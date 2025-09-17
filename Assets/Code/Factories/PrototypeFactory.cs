@@ -1,5 +1,8 @@
+using System;
 using ECS.Component;
 using ECS.Entity;
+using Unity.VisualScripting;
+using UnityEngine;
 
 namespace Factories
 {
@@ -28,9 +31,18 @@ namespace Factories
             var e = new AliveEntity(IdGenerator.GenerateNewId(), "playerEntity"); 
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
+            e.AddComponent(new PositionComponent(0, 0, 0));
             e.AddComponent(new InventoryComponent(36));
             e.AddComponent(new NameComponent("Jugador"));
             e.AddComponent(new FisiologicComponent(1.80f, 85, 25, 0));
+
+            var hierarchyPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (hierarchyPlayer == null)
+            {
+                Debug.LogError("No se ha encontrado el GameObject con la etiqueta 'Player'. Asegúrate de que existe en la escena.");
+                throw new NullReferenceException("GameObject with tag 'Player' not found.");
+            }
+            e.AddComponent(new UnityEntityComponent(hierarchyPlayer)); // La asignaremos luego
             return e;
         }
     }

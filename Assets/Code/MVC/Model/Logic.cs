@@ -11,7 +11,7 @@ namespace MVC.Model
         private static readonly EntityManager entityManager = new EntityManager();
         private readonly ClockSystem clockInstance = ClockSystem.GetInstance();
         private MapManager MapManager;
-        
+         
         public EntityManager GetEntityManager()
         {
             return entityManager;

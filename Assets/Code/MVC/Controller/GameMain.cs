@@ -2,6 +2,7 @@ using UnityEngine;
 using Strategy;
 using MVC.Controller;
 using ECS.Entity;
+using Factories;
 
 /// <summary>
 /// Main entry point for the game. Initializes the game context and input manager.
@@ -24,8 +25,8 @@ public class GameMain : MonoBehaviour
         gameContext.GetCameraRegister().AddCamera(CameraRegister.CameraType.FPS, new FPCameraStrategy(null));
         gameContext.GetCameraRegister().ActivateCamera(CameraRegister.CameraType.RTS);
 
-        // Gestionamos el MainPlayer
-        playerEntity = new AliveEntity(IdGenerator.GenerateNewId(), "PlayerEntity");
+        // Gestionamos el MainPlayer TODO montar un sistema de login y de gestion modular respecto al player
+        gameContext.GetLogic().GetEntityManager().CreateEntity("playerEntity");
         
         // Inicializamos el InputManager
         inputManager = new InputManager(gameContext);
