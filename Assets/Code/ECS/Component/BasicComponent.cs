@@ -1,6 +1,8 @@
+using Observer;
+
 namespace ECS.Component
 {
-    public abstract class BasicComponent : IComponent
+    public abstract class BasicComponent : GenericSubject, IComponent
     {
         protected string name;
  

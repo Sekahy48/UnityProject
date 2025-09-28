@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Strategy;
 using UnityEngine;
@@ -7,10 +8,11 @@ namespace MVC.Controller
     public class CameraRegister
 
     {
-        public enum CameraType { RTS, FPS }
+        public enum CameraType { RTS, FPS, TPS}
         private Dictionary<CameraType, ICameraStrategy> Cams = new();
+        private Array CameraCarousel = Enum.GetValues(typeof(CameraType));
         private CameraType activeCam;
-        
+
         public void AddCamera(CameraType name, ICameraStrategy camera)
         {
             if (!Cams.ContainsKey(name))
@@ -38,9 +40,15 @@ namespace MVC.Controller
 
         public ICameraStrategy GetActiveCamera()
         {
+            if (activeCam.Equals(null))
+            {
+                Debug.LogError("No active camera set. Taking the first one available.");
+                return null;
+            }
+
             return GetCamera(activeCam);
         }
-        
+
         public bool RemoveCamera(CameraType name)
         {
             return Cams.Remove(name);
@@ -65,6 +73,15 @@ namespace MVC.Controller
             }
 
             activeCam = name;
+        }
+
+        public ICameraStrategy NextCamera()
+        {
+            int i = Array.IndexOf(CameraCarousel, activeCam);
+            i = (i + 1) % CameraCarousel.Length;
+            ActivateCamera((CameraType)CameraCarousel.GetValue(i));
+            return GetActiveCamera();
+            
         }
 
     }

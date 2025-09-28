@@ -7,8 +7,10 @@ namespace MVC.Controller
     public class GameContext
     {
         private GameController GameController;
-        private Logic Model;
         private CameraRegister CameraRegister = new();
+        private InputManager InputManager;
+
+        private Logic Model;
         public GameContext(GameController gameController, Logic model)
         {
             GameController = gameController;
@@ -36,6 +38,12 @@ namespace MVC.Controller
             return this;
         }
 
+        public GameContext SetInputManager(InputManager inputManager)
+        {
+            InputManager = inputManager;
+            return this;
+        }
+
         public GameController GetGameController()
         {
             return GameController;
@@ -49,6 +57,10 @@ namespace MVC.Controller
         public ICameraStrategy GetCamera(CameraRegister.CameraType name)
         {
             return CameraRegister.GetCamera(name);
+        }
+        public InputManager GetInputManager()
+        {
+            return InputManager;
         }
          
     }

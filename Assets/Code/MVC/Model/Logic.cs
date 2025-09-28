@@ -8,10 +8,10 @@ namespace MVC.Model
 {
     public class Logic
     {
-        private static readonly EntityManager entityManager = new EntityManager();
+        private static readonly EntityManager entityManager = new EntityManager(GameObject.FindWithTag("MainPlayer"));
         private readonly ClockSystem clockInstance = ClockSystem.GetInstance();
         private MapManager MapManager;
-        
+         
         public EntityManager GetEntityManager()
         {
             return entityManager;

@@ -14,11 +14,11 @@ namespace ECS.Systems
         private readonly Dictionary<string, IEntity> prototypes = new();
         private readonly Dictionary<string, ItemEntity> itemsCatalog = new();
 
-        public EntityManager()
+        public EntityManager(GameObject playerObject)
         {
             prototypes["resourceNode"] = PrototypeFactory.CreateResourceNodePrototype();
             prototypes["aliveEntity"] = PrototypeFactory.CreateAliveEntityPrototype();
-            prototypes["playerEntity"] = PrototypeFactory.CreatePlayerEntityPrototype();
+            prototypes["playerEntity"] = PrototypeFactory.CreatePlayerEntityPrototype(playerObject);
         }
 
         public IEntity CreateEntity(string type)
