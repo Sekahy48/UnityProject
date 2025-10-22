@@ -1,0 +1,8 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/MainMenuStyle.uss?fileID=7433441132597879392&amp;guid=9d8d2a1597b89e745be85ae3cca8e9b5&amp;type=3#MainMenuStyle" />
+    <ui:VisualElement name="Container" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/TextMesh%20Pro/Sprites/EmojiOne.png?fileID=2800000&amp;guid=dffef66376be4fa480fb02b19edbe903&amp;type=3#EmojiOne&quot;);">
+        <ui:Label text="Label" name="Header" class="header" />
+        <ui:Button text="Start" class="button" />
+        <ui:Button text="Setting" class="button" />
+    </ui:VisualElement>
+</ui:UXML>

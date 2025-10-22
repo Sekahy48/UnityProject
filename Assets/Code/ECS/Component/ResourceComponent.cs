@@ -15,7 +15,7 @@ namespace ECS.Component
             this.amount = amount;
             this.maxAmount = amount;
             this.renewable = renewable;
-            this.name = "ResourceComponent"; // Inicializa el nombre del componente
+            this._name = "ResourceComponent"; // Inicializa el nombre del componente
         }
 
         public override IComponent Clone()

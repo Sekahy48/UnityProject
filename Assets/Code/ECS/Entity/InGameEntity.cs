@@ -12,7 +12,7 @@ namespace ECS.Entity
     /// </summary>
     public class InGameEntity : IEntity
     {
-        protected readonly EntityId id;
+        protected EntityId id;
         protected readonly NameId type;
         protected readonly Dictionary<Type, IComponent> components = new();
 
@@ -49,6 +49,11 @@ namespace ECS.Entity
             return id.ToInt();
         }
 
+        public int GenerateEntityId()
+        {
+            this.id = new EntityId(IdGenerator.GenerateNewId());
+            return this.id.ToInt();
+        }
         public T GetComponent<T>(Type target) where T : IComponent
         {
             if (HasComponent(target))

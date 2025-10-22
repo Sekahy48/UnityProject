@@ -1,0 +1,68 @@
+VisualElement {
+}
+
+.fill {
+}
+
+.staminaBar {
+    width: 300px;
+    height: 18px;
+    margin-top: 3px;
+    margin-right: 25px;
+    margin-bottom: 25px;
+    margin-left: 25px;
+    background-color: rgba(0, 0, 0, 0.86);
+}
+
+.fatigueBar {
+    width: 450px;
+    height: 18px;
+    margin-top: 25px;
+    margin-right: 25px;
+    margin-bottom: 2px;
+    margin-left: 25px;
+    background-color: rgba(0, 0, 0, 0.86);
+    visibility: visible;
+    display: flex;
+    overflow: visible;
+}
+
+.orbfill {
+    background-image: resource('Images/descarga');
+    border-bottom-left-radius: 50%;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
+    margin-top: -10px;
+    margin-right: -10px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-left: 0;
+    margin-bottom: 10px;
+    margin-left: -10px;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+}
+
+.bloodOrb {
+    width: 75px;
+    height: 75px;
+}
+
+.emptyOrb {
+    background-image: resource('Images/Empty_Orb');
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    overflow: visible;
+    width: 75px;
+    height: 75px;
+    -unity-background-image-tint-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+    background-repeat: no-repeat no-repeat;
+    margin-top: -10px;
+    margin-right: -10px;
+    margin-bottom: 10px;
+    margin-left: -10px;
+}

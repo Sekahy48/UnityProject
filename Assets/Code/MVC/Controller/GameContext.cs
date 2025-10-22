@@ -1,4 +1,5 @@
 using MVC.Model;
+using MVC.View;
 using Strategy;
 using UnityEngine;
 
@@ -9,6 +10,7 @@ namespace MVC.Controller
         private GameController GameController;
         private CameraRegister CameraRegister = new();
         private InputManager InputManager;
+        private HUDManager HUDManager;
 
         private Logic Model;
         public GameContext(GameController gameController, Logic model)
@@ -44,6 +46,12 @@ namespace MVC.Controller
             return this;
         }
 
+        public GameContext SetHUDManager(HUDManager hudManager)
+        {
+            HUDManager = hudManager;
+            return this;
+        }
+
         public GameController GetGameController()
         {
             return GameController;
@@ -62,6 +70,10 @@ namespace MVC.Controller
         {
             return InputManager;
         }
-         
+        
+        public HUDManager GetHUDManager()
+        {
+            return HUDManager;
+        }
     }
 }

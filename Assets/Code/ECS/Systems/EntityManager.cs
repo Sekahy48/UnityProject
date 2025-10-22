@@ -10,6 +10,7 @@ namespace ECS.Systems
 {
     public class EntityManager : IObserver
     {
+        private int _playerId;
         private readonly Dictionary<int, IEntity> entities = new();
         private readonly Dictionary<string, IEntity> prototypes = new();
         private readonly Dictionary<string, ItemEntity> itemsCatalog = new();
@@ -82,15 +83,16 @@ namespace ECS.Systems
 
         public IEntity GetPlayer()
         {
-            var playerPrototype = prototypes["playerEntity"];
-            var player = entities.GetValueOrDefault(playerPrototype.GetIdAsInt());
+            IEntity playerPrototype = prototypes["playerEntity"];
+            InGameEntity player = (InGameEntity)entities.GetValueOrDefault(_playerId);
 
             if (player == null)
             {
                 Debug.Log("EntityManager: Player entity not found, creating a new one.");
-                player = playerPrototype.Clone();
-                Debug.Log("EntityManager: Player entity retrieved: " + player.GetName());
-                entities[IdGenerator.GenerateNewId()] = player;
+                player = (InGameEntity) playerPrototype.Clone();
+                _playerId = player.GenerateEntityId();
+                Debug.Log("EntityManager: Player entity retrieved: " + player.GetName() + " with ID: " + _playerId);
+                entities[_playerId] = player;
             }
 
             return player;

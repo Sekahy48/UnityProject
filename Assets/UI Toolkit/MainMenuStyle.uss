@@ -1,0 +1,23 @@
+:root {
+}
+
+.header {
+    font-size: 100px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: upper-center;
+}
+
+.button {
+    font-size: 20px;
+    width: 220px;
+    height: 60px;
+    justify-content: flex-start;
+    align-self: center;
+    align-content: auto;
+    align-items: stretch;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background-image: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=-4521532143779581420&guid=5362aff2f64080b4494d600630d8e7f2&type=3#arrow-right");
+}

@@ -1,11 +1,15 @@
+using ECS.Entity;
+using UnityEngine;
+
 namespace Strategy
 {
     public interface ICameraStrategy
     {
         void Execute(float deltaTime);
-
-        void activate();
-        void deactivate();
+        void Activate();
+        void Deactivate();
+        Camera GetCamera();
+        IEntity GetPlayer();    
     }
     
 }

@@ -1,4 +1,6 @@
+using ECS.Systems;
 using MVC.Model;
+using MVC.View;
 using Strategy;
 
 namespace MVC.Controller
@@ -18,6 +20,15 @@ namespace MVC.Controller
         {
         }
 
+        public void SetUpOnStart()
+        {
+            Logic logic = this.GameContext.GetLogic();
+            HUDManager hUDManager = this.GameContext.GetHUDManager();
+            FatigueStaminaSystem staminaSystem = logic.GetFatigueStaminaSystem();
+            staminaSystem.Attach(hUDManager);
+            staminaSystem.Attach(logic);
+
+        }
         public void SetGameContext(GameContext gameContext)
         {
             GameContext = gameContext;

@@ -13,6 +13,11 @@ namespace MVC.Controller
         private Array CameraCarousel = Enum.GetValues(typeof(CameraType));
         private CameraType activeCam;
 
+        public CameraRegister()
+        {
+            GameObject.FindWithTag("MainCamera").GetComponent<Camera>().enabled = false;
+        }
+
         public void AddCamera(CameraType name, ICameraStrategy camera)
         {
             if (!Cams.ContainsKey(name))
@@ -58,12 +63,12 @@ namespace MVC.Controller
         {
             if (Cams.TryGetValue(name, out ICameraStrategy camera))
             {
-                camera.activate();
+                camera.Activate();
                 foreach (var cam in Cams.Values)
                 {
                     if (!cam.Equals(camera))
                     {
-                        cam.deactivate();
+                        cam.Deactivate();
                     }
                 }
             }

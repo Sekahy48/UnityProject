@@ -1,10 +1,11 @@
+using System;
 using Observer;
 
 namespace ECS.Component
 {
     public abstract class BasicComponent : GenericSubject, IComponent
     {
-        protected string name;
+        protected String _name;
  
 
         public abstract IComponent Clone();

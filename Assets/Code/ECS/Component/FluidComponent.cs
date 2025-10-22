@@ -11,7 +11,7 @@ namespace ECS.Component
         {
             this.fluids = new Dictionary<ResourceType, float>();
             this.maxCapacity = maxCapacity;
-            this.name = "FluidComponent";
+            this._name = "FluidComponent";
         }
 
         public override IComponent Clone()

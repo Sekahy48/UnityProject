@@ -1,3 +1,4 @@
+using ECS.Entity;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,7 +6,7 @@ namespace Strategy
 {
     public class RTSCameraStrategy : ICameraStrategy
     {
-        private readonly Camera camera;
+        private readonly Camera Camera;
         private float cameraSpeed = 10f;
         private float rotationSpeed = 45f;
 
@@ -17,17 +18,17 @@ namespace Strategy
             GameObject camGO = new GameObject("RTSCamera");
             camGO.transform.position = new Vector3(0f, 20f, -20f);
             camGO.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
-            this.camera = camGO.AddComponent<Camera>();
+            this.Camera = camGO.AddComponent<Camera>();
 
             pivot = new Vector3(0f, 0f, 0f); // al principio, que mire al origen
         }
 
-        public void activate() => camera.enabled = true;
-        public void deactivate() => camera.enabled = false;
+        public void Activate() => Camera.enabled = true;
+        public void Deactivate() => Camera.enabled = false;
 
         public void Execute(float deltaTime)
         {
-            Transform camTransform = camera.transform;
+            Transform camTransform = Camera.transform;
 
             // Actualizar pivot dinámicamente: lo que "mira" la cámara a cierta distancia
             pivot = camTransform.position + camTransform.forward * 10f;
@@ -47,7 +48,7 @@ namespace Strategy
                 else
                 {
                     // Zoom (ajustar FOV)
-                    camera.fieldOfView -= scroll * deltaTime * 10f;
+                    Camera.fieldOfView -= scroll * deltaTime * 10f;
                 }
             }
             // -----------------------------------
@@ -121,13 +122,16 @@ namespace Strategy
             }
 
             // Clamp final de FOV
-            camera.fieldOfView = Mathf.Clamp(camera.fieldOfView, 30f, 100f);
+            Camera.fieldOfView = Mathf.Clamp(Camera.fieldOfView, 30f, 100f);
         }
 
         private void OrbitAroundPivot(Vector3 axis, float angle)
         {
-            Transform camTransform = camera.transform;
+            Transform camTransform = Camera.transform;
             camTransform.RotateAround(pivot, axis, angle);
         }
+
+        public Camera GetCamera() => Camera;
+        public IEntity GetPlayer() => null; // No hay jugador asociado en RTS
     }
 }

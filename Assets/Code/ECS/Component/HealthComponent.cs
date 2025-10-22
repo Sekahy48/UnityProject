@@ -19,7 +19,7 @@ namespace ECS.Component
         {
             this.currentHealth = current;
             this.maxHealth = max == UNLIMITED_HEALTH ? UNLIMITED_HEALTH : Math.Max(0, max);
-            this.name = "HealthComponent";
+            this._name = "HealthComponent";
         }
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace ECS.Component
         {
             this.currentHealth = current;
             this.maxHealth = UNLIMITED_HEALTH;
-            this.name = "HealthComponent";
+            this._name = "HealthComponent";
         }
 
         public override IComponent Clone()

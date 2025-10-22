@@ -1,31 +1,51 @@
 using System;
 using System.Collections.Generic;
 using ECS.Entity;
-using ECS.Systems; 
+using ECS.Systems;
+using Observer;
 using UnityEngine;
 
 namespace MVC.Model
 {
-    public class Logic
+    public class Logic : IObserver
     {
-        private static readonly EntityManager entityManager = new EntityManager(GameObject.FindWithTag("MainPlayer"));
+        private readonly EntityManager entityManager = new EntityManager(GameObject.FindWithTag("MainPlayer"));
+        private readonly FatigueStaminaSystem fatigueStaminaSystem = new();
         private readonly ClockSystem clockInstance = ClockSystem.GetInstance();
+        private Boolean changesRemaining = false;  
         private MapManager MapManager;
-         
+
         public EntityManager GetEntityManager()
         {
             return entityManager;
         }
 
+        public FatigueStaminaSystem GetFatigueStaminaSystem()
+        {
+            return fatigueStaminaSystem;
+        }
+        
         public List<IEntity> GetEntitiesWithComponent(Type componentName)
         {
             return entityManager.GetEntitiesWithComponent(componentName);
         }
 
-        public void ExecuteFrame()
+        public void UpdateThis()
         {
-            float deltaTime = Time.deltaTime;
-            clockInstance.Update(deltaTime);
+            //float deltaTime = Time.deltaTime;
+            //clockInstance.Update(deltaTime);
+            //Debug.Log("Updating Logic" + entityManager.GetPlayer().GetComponent<ECS.Component.MovementComponent>(typeof(ECS.Component.MovementComponent)).IsRunning());
+
+            if (changesRemaining)
+            {
+                changesRemaining = false;
+                this.fatigueStaminaSystem.ProcessEntity(Time.deltaTime, entityManager.GetPlayer(), entityManager.GetPlayer().GetComponent<ECS.Component.MovementComponent>(typeof(ECS.Component.MovementComponent)).IsRunning());
+            }
+        }
+
+        public void Update()
+        {
+            changesRemaining = true;
         }
 
         public void SetCurrentMap(String map)

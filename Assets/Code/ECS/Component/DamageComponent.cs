@@ -18,7 +18,7 @@ namespace ECS.Component
             this.baseDamage = baseDamage;
             this.criticalChance = criticalChance;
             this.criticalMultiplier = criticalMultiplier;
-            this.name = "DamageComponent"; // Inicializa el nombre del componente
+            this._name = "DamageComponent"; // Inicializa el nombre del componente
         }
 
         public override IComponent Clone()

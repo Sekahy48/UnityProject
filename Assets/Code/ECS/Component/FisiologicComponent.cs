@@ -1,10 +1,11 @@
 using System;
+using UnityEngine;
 
 namespace ECS.Component
 {
     public class FisiologicComponent : BasicComponent
     {
-        private static Random random = new Random(); // Generador de números aleatorios
+        private static System.Random random = new System.Random(); // Generador de números aleatorios
 
         private float height; // Altura del personaje
         private float weight; // Peso del personaje
@@ -19,10 +20,11 @@ namespace ECS.Component
         private float hunger;   // Hambre
         private float thirst;   // Sed
         private float fatigue;  // Fatiga
-
+        private float stamina; // Resistencia física
         private float maxHunger;
         private float maxThirst;
         private float maxFatigue;
+        private float maxStamina;
 
         private float storedKcal;
         private float storedWater;
@@ -48,15 +50,16 @@ namespace ECS.Component
             this.metabolicRate = RndmF(100, 150);
             CalculateBasalMetabolism();
             this.hunger = RndmF(0, 100);
-            this.thirst = RndmF(0, 100);
-            this.fatigue = RndmF(0, 100);
+            this.thirst = RndmF(0, 100); 
             this.maxHunger = 100;
             this.maxThirst = 100;
-            this.maxFatigue = 100;
+            this.fatigue = 100f;
+            this.maxFatigue = 100f;
             EstimateFatPercentage();
             this.storedWater = GenerateStoredWater();
-
-            this.name = "FisiologicComponent";
+            this._name = "FisiologicComponent";
+            this.stamina = 100f;
+            this.maxStamina = 100f;
         }
 
         public float EstimateFatPercentage()
@@ -130,13 +133,19 @@ namespace ECS.Component
         public void SetBasalMetabolicRate(float basalMetabolicRate) => this.basalMetabolicRate = basalMetabolicRate;
 
         public float GetHunger() => hunger;
-        public void SetHunger(float hunger) => this.hunger = hunger;
+        public void SetHunger(float hunger) => this.hunger = Math.Max(0, Math.Min(hunger, this.maxHunger));
 
         public float GetThirst() => thirst;
-        public void SetThirst(float thirst) => this.thirst = thirst;
+        public void SetThirst(float thirst) => this.thirst = Math.Max(0, Math.Min(thirst, this.maxThirst));
 
         public float GetFatigue() => fatigue;
-        public void SetFatigue(float fatigue) => this.fatigue = fatigue;
+        public void SetFatigue(float fatigue) => this.fatigue = Math.Max(0, Math.Min(fatigue, this.maxFatigue));
+
+        public float GetStamina() => stamina;
+        public void SetStamina(float stamina) => this.stamina = Math.Max(0, Math.Min(stamina, this.maxStamina));
+        
+        public float GetMaxStamina() => maxStamina;
+        public void SetMaxStamina(float maxStamina) => this.maxStamina = maxStamina;
 
         public float GetMaxHunger() => maxHunger;
         public void SetMaxHunger(float maxHunger) => this.maxHunger = maxHunger;
@@ -173,10 +182,18 @@ namespace ECS.Component
         public void AddFiber(float fiber) => this.fiber += fiber;
         public void SetFiber(float fiber) => this.fiber = fiber;
 
-        public void SetThirst(float thirst, float maxThirst) => this.thirst = Math.Min(thirst, maxThirst);
-        public void SetHunger(float hunger, float maxHunger) => this.hunger = Math.Min(hunger, maxHunger);
-        public void SetFatigue(float fatigue, float maxFatigue) => this.fatigue = Math.Min(fatigue, maxFatigue);
 
+        // Metodos para comprobar si un atributo esta al maximo posible
+        public bool IsHungerFull() => this.hunger >= this.maxHunger;
+        public bool IsThirstFull() => this.thirst >= this.maxThirst;
+        public bool IsFatigueFull() => this.fatigue >= this.maxFatigue;
+        public bool IsStaminaFull() => this.stamina >= this.maxStamina;
+        public bool IsHungerEmpty() => this.hunger <= 0;
+        public bool IsThirstEmpty() => this.thirst <= 0;
+        public bool IsFatigueEmpty() => this.fatigue <= 0;
+        public bool IsStaminaEmpty() => this.stamina <= 0;
+
+        // Clonación del componente        
         public override IComponent Clone()
         {
             FisiologicComponent copy = new FisiologicComponent(this.height, this.weight, this.age, this.sex);
@@ -189,7 +206,9 @@ namespace ECS.Component
             copy.hunger = this.hunger;
             copy.thirst = this.thirst;
             copy.fatigue = this.fatigue;
+            copy.stamina = this.stamina;
 
+            copy.maxStamina = this.maxStamina;
             copy.maxHunger = this.maxHunger;
             copy.maxThirst = this.maxThirst;
             copy.maxFatigue = this.maxFatigue;
@@ -203,7 +222,7 @@ namespace ECS.Component
             copy.micronutrients = this.micronutrients;
             copy.fiber = this.fiber;
 
-            copy.name = this.name;
+            copy._name = this._name;
 
             return copy;
         }

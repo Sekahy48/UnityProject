@@ -1,0 +1,14 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/PlayerHUDStyle.uss?fileID=7433441132597879392&amp;guid=42e6b8024efe2e643b2a4333895bd259&amp;type=3#PlayerHUDStyle" />
+    <ui:VisualElement name="Container" style="flex-grow: 1;">
+        <ui:VisualElement name="FatigueBar" class="fatigueBar">
+            <ui:VisualElement name="Fill" class="fill" style="flex-grow: 1; width: 100%; height: 100%; background-color: rgb(200, 255, 0); position: absolute; top: 0; left: 0; right: auto;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="StaminaBar" class="staminaBar">
+            <ui:VisualElement name="Fill" class="fill" style="flex-grow: 1; width: 100%; height: 100%; background-color: rgb(250, 255, 81); position: absolute; top: 0; left: 0; right: auto;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="BloodOrb" enabled="true" class="bloodOrb" style="bottom: 0; right: 0; position: absolute; opacity: 1;">
+            <ui:VisualElement name="Fill" enabled="true" class="orbfill" style="flex-grow: 1; width: 100%; height: 100%; border-bottom-left-radius: 50%; border-top-left-radius: 50%; border-top-right-radius: 50%; border-bottom-right-radius: 50%; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; -unity-background-image-tint-color: rgb(255, 255, 255);" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

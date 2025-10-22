@@ -11,7 +11,7 @@ namespace ECS.Component
         public NameComponent(string displayName)
         {
             this.displayName = displayName;
-            this.name = "NameComponent"; // Inicializa el nombre del componente
+            this._name = "NameComponent"; // Inicializa el nombre del componente
         }
 
         public string GetDisplayName()

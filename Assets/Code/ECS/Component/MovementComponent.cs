@@ -5,80 +5,119 @@ namespace ECS.Component
 {
     public class MovementComponent : BasicComponent
     {
-        private float Speed;
-        private float RunMultiplier = 1.5f;
-        private Vector2 Direction;
+        private float _speed;
+        private float _runMultiplier = 2.5f;
+        private Vector2 _direction;
         private bool _isMoving;
-        private float MouseSensitivity = 1f;
+        private bool _isRunning = false;
+        private bool _canRun;
+        private bool _wantsToJump = false;
+        private float _mouseSensitivity = 1f;
+
         public MovementComponent(float speed)
         {
-            Speed = speed;
-            Direction = Vector2.zero; // Inicializa la dirección a un vector nulo
+            _speed = speed;
+            _direction = Vector2.zero; // Inicializa la dirección a un vector nulo
             this._isMoving = false; // Inicializa el estado de movimiento a falso
         }
 
         public MovementComponent(float speed, float mult, Vector2 direction, bool isMoving, float mouseSensitivity)
         {
-            this.Speed = speed;
-            this.RunMultiplier = mult;
-            this.Direction = direction;
+            this._speed = speed;
+            this._runMultiplier = mult;
+            this._direction = direction;
             this._isMoving = isMoving; // Inicializa el estado de movimiento a falso
-            this.MouseSensitivity = mouseSensitivity;
+            this._mouseSensitivity = mouseSensitivity;
         }
         
 
         public void SetSpeed(float speed)
         {
-            Speed = speed;
+            _speed = speed;
         }
 
         public float GetSpeed()
         {
-            return Speed;
+            return _speed;
         }
 
         public void SetRunMultiplier(float mult)
         {
-            RunMultiplier = mult;
+            _runMultiplier = mult;
         }
         public float GetRunMultiplier()
         {
-            return RunMultiplier;
+            return _runMultiplier;
         }
 
         public void SetDirection(Vector2 direction)
         {
-            Direction = direction;
+            _direction = direction;
         }
 
         public Vector2 GetDirection()
         {
-            return Direction;
+            return _direction;
         }
 
         public void SetMouseSensitivity(float sensitivity)
         {
-            MouseSensitivity = sensitivity;
+            _mouseSensitivity = sensitivity;
         }
 
         public float GetMouseSensitivity()
         {
-            return MouseSensitivity;
+            return _mouseSensitivity;
         }
         
         public void switchIsMoving()
         {
             _isMoving = !_isMoving;
         }
-        
+
         public bool IsMoving()
         {
             return _isMoving;
         }
 
+        public void SetIsRunning(bool running)
+        {
+            if(!CanRun())
+                _isRunning = false;
+            else
+            _isRunning = running;
+        }
+
+        public bool IsRunning()
+        {
+            return _isRunning;
+        }
+
+        public void SetIsJumping(bool jump)
+        {
+            _wantsToJump = jump;
+        }
+
+        public bool IsJumping()
+        {
+            return _wantsToJump;
+        }
+
+        public void SetCanRun(bool canRun)
+        {
+            this.SetIsRunning(false);
+            _canRun = canRun;
+            
+        }
+        
+        public bool CanRun()
+        {
+            return _canRun;
+        }
+
         public override IComponent Clone()
         {
-            return new MovementComponent(this.Speed, this.RunMultiplier, this.Direction, this._isMoving, this.MouseSensitivity);
+            return new MovementComponent(this._speed, this._runMultiplier, this._direction, this._isMoving, this._mouseSensitivity);
         }
     }
 }

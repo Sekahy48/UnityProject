@@ -12,7 +12,7 @@ namespace ECS.Component
         {
             this.healingAmount = healingAmount;
             this.bonusMultiplier = bonusMultiplier;
-            this.name = "HealComponent"; // Inicializa el nombre del componente
+            this._name = "HealComponent"; // Inicializa el nombre del componente
         }
 
         public override IComponent Clone()

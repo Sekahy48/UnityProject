@@ -10,7 +10,7 @@ namespace ECS.Component
 
         public TaskComponent()
         {
-            this.name = "TaskComponent"; // Inicializa el nombre del componente
+            this._name = "TaskComponent"; // Inicializa el nombre del componente
         }
 
         public void AddTask(ITask task)
