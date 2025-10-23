@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 OPR/121.0.0.0" version="28.2.8">
   <diagram name="Página-1" id="F4Gypos5oSnN8ToE1prj">
-    <mxGraphModel dx="2622" dy="1702" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="825" dy="931" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -343,7 +343,7 @@
         <mxCell id="NegsCRsM2UyYIKy7xB2g-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=10;endArrow=block;endFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="NegsCRsM2UyYIKy7xB2g-10" target="Sg5DRJIkV-H7FFbYhFR8-8">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="NegsCRsM2UyYIKy7xB2g-25" value="&lt;span style=&quot;font-weight: 400;&quot;&gt;TemperatureComponente&lt;/span&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-25" value="&lt;span style=&quot;font-weight: 400;&quot;&gt;TemperatureComponent&lt;/span&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="3550" y="20" width="260" height="140" as="geometry" />
         </mxCell>
         <mxCell id="NegsCRsM2UyYIKy7xB2g-26" value="&lt;div&gt;- _temperature : float&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-25">
@@ -357,6 +357,58 @@
         </mxCell>
         <mxCell id="NegsCRsM2UyYIKy7xB2g-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=10;endArrow=block;endFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="NegsCRsM2UyYIKy7xB2g-25" target="Sg5DRJIkV-H7FFbYhFR8-8">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-30" value="&lt;span style=&quot;font-weight: 400;&quot;&gt;FluidComponent&lt;/span&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="3840" y="20" width="280" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-31" value="&lt;div&gt;- _fluids : Dictionary &amp;lt;FluidType, float&amp;gt;&lt;/div&gt;&lt;div&gt;- _maxCapacity : float&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-30">
+          <mxGeometry y="26" width="280" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-32" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-30">
+          <mxGeometry y="70" width="280" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-33" value="+ AddFluid(fluid : FluidType, amount : float)&lt;div&gt;+ DrainFluid(fluid : FluidType, amount : float)&lt;/div&gt;&lt;div&gt;+ GetSpaceLeft() : float&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-30">
+          <mxGeometry y="78" width="280" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=10;endArrow=block;endFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="NegsCRsM2UyYIKy7xB2g-30" target="Sg5DRJIkV-H7FFbYhFR8-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=open;endFill=0;endSize=8;" edge="1" parent="1" source="NegsCRsM2UyYIKy7xB2g-35" target="NegsCRsM2UyYIKy7xB2g-31">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="4140" y="305" />
+              <mxPoint x="4140" y="68" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-35" value="«enum»&lt;br&gt;WeaponPartSlot" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=53;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="3980" y="230" width="140" height="151" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-36" value="Top&lt;div&gt;Middle&lt;br&gt;&lt;div&gt;Base&lt;br&gt;&lt;div&gt;Radial&lt;/div&gt;&lt;div&gt;Left&lt;/div&gt;&lt;/div&gt;&lt;div&gt;Right&lt;/div&gt;&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-35">
+          <mxGeometry y="53" width="140" height="98" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-40" value="&lt;span style=&quot;font-weight: 400;&quot;&gt;UnityEntityComponent&lt;/span&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="4160" y="20" width="280" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-41" value="&lt;div&gt;- _fluids : Dictionary &amp;lt;FluidType, float&amp;gt;&lt;/div&gt;&lt;div&gt;- _maxCapacity : float&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-40">
+          <mxGeometry y="26" width="280" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-42" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-40">
+          <mxGeometry y="70" width="280" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-43" value="+ AddFluid(fluid : FluidType, amount : float)&lt;div&gt;+ DrainFluid(fluid : FluidType, amount : float)&lt;/div&gt;&lt;div&gt;+ GetSpaceLeft() : float&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="NegsCRsM2UyYIKy7xB2g-40">
+          <mxGeometry y="78" width="280" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=10;endArrow=block;endFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="NegsCRsM2UyYIKy7xB2g-40" target="Sg5DRJIkV-H7FFbYhFR8-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="NegsCRsM2UyYIKy7xB2g-45">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="4430" y="10.000000000000114" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NegsCRsM2UyYIKy7xB2g-45" value="Anotación, en la documentacion esta mal escrito como UnityComponent (sin entity)" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="4350" y="-77" width="60" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
