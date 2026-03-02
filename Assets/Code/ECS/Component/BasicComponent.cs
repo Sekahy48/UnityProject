@@ -9,5 +9,6 @@ namespace ECS.Component
  
 
         public abstract IComponent Clone();
+        public abstract bool Equivalent(IComponent other);
     }
 }

@@ -21,6 +21,13 @@ namespace ECS.Component
         {
             return this.GameObject;
         }
+
+        public bool Equivalent(IComponent other)
+        {
+            return 
+                other is UnityEntityComponent otherUnity &&
+                this.GameObject == otherUnity.GameObject;
+        }
     }
 
 }

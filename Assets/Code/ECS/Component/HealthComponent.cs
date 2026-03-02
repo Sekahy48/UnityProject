@@ -32,11 +32,6 @@ namespace ECS.Component
             this._name = "HealthComponent";
         }
 
-        public override IComponent Clone()
-        {
-            return new HealthComponent(this.currentHealth, this.maxHealth);
-        }
-
         /// <summary>
         /// Disminuye la vida actual (hasta cero como mucho).
         /// </summary>
@@ -184,6 +179,19 @@ namespace ECS.Component
                     Thread.CurrentThread.Interrupt();
                 }
             }
+        }
+
+        public override IComponent Clone()
+        {
+            return new HealthComponent(this.currentHealth, this.maxHealth);
+        }
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is HealthComponent otherHealth &&
+                this.currentHealth == otherHealth.currentHealth &&
+                this.maxHealth == otherHealth.maxHealth;
         }
     }
 }

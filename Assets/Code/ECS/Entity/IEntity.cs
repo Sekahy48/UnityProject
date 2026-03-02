@@ -55,5 +55,12 @@ namespace ECS.Entity
         /// Clona la entidad (nuevo ID)
         /// </summary>
         IEntity Clone(); // override del Clone() de ICloneable
+
+        /// <summary>
+        /// Comprueba si esta entidad es equivalente a otra (mismo tipo y mismos componentes con mismos valores)
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equivalent(IEntity other);
     }
 }

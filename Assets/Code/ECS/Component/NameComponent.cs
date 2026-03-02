@@ -23,6 +23,12 @@ namespace ECS.Component
         {
             return new NameComponent(displayName);
         }
- 
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is NameComponent otherName &&
+                this.displayName == otherName.displayName;
+        }
     }
 }

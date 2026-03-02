@@ -1,6 +1,7 @@
 using System;
 using ECS.Component;
 using ECS.Entity;
+using Inventory;
 using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
@@ -43,7 +44,7 @@ namespace Factories
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
             e.AddComponent(new PositionComponent(player.transform));
-            e.AddComponent(new InventoryComponent(36));
+            e.AddComponent(new InventoryComponent(new InventoryObject()));
             e.AddComponent(new NameComponent("Jugador"));
             e.AddComponent(new FisiologicComponent(1.80f, 85, 25, 0));
             e.AddComponent(new UnityEntityComponent(player));

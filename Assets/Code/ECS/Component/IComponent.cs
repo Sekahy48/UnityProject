@@ -9,6 +9,7 @@ namespace ECS.Component
         /// <summary>
         /// Clona "deep" el componente.
         /// </summary>
-        IComponent Clone();
+        public IComponent Clone();
+        public bool Equivalent(IComponent other);
     }
 }

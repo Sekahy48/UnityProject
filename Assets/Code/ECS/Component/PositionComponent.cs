@@ -15,11 +15,7 @@ namespace ECS.Component
         private float x;
         private float y; // Altura
         private float z;
-    */
-        private Vector3 rotation;
-
-        private float xRotation;
-
+    */ 
         public PositionComponent(Transform transform)
         {
             this._transform = transform;
@@ -34,10 +30,6 @@ namespace ECS.Component
                 this.name = "PositionComponent";
             } 
     */
-        public override IComponent Clone()
-        {
-            return new PositionComponent(null);
-        }
 
         /*
         // Getters
@@ -68,46 +60,7 @@ namespace ECS.Component
         {
             return this._transform == null ? throw new NullReferenceException() : this._transform;
         }
-        
-        public Vector3 GetRotation()
-        {
-            return this.rotation;
-        }
-
-        public void SetRotation(Vector3 rotation)
-        {
-            this.rotation = rotation;
-        }
-
-        public void ModifyRotation(Vector3 deltaRotation)
-        {
-            Quaternion delta = Quaternion.Euler(deltaRotation);
-            _transform.rotation *= delta; 
-        }
-
-
-        public Quaternion GetQuaternionRotation(Quaternion rotation)
-        {
-            return Quaternion.Euler(this.rotation);
-        }   
-
-        public float GetXRotation()
-        {
-            return this.xRotation;
-        }
-
-        public void SetXRotation(float xRotation)
-        {
-            this.xRotation = xRotation;
-        }
-
-        public void ModifyXRotation(float deltaXRotation, Camera camera)
-        {
-            this.xRotation += deltaXRotation;
-            this.xRotation = Mathf.Clamp(this.xRotation, -90f, 90f);
-
-            camera.transform.localRotation = Quaternion.Euler(this.xRotation, 0f, 0f);
-        }
+         
         /*
         // Métodos incrementadores
         public void IncrementX(float deltaX) => x += deltaX;
@@ -150,6 +103,20 @@ namespace ECS.Component
         public override string ToString()
         {
             return $"PositionComponent{_transform.position.ToString()}";
+        }
+
+        public override IComponent Clone()
+        {
+            return new PositionComponent(null);
+        }
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is PositionComponent otherPosition &&
+                this._transform.position == otherPosition._transform.position &&
+                this._transform.rotation == otherPosition._transform.rotation &&
+                this._transform.localScale == otherPosition._transform.localScale;
         }
     }
 }

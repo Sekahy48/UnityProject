@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using ECS.Component;
 using ECS.Entity;
+using Events;
 using MVC.Model;
 using Observer;
 
 namespace ECS.Systems
 {
-    public class TaskSystem : IObserver
+    public class TaskSystem : IEventObserver
     {
         private readonly Logic logic;
 
@@ -16,7 +17,7 @@ namespace ECS.Systems
             this.logic = logic;
         }
 
-        public void Update()
+        public void UpdateOnEvent(GameEvent gameEvent)
         {
             List<IEntity> entitiesWithTasks = logic.GetEntitiesWithComponent(typeof(TaskComponent));
 

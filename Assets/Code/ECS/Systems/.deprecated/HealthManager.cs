@@ -3,9 +3,11 @@ using ECS.Entity;
 using Observer;
 using UnityEngine;
 using System;
+using Events;
+using ECS.Component.InventoryComponents;
 namespace ECS.Systems
 {
-    public class HealthManager : IObserver
+    public class HealthManager : IEventObserver
     {
         /// <summary>
         /// Procesa un evento de daño o curación entre entidades.
@@ -75,7 +77,7 @@ namespace ECS.Systems
         /// <summary>
         /// Método requerido por la interfaz IObserver (vacío por ahora).
         /// </summary>
-        public void Update()
+        public void UpdateOnEvent(GameEvent gameEvent)
         {
             throw new System.NotImplementedException("HealthManager.Update is not yet implemented.");
         }

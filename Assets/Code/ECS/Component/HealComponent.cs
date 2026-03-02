@@ -15,11 +15,6 @@ namespace ECS.Component
             this._name = "HealComponent"; // Inicializa el nombre del componente
         }
 
-        public override IComponent Clone()
-        {
-            return new HealComponent(this.healingAmount, this.bonusMultiplier); // Clona el componente
-        }
-
         // Getters y setters en estilo C#
         public int HealingAmount
         {
@@ -41,6 +36,19 @@ namespace ECS.Component
         public override string ToString()
         {
             return $"HealComponent{{healingAmount={healingAmount}, bonusMultiplier={bonusMultiplier}}}";
+        }
+
+        public override IComponent Clone()
+        {
+            return new HealComponent(this.healingAmount, this.bonusMultiplier); // Clona el componente
+        }
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is HealComponent otherHeal &&
+                this.healingAmount == otherHeal.healingAmount &&
+                this.bonusMultiplier == otherHeal.bonusMultiplier;
         }
     }
 }

@@ -119,5 +119,16 @@ namespace ECS.Component
         {
             return new MovementComponent(this._speed, this._runMultiplier, this._direction, this._isMoving, this._mouseSensitivity);
         }
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is MovementComponent otherMovement &&
+                this._speed == otherMovement._speed &&
+                this._runMultiplier == otherMovement._runMultiplier &&
+                this._direction == otherMovement._direction &&
+                this._isMoving == otherMovement._isMoving &&
+                this._mouseSensitivity == otherMovement._mouseSensitivity;
+        }
     }
 }

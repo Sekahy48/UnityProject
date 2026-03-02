@@ -1,31 +1,18 @@
 using System;
 using System.Collections.Generic;
+using ECS.Component;
 using ECS.Entity;
-using Unity.VisualScripting.ReorderableList.Element_Adder_Menu;
-using UnityEditor;
 using AC = Utils.ArgumentChecker;
 
 namespace Inventory
 {
-    /// <summary>
-    /// Representa un item o inventario (contenedor de items) que 
-    /// puede ser contenido en otro inventario y contiene o puede contener
-    /// otros items o inventarios.
-    /// 
-    /// Por ejemplo, el inventario del jugador, una mochila en el inventario 
-    /// del jugador, o un bolsillo en la mochila.
-    /// </summary>
     public class InventoryObject : IInventoryElement
     {
-        /// Lista de elementos contenidos
         private List<IInventoryElement> _inventory;
-        /// Identificador no unitario, representa el concepto del item contenedor (o inventario puro/root)
-        private String _id;
-        /// Entidad envuelta (si es root será null)
-        private IEntity _item;
+        private string _id;
+        private ItemEntity _item;
 
-        /// Contructor de la clase
-        public InventoryObject(IEntity item)
+        public InventoryObject(ItemEntity item)
         {
             AC.CheckNotNull(item, item.GetCompoundIdentification().ToString());
             this._id = item.GetName();
@@ -33,175 +20,331 @@ namespace Inventory
             this._inventory = new List<IInventoryElement>();
         }
 
-        /// <summary>
-        /// Obtiene el identificador del inventario (no unitario)
-        /// </summary>
-        /// <returns>identificador del inventario</returns>
-        public String GetId()
+        public InventoryObject()
         {
-            return this._id;
+            this._id = "root";
+            this._item = null;
+            this._inventory = new List<IInventoryElement>();
         }
 
-        /// <summary>
-        /// Obtiene la entidad item envuelta (si es root será null)
-        /// </summary>
-        /// <returns>entidad item envuelta</returns>
-        public IEntity GetItemEntity()
+        public string GetId() => this._id;
+        public ItemEntity GetItemEntity() => this._item;
+        public bool IsLeaf() => false;
+        public int GetAmount() => 1;
+        public void SetAmount(int amount) { } // los contenedores no tienen cantidad
+        public List<IInventoryElement> GetChildren() => new List<IInventoryElement>(_inventory);
+
+        //#region BFS helper
+
+        private IInventoryElement BfsFind(string id)
         {
-            return this._item;
+            Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
+            foreach (IInventoryElement elem in _inventory)
+                queue.Enqueue(elem);
+
+            while (queue.Count > 0)
+            {
+                IInventoryElement current = queue.Dequeue();
+                if (current.GetId().Equals(id))
+                    return current;
+                if (!current.IsLeaf())
+                    foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
+                        queue.Enqueue(child);
+            }
+            return null;
         }
 
-        /// Añade x cantidad de un item al inventario a la
-        /// pila de dicho item que antes se encuentre en el arbol
-        /// de inventario donde se esta añadiendo la cantidad.
-        /// Si no existe dicho item en el arbol se añade como nuevo.
-        /// Si el item a añadir no es hoja se añade directamente.
-        public void AddAmountOfItem(IInventoryElement item, int amount)
+        private List<IInventoryElement> BfsFindAll(string id)
         {
-            AC.CheckNotNull(item, item.GetId());
+            List<IInventoryElement> results = new List<IInventoryElement>();
+            Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
+            foreach (IInventoryElement elem in _inventory)
+                queue.Enqueue(elem);
+
+            while (queue.Count > 0)
+            {
+                IInventoryElement current = queue.Dequeue();
+                if (current.GetId().Equals(id))
+                    results.Add(current);
+                if (!current.IsLeaf())
+                    foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
+                        queue.Enqueue(child);
+            }
+            return results;
+        }
+
+        private IInventoryElement BfsFindEquivalent(ItemEntity item)
+        {
+            Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
+            foreach (IInventoryElement elem in _inventory)
+                queue.Enqueue(elem);
+
+            while (queue.Count > 0)
+            {
+                IInventoryElement current = queue.Dequeue();
+                if (current.IsLeaf() && current.GetItemEntity().Equivalent(item))
+                    return current;
+                if (!current.IsLeaf())
+                    foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
+                        queue.Enqueue(child);
+            }
+            return null;
+        }
+
+        //#endregion
+
+        //#region Global operations
+
+        public void AddItem(ItemEntity item, int amount)
+        {
+            AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
-            IInventoryElement found = this.Contains(item.GetId());
-            if (found != null)
-            {
-                if (!found.IsLeaf())
-                {
-                    this._inventory.Add(item);
-                }
-                else
-                {
-                    ItemObject leafItem = (ItemObject)found;
-                    leafItem.ChangeAmount(amount);
-                }
-            }
-            else
-            {
-                this._inventory.Add(item);
-            }
+            bool isContainer = item.HasComponent(typeof(StorageComponent));
+            IInventoryElement node = isContainer
+                ? (IInventoryElement)new InventoryObject(item)
+                : new ItemObject(item, amount);
+            _inventory.Add(node);
         }
 
-        /// Elimina x cantidad de un item
-        /// <returns>si se ha podido eliminar</returns> 
-        public bool RemoveAmountOfItem(IInventoryElement item, int amount)
+        public void StackOnto(ItemEntity item, int amount)
         {
-            return this.RetrieveAmountOfItem(item.GetId(), amount) != null;
+            AC.CheckNotNull(item, "item");
+            AC.CheckPositive(amount, "amount");
+            IInventoryElement match = BfsFindEquivalent(item);
+            if (match != null)
+                match.SetAmount(match.GetAmount() + amount);
+            else
+                AddItem(item, amount);
         }
 
-        /// Extrae una cantidad X de un item del inventario
-        /// <returns>el item extraido o null si no se ha podido</returns>
-        public IInventoryElement RetrieveAmountOfItem(String id, int amount)
+        public void AddSeveralItems(List<(ItemEntity item, int amount)> items)
+        {
+            AC.CheckNotNull(items, "items");
+            foreach (var (item, amount) in items)
+                AddItem(item, amount);
+        }
+
+        public int ModifyAmount(string id, int amount)
         {
             AC.CheckNotNull(id, "id");
-            AC.CheckPositive(amount, "amount");
-            IInventoryElement found = this.Contains(id);
-            if (found == null)
-            {
-                return null;
-            }
-            else
-            {
-                if (found.IsLeaf())
-                {
-                    ItemObject leafItem = (ItemObject)found;
-                    int currentAmount = leafItem.GetAmount();
-                    if (currentAmount <= amount)
-                    {
-                        this.Destroy(leafItem.GetId());
-                        return leafItem;
-                    }
-                    else
-                    {
-                        leafItem.ChangeAmount(-amount);
-                        return new ItemObject(leafItem.GetItemEntity(), amount);
-                    }
-                }
-                else
-                {
-                    this.Destroy(found.GetId());
-                    return found;
-                }
-            }
+            IInventoryElement found = BfsFind(id);
+            if (found == null) return 0;
+            int before = found.GetAmount();
+            found.SetAmount(Math.Max(0, found.GetAmount() + amount));
+            int modified = Math.Abs(found.GetAmount() - before);
+            CleanTree();
+            return modified;
         }
-        /// Obtiene la cantidad total de un item en el inventario
-        /// teniendo en cuenta sub-inventarios
-        /// <returns>cantidad total del item</returns>
-        public int HowMuchThereIsOf(String id)
+
+        public bool Contains(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            return BfsFind(id) != null;
+        }
+
+        public int GetAmount(string id)
         {
             AC.CheckNotNull(id, "id");
             int total = 0;
-            foreach (IInventoryElement elem in this._inventory)
-            {
-                if (elem.GetId().Equals(id) && elem.IsLeaf())
-                {
-                    ItemObject leafItem = (ItemObject)elem;
-                    total += leafItem.GetAmount();
-                }
-                else if (!elem.IsLeaf())
-                {
-                    InventoryObject inv = (InventoryObject)elem;
-                    total += inv.HowMuchThereIsOf(id);
-                }
-                
-            }
+            foreach (IInventoryElement node in BfsFindAll(id))
+                total += node.GetAmount();
             return total;
         }
 
-        /// Comprueba si cierto item está en el inventario 
-        /// y si lo esta lo devuelve
-        /// <param name="id">identificador del item a buscar</param>
-        /// <returns>si está o no</returns>
-        public IInventoryElement Contains(String id)
+        public void DeleteItem(string id)
         {
             AC.CheckNotNull(id, "id");
-            IInventoryElement found = null;
-            foreach (IInventoryElement elem in this._inventory)
-            {
-                found = elem.Contains(id);
-                if (found != null) return found;
-            }
-
-            return found;
+            ModifyAmount(id, -GetAmount(id));
         }
 
-        /// Destruye todas las unidades de un item del inventario
-        /// <returns>si se ha podido destruir</returns>
-        public Boolean Destroy(String id)
+        public IInventoryElement Find(string id)
         {
             AC.CheckNotNull(id, "id");
-            foreach (IInventoryElement elem in this._inventory)
+            return BfsFind(id);
+        }
+
+        public List<IInventoryElement> FindNodes(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            return BfsFindAll(id);
+        }
+
+        //#endregion
+
+        //#region Local operations
+
+        public void AddItemHere(ItemEntity item, int amount)
+        {
+            AC.CheckNotNull(item, "item");
+            AC.CheckPositive(amount, "amount");
+            bool isContainer = item.HasComponent(typeof(StorageComponent));
+            IInventoryElement node = isContainer
+                ? (IInventoryElement)new InventoryObject(item)
+                : new ItemObject(item, amount);
+            _inventory.Add(node);
+        }
+
+        public void StackOntoHere(ItemEntity item, int amount)
+        {
+            AC.CheckNotNull(item, "item");
+            AC.CheckPositive(amount, "amount");
+            foreach (IInventoryElement elem in _inventory)
+            {
+                if (elem.IsLeaf() && elem.GetItemEntity().Equivalent(item))
+                {
+                    elem.SetAmount(elem.GetAmount() + amount);
+                    return;
+                }
+            }
+            AddItemHere(item, amount);
+        }
+
+        public int ModifyAmountHere(string id, int amount)
+        {
+            AC.CheckNotNull(id, "id");
+            foreach (IInventoryElement elem in _inventory)
             {
                 if (elem.GetId().Equals(id))
                 {
-                    this._inventory.Remove(elem);
-                    return true;
+                    int before = elem.GetAmount();
+                    elem.SetAmount(Math.Max(0, elem.GetAmount() + amount));
+                    CleanTree();
+                    return Math.Abs(elem.GetAmount() - before);
                 }
+            }
+            return 0;
+        }
+
+        public bool ContainsHere(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            return FindHere(id) != null;
+        }
+
+        public int GetAmountHere(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            int total = 0;
+            foreach (IInventoryElement elem in _inventory)
+                if (elem.GetId().Equals(id))
+                    total += elem.GetAmount();
+            return total;
+        }
+
+        public void DeleteItemHere(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            List<IInventoryElement> snapshot = new List<IInventoryElement>(_inventory);
+            foreach (IInventoryElement elem in snapshot)
+                if (elem.GetId().Equals(id))
+                    _inventory.Remove(elem);
+        }
+
+        public IInventoryElement FindHere(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            foreach (IInventoryElement elem in _inventory)
+                if (elem.GetId().Equals(id)) return elem;
+            return null;
+        }
+
+        public List<IInventoryElement> FindNodesHere(string id)
+        {
+            AC.CheckNotNull(id, "id");
+            List<IInventoryElement> results = new List<IInventoryElement>();
+            foreach (IInventoryElement elem in _inventory)
+                if (elem.GetId().Equals(id)) results.Add(elem);
+            return results;
+        }
+
+        //#endregion
+
+        //#region Getters & Utilities
+
+        public void ClearInventory() => _inventory.Clear();
+
+        public void CleanTree()
+        {
+            foreach (IInventoryElement elem in _inventory)
+                elem.CleanTree();
+            _inventory.RemoveAll(e => e.GetAmount() <= 0);
+        }
+
+        public List<IInventoryElement> FlattenInventory()
+        {
+            List<IInventoryElement> result = new List<IInventoryElement>();
+            Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
+            foreach (IInventoryElement elem in _inventory)
+                queue.Enqueue(elem);
+
+            while (queue.Count > 0)
+            {
+                IInventoryElement current = queue.Dequeue();
+                if (current.IsLeaf())
+                    result.Add(current);
                 else
                 {
-                    if (!elem.IsLeaf())
-                    {
-                        InventoryObject inv = (InventoryObject)elem;
-                        return inv.Destroy(id);
-                    }
+                    if (((InventoryObject)current)._inventory.Count > 0)
+                        result.Add(current);
+                    foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
+                        queue.Enqueue(child);
                 }
             }
-            return false;
+            return result;
         }
-        
-        /// Comprueba si este objeto es una hoja 
-        /// (esto es, si no es un inventario)
-        /// <returns>si es hoja o no</returns>
-        public Boolean IsLeaf()
+
+        public float GetTotalWeight()
         {
-            return false;
+            float total = 0f;
+            foreach (IInventoryElement elem in _inventory)
+                total += elem.GetTotalWeight();
+            return total;
         }
-        
+
+        public float GetTotalVolume()
+        {
+            float total = 0f;
+            foreach (IInventoryElement elem in _inventory)
+                total += elem.GetTotalVolume();
+            return total;
+        }
+
+        public bool Equivalent(IInventoryElement other)
+        {
+            AC.CheckNotNull(other, "other");
+            if (!(other is InventoryObject otherInv)) return false;
+
+            bool generalCheck = this._id.Equals(other.GetId())
+                             && this.IsLeaf() == other.IsLeaf()
+                             && (this._item == null ? otherInv._item == null
+                                                    : this._item.Equivalent(otherInv._item));
+            if (!generalCheck) return false;
+            if (this._inventory.Count != otherInv._inventory.Count) return false;
+
+            List<IInventoryElement> remaining = new List<IInventoryElement>(otherInv._inventory);
+            foreach (IInventoryElement elem in _inventory)
+            {
+                IInventoryElement match = null;
+                foreach (IInventoryElement candidate in remaining)
+                {
+                    if (elem.Equivalent(candidate)) { match = candidate; break; }
+                }
+                if (match == null) return false;
+                remaining.Remove(match);
+            }
+            return remaining.Count == 0;
+        }
+
         public IInventoryElement Clone()
         {
-            InventoryObject clone = new InventoryObject(this._item);
-            foreach (IInventoryElement elem in this._inventory)
-            {
+            InventoryObject clone = this._item != null
+                ? new InventoryObject(this._item)
+                : new InventoryObject();
+            foreach (IInventoryElement elem in _inventory)
                 clone._inventory.Add(elem.Clone());
-            }
             return clone;
         }
+
+        //#endregion
     }
 }

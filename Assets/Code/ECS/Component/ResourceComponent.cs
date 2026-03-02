@@ -18,11 +18,6 @@ namespace ECS.Component
             this._name = "ResourceComponent"; // Inicializa el nombre del componente
         }
 
-        public override IComponent Clone()
-        {
-            return new ResourceComponent(this.type, this.amount, this.renewable); // Clona el componente
-        }
-
         public ResourceType GetResourceType()
         {
             return type;
@@ -68,6 +63,21 @@ namespace ECS.Component
             {
                 throw new NotSupportedException("Resource is not renewable");
             }
+        }
+
+        public override IComponent Clone()
+        {
+            return new ResourceComponent(this.type, this.amount, this.renewable); // Clona el componente
+        }
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is ResourceComponent otherResource &&
+                this.type == otherResource.type &&
+                this.amount == otherResource.amount &&
+                this.renewable == otherResource.renewable &&
+                this.maxAmount == otherResource.maxAmount;
         }
     }
 }

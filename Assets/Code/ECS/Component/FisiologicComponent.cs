@@ -193,6 +193,44 @@ namespace ECS.Component
         public bool IsFatigueEmpty() => this.fatigue <= 0;
         public bool IsStaminaEmpty() => this.stamina <= 0;
 
+        // FisiologicComponent
+        public float GetMaxCarryWeight()
+        {
+            float muscleMass = weight * (1f - fatPercentage / 100f);
+            float carryBase = muscleMass * 0.5f;
+            float factorSex = (sex == 0) ? 1.0f : 0.85f;
+            
+            float factorAge;
+            if      (age < 18f)  factorAge = 0.6f  + (age - 10f) * 0.05f;
+            else if (age <= 35f) factorAge = 1.0f;
+            else if (age <= 60f) factorAge = 1.0f  - (age - 35f) * 0.015f;
+            else                 factorAge = 0.625f - (age - 60f) * 0.01f;
+            factorAge = Math.Max(factorAge, 0.1f);
+
+            float hungerNorm  = hunger  / maxHunger;
+            float thirstNorm  = thirst  / maxThirst;
+            float fatigueNorm = fatigue / maxFatigue;
+
+            float factorHunger  = 1.0f - hungerNorm  * 0.30f;
+            float factorThirst  = 1.0f - thirstNorm  * 0.40f;
+            float factorFatigue = 1.0f - fatigueNorm * 0.35f;
+
+            return carryBase * factorSex * factorAge * factorHunger * factorThirst * factorFatigue;
+        }
+
+        public float GetMaxCarryVolume()
+        {
+            float muscleMass = weight * (1f - fatPercentage / 100f);
+            float heightCm   = height * 100f;
+            float volumeBase = 8.0f + (heightCm - 170f) * 0.05f + muscleMass * 0.1f;
+
+            float factorHunger  = 1.0f - (hunger  / maxHunger)  * 0.30f;
+            float factorThirst  = 1.0f - (thirst  / maxThirst)  * 0.40f;
+            float factorFatigue = 1.0f - (fatigue / maxFatigue) * 0.35f;
+
+            return volumeBase * factorHunger * factorThirst * factorFatigue;
+        }
+
         // Clonación del componente        
         public override IComponent Clone()
         {
@@ -225,6 +263,40 @@ namespace ECS.Component
             copy._name = this._name;
 
             return copy;
+        }
+
+        public override bool Equivalent(IComponent other)
+        {
+            
+            if (other is FisiologicComponent otherFisio)
+            {
+                float eps = 0.001f;
+                return
+                    Math.Abs(height         - otherFisio.height)         < eps &&
+                    Math.Abs(weight         - otherFisio.weight)         < eps &&
+                    Math.Abs(age            - otherFisio.age)            < eps &&
+                    sex == otherFisio.sex                                      &&
+                    Math.Abs(fatPercentage  - otherFisio.fatPercentage)  < eps &&
+                    Math.Abs(hunger         - otherFisio.hunger)         < eps &&
+                    Math.Abs(thirst         - otherFisio.thirst)         < eps &&
+                    Math.Abs(fatigue        - otherFisio.fatigue)        < eps &&
+                    Math.Abs(stamina        - otherFisio.stamina)        < eps &&
+                    Math.Abs(maxHunger      - otherFisio.maxHunger)      < eps &&
+                    Math.Abs(maxThirst      - otherFisio.maxThirst)      < eps &&
+                    Math.Abs(maxFatigue     - otherFisio.maxFatigue)     < eps &&
+                    Math.Abs(maxStamina     - otherFisio.maxStamina)     < eps &&
+                    Math.Abs(storedKcal     - otherFisio.storedKcal)     < eps &&
+                    Math.Abs(storedWater    - otherFisio.storedWater)    < eps &&
+                    Math.Abs(protein        - otherFisio.protein)        < eps &&
+                    Math.Abs(carbohydrates  - otherFisio.carbohydrates)  < eps &&
+                    Math.Abs(fats           - otherFisio.fats)           < eps &&
+                    Math.Abs(micronutrients - otherFisio.micronutrients) < eps &&
+                    Math.Abs(fiber          - otherFisio.fiber)          < eps &&
+                    Math.Abs(energeticBalance   - otherFisio.energeticBalance)   < eps &&
+                    Math.Abs(metabolicRate      - otherFisio.metabolicRate)      < eps &&
+                    Math.Abs(basalMetabolicRate - otherFisio.basalMetabolicRate) < eps;
+            }
+            return false;
         }
     }
 }

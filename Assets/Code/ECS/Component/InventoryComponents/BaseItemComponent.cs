@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Numerics;
 using Observer;
+using Utils;
 
 namespace ECS.Component
 {
@@ -14,14 +17,16 @@ namespace ECS.Component
 
     public enum ItemType
     {
-        GENERIC,
         WEAPON,
-        ARMOR,
+        TOOL,
+        FOOD,
+        BEVERAGE,
         CONSUMABLE,
         MATERIAL,
-        TOOL,
-        QUEST,
-        MISC
+        PLACEABLE,
+        DOCUMENT,
+        GENERIC,
+        PART
     }
     
     public class BaseItemComponent : BasicComponent
@@ -30,7 +35,7 @@ namespace ECS.Component
         /// <summary>
         /// Tipo de la entidad.
         /// </summary>
-        private ItemType _itemType;
+        private List<ItemType> _itemType;
         
         /// <summary>
         /// Peso de la entidad.
@@ -45,22 +50,22 @@ namespace ECS.Component
         /// <summary>
         /// Durabilidad de la entidad.
         /// </summary>
-        private int _durability;
+        private float _durability;
 
         /// <summary>
         /// Durabilidad máxima de la entidad. (puntos hasta romperse)
         /// </summary>
-        private const int _maxDurability = 100;
+        private const float _maxDurability = 100;
 
         /// <summary>
         /// Condición de la entidad. (puntos hasta funcionar muy deficientemente)
         /// </summary>
-        private int condition;
+        private float _condition;
 
         /// <summary>
         /// Condición maxima de la entidad.
         /// </summary>
-        private const int maxCondition = 100;
+        private const float maxCondition = 100;
 
         /// <summary>
         /// Descripción del componente.
@@ -72,15 +77,31 @@ namespace ECS.Component
         /// </summary>
         private String _iconPath;
 
-        public BaseItemComponent(float weight, float volume)
-        {
+        /// <summary>
+        /// Dimensiones del item cuando esta en inventario, cuanto ocupa visualmente,
+        /// no en terminos de calculo de capacidad de carga restante del inventario 
+        /// que lo alverga.
+        /// </summary>
+        private Vector2 _dimmensions;
+        
+        public BaseItemComponent(float weight, float volume, 
+                                Vector2 dimmensions,
+                                List<ItemType> itemType,
+                                float durability = _maxDurability, 
+                                float condition = maxCondition, 
+                                String description = "", String iconPath = "")
+        {   
+            ArgumentChecker.CheckNotNull(dimmensions, "Dimmensions cannot be null");
+            ArgumentChecker.CheckNotNull(itemType, "ItemType cannot be null");
             _weight = weight;
             _volume = volume;
-        } 
-        
-        public override IComponent Clone()
-        {
-            return new BaseItemComponent(_weight, _volume);
+            _durability = durability;
+            _condition = condition;
+            _dimmensions = dimmensions;
+            _description = description;
+            _iconPath = iconPath;
+            _itemType = new List<ItemType>();
+
         }
  
 
@@ -122,7 +143,7 @@ namespace ECS.Component
         /// Obtiene la durabilidad del componente.
         /// </summary>
         /// <returns>la durabilidad</returns>
-        public int GetDurability()
+        public float GetDurability()
         {
             return _durability;
         }
@@ -139,17 +160,17 @@ namespace ECS.Component
         /// Obtiene la condición del componente.
         /// </summary>
         /// <returns>la condición</returns>
-        public int GetCondition()
+        public float GetCondition()
         {
-            return condition;
+            return _condition;
         }
 
         /// <summary>
         /// Establece la condición del componente.
         /// </summary>
-        public void SetCondition(int condition)
+        public void SetCondition(float condition)
         {
-            this.condition = Math.Clamp(condition, 0, maxCondition);
+            this._condition = Math.Clamp(condition, 0, maxCondition);
         }
 
         /// <summary>
@@ -189,7 +210,7 @@ namespace ECS.Component
         /// <summary>
         /// Obtiene el tipo del componente.
         /// </summary>
-        public ItemType GetItemType()
+        public List<ItemType> GetItemType()
         {
             return _itemType;
         }
@@ -197,10 +218,46 @@ namespace ECS.Component
         /// <summary>
         /// Establece el tipo del componente.
         /// </summary>
-        public void SetItemType(ItemType itemType)
+        public void SetItemType(List<ItemType> itemType)
         {
             _itemType = itemType;
-        }
+        } 
         
+        public override IComponent Clone()
+        {
+            return new BaseItemComponent(_weight, _volume,
+                                        _dimmensions,
+                                        _itemType,
+                                        _durability,
+                                        _condition,
+                                        _description,
+                                        _iconPath);
+        }
+
+        public override bool Equivalent(IComponent other)
+        {
+            return 
+                other is BaseItemComponent otherBase &&
+                this._weight == otherBase._weight &&
+                this._volume == otherBase._volume &&
+                this._durability == otherBase._durability &&
+                this._condition == otherBase._condition &&
+                this._description == otherBase._description &&
+                this._iconPath == otherBase._iconPath &&
+                this.SameItemTypes(otherBase._itemType);
+        }
+
+        private bool SameItemTypes(List<ItemType> other)
+        {
+            if (this._itemType == null && other == null) return true;
+            if (this._itemType == null || other == null) return false;
+            if (this._itemType.Count != other.Count) return false;
+            
+            for (int i = 0; i < this._itemType.Count; i++)
+            {
+                if (this._itemType[i] != other[i]) return false;
+            }
+            return true;
+        }
     }
 }
