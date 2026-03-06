@@ -60,6 +60,7 @@ namespace MVC.Controller
             // Actualizar cámara activa
             GameContext.GetInputManager().Update(deltaTime);
         }
+        
     }
 
 }

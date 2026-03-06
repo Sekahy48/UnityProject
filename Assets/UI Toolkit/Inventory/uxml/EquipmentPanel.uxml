@@ -1,0 +1,88 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../uss/EquipmentPanel.uss"/>
+    <ui:VisualElement name="equipment-panel" class="equipment-panel">
+
+        <!-- Columna izquierda: silueta del cuerpo -->
+        <ui:VisualElement name="body-panel" class="body-panel">
+            <ui:VisualElement name="body-image" class="body-image"/>
+        </ui:VisualElement>
+
+        <!-- Columna derecha: slots de equipamiento -->
+        <ui:VisualElement name="slots-column" class="slots-column">
+
+            <!-- Fila 1: Hombro Izq, Cabeza, Hombro Dcho -->
+            <ui:VisualElement class="slot-row">
+                <ui:VisualElement name="slot-shoulder-left" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-head" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-shoulder-right" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Fila 2: Guantes, Pecho, Guantes -->
+            <ui:VisualElement class="slot-row">
+                <ui:VisualElement name="slot-gloves-left" class="slot">
+                    <ui:VisualElement class="slot-icon"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-chest" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-gloves-right" class="slot">
+                    <ui:VisualElement class="slot-icon"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Fila 3: Espalda/Mochila, Piernas, Cadera/Riñonera -->
+            <ui:VisualElement class="slot-row">
+                <ui:VisualElement name="slot-back" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-legs" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-hip" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Fila 4: Mano Izda, Pies, Mano Dcha -->
+            <ui:VisualElement class="slot-row">
+                <ui:VisualElement name="slot-hand-left" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-feet" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="slot-hand-right" class="slot slot-expandable">
+                    <ui:VisualElement class="slot-icon"/>
+                    <ui:Button class="slot-expand-btn" text="▼"/>
+                    <ui:VisualElement class="slot-dropdown"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

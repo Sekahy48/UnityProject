@@ -14,17 +14,11 @@ namespace Strategy
             Camera.transform.SetParent(PlayerObject.transform);
             Camera.transform.localPosition = new Vector3(0f, 1.7f, 0f);
             Camera.transform.localRotation = Quaternion.identity;
-        }
-
-        public override void Execute(float deltaTime)
-        {
-            HandleMouseLook(deltaTime);
-            HandleMovement(deltaTime);
-        }
+        } 
 
         public override void Update() { }
 
-        private void HandleMouseLook(float deltaTime)
+        protected override void HandleMouseLook(float deltaTime)
         {
             MovementComponent movComp = GetMov();
 
@@ -39,7 +33,7 @@ namespace Strategy
             Camera.transform.localRotation = Quaternion.Euler(rotation.y, 0f, 0f);
         }
 
-        private void HandleMovement(float deltaTime)
+        protected override void HandleMovement(float deltaTime)
         {
             Vector3 move = Vector3.zero;
             PositionComponent posComp = this.GetPos();

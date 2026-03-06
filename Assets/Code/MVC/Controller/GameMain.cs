@@ -3,6 +3,9 @@ using Strategy;
 using MVC.Controller;
 using ECS.Entity;
 using Factories;
+using MVC.Presenter;
+using MVC.Presenter.Inventory;
+using MVC.View;
 
 /// <summary>
 /// Main entry point for the game. Initializes the game context and input manager.
@@ -12,7 +15,7 @@ public class GameMain : MonoBehaviour
 {
     private GameContext gameContext;
     private InputManager inputManager;
-
+    [SerializeField] private UIRegistry _uiRegistry;
     // TEMPORAL
     private IEntity playerEntity;
     // TEMPORAL
@@ -21,7 +24,7 @@ public class GameMain : MonoBehaviour
         
         // Establecemos el GameContext y sus componentes
         gameContext = new GameContext();
-        gameContext.SetGameController(new GameController(gameContext, this)).SetLogic(new MVC.Model.Logic()).SetInputManager(inputManager = new InputManager(gameContext));
+        gameContext.SetGameController(new GameController(gameContext, this)).SetLogic(new MVC.Model.Logic()).SetInputManager(inputManager = new InputManager(gameContext)).SetUIRegistry(_uiRegistry);
         //GameObject.FindWithTag("MainCamera").GetComponent<Camera>().enabled = false; // Desactivamos la cámara por defecto de Unity
         // Gestionamos el MainPlayer TODO montar un sistema de login y de gestion modular respecto al player
         IEntity player = gameContext.GetLogic().GetEntityManager().CreateEntity("playerEntity");
@@ -33,14 +36,17 @@ public class GameMain : MonoBehaviour
 
         gameContext.SetHUDManager(new MVC.View.HUDManager(player));
         
-        gameContext.GetCameraRegister().AddCamera(CameraRegister.CameraType.RTS, new RTSCameraStrategy());
-        gameContext.GetCameraRegister().AddCamera(CameraRegister.CameraType.FPS, new FirstPersonCamera(player));
-        gameContext.GetCameraRegister().AddCamera(CameraRegister.CameraType.TPS, new ThirdPersonCamera(player)); 
+        gameContext.GetCameraRegister().InitizalizeCameras(player);
         gameContext.GetCameraRegister().ActivateCamera(CameraRegister.CameraType.RTS);
-
+        
         // Inicializamos el InputManager
         inputManager = new InputManager(gameContext);
         gameContext.GetGameController().SetUpOnStart();
+
+
+        // Inicializar vistas y presenters
+        gameContext.GetViewManager().InitializeViews(_uiRegistry);
+        this.InitializePresenters();
     }
 
     void Update()
@@ -51,4 +57,13 @@ public class GameMain : MonoBehaviour
         gameContext.GetGameController().Update(Time.deltaTime);
         gameContext.GetLogic().UpdateThis();
     }
+
+    private void InitializePresenters()
+    {
+        PresenterManager presenterManager = gameContext.GetPresenterManager();
+        presenterManager.RegisterPresenter(PresenterType.INV, new InventoryPresenter(gameContext.GetViewManager().GetView<InventoryView>(PresenterType.INV)));
+        
+    }
+
+
 }

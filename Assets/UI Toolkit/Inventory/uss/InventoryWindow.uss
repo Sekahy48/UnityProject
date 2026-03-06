@@ -1,0 +1,172 @@
+.inventory-root {
+    position: absolute;
+    right: 50px;
+    top: 50px;
+    width: 30%;
+    min-height: 400px;
+    height: 85%;
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.8);
+    flex-direction: column;
+    align-self: flex-start;
+}
+
+.title-bar {
+    height: 32px;
+    background-color: rgba(40, 40, 40, 1);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 10px;
+    padding-right: 6px;
+    cursor: move;
+}
+
+.title-label {
+    flex-grow: 1;
+    color: rgba(200, 200, 200, 1);
+    font-size: 13px;
+    -unity-font-style: bold;
+}
+
+.close-button {
+    width: 20px;
+    height: 20px;
+    background-color: rgba(180, 50, 50, 0.8);
+    border-radius: 3px;
+    border-width: 0;
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.inventory-body {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.tab-panel {
+    width: 56px;
+    background-color: rgba(15, 15, 15, 0.9);
+    border-right-width: 1px;
+    border-color: rgba(60, 60, 60, 0.8);
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.tab-list {
+    flex-direction: column;
+    align-items: center;
+}
+
+.tab-item {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 6px;
+    background-color: rgba(50, 50, 50, 0.8);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.6);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.tab-item:hover {
+    background-color: rgba(70, 70, 70, 0.9);
+    border-color: rgba(150, 150, 150, 0.8);
+}
+
+.tab-item--active {
+    background-color: rgba(60, 80, 60, 0.9);
+    border-color: rgba(100, 160, 100, 0.8);
+}
+
+.tab-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.tab-label {
+    font-size: 8px;
+    color: rgba(160, 160, 160, 1);
+    -unity-text-align: middle-center;
+}
+
+.content-panel {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.stats-bar {
+    height: 28px;
+    background-color: rgba(30, 30, 30, 0.9);
+    flex-direction: row;
+    align-items: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-bottom-width: 1px;
+    border-color: rgba(60, 60, 60, 0.8);
+}
+
+.stat-label {
+    color: rgba(180, 180, 180, 1);
+    font-size: 11px;
+    margin-right: 16px;
+}
+
+.item-scroll {
+    flex-grow: 1;
+}
+
+.item-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 8px;
+}
+
+.item-card {
+    width: 72px;
+    height: 88px;
+    margin: 4px;
+    background-color: rgba(40, 40, 40, 0.8);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(70, 70, 70, 0.6);
+    align-items: center;
+    justify-content: flex-end;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.item-card:hover {
+    border-color: rgba(140, 140, 140, 0.8);
+    background-color: rgba(55, 55, 55, 0.9);
+}
+
+.item-icon {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    top: 6px;
+}
+
+.item-amount {
+    font-size: 10px;
+    color: rgba(220, 220, 220, 1);
+    -unity-text-align: middle-right;
+    padding-right: 4px;
+    width: 100%;
+}
+
+.item-name {
+    font-size: 9px;
+    color: rgba(160, 160, 160, 1);
+    -unity-text-align: middle-center;
+    padding-bottom: 4px;
+    width: 100%;
+    overflow: hidden;
+}

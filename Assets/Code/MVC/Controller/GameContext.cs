@@ -1,4 +1,5 @@
 using MVC.Model;
+using MVC.Presenter;
 using MVC.View;
 using Strategy;
 using UnityEngine;
@@ -11,6 +12,11 @@ namespace MVC.Controller
         private CameraRegister CameraRegister = new();
         private InputManager InputManager;
         private HUDManager HUDManager;
+
+        private PresenterManager PresenterManager = new();
+        private ViewManager ViewManager = new();
+
+        private UIRegistry UIRegistry;
 
         private Logic Model;
         public GameContext(GameController gameController, Logic model)
@@ -52,6 +58,12 @@ namespace MVC.Controller
             return this;
         }
 
+        public GameContext SetUIRegistry(UIRegistry uiRegistry)
+        {
+            UIRegistry = uiRegistry;
+            return this;
+        }
+
         public GameController GetGameController()
         {
             return GameController;
@@ -74,6 +86,16 @@ namespace MVC.Controller
         public HUDManager GetHUDManager()
         {
             return HUDManager;
+        }
+
+        public PresenterManager GetPresenterManager()
+        {
+            return PresenterManager;
+        }
+
+        public ViewManager GetViewManager()
+        {
+            return ViewManager;
         }
     }
 }

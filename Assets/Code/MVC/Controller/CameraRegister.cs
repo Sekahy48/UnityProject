@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ECS.Entity;
 using Strategy;
 using UnityEngine;
 
@@ -30,6 +31,13 @@ namespace MVC.Controller
             }
         }
 
+        public void InitizalizeCameras(IEntity player)
+        {
+            AddCamera(CameraType.RTS, new RTSCameraStrategy());
+            AddCamera(CameraType.FPS, new FirstPersonCamera(player)); 
+            AddCamera(CameraType.TPS, new ThirdPersonCamera(player)); 
+        }
+        
         public ICameraStrategy GetCamera(CameraType name)
         {
             if (Cams.TryGetValue(name, out ICameraStrategy camera))

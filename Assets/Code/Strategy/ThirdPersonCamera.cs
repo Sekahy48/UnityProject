@@ -19,15 +19,11 @@ namespace Strategy
             Camera.transform.LookAt(PlayerObject.transform.position + Vector3.up * height);
         }
 
-        public override void Execute(float deltaTime)
-        {
-            HandleMouseLook(deltaTime);
-            HandleMovement(deltaTime);
-        }
+        
 
         public override void Update() { }
 
-        private void HandleMouseLook(float deltaTime)
+        protected override void HandleMouseLook(float deltaTime)
         {
             MovementComponent movComp = GetMov();
             PositionComponent posComp = GetPos();
@@ -51,7 +47,7 @@ namespace Strategy
             posComp.GetTransform().rotation = Quaternion.Euler(0f, rotation.x, 0f);
         }
 
-        private void HandleMovement(float deltaTime)
+        protected override void HandleMovement(float deltaTime)
         {
             //Debug.Log("IsRunning al empezar: " + GetMov().IsRunning());
             Vector3 move = Vector3.zero;

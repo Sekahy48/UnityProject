@@ -1,3 +1,4 @@
+using System;
 using ECS.Entity;
 using UnityEngine;
 
@@ -9,7 +10,8 @@ namespace Strategy
         void Activate();
         void Deactivate();
         Camera GetCamera();
-        IEntity GetPlayer();    
+        IEntity GetPlayer(); 
+  
     }
     
 }

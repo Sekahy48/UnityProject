@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using ECS.Entity;
+using MVC.Presenter;
+using MVC.Presenter.Inventory;
 using Strategy;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -10,7 +12,7 @@ namespace MVC.Controller
     public class InputManager
     {
         private GameContext GameContext;
-        private ICameraStrategy activeCam;  
+        private ICameraStrategy _activeStrategy;  
         public InputManager(GameContext gameContext)
         {
             this.GameContext = gameContext;  
@@ -18,10 +20,10 @@ namespace MVC.Controller
 
         public void Update(float deltaTime)
         {
-            if (activeCam == null)
+            if (_activeStrategy == null)
             {
-                activeCam = GameContext.GetCameraRegister().GetActiveCamera();
-                if (activeCam == null)
+                _activeStrategy = GameContext.GetCameraRegister().GetActiveCamera();
+                if (_activeStrategy == null)
                 {
                     Debug.LogError("No active camera strategy found in InputManager.");
                     return;
@@ -30,20 +32,61 @@ namespace MVC.Controller
 
             if (Keyboard.current.f1Key.wasPressedThisFrame)
             { 
+
                 Debug.Log("Switching to next camera.");
-                activeCam = GameContext.GetCameraRegister().NextCamera();
+                ICameraStrategy nextStrategy = GameContext.GetCameraRegister().NextCamera();
+                this.SetActiveStrategy(nextStrategy);
             }
 
-            activeCam.Execute(deltaTime);
-            IEntity player = activeCam.GetPlayer();
+            _activeStrategy.Execute(deltaTime);
+            IEntity player = _activeStrategy.GetPlayer();
             if (player != null)
             {
-                bool isRunning = ((Strategy.BaseCameraStrategy)this.activeCam).GetMov().IsRunning();
+                bool isRunning = ((Strategy.BaseCameraStrategy)this._activeStrategy).GetMov().IsRunning();
                 this.GameContext.GetLogic().GetFatigueStaminaSystem().ProcessEntity(deltaTime, player, isRunning);
             }
         }
  
-        
+        public void SetActiveStrategy(ICameraStrategy strategy)
+        {
+            // Desuscribir la anterior si existe
+            if (_activeStrategy != null && _activeStrategy is IInventoryInputSource invStrategy)
+                invStrategy.OnInventoryRequested -= OnInventoryRequested;
+
+            _activeStrategy = strategy;
+
+            // Suscribir la nueva
+            if (_activeStrategy is IInventoryInputSource invStrategy2)
+                invStrategy2.OnInventoryRequested += OnInventoryRequested;
+
+            else
+            {
+                InventoryPresenter presenter = this.GameContext.GetPresenterManager()
+                .GetPresenter<InventoryPresenter>(PresenterType.INV);
+                presenter.Close();
+            }
+            _activeStrategy.Activate();
+        }
+
+        private void OnInventoryRequested(int tabIndex)
+        {
+            InventoryPresenter presenter = this.GameContext.GetPresenterManager()
+                .GetPresenter<InventoryPresenter>(PresenterType.INV);
+
+            if (tabIndex == -1)
+            {
+                presenter.Close();
+                return;
+            }
+
+            if (!presenter.IsOpen())
+                presenter.Open(this._activeStrategy.GetPlayer(), tabIndex);
+            else if (presenter.GetActiveTabIndex() == tabIndex)
+                presenter.Close();
+            else
+                presenter.NavigateToTab(tabIndex);
+        }
+
         /*
         public ICameraStrategy GetCameraStrategy(CameraRegister.CameraType camera)
         {
