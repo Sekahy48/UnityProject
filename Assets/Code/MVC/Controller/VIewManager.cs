@@ -18,7 +18,8 @@ namespace MVC.Controller
              // Inventory View
              views[PresenterType.INV] = new InventoryView(  uiRegistry.GetDocument(UIDocumentType.Inventory),
                                                             uiRegistry.GetTemplate(UITemplateType.InventoryTab),
-                                                            uiRegistry.GetTemplate(UITemplateType.InventoryItem));
+                                                            uiRegistry.GetTemplate(UITemplateType.InventoryItem),
+                                                            uiRegistry.GetTemplate(UITemplateType.EquipmentPanel));
         }
 
         public T GetView<T>(PresenterType type) where T : IView

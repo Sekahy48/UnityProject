@@ -94,7 +94,7 @@ namespace MVC.Presenter.Inventory
 
             if (index == 0)
             {
-                _view.RenderItems(new List<ItemDisplayData>());
+                _view.ShowEquipmentPanel();
                 return;
             }
 
@@ -109,6 +109,7 @@ namespace MVC.Presenter.Inventory
             }
 
             List<ItemDisplayData> items = new List<ItemDisplayData>();
+            _view.ShowInventoryPanel();
             foreach (IInventoryElement elem in inventory.FlattenInventory())
             {
                 ItemEntity itemEntity = elem.GetItemEntity();

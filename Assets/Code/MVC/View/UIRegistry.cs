@@ -9,6 +9,8 @@ namespace MVC.View
         [SerializeField] private UIDocument _inventoryDocument;
         [SerializeField] private VisualTreeAsset _inventoryTabTemplate;
         [SerializeField] private VisualTreeAsset _inventoryItemTemplate;
+
+        [SerializeField] private VisualTreeAsset _equipmentPanelTemplate;
         // en el futuro: crafting, equipment, hud...
 
         public UIDocument GetDocument(UIDocumentType type)
@@ -26,11 +28,12 @@ namespace MVC.View
             {
                 UITemplateType.InventoryTab  => _inventoryTabTemplate,
                 UITemplateType.InventoryItem => _inventoryItemTemplate,
+                UITemplateType.EquipmentPanel => _equipmentPanelTemplate,
                 _ => throw new ArgumentException($"Unknown template type: {type}")
             };
         }
     }
 
-    public enum UIDocumentType  { Inventory, Crafting, Equipment }
-    public enum UITemplateType  { InventoryTab, InventoryItem, CraftingRecipe }
+    public enum UIDocumentType  { Inventory }
+    public enum UITemplateType  { InventoryTab, InventoryItem, EquipmentPanel }
 }

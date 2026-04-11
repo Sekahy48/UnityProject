@@ -11,11 +11,18 @@ namespace MVC.View
         private UIDocument _uiDocument;
         private VisualTreeAsset _tabTemplate;
         private VisualTreeAsset _itemTemplate;
+        private VisualTreeAsset _equipmentPanelTemplate;
 
         private VisualElement _root;
         private VisualElement _tabList;
         private VisualElement _itemGrid;
         private VisualElement _titleBar;
+
+        // Campos nuevos
+        private VisualElement _contentPanel;
+        private VisualElement _statsBar;
+        private VisualElement _itemScroll;
+
         private Label _weightLabel;
         private Label _volumeLabel;
 
@@ -29,11 +36,12 @@ namespace MVC.View
         private bool _isDragging;
         private Vector2 _dragOffset;
 
-        public InventoryView(UIDocument uiDocument, VisualTreeAsset tabTemplate, VisualTreeAsset itemTemplate)
+        public InventoryView(UIDocument uiDocument, VisualTreeAsset tabTemplate, VisualTreeAsset itemTemplate, VisualTreeAsset equipmentPanelTemplate)
         {
             _uiDocument = uiDocument;
             _tabTemplate = tabTemplate;
             _itemTemplate = itemTemplate;
+            _equipmentPanelTemplate = equipmentPanelTemplate;
         }
 
         public void Initialize()
@@ -53,6 +61,9 @@ namespace MVC.View
             _titleBar    = _root.Q<VisualElement>("title-bar");
             _weightLabel = _root.Q<Label>("weight-label");
             _volumeLabel = _root.Q<Label>("volume-label");
+            _contentPanel = _root.Q<VisualElement>("content-panel");
+            _statsBar     = _root.Q<VisualElement>("stats-bar");
+            _itemScroll   = _root.Q<VisualElement>("item-scroll");
 
             Debug.Log($"[InventoryView] OnRootReady - _tabList:{(_tabList == null ? "NULL" : "OK")} _titleBar:{(_titleBar == null ? "NULL" : "OK")}");
 
@@ -109,6 +120,24 @@ namespace MVC.View
             }
         }
 
+        public void ShowEquipmentPanel()
+        { 
+            _itemScroll.style.display = DisplayStyle.None;
+            VisualElement existing = _contentPanel.Q<VisualElement>("equipment-panel");
+            if (existing == null)
+                _contentPanel.Add(_equipmentPanelTemplate.CloneTree());
+            else
+                existing.style.display = DisplayStyle.Flex;
+        }   
+
+        public void ShowInventoryPanel()
+        { 
+            _itemScroll.style.display = DisplayStyle.Flex;
+            VisualElement existing = _contentPanel.Q<VisualElement>("equipment-panel");
+            if (existing != null)
+                existing.style.display = DisplayStyle.None;
+        }
+    
         public void UpdateStats(float currentWeight, float maxWeight, float currentVolume, float maxVolume)
         {
             _weightLabel.text = $"Peso: {currentWeight:F1}/{maxWeight:F1} kg";
