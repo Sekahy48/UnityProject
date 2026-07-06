@@ -23,7 +23,7 @@ namespace ECS.Systems
 
             foreach (var entity in entitiesWithTasks)
             {
-                var taskComponent = entity.GetComponent<TaskComponent>(typeof(TaskComponent));
+                var taskComponent = entity.GetComponent<TaskComponent>();
                 if (taskComponent != null)
                     ExecuteTaskComponent(entity, taskComponent);
             }

@@ -11,18 +11,18 @@ namespace ECS.Systems
     {
         public void ProcessEntity(IEntity entity)
         {
-            InventoryComponent inventoryComponent = entity.GetComponent<InventoryComponent>(typeof(InventoryComponent));
+            InventoryComponent inventoryComponent = entity.GetComponent<InventoryComponent>();
             if (inventoryComponent != null)
             {
-                float totalVolume = inventoryComponent.getInventory().GetTotalVolume(); 
-                float totalWeight = inventoryComponent.getInventory().GetTotalWeight(); 
+                float totalVolume = inventoryComponent.Inventory.GetTotalVolume();
+                float totalWeight = inventoryComponent.Inventory.GetTotalWeight();
                 UnityEngine.Debug.Log("Total volume: " + totalVolume +  ", Total weight: " + totalWeight );
 
                 // --- Cálculo de capacidad física del personaje ---
                 if (entity.HasComponent(typeof(FisiologicComponent)))
                 {
-                    float carryWeight = entity.GetComponent<FisiologicComponent>(typeof(FisiologicComponent)).GetMaxCarryWeight();
-                    float carryVolume = entity.GetComponent<FisiologicComponent>(typeof(FisiologicComponent)).GetMaxCarryVolume();
+                    float carryWeight = entity.GetComponent<FisiologicComponent>().GetMaxCarryWeight();
+                    float carryVolume = entity.GetComponent<FisiologicComponent>().GetMaxCarryVolume();
 
                     if (carryVolume < totalVolume)
                     {
@@ -51,7 +51,7 @@ namespace ECS.Systems
     
         public void UpdateOnEvent(GameEvent gameEvent)
         {
-            if (gameEvent.GetEventType() == GameEventType.INVETORY_CHANGED)
+            if (gameEvent.GetEventType() == GameEventType.INVENTORY_CHANGED)
             {
                 ProcessEntity(gameEvent.GetEntity());
             }

@@ -31,8 +31,8 @@ namespace Strategy
         public virtual void Activate() => Camera.enabled = true;
         public virtual void Deactivate() => Camera.enabled = false;
 
-        protected internal PositionComponent GetPos() => player.GetComponent<PositionComponent>(typeof(PositionComponent));
-        protected internal MovementComponent GetMov() => player.GetComponent<MovementComponent>(typeof(MovementComponent));
+        protected internal PositionComponent GetPos() => player.GetComponent<PositionComponent>();
+        protected internal MovementComponent GetMov() => player.GetComponent<MovementComponent>();
         public IEntity GetPlayer() => player; 
         public void Execute(float deltaTime)
         {

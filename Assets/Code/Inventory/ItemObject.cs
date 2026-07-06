@@ -64,13 +64,13 @@ namespace Inventory
 
         public float GetTotalWeight()
         {
-            BaseItemComponent baseItem = _item.GetComponent<BaseItemComponent>(typeof(BaseItemComponent));
+            BaseItemComponent baseItem = _item.GetComponent<BaseItemComponent>();
             return baseItem.GetWeight() * _amount;
         }
 
         public float GetTotalVolume()
         {
-            BaseItemComponent baseItem = _item.GetComponent<BaseItemComponent>(typeof(BaseItemComponent));
+            BaseItemComponent baseItem = _item.GetComponent<BaseItemComponent>();
             return baseItem.GetVolume() * _amount;
         }
 

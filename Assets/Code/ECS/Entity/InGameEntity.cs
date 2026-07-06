@@ -36,12 +36,12 @@
 
             public string GetName()
             {
-                return GetComponent<NameComponent>(typeof(NameComponent))?.GetDisplayName();
+                return GetComponent<NameComponent>()?.DisplayName;
             }
 
                 public IHandler GetCompoundIdentification()
             {
-                return new NameId($"{this.GetComponent<NameComponent>(typeof(NameComponent))}-{id}");
+                return new NameId($"{this.GetComponent<NameComponent>()}-{id}");
             }
 
             public int GetIdAsInt()
@@ -54,12 +54,20 @@
                 this.id = new EntityId(IdGenerator.GenerateNewId());
                 return this.id.ToInt();
             }
-            public T GetComponent<T>(Type target) where T : IComponent
+            public T GetComponent<T>() where T : IComponent
             {
-                if (HasComponent(target))
-                    return (T)components[target];
+                if (HasComponent(typeof(T)))
+                    return (T)components[typeof(T)];
                 else
                     return default;
+            }
+
+            /// <summary>
+            /// Obtiene un componente por Type dinámico. Usar solo cuando el tipo no se conoce en compilación.
+            /// </summary>
+            public IComponent GetComponentByType(Type target)
+            {
+                return components.TryGetValue(target, out var c) ? c : null;
             }
 
             // ---- IComponent related ----
@@ -102,7 +110,7 @@
                     //TODO 
                     if (!other.HasComponent(component.GetType()))
                         return false;
-                    if (!component.Equivalent(other.GetComponent<IComponent>(component.GetType())))
+                    if (!component.Equivalent(other.GetComponentByType(component.GetType())))
                         return false;
                 }
                 return true;

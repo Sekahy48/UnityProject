@@ -21,7 +21,7 @@ namespace MVC.View
         }
         public void UpdateStamina()
         {
-            FisiologicComponent fisiologic = player.GetComponent<FisiologicComponent>(typeof(FisiologicComponent));
+            FisiologicComponent fisiologic = player.GetComponent<FisiologicComponent>();
             if (fisiologic == null)
             {
                 UnityEngine.Debug.LogError("Player entity does not have a FisiologicComponent.");
@@ -34,7 +34,7 @@ namespace MVC.View
 
         public void UpdateFatigue()
         {
-            FisiologicComponent fisiologic = player.GetComponent<FisiologicComponent>(typeof(FisiologicComponent));
+            FisiologicComponent fisiologic = player.GetComponent<FisiologicComponent>();
             if (fisiologic == null)
             {
                 UnityEngine.Debug.LogError("Player entity does not have a FisiologicComponent.");

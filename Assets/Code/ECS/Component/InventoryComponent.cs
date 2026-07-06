@@ -12,10 +12,7 @@ namespace ECS.Component
             this._inventory = inventory;  
         }
 
-        public IInventoryElement getInventory()
-        {
-            return this._inventory;
-        } 
+        public IInventoryElement Inventory => _inventory;
         
         public override IComponent Clone()
         {

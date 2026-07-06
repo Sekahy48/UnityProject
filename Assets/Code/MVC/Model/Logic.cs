@@ -34,12 +34,12 @@ namespace MVC.Model
         {
             //float deltaTime = Time.deltaTime;
             //clockInstance.Update(deltaTime);
-            //Debug.Log("Updating Logic" + entityManager.GetPlayer().GetComponent<ECS.Component.MovementComponent>(typeof(ECS.Component.MovementComponent)).IsRunning());
+            //Debug.Log("Updating Logic" + entityManager.GetPlayer().GetComponent<ECS.Component.MovementComponent>().IsRunning());
 
             if (changesRemaining)
             {
                 changesRemaining = false;
-                this.fatigueStaminaSystem.ProcessEntity(Time.deltaTime, entityManager.GetPlayer(), entityManager.GetPlayer().GetComponent<ECS.Component.MovementComponent>(typeof(ECS.Component.MovementComponent)).IsRunning());
+                this.fatigueStaminaSystem.ProcessEntity(Time.deltaTime, entityManager.GetPlayer(), entityManager.GetPlayer().GetComponent<ECS.Component.MovementComponent>().IsRunning());
             }
         }
 

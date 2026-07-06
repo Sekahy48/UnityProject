@@ -46,9 +46,7 @@ namespace Factories
             e.AddComponent(new PositionComponent(player.transform));
             e.AddComponent(new InventoryComponent(new InventoryObject()));
             e.AddComponent(new NameComponent("Jugador"));
-            e.AddComponent(new FisiologicComponent(1.80f, 85, 25, 0));
-            e.AddComponent(new UnityEntityComponent(player));
-
+            e.AddComponent(new FisiologicComponent(1.80f, 85, 25, 0)); 
             if (player == null)
             {
                 Debug.LogError("Player suministrado para creación de entidad de Jugador nula.");

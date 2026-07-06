@@ -80,8 +80,8 @@ namespace MVC.Presenter.Inventory
             tabs.Add(new TabDisplayData { Index = 1, Label = "INV", IsBaseInventory = true });
 
             _tabInventories.Add(null);
-            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>(typeof(InventoryComponent));
-            _tabInventories.Add(invComp?.getInventory());
+            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
+            _tabInventories.Add(invComp?.Inventory);
 
             _view.RenderTabs(tabs);
             UpdateStats();
@@ -114,7 +114,7 @@ namespace MVC.Presenter.Inventory
             {
                 ItemEntity itemEntity = elem.GetItemEntity();
                 BaseItemComponent baseItem = itemEntity
-                    .GetComponent<BaseItemComponent>(typeof(BaseItemComponent));
+                    .GetComponent<BaseItemComponent>();
 
                 items.Add(new ItemDisplayData
                 {
@@ -133,8 +133,8 @@ namespace MVC.Presenter.Inventory
 
         private void OnItemClicked(string itemId)
         {
-            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>(typeof(InventoryComponent));
-            IInventoryElement found = invComp?.getInventory().Find(itemId);
+            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
+            IInventoryElement found = invComp?.Inventory.Find(itemId);
             if (found != null && found.GetItemEntity().HasComponent(typeof(StorageComponent)))
             {
                 int tabIndex = GetTabIndexForContainer(found.GetItemEntity());
@@ -148,13 +148,13 @@ namespace MVC.Presenter.Inventory
         {
             if (_entity == null) return;
 
-            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>(typeof(InventoryComponent));
-            FisiologicComponent fisio = _entity.GetComponent<FisiologicComponent>(typeof(FisiologicComponent));
+            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
+            FisiologicComponent fisio = _entity.GetComponent<FisiologicComponent>();
 
             if (invComp == null || fisio == null) return;
 
-            float currentWeight = invComp.getInventory().GetTotalWeight();
-            float currentVolume = invComp.getInventory().GetTotalVolume();
+            float currentWeight = invComp.Inventory.GetTotalWeight();
+            float currentVolume = invComp.Inventory.GetTotalVolume();
             float maxWeight = fisio.GetMaxCarryWeight();
             float maxVolume = fisio.GetMaxCarryVolume();
 

@@ -1,4 +1,5 @@
 using System;
+using System;
 using ECS.Component;
 using Handler;
 
@@ -37,9 +38,14 @@ namespace ECS.Entity
         void AddComponent<T>(T component) where T : IComponent;
 
         /// <summary>
-        /// Obtiene un componente por nombre
+        /// Obtiene un componente por tipo genérico
         /// </summary>
-        T GetComponent<T>(Type target) where T : IComponent;
+        T GetComponent<T>() where T : IComponent;
+
+        /// <summary>
+        /// Obtiene un componente por Type dinámico (para cuando el tipo no se conoce en compilación)
+        /// </summary>
+        IComponent GetComponentByType(Type target);
 
         /// <summary>
         /// Elimina un componente por nombre

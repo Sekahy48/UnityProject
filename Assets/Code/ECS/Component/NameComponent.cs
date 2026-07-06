@@ -14,10 +14,7 @@ namespace ECS.Component
             this._name = "NameComponent"; // Inicializa el nombre del componente
         }
 
-        public string GetDisplayName()
-        {
-            return displayName;
-        }
+        public string DisplayName => displayName;
 
         public override IComponent Clone()
         {

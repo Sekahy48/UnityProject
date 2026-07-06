@@ -21,7 +21,7 @@ namespace ECS.Systems
 
             foreach (var entity in entitiesWithMovement)
             {
-                MovementComponent movementComponent = entity.GetComponent<MovementComponent>(typeof(MovementComponent));
+                MovementComponent movementComponent = entity.GetComponent<MovementComponent>();
                 if (movementComponent != null)
                 {
                     ExecuteMovement(entity, movementComponent);
@@ -34,7 +34,7 @@ namespace ECS.Systems
 
             try
             {
-                UnityEntityComponent unityComponent = entity.GetComponent<UnityEntityComponent>(typeof(UnityEntityComponent));
+                UnityEntityComponent unityComponent = entity.GetComponent<UnityEntityComponent>();
                 if (unityComponent == null) throw new EntityComponentException($"UnityEntityComponent not found.");
 
                 Vector2 dir = movementComponent.GetDirection();

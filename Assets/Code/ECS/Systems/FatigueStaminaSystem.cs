@@ -24,7 +24,7 @@ namespace ECS.Systems
             Boolean changed = false;
             if (entity.HasComponent(typeof(FisiologicComponent)))
             {
-                FisiologicComponent fisiologic = entity.GetComponent<FisiologicComponent>(typeof(FisiologicComponent));
+                FisiologicComponent fisiologic = entity.GetComponent<FisiologicComponent>();
 
                 if (!drain)
                 {
@@ -40,7 +40,7 @@ namespace ECS.Systems
                     }
                     if (fisiologic.IsStaminaFull())
                     {
-                        entity.GetComponent<MovementComponent>(typeof(MovementComponent)).SetCanRun(true);
+                        entity.GetComponent<MovementComponent>().SetCanRun(true);
                     }
                 }
                 else
@@ -52,7 +52,7 @@ namespace ECS.Systems
                         if (fisiologic.IsStaminaEmpty())
                         {
                             //UnityEngine.Debug.Log("Stamina has reached zero!");
-                            entity.GetComponent<MovementComponent>(typeof(MovementComponent)).SetCanRun(false);
+                            entity.GetComponent<MovementComponent>().SetCanRun(false);
                         }
                     }
                 }
@@ -89,12 +89,12 @@ namespace ECS.Systems
         
         public void DrainFatigue(float DeltaTime, FisiologicComponent component, Boolean burst)
         {
-            float fattigueDrain = FATIGUE_DRAIN_PER_STAMINA * STAMINA_DRAIN_PER_SECOND * DeltaTime;
+            float fatigueDrain = FATIGUE_DRAIN_PER_STAMINA * STAMINA_DRAIN_PER_SECOND * DeltaTime;
             if (burst)
             {
-                fattigueDrain += FATIGUE_BURST_DRAIN;
+                fatigueDrain += FATIGUE_BURST_DRAIN;
             }   
-            component.SetFatigue(component.GetFatigue() - fattigueDrain);
+            component.SetFatigue(component.GetFatigue() - fatigueDrain);
         }
 
         public void Attach(IObserver observer)

@@ -13,20 +13,11 @@ namespace ECS.Component
             this.weightRatio = weightRatio;
         }
 
-        public float getMaxVolume()
-        {
-            return maxVolume;
-        }
+        public float MaxVolume => maxVolume;
 
-        public float getMaxWeight()
-        {
-            return maxWeight;
-        }
+        public float MaxWeight => maxWeight;
 
-        public float getWeightRatio()
-        {
-            return weightRatio;
-        }
+        public float WeightRatio => weightRatio;
 
         public IComponent Clone()
         {
