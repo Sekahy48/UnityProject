@@ -15,14 +15,14 @@ namespace Factories
         public static IEntity CreateResourceNodePrototype()
         {
             ResourceType type = ResourceType.WOOD; // Cambia el tipo de recurso según sea necesario
-            var e = new UnaliveEntity(IdGenerator.GenerateNewId(), "resourceNode"); 
+            var e = new InGameEntity(IdGenerator.GenerateNewId(), "resourceNode"); 
             e.AddComponent(new ResourceComponent(type, 0, false));
             return e;
         }
 
         public static IEntity CreateAliveEntityPrototype()
         {
-            var e = new AliveEntity(IdGenerator.GenerateNewId(), "aliveEntity"); 
+            var e = new InGameEntity(IdGenerator.GenerateNewId(), "aliveEntity"); 
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
             return e;
@@ -40,7 +40,7 @@ namespace Factories
                 throw new ArgumentException("Player's transform is not valid.");
             }
 
-            var e = new AliveEntity(IdGenerator.GenerateNewId(), "playerEntity"); 
+            var e = new InGameEntity(IdGenerator.GenerateNewId(), "playerEntity"); 
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
             e.AddComponent(new PositionComponent(player.transform));

@@ -81,7 +81,40 @@ namespace Strategy
         public Camera GetCamera() => Camera;
 
         protected abstract void HandleMouseLook(float deltaTime);
-        protected abstract void HandleMovement(float deltaTime);
+
+        protected virtual void HandleMovement(float deltaTime)
+        {
+            Vector3 move = Vector3.zero;
+            var posComp = GetPos();
+            var movComp = GetMov();
+
+            float horizontal = 0f;
+            float vertical = 0f;
+
+            if (Keyboard.current.wKey.isPressed) { move += posComp.Forward(); vertical += 1f; }
+            if (Keyboard.current.sKey.isPressed) { move -= posComp.Forward(); vertical -= 1f; }
+            if (Keyboard.current.aKey.isPressed) { move -= posComp.Right(); horizontal -= 1f; }
+            if (Keyboard.current.dKey.isPressed) { move += posComp.Right(); horizontal += 1f; }
+
+            HandleAnimation(horizontal, vertical, deltaTime);
+
+            if (move != Vector3.zero)
+            {
+                move.Normalize();
+                movComp.SetIsJumping(Keyboard.current.spaceKey.isPressed);
+                movComp.SetIsRunning(Keyboard.current.leftShiftKey.isPressed);
+                float speed = movComp.IsRunning() && movComp.CanRun()
+                    ? movComp.GetSpeed() * movComp.GetRunMultiplier()
+                    : movComp.GetSpeed();
+
+                posComp.ModifyPosition(move, speed, deltaTime);
+            }
+            else
+            {
+                movComp.SetIsRunning(false);
+                movComp.SetIsJumping(false);
+            }
+        }
 
     }
 }

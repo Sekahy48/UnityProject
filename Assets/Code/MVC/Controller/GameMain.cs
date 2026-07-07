@@ -23,8 +23,12 @@ public class GameMain : MonoBehaviour
     {
         
         // Establecemos el GameContext y sus componentes
+        GameObject playerObj = GameObject.FindWithTag("MainPlayer");
+
         gameContext = new GameContext();
-        gameContext.SetGameController(new GameController(gameContext, this)).SetLogic(new MVC.Model.Logic()).SetInputManager(inputManager = new InputManager(gameContext)).SetUIRegistry(_uiRegistry);
+        gameContext.SetGameController(new GameController(gameContext, this)).SetLogic(new MVC.Model.Logic(playerObj))
+                                                                            .SetInputManager(inputManager = new InputManager(gameContext))
+                                                                            .SetUIRegistry(_uiRegistry);
         //GameObject.FindWithTag("MainCamera").GetComponent<Camera>().enabled = false; // Desactivamos la cámara por defecto de Unity
         // Gestionamos el MainPlayer TODO montar un sistema de login y de gestion modular respecto al player
         IEntity player = gameContext.GetLogic().GetEntityManager().CreateEntity("playerEntity");
@@ -38,9 +42,7 @@ public class GameMain : MonoBehaviour
         
         gameContext.GetCameraRegister().InitizalizeCameras(player);
         gameContext.GetCameraRegister().ActivateCamera(CameraRegister.CameraType.RTS);
-        
-        // Inicializamos el InputManager
-        inputManager = new InputManager(gameContext);
+         
         gameContext.GetGameController().SetUpOnStart();
 
 

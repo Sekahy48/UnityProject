@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 
 namespace ECS.Component
 {
@@ -76,52 +75,6 @@ namespace ECS.Component
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
 
-        /// <summary>
-        /// Recibe daño a lo largo del tiempo.
-        /// </summary>
-        public void ReceiveDamageOverTime(int totalDamage, int timeInMilliseconds)
-        {
-            int damagePerTick = totalDamage / (timeInMilliseconds / 1000);
-            int elapsedTime = 0;
-
-            while (elapsedTime < timeInMilliseconds)
-            {
-                ReceiveDamage(damagePerTick);
-                elapsedTime += 1000;
-                try
-                {
-                    Thread.Sleep(1000);
-                }
-                catch (ThreadInterruptedException)
-                {
-                    Thread.CurrentThread.Interrupt();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Cura a lo largo del tiempo.
-        /// </summary>
-        public void HealOverTime(int totalHeal, int timeInMilliseconds)
-        {
-            int healPerTick = totalHeal / (timeInMilliseconds / 1000);
-            int elapsedTime = 0;
-
-            while (elapsedTime < timeInMilliseconds)
-            {
-                HealHealth(healPerTick);
-                elapsedTime += 1000;
-                try
-                {
-                    Thread.Sleep(1000);
-                }
-                catch (ThreadInterruptedException)
-                {
-                    Thread.CurrentThread.Interrupt();
-                }
-            }
-        }
-
         private void ClampHealth()
         {
             if (maxHealth != UNLIMITED_HEALTH && currentHealth > maxHealth)
@@ -133,52 +86,6 @@ namespace ECS.Component
         public bool IsDead()
         {
             return currentHealth <= 0;
-        }
-
-        /// <summary>
-        /// Recibe daño a lo largo del tiempo en porcentaje.
-        /// </summary>
-        public void ReceiveDamagePercentageOverTime(double percentage, int timeInMilliseconds)
-        {
-            int damagePerTick = (int)(maxHealth * percentage);
-            int elapsedTime = 0;
-
-            while (elapsedTime < timeInMilliseconds)
-            {
-                ReceiveDamage(damagePerTick);
-                elapsedTime += 1000;
-                try
-                {
-                    Thread.Sleep(1000);
-                }
-                catch (ThreadInterruptedException)
-                {
-                    Thread.CurrentThread.Interrupt();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Cura a lo largo del tiempo en porcentaje.
-        /// </summary>
-        public void HealPercentageOverTime(double percentage, int timeInMilliseconds)
-        {
-            int healPerTick = (int)(maxHealth * percentage);
-            int elapsedTime = 0;
-
-            while (elapsedTime < timeInMilliseconds)
-            {
-                HealHealth(healPerTick);
-                elapsedTime += 1000;
-                try
-                {
-                    Thread.Sleep(1000);
-                }
-                catch (ThreadInterruptedException)
-                {
-                    Thread.CurrentThread.Interrupt();
-                }
-            }
         }
 
         public override IComponent Clone()

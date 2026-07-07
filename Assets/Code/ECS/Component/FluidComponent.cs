@@ -19,23 +19,18 @@ namespace ECS.Component
         public float AddFluid(ResourceType fluid, float amount)
         {
             float left = this.GetSpaceLeft();
-            float outAmount = -1;
 
-            if (fluids.ContainsKey(fluid) && left > 0)
-            {
-                fluids[fluid] = System.Math.Min(amount, left);
+            if (left <= 0)
+                return -1;
 
-                if (left < amount)
-                {
-                    outAmount = amount - left;
-                }
-                else
-                {
-                    outAmount = 0;
-                }
-            }
+            float toAdd = System.Math.Min(amount, left);
 
-            return outAmount;
+            if (fluids.ContainsKey(fluid))
+                fluids[fluid] += toAdd;
+            else
+                fluids[fluid] = toAdd;
+
+            return amount - toAdd;
         }
 
         // Drain fluid from the component

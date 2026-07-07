@@ -15,6 +15,7 @@ namespace ECS.Component
         public EquipmentComponent(List<EquipmentSlotType> allowedSlots)
         {
             this.allowedSlots = allowedSlots;
+            equipmentSlots = new Dictionary<EquipmentSlotType, EquipmentSlot>();
         }
 
         public bool AddSlot(EquipmentSlotType slotType, int capacity)

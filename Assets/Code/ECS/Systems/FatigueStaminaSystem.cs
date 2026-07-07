@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 using ECS.Component;
 using ECS.Entity;
 using Observer;
@@ -9,16 +6,14 @@ using UnityEngine;
 
 namespace ECS.Systems
 {
-    public class FatigueStaminaSystem : ISubject
+    public class FatigueStaminaSystem : GenericSubject
     {
         private const float STAMINA_REGEN_RATE = 5f;
         private const float FATIGUE_REGEN_RATE = 0.5f;
 
-        private const float STAMINA_DRAIN_PER_SECOND = 10f;        
+        private const float STAMINA_DRAIN_PER_SECOND = 10f;
         private const float FATIGUE_DRAIN_PER_STAMINA = 0.01f;
         private const float FATIGUE_BURST_DRAIN = 5f;
-
-        private ArrayList _observers = new();
         public void ProcessEntity(float DeltaTime, IEntity entity, Boolean drain)
         {
             Boolean changed = false;
@@ -97,22 +92,5 @@ namespace ECS.Systems
             component.SetFatigue(component.GetFatigue() - fatigueDrain);
         }
 
-        public void Attach(IObserver observer)
-        {
-            this._observers.Add(observer);
-        }
-
-        public void Detach(IObserver observer)
-        {
-            this._observers.Remove(observer);
-        }
-
-        public void NotifyObservers()
-        {
-            foreach (IObserver observer in this._observers)
-            {
-                observer.Update();
-            }
-        }
     }
 }

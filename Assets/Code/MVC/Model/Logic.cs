@@ -9,11 +9,16 @@ namespace MVC.Model
 {
     public class Logic : IObserver
     {
-        private readonly EntityManager entityManager = new EntityManager(GameObject.FindWithTag("MainPlayer"));
+        private readonly EntityManager entityManager;
         private readonly FatigueStaminaSystem fatigueStaminaSystem = new();
         private readonly ClockSystem clockInstance = ClockSystem.GetInstance();
         private Boolean changesRemaining = false;  
         private MapManager MapManager;
+
+        public Logic(GameObject playerObject)
+        {
+            entityManager = new EntityManager(playerObject);
+        }
 
         public EntityManager GetEntityManager()
         {
