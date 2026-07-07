@@ -70,6 +70,8 @@ namespace ECS.Systems
 
         public void Update(float deltaTime)
         {
+            if (!isRunning) return;
+
             adjustedDeltaTime += deltaTime * timeSpeed;
 
             while (adjustedDeltaTime >= tickTime)

@@ -1,9 +1,6 @@
-using System.Runtime.InteropServices;
-using ECS.Entity;
 using MVC.Presenter;
 using MVC.Presenter.Inventory;
 using Strategy;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -39,12 +36,6 @@ namespace MVC.Controller
             }
 
             _activeStrategy.Execute(deltaTime);
-            IEntity player = _activeStrategy.GetPlayer();
-            if (player != null)
-            {
-                bool isRunning = ((Strategy.BaseCameraStrategy)this._activeStrategy).GetMov().IsRunning();
-                this.GameContext.GetLogic().GetFatigueStaminaSystem().ProcessEntity(deltaTime, player, isRunning);
-            }
         }
  
         public void SetActiveStrategy(ICameraStrategy strategy)

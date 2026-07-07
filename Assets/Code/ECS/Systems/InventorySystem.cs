@@ -19,10 +19,10 @@ namespace ECS.Systems
                 UnityEngine.Debug.Log("Total volume: " + totalVolume +  ", Total weight: " + totalWeight );
 
                 // --- Cálculo de capacidad física del personaje ---
-                if (entity.HasComponent(typeof(FisiologicComponent)))
+                if (entity.HasComponent(typeof(BodyComponent)))
                 {
-                    float carryWeight = entity.GetComponent<FisiologicComponent>().GetMaxCarryWeight();
-                    float carryVolume = entity.GetComponent<FisiologicComponent>().GetMaxCarryVolume();
+                    float carryWeight = CarryCapacity.GetMaxCarryWeight(entity);
+                    float carryVolume = CarryCapacity.GetMaxCarryVolume(entity);
 
                     if (carryVolume < totalVolume)
                     {

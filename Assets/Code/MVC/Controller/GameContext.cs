@@ -1,3 +1,4 @@
+using ECS.Systems;
 using MVC.Model;
 using MVC.Presenter;
 using MVC.View;
@@ -12,6 +13,7 @@ namespace MVC.Controller
         private CameraRegister CameraRegister = new();
         private InputManager InputManager;
         private HUDManager HUDManager;
+        private SystemManager SystemManager;
 
         private PresenterManager PresenterManager = new();
         private ViewManager ViewManager = new();
@@ -96,6 +98,17 @@ namespace MVC.Controller
         public ViewManager GetViewManager()
         {
             return ViewManager;
+        }
+
+        public GameContext SetSystemManager(SystemManager systemManager)
+        {
+            SystemManager = systemManager;
+            return this;
+        }
+
+        public SystemManager GetSystemManager()
+        {
+            return SystemManager;
         }
     }
 }

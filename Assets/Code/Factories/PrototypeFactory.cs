@@ -46,13 +46,18 @@ namespace Factories
             e.AddComponent(new PositionComponent(player.transform));
             e.AddComponent(new InventoryComponent(new InventoryObject()));
             e.AddComponent(new NameComponent("Jugador"));
-            e.AddComponent(new FisiologicComponent(1.80f, 85, 25, 0)); 
-            if (player == null)
-            {
-                Debug.LogError("Player suministrado para creación de entidad de Jugador nula.");
-                throw new NullReferenceException("Player is null.");
-            }
-            e.AddComponent(new UnityEntityComponent(player)); // La asignaremos luego
+            var body = new BodyComponent(1.80f, 85, 25, 0);
+            e.AddComponent(body);
+
+            var energy = new EnergyComponent(100f, 100f, 100f, 100f);
+            energy.CalculateBasalMetabolism(body.GetWeight(), body.GetHeight() * 100f, body.GetAge(), body.GetSex());
+            e.AddComponent(energy);
+
+            var nutrition = new NutritionComponent(100f, 100f);
+            nutrition.GenerateStoredWater(body.GetWeight(), body.GetSex());
+            e.AddComponent(nutrition);
+
+            e.AddComponent(new UnityEntityComponent(player));
             return e;
         }
     }

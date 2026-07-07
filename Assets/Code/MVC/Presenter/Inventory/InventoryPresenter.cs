@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ECS.Component;
 using ECS.Entity;
+using ECS.Systems;
 using Inventory;
 using MVC.View;
 using MVC.View.UI.Inventory;
@@ -149,14 +150,13 @@ namespace MVC.Presenter.Inventory
             if (_entity == null) return;
 
             InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
-            FisiologicComponent fisio = _entity.GetComponent<FisiologicComponent>();
 
-            if (invComp == null || fisio == null) return;
+            if (invComp == null || !_entity.HasComponent(typeof(BodyComponent))) return;
 
             float currentWeight = invComp.Inventory.GetTotalWeight();
             float currentVolume = invComp.Inventory.GetTotalVolume();
-            float maxWeight = fisio.GetMaxCarryWeight();
-            float maxVolume = fisio.GetMaxCarryVolume();
+            float maxWeight = CarryCapacity.GetMaxCarryWeight(_entity);
+            float maxVolume = CarryCapacity.GetMaxCarryVolume(_entity);
 
             _view.UpdateStats(currentWeight, maxWeight, currentVolume, maxVolume);
         }

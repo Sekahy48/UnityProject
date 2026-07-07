@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ECS.Component;
 using ECS.Entity;
 using Observer;
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace ECS.Systems
 {
-    public class FatigueStaminaSystem : GenericSubject
+    public class FatigueStaminaSystem : GenericSubject, IGameSystem
     {
         private const float STAMINA_REGEN_RATE = 5f;
         private const float FATIGUE_REGEN_RATE = 0.5f;
@@ -14,83 +15,90 @@ namespace ECS.Systems
         private const float STAMINA_DRAIN_PER_SECOND = 10f;
         private const float FATIGUE_DRAIN_PER_STAMINA = 0.01f;
         private const float FATIGUE_BURST_DRAIN = 5f;
-        public void ProcessEntity(float DeltaTime, IEntity entity, Boolean drain)
+
+        /// <summary>
+        /// IGameSystem: procesa todas las entidades con EnergyComponent + MovementComponent.
+        /// </summary>
+        public void Process(float deltaTime, EntityManager entityManager)
         {
-            Boolean changed = false;
-            if (entity.HasComponent(typeof(FisiologicComponent)))
+            List<IEntity> entities = entityManager.GetEntitiesWithComponent(typeof(EnergyComponent));
+            foreach (var entity in entities)
             {
-                FisiologicComponent fisiologic = entity.GetComponent<FisiologicComponent>();
+                ProcessEntity(deltaTime, entity);
+            }
+        }
 
-                if (!drain)
-                {
-                    if (!fisiologic.IsFatigueFull())
-                    {
-                        RestoreFatigue(DeltaTime, fisiologic); 
-                        changed = true;
-                    }
-                    if (!fisiologic.IsStaminaFull())
-                    {
-                        RestoreStamina(DeltaTime, fisiologic);
-                        changed = true;
-                    }
-                    if (fisiologic.IsStaminaFull())
-                    {
-                        entity.GetComponent<MovementComponent>().SetCanRun(true);
-                    }
-                }
-                else
-                {
-                    if (!fisiologic.IsStaminaEmpty())
-                    {
-                        DrainStamina(DeltaTime, fisiologic);
-                        changed = true;
-                        if (fisiologic.IsStaminaEmpty())
-                        {
-                            //UnityEngine.Debug.Log("Stamina has reached zero!");
-                            entity.GetComponent<MovementComponent>().SetCanRun(false);
-                        }
-                    }
-                }
+        public void ProcessEntity(float deltaTime, IEntity entity)
+        {
+            EnergyComponent energy = entity.GetComponent<EnergyComponent>();
+            MovementComponent movement = entity.GetComponent<MovementComponent>();
 
-                if (changed)
+            if (energy == null) return;
+
+            bool drain = movement != null && movement.IsRunning();
+            bool changed = false;
+
+            if (!drain)
+            {
+                if (!energy.IsFatigueFull())
                 {
-                    this.NotifyObservers();
+                    RestoreFatigue(deltaTime, energy);
+                    changed = true;
+                }
+                if (!energy.IsStaminaFull())
+                {
+                    RestoreStamina(deltaTime, energy);
+                    changed = true;
+                }
+                if (energy.IsStaminaFull() && movement != null)
+                {
+                    movement.SetCanRun(true);
                 }
             }
             else
             {
-                UnityEngine.Debug.LogError($"Entity {entity.GetCompoundIdentification()} does not have a FisiologicComponent.");
+                if (!energy.IsStaminaEmpty())
+                {
+                    DrainStamina(deltaTime, energy);
+                    changed = true;
+                    if (energy.IsStaminaEmpty())
+                    {
+                        movement.SetCanRun(false);
+                    }
+                }
             }
-            
-        }
-        
-        public void RestoreFatigue(float DeltaTime, FisiologicComponent component)
-        {
-            component.SetFatigue(component.GetFatigue() + FATIGUE_REGEN_RATE * DeltaTime);
 
+            if (changed)
+            {
+                this.NotifyObservers();
+            }
         }
 
-        public void RestoreStamina(float DeltaTime, FisiologicComponent component)
+        public void RestoreFatigue(float deltaTime, EnergyComponent component)
         {
-            component.SetStamina(component.GetStamina() + STAMINA_REGEN_RATE * DeltaTime);
+            component.SetFatigue(component.GetFatigue() + FATIGUE_REGEN_RATE * deltaTime);
         }
 
-        public void DrainStamina(float DeltaTime, FisiologicComponent component)
+        public void RestoreStamina(float deltaTime, EnergyComponent component)
         {
-            component.SetStamina(component.GetStamina() - STAMINA_DRAIN_PER_SECOND * DeltaTime);
-            Boolean burst = component.GetStamina() <= 0;
-            DrainFatigue(DeltaTime, component, burst);
+            component.SetStamina(component.GetStamina() + STAMINA_REGEN_RATE * deltaTime);
         }
-        
-        public void DrainFatigue(float DeltaTime, FisiologicComponent component, Boolean burst)
+
+        public void DrainStamina(float deltaTime, EnergyComponent component)
         {
-            float fatigueDrain = FATIGUE_DRAIN_PER_STAMINA * STAMINA_DRAIN_PER_SECOND * DeltaTime;
+            component.SetStamina(component.GetStamina() - STAMINA_DRAIN_PER_SECOND * deltaTime);
+            bool burst = component.GetStamina() <= 0;
+            DrainFatigue(deltaTime, component, burst);
+        }
+
+        public void DrainFatigue(float deltaTime, EnergyComponent component, bool burst)
+        {
+            float fatigueDrain = FATIGUE_DRAIN_PER_STAMINA * STAMINA_DRAIN_PER_SECOND * deltaTime;
             if (burst)
             {
                 fatigueDrain += FATIGUE_BURST_DRAIN;
-            }   
+            }
             component.SetFatigue(component.GetFatigue() - fatigueDrain);
         }
-
     }
 }

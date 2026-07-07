@@ -9,26 +9,27 @@ namespace MVC.Controller
     {
         private GameContext GameContext;
         private GameMain GameMain;
-        private readonly ICameraStrategy activeCamera;
 
         public GameController(GameContext gameContext, GameMain gameMain)
         {
             GameContext = gameContext;
             GameMain = gameMain;
         }
-        public GameController()
-        {
-        }
+
+        public GameController() { }
 
         public void SetUpOnStart()
         {
-            Logic logic = this.GameContext.GetLogic();
-            HUDManager hUDManager = this.GameContext.GetHUDManager();
-            FatigueStaminaSystem staminaSystem = logic.GetFatigueStaminaSystem();
-            staminaSystem.Attach(hUDManager);
-            staminaSystem.Attach(logic);
-
+            // HUD observa el sistema de stamina/fatiga para actualizar barras
+            FatigueStaminaSystem staminaSystem = GameContext.GetSystemManager()
+                .GetGameSystem<FatigueStaminaSystem>();
+            if (staminaSystem != null)
+            {
+                HUDManager hUDManager = GameContext.GetHUDManager();
+                staminaSystem.Attach(hUDManager);
+            }
         }
+
         public void SetGameContext(GameContext gameContext)
         {
             GameContext = gameContext;
@@ -47,20 +48,18 @@ namespace MVC.Controller
         public GameMain GetGameMain()
         {
             return GameMain;
-        }   
-        
+        }
+
         /// <summary>
-        /// Ciclo de gestion del GameController
+        /// Ciclo principal del juego.
         /// </summary>
         public void Update(float deltaTime)
         {
-            // Lógica del juego
-            //GameContext.GetLogic().Update();
-
-            // Actualizar cámara activa
+            // 1. Input y cámara (tiempo real, no afectado por pausa/timeSpeed)
             GameContext.GetInputManager().Update(deltaTime);
-        }
-        
-    }
 
+            // 2. SystemManager: engine systems (cada frame) + game systems (por tick de ClockSystem)
+            GameContext.GetSystemManager().Update(deltaTime);
+        }
+    }
 }

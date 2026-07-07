@@ -21,10 +21,10 @@ namespace MVC.View
         }
         public void UpdateStamina()
         {
-            FisiologicComponent fisiologic = player.GetComponent<FisiologicComponent>();
+            EnergyComponent fisiologic = player.GetComponent<EnergyComponent>();
             if (fisiologic == null)
             {
-                UnityEngine.Debug.LogError("Player entity does not have a FisiologicComponent.");
+                UnityEngine.Debug.LogError("Player entity does not have a EnergyComponent.");
                 return;
             }
             // Lógica para reducir la barra de stamina en la interfaz HUD
@@ -34,10 +34,10 @@ namespace MVC.View
 
         public void UpdateFatigue()
         {
-            FisiologicComponent fisiologic = player.GetComponent<FisiologicComponent>();
+            EnergyComponent fisiologic = player.GetComponent<EnergyComponent>();
             if (fisiologic == null)
             {
-                UnityEngine.Debug.LogError("Player entity does not have a FisiologicComponent.");
+                UnityEngine.Debug.LogError("Player entity does not have a EnergyComponent.");
                 return;
             }
             // Lógica para reducir la barra de fatiga en la interfaz HUD
