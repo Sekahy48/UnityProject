@@ -8,9 +8,9 @@ using Observer;
 namespace ECS.Systems
 {
     /// <summary>
-    /// Gestiona entidades del juego. Sin dependencias de UnityEngine.
-    /// Los prototipos se crean con componentes Core puros.
-    /// IEntityLinker (Unity) se encarga de vincular entidades con GameObjects.
+    /// Manages the game's entities. No UnityEngine dependencies.
+    /// Prototypes are created with pure Core components.
+    /// IEntityLinker (Unity) handles linking entities with GameObjects.
     /// </summary>
     public class EntityManager : IObserver
     {

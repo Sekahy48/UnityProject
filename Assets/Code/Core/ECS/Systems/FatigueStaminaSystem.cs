@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using ECS.Component;
 using ECS.Entity;
 using Observer;
-using UnityEngine;
 
 namespace ECS.Systems
 {
@@ -17,7 +16,7 @@ namespace ECS.Systems
         private const float FATIGUE_BURST_DRAIN = 5f;
 
         /// <summary>
-        /// IGameSystem: procesa todas las entidades con EnergyComponent + MovementComponent.
+        /// IGameSystem: processes all entities with EnergyComponent + MovementComponent.
         /// </summary>
         public void Process(float deltaTime, EntityManager entityManager)
         {

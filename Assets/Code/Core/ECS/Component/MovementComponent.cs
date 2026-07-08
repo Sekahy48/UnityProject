@@ -1,8 +1,8 @@
 namespace ECS.Component
 {
     /// <summary>
-    /// Componente de movimiento puro C#. Sin dependencias de UnityEngine.
-    /// Las cámaras (Unity) leen/escriben estos valores; los sistemas Core los procesan.
+    /// Pure C# movement component. No UnityEngine dependencies.
+    /// Cameras (Unity) read/write these values; Core systems process them.
     /// </summary>
     public class MovementComponent : BasicComponent
     {

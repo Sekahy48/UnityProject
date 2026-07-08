@@ -4,8 +4,8 @@ using MVC.Presenter;
 namespace Core.Contexts
 {
     /// <summary>
-    /// Contexto de infraestructura: sistemas de juego, presenters.
-    /// Equivalente a SystemContext en StackGo.
+    /// Infrastructure context: game systems, presenters.
+    /// Equivalent to SystemContext in StackGo.
     /// </summary>
     public class GameSystemContext
     {

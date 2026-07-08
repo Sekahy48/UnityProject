@@ -1,21 +1,21 @@
 namespace ECS.Component
 {
     /// <summary>
-    /// Componente que representa la capacidad de curación de una entidad.
+    /// Component representing an entity's healing capacity.
     /// </summary>
     public class HealComponent : BasicComponent
     {
-        private int healingAmount;       // Cantidad de curación base
-        private float bonusMultiplier;   // Multiplicador de bonificación
+        private int healingAmount;       // Base healing amount
+        private float bonusMultiplier;   // Bonus multiplier
 
         public HealComponent(int healingAmount, float bonusMultiplier)
         {
             this.healingAmount = healingAmount;
             this.bonusMultiplier = bonusMultiplier;
-            this._name = "HealComponent"; // Inicializa el nombre del componente
+            this._name = "HealComponent"; // Initializes the component name
         }
 
-        // Getters y setters en estilo C#
+        // Getters and setters in C# style
         public int HealingAmount
         {
             get => healingAmount;
@@ -40,7 +40,7 @@ namespace ECS.Component
 
         public override IComponent Clone()
         {
-            return new HealComponent(this.healingAmount, this.bonusMultiplier); // Clona el componente
+            return new HealComponent(this.healingAmount, this.bonusMultiplier); // Clones the component
         }
 
         public override bool Equivalent(IComponent other)

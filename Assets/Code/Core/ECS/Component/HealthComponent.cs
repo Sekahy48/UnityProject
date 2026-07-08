@@ -3,16 +3,16 @@ using System;
 namespace ECS.Component
 {
     /// <summary>
-    /// Representa un atributo concreto referido a los puntos de salud de una entidad.
+    /// Represents a specific attribute referring to an entity's health points.
     /// </summary>
     public class HealthComponent : BasicComponent
     {
-        private int currentHealth; // Vida actual
-        private int maxHealth;     // Vida máxima
+        private int currentHealth; // Current health
+        private int maxHealth;     // Max health
         public const int UNLIMITED_HEALTH = -1;
 
         /// <summary>
-        /// Crea un componente de salud con vida current y máximo max.
+        /// Creates a health component with current health and a max value.
         /// </summary>
         public HealthComponent(int current, int max)
         {
@@ -22,7 +22,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Crea un componente de salud con vida current y máximo indefinido.
+        /// Creates a health component with current health and an unlimited max.
         /// </summary>
         public HealthComponent(int current)
         {
@@ -32,7 +32,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Disminuye la vida actual (hasta cero como mucho).
+        /// Decreases current health (down to zero at most).
         /// </summary>
         public void ReceiveDamage(int damage)
         {
@@ -41,7 +41,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Incrementa la vida actual (hasta el máximo como mucho).
+        /// Increases current health (up to the max at most).
         /// </summary>
         public void HealHealth(int heal)
         {
@@ -50,7 +50,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Decrementa la vida actual en un porcentaje.
+        /// Decreases current health by a percentage.
         /// </summary>
         public void ReceiveDamagePercentage(double percentage)
         {
@@ -59,7 +59,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Incrementa la vida actual en un porcentaje (hasta el máximo).
+        /// Increases current health by a percentage (up to the max).
         /// </summary>
         public void HealPercentage(double percentage)
         {

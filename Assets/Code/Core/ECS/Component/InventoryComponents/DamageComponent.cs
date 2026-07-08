@@ -2,24 +2,24 @@ namespace ECS.Component.InventoryComponents
 {
 
     /// <summary>
-    /// Clase encargada de almacenar las capacidades de daño de un objeto
+    /// Class responsible for storing an object's damage capabilities
     /// </summary>
     public class DamageComponent : IComponent
     {
 
         #region Atributes
         /// <summary>
-        /// Nivel de efectividad de daño PENETRANTE 
+        /// Effectiveness level of PIERCING damage
         /// </summary>
         private DamageLevel _punctureDmg;
 
         /// <summary>
-        /// Nivel de efectividad de daño CORTANTE 
+        /// Effectiveness level of SLASHING damage
         /// </summary>
         private DamageLevel _slashingDmg;
 
         /// <summary>
-        /// Nivel de efectividad de daño CONTUNDENTE 
+        /// Effectiveness level of BLUNT damage
         /// </summary>
         private DamageLevel _impactDmg;
 
@@ -34,10 +34,10 @@ namespace ECS.Component.InventoryComponents
 
         #region Getters & Setters
         /// <summary>
-        /// Obtiene el nivel de daño **penetrante** del objeto.
+        /// Gets the object's **piercing** damage level.
         /// </summary>
         /// <returns>
-        /// Un valor del enumerado <see cref="DamageLevel"/> que representa la efectividad del daño penetrante.
+        /// A <see cref="DamageLevel"/> enum value representing the piercing damage effectiveness.
         /// </returns>
         public DamageLevel GetPunctureDmg()
         {
@@ -45,9 +45,9 @@ namespace ECS.Component.InventoryComponents
         }
 
         /// <summary>
-        /// Establece el nivel de daño **penetrante** del objeto.
+        /// Sets the object's **piercing** damage level.
         /// </summary>
-        /// <param name="level">Nivel de daño de tipo <see cref="DamageLevel"/>.</param>
+        /// <param name="level">Damage level of type <see cref="DamageLevel"/>.</param>
         public void SetPunctureDmg(DamageLevel level)
         {
             _punctureDmg = level;
@@ -55,10 +55,10 @@ namespace ECS.Component.InventoryComponents
 
 
         /// <summary>
-        /// Obtiene el nivel de daño **cortante** del objeto.
+        /// Gets the object's **slashing** damage level.
         /// </summary>
         /// <returns>
-        /// Un valor del enumerado <see cref="DamageLevel"/> que representa la efectividad del daño cortante.
+        /// A <see cref="DamageLevel"/> enum value representing the slashing damage effectiveness.
         /// </returns>
         public DamageLevel GetSlashingDmg()
         {
@@ -66,9 +66,9 @@ namespace ECS.Component.InventoryComponents
         }
 
         /// <summary>
-        /// Establece el nivel de daño **cortante** del objeto.
+        /// Sets the object's **slashing** damage level.
         /// </summary>
-        /// <param name="level">Nivel de daño de tipo <see cref="DamageLevel"/>.</param>
+        /// <param name="level">Damage level of type <see cref="DamageLevel"/>.</param>
         public void SetSlashingDmg(DamageLevel level)
         {
             _slashingDmg = level;
@@ -76,10 +76,10 @@ namespace ECS.Component.InventoryComponents
 
 
         /// <summary>
-        /// Obtiene el nivel de daño **contundente** del objeto.
+        /// Gets the object's **blunt** damage level.
         /// </summary>
         /// <returns>
-        /// Un valor del enumerado <see cref="DamageLevel"/> que representa la efectividad del daño contundente.
+        /// A <see cref="DamageLevel"/> enum value representing the blunt damage effectiveness.
         /// </returns>
         public DamageLevel GetImpactDmg()
         {
@@ -87,9 +87,9 @@ namespace ECS.Component.InventoryComponents
         }
 
         /// <summary>
-        /// Establece el nivel de daño **contundente** del objeto.
+        /// Sets the object's **blunt** damage level.
         /// </summary>
-        /// <param name="level">Nivel de daño de tipo <see cref="DamageLevel"/>.</param>
+        /// <param name="level">Damage level of type <see cref="DamageLevel"/>.</param>
         public void SetImpactDmg(DamageLevel level)
         {
             _impactDmg = level;

@@ -11,55 +11,55 @@ namespace Inventory
         //#region Global operations (recursive, BFS)
 
         /// <summary>
-        /// Añade un nuevo nodo al inventario. Siempre crea nodo nuevo.
-        /// Si la entidad tiene StorageComponent crea InventoryObject, si no ItemObject.
+        /// Adds a new node to the inventory. Always creates a new node.
+        /// If the entity has StorageComponent creates an InventoryObject, otherwise an ItemObject.
         /// </summary>
         void AddItem(ItemEntity item, int amount);
 
         /// <summary>
-        /// Intenta apilar el item en el primer nodo equivalente encontrado.
-        /// Si no encuentra ninguno, crea nodo nuevo.
+        /// Tries to stack the item onto the first equivalent node found.
+        /// If none is found, creates a new node.
         /// </summary>
         void StackOnto(ItemEntity item, int amount);
 
         /// <summary>
-        /// Añade varios items como hojas nuevas.
+        /// Adds several items as new leaves.
         /// </summary>
         void AddSeveralItems(List<(ItemEntity item, int amount)> items);
 
         /// <summary>
-        /// Modifica la cantidad de un item en el inventario global.
+        /// Modifies the amount of an item in the global inventory.
         /// </summary>
         int ModifyAmount(string id, int amount);
 
         /// <summary>
-        /// Comprueba si el inventario contiene un item con el id dado.
+        /// Checks if the inventory contains an item with the given id.
         /// </summary>
         bool Contains(string id);
 
         /// <summary>
-        /// Obtiene la cantidad total de un item en todo el inventario.
+        /// Gets the total amount of an item across the whole inventory.
         /// </summary>
         int GetAmount(string id);
 
         /// <summary>
-        /// Elimina todas las unidades de un item del inventario.
+        /// Removes all units of an item from the inventory.
         /// </summary>
         void DeleteItem(string id);
 
         /// <summary>
-        /// Devuelve el primer nodo que contiene el item con el id dado.
+        /// Returns the first node containing the item with the given id.
         /// </summary>
         IInventoryElement Find(string id);
 
         /// <summary>
-        /// Devuelve todos los nodos que contienen el item con el id dado.
+        /// Returns all nodes containing the item with the given id.
         /// </summary>
         List<IInventoryElement> FindNodes(string id);
 
         //#endregion
 
-        //#region Local operations (solo nivel inmediato)
+        //#region Local operations (immediate level only)
 
         void AddItemHere(ItemEntity item, int amount);
         void StackOntoHere(ItemEntity item, int amount);

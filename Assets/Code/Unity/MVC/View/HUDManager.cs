@@ -27,7 +27,7 @@ namespace MVC.View
                 UnityEngine.Debug.LogError("Player entity does not have a EnergyComponent.");
                 return;
             }
-            // Lógica para reducir la barra de stamina en la interfaz HUD
+            // Logic to reduce the stamina bar in the HUD interface
             //UnityEngine.Debug.Log("Stamina: " + fisiologic.GetStamina() + "/" + fisiologic.GetMaxStamina());
             HUDUtils.GetInstance().ModifyFillable("StaminaBar", fisiologic.GetStamina() / fisiologic.GetMaxStamina());
         }
@@ -40,7 +40,7 @@ namespace MVC.View
                 UnityEngine.Debug.LogError("Player entity does not have a EnergyComponent.");
                 return;
             }
-            // Lógica para reducir la barra de fatiga en la interfaz HUD
+            // Logic to reduce the fatigue bar in the HUD interface
             // UnityEngine.Debug.Log("Fatigue: " + fisiologic.GetFatigue() + "/" + fisiologic.GetMaxFatigue());
             HUDUtils.GetInstance().ModifyFillable("FatigueBar", fisiologic.GetFatigue() / fisiologic.GetMaxFatigue());
         }

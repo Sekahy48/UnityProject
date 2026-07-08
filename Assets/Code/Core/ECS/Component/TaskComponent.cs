@@ -11,7 +11,7 @@ namespace ECS.Component
 
         public TaskComponent()
         {
-            this._name = "TaskComponent"; // Inicializa el nombre del componente
+            this._name = "TaskComponent"; // Initializes the component name
         }
 
         public void AddTask(ITask task)
@@ -21,7 +21,7 @@ namespace ECS.Component
 
         public void PushTask(ITask task)
         {
-            tasks.Insert(0, task); // Añade al principio
+            tasks.Insert(0, task); // Adds to the front
         }
 
         public void RemoveTask(ITask task)

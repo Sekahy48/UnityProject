@@ -6,13 +6,13 @@ using UnityEngine;
 namespace Unity
 {
     /// <summary>
-    /// Engine system (corre cada frame con deltaTime real).
-    /// Sincroniza PositionComponent (Core) con Transform (Unity).
+    /// Engine system (runs every frame with real deltaTime).
+    /// Syncs PositionComponent (Core) with Transform (Unity).
     ///
-    /// Dirección del sync:
-    /// - Si PositionComponent está dirty (Core lo modificó) → escribe en Transform.
-    /// - Si no está dirty → lee Transform y actualiza PositionComponent
-    ///   (para reflejar movimientos hechos por cámaras, físicas, animación, etc.)
+    /// Sync direction:
+    /// - If PositionComponent is dirty (Core modified it) → writes to Transform.
+    /// - If not dirty → reads Transform and updates PositionComponent
+    ///   (to reflect movements done by cameras, physics, animation, etc.)
     /// </summary>
     public class TransformSyncSystem : IGameSystem
     {
@@ -31,17 +31,17 @@ namespace Unity
 
                 if (pos.IsDirty())
                 {
-                    // Core modificó la posición → aplicar al Transform
+                    // Core modified the position → apply to Transform
                     t.position = new Vector3(pos.GetX(), pos.GetY(), pos.GetZ());
                     t.rotation = new Quaternion(pos.GetRotX(), pos.GetRotY(), pos.GetRotZ(), pos.GetRotW());
                     pos.ClearDirty();
                 }
                 else
                 {
-                    // Unity movió el objeto (cámaras, físicas) → leer al componente Core
+                    // Unity moved the object (cameras, physics) → read into the Core component
                     pos.SetPosition(t.position.x, t.position.y, t.position.z);
                     pos.SetRotation(t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w);
-                    pos.ClearDirty(); // SetPosition marca dirty, pero aquí no queremos re-sync
+                    pos.ClearDirty(); // SetPosition marks dirty, but here we don't want to re-sync
                 }
             }
         }

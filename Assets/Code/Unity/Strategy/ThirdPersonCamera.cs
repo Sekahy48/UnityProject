@@ -41,10 +41,10 @@ namespace Strategy
             Camera.transform.position = Vector3.Lerp(Camera.transform.position, targetPosition, deltaTime * rotationSmoothness);
             Camera.transform.LookAt(PlayerObject.transform.position + Vector3.up * height);
 
-            // Rotar el jugador directamente via Transform (no via PositionComponent)
+            // Rotate the player directly via Transform (not via PositionComponent)
             PlayerObject.transform.rotation = Quaternion.Euler(0f, rotation.x, 0f);
         }
 
-        // HandleMovement heredado de BaseCameraStrategy
+        // HandleMovement inherited from BaseCameraStrategy
     }
 }

@@ -7,6 +7,6 @@ namespace MVC.View.UI.Inventory
         public int Amount;
         public string IconPath;
         public bool IsContainer;
-        public int TabIndex; // si IsContainer, a qué tab navega al clickar
+        public int TabIndex; // if IsContainer, which tab to navigate to on click
     }
 }

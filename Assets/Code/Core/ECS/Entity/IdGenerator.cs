@@ -16,7 +16,7 @@ namespace ECS.Entity
         }
 
         /// <summary>
-        /// Para cuando haya que guardar partidas y se necesite ir a un punto concreto de numero de id.
+        /// For when saving games and needing to jump to a specific id number.
         /// </summary>
         public static void SetCurrentId(int id)
         {

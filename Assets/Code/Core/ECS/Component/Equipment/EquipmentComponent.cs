@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using ECS.Entity;
-using UnityEngine;
-using UnityEngine.TestTools;
 using Utils;
 
 namespace ECS.Component
@@ -26,14 +24,11 @@ namespace ECS.Component
             bool added = false;
 
             if (!allowedSlots.Contains(slotType))
-            {
-                Debug.Log("Slot type not allowed."); 
-            }
+                return false;
 
             if (equipmentSlots.ContainsKey(slotType))
-            {
-                Debug.Log("Slot type already exists.");  
-            } else
+                return false;
+            else
             {
                 equipmentSlots[slotType] = new EquipmentSlot(slotType, capacity);
                 added = true; 
@@ -49,12 +44,11 @@ namespace ECS.Component
             bool equiped = false;
 
             if (!allowedSlots.Contains(slotType))
-            {
-                Debug.Log("Slot type not allowed."); 
-            } else if (!equipmentSlots.ContainsKey(slotType))
-            {
-                Debug.Log("This entity doesnt contains a slot of type: " + slotType);
-            } else {
+                return false;
+
+            if (!equipmentSlots.ContainsKey(slotType))
+                return false;
+            else {
                 equiped = equipmentSlots[slotType].EquipItem(item);
             }
              
@@ -72,7 +66,7 @@ namespace ECS.Component
             }
             return equipmentComponent;
 
-            //TODO revisar por si falta algo de copia profunda
+            //TODO check whether any deep copy is missing
         }
 
         public bool Equivalent(IComponent other)

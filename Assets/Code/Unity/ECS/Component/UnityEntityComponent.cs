@@ -13,7 +13,7 @@ namespace ECS.Component
 
         public IComponent Clone()
         {
-            // Posible problema: los GameObjects no se pueden clonar directamente.
+            // Possible issue: GameObjects can't be cloned directly.
             return new UnityEntityComponent(this.GameObject);
         }
 

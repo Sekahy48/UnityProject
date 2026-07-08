@@ -6,9 +6,9 @@ using UnityEngine;
 namespace Unity
 {
     /// <summary>
-    /// Vincula entidades Core con GameObjects de Unity.
-    /// Añade UnityEntityComponent y sincroniza la posición inicial
-    /// desde el Transform del GameObject al PositionComponent Core.
+    /// Links Core entities with Unity GameObjects.
+    /// Adds UnityEntityComponent and syncs the initial position
+    /// from the GameObject's Transform to the Core PositionComponent.
     /// </summary>
     public class UnityEntityLinker : IEntityLinker
     {
@@ -21,10 +21,10 @@ namespace Unity
                 return;
             }
 
-            // Añadir el componente puente Unity (vive fuera del ECS Core)
+            // Add the Unity bridge component (lives outside the Core ECS)
             entity.AddComponent(new UnityEntityComponent(go));
 
-            // Sincronizar posición inicial: Transform → PositionComponent
+            // Sync initial position: Transform → PositionComponent
             var pos = entity.GetComponent<PositionComponent>();
             if (pos != null)
             {
@@ -36,9 +36,9 @@ namespace Unity
         }
 
         /// <summary>
-        /// Resuelve qué GameObject corresponde a un tipo de entidad.
-        /// Para el jugador, busca por tag. Para otros tipos, se puede
-        /// extender con Instantiate de prefabs, pool, etc.
+        /// Resolves which GameObject corresponds to an entity type.
+        /// For the player, looks up by tag. For other types, this can be
+        /// extended with prefab Instantiate, pooling, etc.
         /// </summary>
         private GameObject ResolveGameObject(string entityType)
         {

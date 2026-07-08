@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Unity
 {
     /// <summary>
-    /// Implementación de ILogger que delega en UnityEngine.Debug.
+    /// ILogger implementation that delegates to UnityEngine.Debug.
     /// </summary>
     public class UnityLogger : Core.ILogger
     {

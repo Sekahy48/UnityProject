@@ -7,8 +7,8 @@ using UnityEngine.InputSystem;
 namespace MVC.Controller
 {
     /// <summary>
-    /// Gestiona input del jugador. Recibe solo CameraRegister y PresenterManager,
-    /// no el GameContext entero.
+    /// Manages player input. Receives only CameraRegister and PresenterManager,
+    /// not the whole GameContext.
     /// </summary>
     public class InputManager
     {
@@ -45,13 +45,13 @@ namespace MVC.Controller
 
         public void SetActiveStrategy(ICameraStrategy strategy)
         {
-            // Desuscribir la anterior si existe
+            // Unsubscribe the previous one if it exists
             if (_activeStrategy != null && _activeStrategy is IInventoryInputSource invStrategy)
                 invStrategy.OnInventoryRequested -= OnInventoryRequested;
 
             _activeStrategy = strategy;
 
-            // Suscribir la nueva
+            // Subscribe the new one
             if (_activeStrategy is IInventoryInputSource invStrategy2)
             {
                 invStrategy2.OnInventoryRequested += OnInventoryRequested;

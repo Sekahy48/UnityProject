@@ -10,7 +10,7 @@ using Core;
 using Core.Contexts;
 
 /// <summary>
-/// Punto de entrada Unity. Construye los contextos, vincula entidades y arranca.
+/// Unity entry point. Builds the contexts, links entities and starts up.
 /// </summary>
 public class GameMain : MonoBehaviour
 {
@@ -20,7 +20,7 @@ public class GameMain : MonoBehaviour
 
     void Awake()
     {
-        // ---- Crear contextos Core ----
+        // ---- Create Core contexts ----
         var logic = new MVC.Model.Logic();
         var entityManager = logic.GetEntityManager();
 
@@ -31,16 +31,19 @@ public class GameMain : MonoBehaviour
             return;
         }
 
-        // Vincular entidad Core con GameObject Unity via linker especializado
+        // Link Core entity with Unity GameObject via specialized linker
         IEntityLinker linker = new Unity.UnityEntityLinker();
         linker.Link(player, "playerEntity");
+
+        // Shared logger for Core classes
+        Core.ILogger logger = new Unity.UnityLogger();
 
         var dataCtx = new GameDataContext(entityManager);
 
         var sessionCtx = new GameSessionContext();
         sessionCtx.SetPlayer(player);
 
-        // SystemManager: registrar sistemas
+        // SystemManager: register systems
         var systemManager = new SystemManager(entityManager);
         systemManager.RegisterGameSystem(new FatigueStaminaSystem());
         systemManager.RegisterEngineSystem(new Unity.TransformSyncSystem());
@@ -48,24 +51,24 @@ public class GameMain : MonoBehaviour
         var presenterManager = new PresenterManager();
         var systemCtx = new GameSystemContext(systemManager, presenterManager);
 
-        // ---- Piezas Unity ----
+        // ---- Unity pieces ----
         var hudManager = new HUDManager(player);
         var cameraRegister = new CameraRegister();
         var inputManager = new InputManager(cameraRegister, presenterManager);
 
-        // Cámaras
+        // Cameras
         cameraRegister.InitizalizeCameras(player);
         cameraRegister.ActivateCamera(CameraRegister.CameraType.RTS);
 
-        // GameController recibe solo lo que necesita
+        // GameController receives only what it needs
         gameController = new GameController(systemCtx, inputManager, hudManager);
         gameController.SetUpOnStart();
 
-        // Vistas y presenters
+        // Views and presenters
         var viewManager = new ViewManager();
         viewManager.InitializeViews(_uiRegistry);
         presenterManager.RegisterPresenter(PresenterType.INV,
-            new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV)));
+            new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV), logger));
     }
 
     void Update()

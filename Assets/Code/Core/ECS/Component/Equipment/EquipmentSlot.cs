@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using ECS.Entity;
-using UnityEngine;
 using Utils;
 
 namespace ECS.Component
@@ -28,9 +27,6 @@ namespace ECS.Component
             {
                 equippedItems.Add(item);
                 equiped = true;
-            } else
-            {
-                Debug.Log("Slot is full. Cannot equip item: " + item.GetName());
             }
             return equiped;
         }
@@ -56,12 +52,9 @@ namespace ECS.Component
             if (items.Count <= maxAmount)
             {
                 this.equippedItems = items;
-            } else
-            {
-                Debug.Log("Too many items for this slot. Max amount: " + maxAmount);
             }
         }
         
-        //TODO Hacer getters y eliminador con criterios
+        //TODO Make getters and a criteria-based remover
     }
 }

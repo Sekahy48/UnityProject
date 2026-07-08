@@ -32,6 +32,6 @@ namespace Strategy
             Camera.transform.localRotation = Quaternion.Euler(rotation.y, 0f, 0f);
         }
 
-        // HandleMovement heredado de BaseCameraStrategy
+        // HandleMovement inherited from BaseCameraStrategy
     }
 }

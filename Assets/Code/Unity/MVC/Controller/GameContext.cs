@@ -9,20 +9,20 @@ using Strategy;
 namespace MVC.Controller
 {
     /// <summary>
-    /// Orquestador que agrupa los 3 contextos temáticos.
-    /// Las clases NO deben recibir GameContext entero — deben recibir
-    /// solo el sub-contexto que necesitan por constructor.
-    /// GameMain usa este objeto para construir todo y luego inyectar
-    /// los sub-contextos individuales donde hagan falta.
+    /// Orchestrator that groups the 3 thematic contexts.
+    /// Classes should NOT receive the whole GameContext — they should
+    /// receive only the sub-context they need via constructor.
+    /// GameMain uses this object to build everything and then inject
+    /// the individual sub-contexts wherever needed.
     /// </summary>
     public class GameContext
     {
-        // ---- Sub-contextos Core ----
+        // ---- Core sub-contexts ----
         public GameDataContext Data { get; private set; }
         public GameSessionContext Session { get; private set; }
         public GameSystemContext System { get; private set; }
 
-        // ---- Piezas Unity (no van a Core) ----
+        // ---- Unity pieces (do not go in Core) ----
         public CameraRegister CameraRegister { get; } = new();
         public InputManager InputManager { get; private set; }
         public HUDManager HUDManager { get; private set; }

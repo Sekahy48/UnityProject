@@ -5,8 +5,8 @@ using MVC.View;
 namespace MVC.Controller
 {
     /// <summary>
-    /// Controlador principal del juego.
-    /// Recibe solo los sub-contextos que necesita, no el GameContext entero.
+    /// Main game controller.
+    /// Receives only the sub-contexts it needs, not the whole GameContext.
     /// </summary>
     public class GameController
     {
@@ -22,7 +22,7 @@ namespace MVC.Controller
         }
 
         /// <summary>
-        /// Conecta observers al arrancar. Ejemplo: HUD observa FatigueStaminaSystem.
+        /// Connects observers on startup. Example: HUD observes FatigueStaminaSystem.
         /// </summary>
         public void SetUpOnStart()
         {
@@ -35,14 +35,14 @@ namespace MVC.Controller
         }
 
         /// <summary>
-        /// Ciclo principal del juego.
+        /// Main game loop.
         /// </summary>
         public void Update(float deltaTime)
         {
-            // 1. Input y cámara (tiempo real)
+            // 1. Input and camera (real time)
             inputManager.Update(deltaTime);
 
-            // 2. SystemManager: engine systems (cada frame) + game systems (por tick)
+            // 2. SystemManager: engine systems (every frame) + game systems (per tick)
             systemCtx.SystemManager.Update(deltaTime);
         }
     }

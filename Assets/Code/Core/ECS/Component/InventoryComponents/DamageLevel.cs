@@ -1,8 +1,8 @@
 namespace ECS.Component.InventoryComponents
 {
     /// <summary>
-    /// Enumeración cuyos elementos hacen referencia a una escala de intensidad 
-    /// en el contexto de daño.
+    /// Enum whose members refer to an intensity scale
+    /// in the context of damage.
     /// </summary>
     public enum DamageLevel
     {

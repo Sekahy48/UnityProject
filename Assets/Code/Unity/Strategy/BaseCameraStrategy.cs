@@ -26,7 +26,7 @@ namespace Strategy
             this.animator = PlayerObject.GetComponent<Animator>();
         }
 
-        // Métodos comunes
+        // Common methods
         public virtual void Activate() => Camera.enabled = true;
         public virtual void Deactivate() => Camera.enabled = false;
 
@@ -79,8 +79,8 @@ namespace Strategy
         protected abstract void HandleMouseLook(float deltaTime);
 
         /// <summary>
-        /// Movimiento unificado FPS/TPS. Trabaja directamente con Transform
-        /// (no con PositionComponent). TransformSyncSystem sincroniza al Core.
+        /// Unified FPS/TPS movement. Works directly with Transform
+        /// (not with PositionComponent). TransformSyncSystem syncs it to Core.
         /// </summary>
         protected virtual void HandleMovement(float deltaTime)
         {

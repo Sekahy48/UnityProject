@@ -5,8 +5,8 @@ using ECS.Entity;
 namespace ECS.Systems
 {
     /// <summary>
-    /// Calcula la capacidad de carga a partir de BodyComponent, EnergyComponent y NutritionComponent.
-    /// Cuando se implemente el system loop real, esto se convertirá en un sistema con componente propio.
+    /// Calculates carry capacity from BodyComponent, EnergyComponent and NutritionComponent.
+    /// When the real system loop is implemented, this will become a system with its own component.
     /// </summary>
     public static class CarryCapacity
     {

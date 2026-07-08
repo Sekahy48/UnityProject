@@ -3,7 +3,7 @@ using System;
 namespace ECS.Component
 {
     /// <summary>
-    /// Stamina, fatiga y metabolismo. Cambia cada frame.
+    /// Stamina, fatigue and metabolism. Changes every frame.
     /// </summary>
     public class EnergyComponent : BasicComponent
     {
@@ -26,7 +26,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Calcula la tasa metabólica basal (Mifflin-St Jeor) a partir de datos corporales.
+        /// Calculates the basal metabolic rate (Mifflin-St Jeor) from body data.
         /// </summary>
         public float CalculateBasalMetabolism(float weight, float heightCm, float age, int sex)
         {

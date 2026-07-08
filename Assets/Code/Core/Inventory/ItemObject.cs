@@ -24,7 +24,7 @@ namespace Inventory
         public int GetAmount() => _amount;
         public void SetAmount(int amount) => _amount = Math.Max(0, amount);
 
-        // Operaciones globales y locales son idénticas en hoja
+        // Global and local operations are identical at a leaf
         public void AddItem(ItemEntity item, int amount) { }
         public void StackOnto(ItemEntity item, int amount) { }
         public void AddSeveralItems(List<(ItemEntity item, int amount)> items) { }

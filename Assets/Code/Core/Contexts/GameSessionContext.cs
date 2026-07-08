@@ -4,8 +4,8 @@ using ECS.Systems;
 namespace Core.Contexts
 {
     /// <summary>
-    /// Contexto de sesión: estado de la partida en curso.
-    /// Equivalente a SessionContext en StackGo.
+    /// Session context: state of the current game session.
+    /// Equivalent to SessionContext in StackGo.
     /// </summary>
     public class GameSessionContext
     {

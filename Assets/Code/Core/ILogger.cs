@@ -1,7 +1,7 @@
 namespace Core
 {
     /// <summary>
-    /// Abstracción de logging para que las clases Core no dependan de UnityEngine.Debug.
+    /// Logging abstraction so Core classes don't depend on UnityEngine.Debug.
     /// </summary>
     public interface ILogger
     {

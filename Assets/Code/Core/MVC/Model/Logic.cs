@@ -6,7 +6,7 @@ using ECS.Systems;
 namespace MVC.Model
 {
     /// <summary>
-    /// Modelo del juego. Sin dependencias de UnityEngine.
+    /// Game model. No UnityEngine dependencies.
     /// </summary>
     public class Logic
     {

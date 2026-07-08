@@ -8,62 +8,62 @@ namespace ECS.Entity
     public interface IEntity
     {
         /// <summary>
-        /// Devuelve el id (handler)
+        /// Returns the id (handler)
         /// </summary>
         Handler.IHandler GetId();
 
         /// <summary>
-        /// Devuelve el id como entero
+        /// Returns the id as an integer
         /// </summary>
         int GetIdAsInt();
 
         /// <summary>
-        /// Devuelve el tipo (handler)
+        /// Returns the type (handler)
         /// </summary>
         Handler.IHandler GetEntityType();
 
         /// <summary>
-        /// Nombre IDENTITARIO de la entidad
+        /// Identifying name of the entity
         /// </summary>
         string GetName();
 
         /// <summary>
-        /// Devuelve el identificador compuesto (tipo + id)
+        /// Returns the compound identifier (type + id)
         /// </summary>
         Handler.IHandler GetCompoundIdentification();
 
         /// <summary>
-        /// Añade un componente a la entidad
+        /// Adds a component to the entity
         /// </summary>
         void AddComponent<T>(T component) where T : IComponent;
 
         /// <summary>
-        /// Obtiene un componente por tipo genérico
+        /// Gets a component by generic type
         /// </summary>
         T GetComponent<T>() where T : IComponent;
 
         /// <summary>
-        /// Obtiene un componente por Type dinámico (para cuando el tipo no se conoce en compilación)
+        /// Gets a component by dynamic Type (for when the type isn't known at compile time)
         /// </summary>
         IComponent GetComponentByType(Type target);
 
         /// <summary>
-        /// Elimina un componente por nombre
+        /// Removes a component by name
         /// </summary>
         bool RemoveComponent(Type target);
 
         /// <summary>
-        /// Comprueba si existe el componente
+        /// Checks if the component exists
         /// </summary>
         bool HasComponent(Type target);
 
         /// <summary>
-        /// Clona la entidad (nuevo ID)
+        /// Clones the entity (new ID)
         /// </summary>
-        IEntity Clone(); // override del Clone() de ICloneable
+        IEntity Clone(); // override of ICloneable's Clone()
 
         /// <summary>
-        /// Comprueba si esta entidad es equivalente a otra (mismo tipo y mismos componentes con mismos valores)
+        /// Checks if this entity is equivalent to another (same type and same components with same values)
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>

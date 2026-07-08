@@ -3,9 +3,9 @@ using System;
 namespace ECS.Component
 {
     /// <summary>
-    /// Componente de posición puro C#. Sin dependencias de UnityEngine.
-    /// TransformSyncSystem (Unity) se encarga de sincronizar estos valores
-    /// con el Transform del GameObject cada frame.
+    /// Pure C# position component. No UnityEngine dependencies.
+    /// TransformSyncSystem (Unity) handles syncing these values
+    /// with the GameObject's Transform every frame.
     /// </summary>
     public class PositionComponent : BasicComponent, IComponent
     {
@@ -27,7 +27,7 @@ namespace ECS.Component
             _dirty = false;
         }
 
-        // ---- Posición ----
+        // ---- Position ----
 
         public float GetX() => _posX;
         public float GetY() => _posY;
@@ -40,7 +40,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Desplaza la posición por un delta escalado por velocidad y tiempo.
+        /// Moves the position by a delta scaled by speed and time.
         /// </summary>
         public void MoveBy(float dx, float dy, float dz, float speed, float deltaTime)
         {
@@ -50,7 +50,7 @@ namespace ECS.Component
             _dirty = true;
         }
 
-        // ---- Rotación (cuaternión) ----
+        // ---- Rotation (quaternion) ----
 
         public float GetRotX() => _rotX;
         public float GetRotY() => _rotY;
@@ -63,11 +63,11 @@ namespace ECS.Component
             _dirty = true;
         }
 
-        // ---- Vectores derivados (math pura desde cuaternión) ----
+        // ---- Derived vectors (pure math from quaternion) ----
 
         /// <summary>
-        /// Vector forward calculado desde el cuaternión de rotación.
-        /// Equivale a Transform.forward en Unity.
+        /// Forward vector calculated from the rotation quaternion.
+        /// Equivalent to Transform.forward in Unity.
         /// </summary>
         public (float x, float y, float z) Forward()
         {
@@ -79,8 +79,8 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Vector right calculado desde el cuaternión de rotación.
-        /// Equivale a Transform.right en Unity.
+        /// Right vector calculated from the rotation quaternion.
+        /// Equivalent to Transform.right in Unity.
         /// </summary>
         public (float x, float y, float z) Right()
         {
@@ -91,7 +91,7 @@ namespace ECS.Component
             );
         }
 
-        // ---- Dirty tracking para TransformSyncSystem ----
+        // ---- Dirty tracking for TransformSyncSystem ----
 
         public bool IsDirty() => _dirty;
         public void ClearDirty() => _dirty = false;

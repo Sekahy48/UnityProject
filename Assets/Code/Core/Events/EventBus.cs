@@ -5,7 +5,7 @@ using Observer;
 namespace Events
 {
     /// <summary>
-    /// Bus de eventos centralizado. Publish/Subscribe para eventos discretos del juego.
+    /// Centralized event bus. Publish/Subscribe for discrete game events.
     /// </summary>
     public class EventBus
     {
@@ -47,7 +47,7 @@ namespace Events
         }
 
         /// <summary>
-        /// Limpia todas las suscripciones. Útil para tests o cambio de escena.
+        /// Clears all subscriptions. Useful for tests or scene changes.
         /// </summary>
         public void Clear()
         {

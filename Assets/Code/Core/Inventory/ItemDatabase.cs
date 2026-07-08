@@ -10,7 +10,7 @@ namespace Inventory
 
         private ItemDatabase()
         {
-            // Cargar todos los ítems base
+            // Load all base items
             // ...
         }
 

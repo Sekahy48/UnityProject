@@ -1,6 +1,6 @@
 using System;
-using ECS.Component.Task; // Asumo que Priorities está aquí
-using ECS.Entity; // Para la clase IEntity (o interfaz)
+using ECS.Component.Task; // Assuming Priorities is here
+using ECS.Entity; // For the IEntity class (or interface)
 
 namespace ECS.Entity
 {
@@ -10,7 +10,7 @@ namespace ECS.Entity
         private Priorities basePrio;
         private readonly DateTime creationTime;
 
-        // Constructor con IEntity y Prioridad
+        // Constructor with IEntity and Priority
         public MemoryEntity(IEntity entity, Priorities prio)
         {
             memory = entity;
@@ -18,7 +18,7 @@ namespace ECS.Entity
             creationTime = DateTime.Now;
         }
 
-        // Constructor por defecto (sin parámetros)
+        // Default constructor (no parameters)
         public MemoryEntity()
         {
             basePrio = Priorities.OMNIP;
@@ -41,7 +41,7 @@ namespace ECS.Entity
             return creationTime;
         }
 
-        // Setters que devuelven el valor anterior
+        // Setters that return the previous value
         public IEntity SetMemory(IEntity newMemo)
         {
             var old = memory;
@@ -56,7 +56,7 @@ namespace ECS.Entity
             return old;
         }
 
-        // Método que compara memorabilidad con otra MemoryEntity
+        // Method that compares memorability with another MemoryEntity
         public bool IsMoreMemorable(MemoryEntity incoming)
         {
             if (this.GetPrio().Equals(incoming.GetPrio()))

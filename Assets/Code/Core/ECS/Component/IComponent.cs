@@ -1,13 +1,13 @@
 namespace ECS.Component
 {
     /// <summary>
-    /// Interfaz para los componentes de las entidades
+    /// Interface for entity components
     /// </summary>
-     
+
     public interface IComponent
-    { 
+    {
         /// <summary>
-        /// Clona "deep" el componente.
+        /// Deep clones the component.
         /// </summary>
         public IComponent Clone();
         public bool Equivalent(IComponent other);

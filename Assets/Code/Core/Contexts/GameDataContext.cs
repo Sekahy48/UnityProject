@@ -3,8 +3,8 @@ using ECS.Systems;
 namespace Core.Contexts
 {
     /// <summary>
-    /// Contexto de datos del mundo: entidades, mapas, catálogos.
-    /// Equivalente a DataContext en StackGo.
+    /// World data context: entities, maps, catalogs.
+    /// Equivalent to DataContext in StackGo.
     /// </summary>
     public class GameDataContext
     {

@@ -5,8 +5,8 @@ using Inventory;
 namespace Factories
 {
     /// <summary>
-    /// Crea prototipos de entidades con componentes Core puros.
-    /// NO añade UnityEntityComponent — eso lo hace IEntityLinker desde Unity.
+    /// Creates entity prototypes with pure Core components.
+    /// Does NOT add UnityEntityComponent — IEntityLinker does that from Unity.
     /// </summary>
     public static class PrototypeFactory
     {
@@ -27,9 +27,9 @@ namespace Factories
         }
 
         /// <summary>
-        /// Crea prototipo de jugador con componentes Core puros.
-        /// Posición inicializada a (0,0,0) — TransformSyncSystem la sincronizará
-        /// con el Transform real del GameObject tras el Link.
+        /// Creates player prototype with pure Core components.
+        /// Position initialized to (0,0,0) — TransformSyncSystem will sync it
+        /// with the GameObject's actual Transform after the Link.
         /// </summary>
         public static IEntity CreatePlayerEntityPrototype()
         {

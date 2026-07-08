@@ -6,9 +6,9 @@
     namespace ECS.Entity
     {
         /// <summary>
-        /// Representa instancias concretas de entidades utilizables in-game.
-        /// Se identifica por un id numérico y un nombre (tipo concreto).
-        /// Contiene componentes organizados en un Dictionary.
+        /// Represents concrete instances of entities usable in-game.
+        /// Identified by a numeric id and a name (concrete type).
+        /// Contains components organized in a Dictionary.
         /// </summary>
         public class InGameEntity : IEntity
         {
@@ -63,7 +63,7 @@
             }
 
             /// <summary>
-            /// Obtiene un componente por Type dinámico. Usar solo cuando el tipo no se conoce en compilación.
+            /// Gets a component by dynamic Type. Use only when the type isn't known at compile time.
             /// </summary>
             public IComponent GetComponentByType(Type target)
             {

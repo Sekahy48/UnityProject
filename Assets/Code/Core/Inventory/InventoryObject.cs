@@ -31,7 +31,7 @@ namespace Inventory
         public ItemEntity GetItemEntity() => this._item;
         public bool IsLeaf() => false;
         public int GetAmount() => 1;
-        public void SetAmount(int amount) { } // los contenedores no tienen cantidad
+        public void SetAmount(int amount) { } // containers don't have an amount
         public List<IInventoryElement> GetChildren() => new List<IInventoryElement>(_inventory);
 
         //#region BFS helper

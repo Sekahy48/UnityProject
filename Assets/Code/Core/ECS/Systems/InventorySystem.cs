@@ -1,14 +1,21 @@
 using System;
+using Core;
 using ECS.Component;
 using ECS.Entity;
 using Events;
 using Observer;
-using UnityEngine.Rendering;
 
 namespace ECS.Systems
 {
     public class InventorySystem : IEventObserver
     {
+        private readonly ILogger _logger;
+
+        public InventorySystem(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public void ProcessEntity(IEntity entity)
         {
             InventoryComponent inventoryComponent = entity.GetComponent<InventoryComponent>();
@@ -16,9 +23,9 @@ namespace ECS.Systems
             {
                 float totalVolume = inventoryComponent.Inventory.GetTotalVolume();
                 float totalWeight = inventoryComponent.Inventory.GetTotalWeight();
-                UnityEngine.Debug.Log("Total volume: " + totalVolume +  ", Total weight: " + totalWeight );
+                _logger.Log("Total volume: " + totalVolume + ", Total weight: " + totalWeight);
 
-                // --- Cálculo de capacidad física del personaje ---
+                // Physical carry capacity check
                 if (entity.HasComponent(typeof(BodyComponent)))
                 {
                     float carryWeight = CarryCapacity.GetMaxCarryWeight(entity);
@@ -26,25 +33,27 @@ namespace ECS.Systems
 
                     if (carryVolume < totalVolume)
                     {
-                        UnityEngine.Debug.Log("El personaje no puede llevar tanto volumen. Capacidad máxima: " + carryVolume);
+                        _logger.LogWarning("Volume exceeds carry capacity. Max: " + carryVolume);
                     }
 
                     float weightRatio = totalWeight / carryWeight;
-                    if ( weightRatio > 0.6f && weightRatio <= 0.8f)
+                    if (weightRatio > 0.6f && weightRatio <= 0.8f)
                     {
-                        UnityEngine.Debug.Log("El personaje está cargando un peso considerable. Velocidad reducida.");
+                        _logger.Log("Heavy load. Speed reduced.");
                     }
                     else if (weightRatio > 0.8f && weightRatio < 1f)
                     {
-                        UnityEngine.Debug.Log("El personaje está sobrecargado. Velocidad reducida considerablemente y sufre penalización en la energia.");
-                    } else if (weightRatio >= 1f)
+                        _logger.LogWarning("Overloaded. Speed heavily reduced, energy penalty.");
+                    }
+                    else if (weightRatio >= 1f)
                     {
-                        UnityEngine.Debug.Log("El personaje no puede moverse debido al exceso de peso.");
+                        _logger.LogWarning("Cannot move due to excess weight.");
                     }
 
-                } else if (entity.HasComponent(typeof(StorageComponent)))
+                }
+                else if (entity.HasComponent(typeof(StorageComponent)))
                 {
-                    // Implementar llegado el momento, tb StorageComponent. 
+                    // TODO: StorageComponent capacity checks
                 }
             }
         }

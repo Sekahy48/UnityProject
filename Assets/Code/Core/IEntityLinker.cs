@@ -3,16 +3,16 @@ using ECS.Entity;
 namespace Core
 {
     /// <summary>
-    /// Permite a Core solicitar que una entidad se vincule con su representación
-    /// en el motor (GameObject en Unity). La implementación vive en Unity/.
+    /// Allows Core to request linking an entity with its engine representation
+    /// (GameObject in Unity). The implementation lives in Unity/.
     /// </summary>
     public interface IEntityLinker
     {
         /// <summary>
-        /// Vincula una entidad Core con su representación en el motor.
+        /// Links a Core entity with its engine representation.
         /// </summary>
-        /// <param name="entity">Entidad ya creada con componentes Core puros.</param>
-        /// <param name="entityType">Tipo lógico para resolver qué recurso visual usar.</param>
+        /// <param name="entity">Entity already created with pure Core components.</param>
+        /// <param name="entityType">Logical type to resolve which visual resource to use.</param>
         void Link(IEntity entity, string entityType);
     }
 }

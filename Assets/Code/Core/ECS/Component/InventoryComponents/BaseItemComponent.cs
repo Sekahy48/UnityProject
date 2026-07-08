@@ -7,11 +7,11 @@ using Utils;
 namespace ECS.Component
 {
     /// <summary>
-    /// Componente básico que implementa IComponent y extiende GenericSubject.
-    /// Contiene como parte de su funcionalidad las cosas basicas que todo ItemEntity 
-    /// debe tener, así como un nombre referente al tipo de componente (se hereda´
-    /// para quien implemente esta clase). Puede componerse dentro de otros tipos
-    /// de entidad pero no se espera que esto se aproveche.
+    /// Basic component that implements IComponent and extends GenericSubject.
+    /// As part of its functionality it contains the basic things every ItemEntity
+    /// should have, as well as a name referring to the component type (inherited
+    /// by whoever implements this class). Can be composed inside other entity
+    /// types but this isn't expected to be leveraged.
     /// </summary>
 
 
@@ -33,54 +33,54 @@ namespace ECS.Component
     {
 
         /// <summary>
-        /// Tipo de la entidad.
+        /// Type of the entity.
         /// </summary>
         private List<ItemType> _itemType;
-        
+
         /// <summary>
-        /// Peso de la entidad.
+        /// Weight of the entity.
         /// </summary>
         private float _weight;
 
         /// <summary>
-        /// Volumen de la entidad.
+        /// Volume of the entity.
         /// </summary>
         private float _volume;
 
         /// <summary>
-        /// Durabilidad de la entidad.
+        /// Durability of the entity.
         /// </summary>
         private float _durability;
 
         /// <summary>
-        /// Durabilidad máxima de la entidad. (puntos hasta romperse)
+        /// Max durability of the entity. (points until it breaks)
         /// </summary>
         private const float _maxDurability = 100;
 
         /// <summary>
-        /// Condición de la entidad. (puntos hasta funcionar muy deficientemente)
+        /// Condition of the entity. (points until it works very poorly)
         /// </summary>
         private float _condition;
 
         /// <summary>
-        /// Condición maxima de la entidad.
+        /// Max condition of the entity.
         /// </summary>
         private const float maxCondition = 100;
 
         /// <summary>
-        /// Descripción del componente.
+        /// Description of the component.
         /// </summary>
         private String _description;
 
         /// <summary>
-        /// Ruta del icono del componente.
+        /// Icon path of the component.
         /// </summary>
         private String _iconPath;
 
         /// <summary>
-        /// Dimensiones del item cuando esta en inventario, cuanto ocupa visualmente,
-        /// no en terminos de calculo de capacidad de carga restante del inventario 
-        /// que lo alverga.
+        /// Item dimensions while in inventory, how much space it takes up visually,
+        /// not in terms of calculating the remaining carry capacity of the inventory
+        /// that holds it.
         /// </summary>
         private Vector2 _dimmensions;
         
@@ -106,16 +106,16 @@ namespace ECS.Component
  
 
         /// <summary>
-        /// Obtiene el peso del componente.
+        /// Gets the weight of the component.
         /// </summary>
-        /// <returns>el peso</returns>
+        /// <returns>the weight</returns>
         public float GetWeight()
         {
             return _weight;
         }
 
         /// <summary>
-        /// Establece el peso del componente.
+        /// Sets the weight of the component.
         /// </summary>
         public void SetWeight(float weight)
         {
@@ -123,16 +123,16 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Obtiene el volumen del componente.
+        /// Gets the volume of the component.
         /// </summary>
-        /// <returns>el volumen</returns>
+        /// <returns>the volume</returns>
         public float GetVolume()
         {
             return _volume;
         }
 
         /// <summary>
-        /// Establece el volumen del componente.
+        /// Sets the volume of the component.
         /// </summary>
         public void SetVolume(float volume)
         {
@@ -140,16 +140,16 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Obtiene la durabilidad del componente.
+        /// Gets the durability of the component.
         /// </summary>
-        /// <returns>la durabilidad</returns>
+        /// <returns>the durability</returns>
         public float GetDurability()
         {
             return _durability;
         }
 
         /// <summary>
-        /// Establece la durabilidad del componente.
+        /// Sets the durability of the component.
         /// </summary>
         public void SetDurability(int durability)
         {
@@ -157,16 +157,16 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Obtiene la condición del componente.
+        /// Gets the condition of the component.
         /// </summary>
-        /// <returns>la condición</returns>
+        /// <returns>the condition</returns>
         public float GetCondition()
         {
             return _condition;
         }
 
         /// <summary>
-        /// Establece la condición del componente.
+        /// Sets the condition of the component.
         /// </summary>
         public void SetCondition(float condition)
         {
@@ -174,16 +174,16 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Obtiene la descripción del componente.
+        /// Gets the description of the component.
         /// </summary>
-        /// <returns>la descripción</returns>
+        /// <returns>the description</returns>
         public String GetDescription()
         {
             return _description;
         }
 
         /// <summary>
-        /// Establece la descripción del componente.
+        /// Sets the description of the component.
         /// </summary>
         public void SetDescription(String description)
         {
@@ -191,16 +191,16 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Obtiene la ruta del icono del componente.
+        /// Gets the icon path of the component.
         /// </summary>
-        /// <returns>la ruta del icono</returns>
+        /// <returns>the icon path</returns>
         public String GetIconPath()
         {
             return _iconPath;
         }
 
         /// <summary>
-        /// Establece la ruta del icono del componente.
+        /// Sets the icon path of the component.
         /// </summary>
         public void SetIconPath(String iconPath)
         {
@@ -208,7 +208,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Obtiene el tipo del componente.
+        /// Gets the type of the component.
         /// </summary>
         public List<ItemType> GetItemType()
         {
@@ -216,12 +216,12 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Establece el tipo del componente.
+        /// Sets the type of the component.
         /// </summary>
         public void SetItemType(List<ItemType> itemType)
         {
             _itemType = itemType;
-        } 
+        }
         
         public override IComponent Clone()
         {

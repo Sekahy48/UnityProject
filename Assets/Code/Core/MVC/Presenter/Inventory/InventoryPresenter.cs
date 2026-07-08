@@ -1,27 +1,29 @@
 using System;
 using System.Collections.Generic;
+using Core;
 using ECS.Component;
 using ECS.Entity;
 using ECS.Systems;
 using Inventory;
 using MVC.View;
 using MVC.View.UI.Inventory;
-using UnityEngine;
 
 namespace MVC.Presenter.Inventory
 {
     public class InventoryPresenter : IPresenter
     {
         private readonly InventoryView _view;
+        private readonly ILogger _logger;
         private IEntity _entity;
         private int _activeTabIndex = 0;
         private int _pendingTabIndex = -1;
 
         private List<IInventoryElement> _tabInventories = new List<IInventoryElement>();
 
-        public InventoryPresenter(InventoryView view)
+        public InventoryPresenter(InventoryView view, ILogger logger)
         {
             _view = view;
+            _logger = logger;
             _view.OnTabClicked += OnTabClicked;
             _view.OnItemClicked += OnItemClicked;
             _view.OnCloseClicked += OnCloseClicked;
@@ -31,12 +33,12 @@ namespace MVC.Presenter.Inventory
 
         public void Open(IEntity entity, int tabIndex = 1)
         {
-            Debug.Log($"[InventoryPresenter] Open - IsReady: {_view.IsReady()}");
+            _logger.Log($"[InventoryPresenter] Open - IsReady: {_view.IsReady()}");
             _entity = entity;
             if (!_view.IsReady())
             {
                 _pendingTabIndex = tabIndex;
-                Debug.Log($"[InventoryPresenter] Guardado pending tab {tabIndex}");
+                _logger.Log($"[InventoryPresenter] Saved pending tab {tabIndex}");
                 return;
             }
             OpenInternal(tabIndex);
@@ -44,7 +46,7 @@ namespace MVC.Presenter.Inventory
 
         private void OnViewReady()
         {
-            Debug.Log($"[InventoryPresenter] OnViewReady - pending: {_pendingTabIndex}, entity: {(_entity == null ? "NULL" : "OK")}");
+            _logger.Log($"[InventoryPresenter] OnViewReady - pending: {_pendingTabIndex}, entity: {(_entity == null ? "NULL" : "OK")}");
             if (_pendingTabIndex >= 0 && _entity != null)
             {
                 int tab = _pendingTabIndex;

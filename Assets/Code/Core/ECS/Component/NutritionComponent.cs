@@ -3,7 +3,7 @@ using System;
 namespace ECS.Component
 {
     /// <summary>
-    /// Hambre, sed, macronutrientes y reservas. Relevante en Fase 3.
+    /// Hunger, thirst, macronutrients and reserves. Relevant in Phase 3.
     /// </summary>
     public class NutritionComponent : BasicComponent
     {
@@ -38,7 +38,7 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Genera el agua corporal almacenada a partir del peso y sexo.
+        /// Generates the stored body water from weight and sex.
         /// </summary>
         public float GenerateStoredWater(float weight, int sex)
         {

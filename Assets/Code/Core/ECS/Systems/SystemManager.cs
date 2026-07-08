@@ -3,9 +3,9 @@ using System.Collections.Generic;
 namespace ECS.Systems
 {
     /// <summary>
-    /// Gestiona y ejecuta los sistemas del juego.
-    /// - Game systems: se ejecutan en cada tick de ClockSystem (afectados por timeSpeed, pausa, etc.)
-    /// - Engine systems: se ejecutan cada frame con deltaTime real (input, cámara, UI)
+    /// Manages and runs the game's systems.
+    /// - Game systems: run on every ClockSystem tick (affected by timeSpeed, pause, etc.)
+    /// - Engine systems: run every frame with real deltaTime (input, camera, UI)
     /// </summary>
     public class SystemManager
     {
@@ -34,18 +34,18 @@ namespace ECS.Systems
         }
 
         /// <summary>
-        /// Llamar cada frame desde GameMain.Update().
+        /// Call every frame from GameMain.Update().
         /// </summary>
         public void Update(float deltaTime)
         {
-            // Engine systems corren cada frame con deltaTime real
+            // Engine systems run every frame with real deltaTime
             foreach (var system in engineSystems)
                 system.Process(deltaTime, entityManager);
 
-            // ClockSystem acumula tiempo y genera ticks
+            // ClockSystem accumulates time and generates ticks
             clock.Update(deltaTime);
 
-            // Game systems corren una vez por cada tick acumulado
+            // Game systems run once per accumulated tick
             float tickTime = clock.GetTickTime();
             while (pendingTicks > 0)
             {
@@ -56,7 +56,7 @@ namespace ECS.Systems
         }
 
         /// <summary>
-        /// Obtiene un sistema registrado por tipo. Útil para conectar observers.
+        /// Gets a registered system by type. Useful for connecting observers.
         /// </summary>
         public T GetGameSystem<T>() where T : class, IGameSystem
         {
@@ -68,7 +68,7 @@ namespace ECS.Systems
         }
 
         /// <summary>
-        /// Adaptador interno para contar ticks de ClockSystem via observer.
+        /// Internal adapter to count ClockSystem ticks via observer.
         /// </summary>
         private class TickCounter : Observer.IObserver
         {

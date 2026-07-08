@@ -6,7 +6,7 @@ namespace ECS.Component
     {
         private ResourceType type;
         private int amount;
-        private int maxAmount; // Cantidad máxima de recursos
+        private int maxAmount; // Max amount of resources
         private bool renewable;
 
         public ResourceComponent(ResourceType type, int amount, bool renewable)
@@ -15,7 +15,7 @@ namespace ECS.Component
             this.amount = amount;
             this.maxAmount = amount;
             this.renewable = renewable;
-            this._name = "ResourceComponent"; // Inicializa el nombre del componente
+            this._name = "ResourceComponent"; // Initializes the component name
         }
 
         public ResourceType GetResourceType()
@@ -55,8 +55,8 @@ namespace ECS.Component
             if (renewable)
             {
                 int regeneratedAmount = (int)(maxAmount * percentage);
-                // Lógica de aumentar la cantidad progresivamente    
-                // Por ahora lo dejo simple
+                // Logic to increase the amount progressively
+                // For now I'll keep it simple
                 amount = Math.Min(amount + regeneratedAmount, maxAmount);
             }
             else
@@ -67,7 +67,7 @@ namespace ECS.Component
 
         public override IComponent Clone()
         {
-            return new ResourceComponent(this.type, this.amount, this.renewable); // Clona el componente
+            return new ResourceComponent(this.type, this.amount, this.renewable); // Clones the component
         }
 
         public override bool Equivalent(IComponent other)

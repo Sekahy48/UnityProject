@@ -2,7 +2,7 @@ namespace ECS.Component
 {
 
     /// <summary>
-    /// Componente que almacena el nombre para mostrar de una entidad.
+    /// Component that stores an entity's display name.
     /// </summary>
     public class NameComponent : BasicComponent
     {
@@ -11,7 +11,7 @@ namespace ECS.Component
         public NameComponent(string displayName)
         {
             this.displayName = displayName;
-            this._name = "NameComponent"; // Inicializa el nombre del componente
+            this._name = "NameComponent"; // Initializes the component name
         }
 
         public string DisplayName => displayName;

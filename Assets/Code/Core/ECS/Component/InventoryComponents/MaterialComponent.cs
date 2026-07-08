@@ -12,38 +12,38 @@ namespace ECS.Component.InventoryComponents
     }
     
     /// <summary>
-    /// Obtiene la categoría/tipo general del material.
+    /// Gets the general category/type of the material.
     ///
     public class MaterialComponent : IComponent
     {
         #region Atributes
         /// <summary>
-        /// Representa la categoría/tipo general del material
+        /// Represents the general category/type of the material
         /// </summary>
         private MaterialType _materialType;
 
         /// <summary>
-        /// Nombre de la instancia
+        /// Name of the instance
         /// </summary>
         private String _materialName;
 
         /// <summary>
-        /// Representa como de flexible es
+        /// Represents how flexible it is
         /// </summary>
         private float _flexibility;
 
         /// <summary>
-        /// Representa como de duro es
+        /// Represents how hard it is
         /// </summary>
         private float _hardness;
 
         /// <summary>
-        /// Representa como de transpirable es
+        /// Represents how breathable it is
         /// </summary>
         private float _transpirability;
 
         /// <summary>
-        /// Representa como de aislante es
+        /// Represents how insulating it is
         /// </summary>
         private float _thermalInsulation;
 
@@ -62,108 +62,108 @@ namespace ECS.Component.InventoryComponents
         #region Setters & Getters 
         
          /// <summary>
-        /// Obtiene el tipo general del material.
+        /// Gets the general type of the material.
         /// </summary>
-        /// <returns>El tipo de material.</returns>
+        /// <returns>The material type.</returns>
         public MaterialType GetMaterialType()
         {
             return _materialType;
         }
 
         /// <summary>
-        /// Establece el tipo general del material.
+        /// Sets the general type of the material.
         /// </summary>
-        /// <param name="materialType">El tipo de material a asignar.</param>
+        /// <param name="materialType">The material type to assign.</param>
         public void SetMaterialType(MaterialType materialType)
         {
             _materialType = materialType;
         }
 
         /// <summary>
-        /// Obtiene el nombre del material.
+        /// Gets the name of the material.
         /// </summary>
-        /// <returns>El nombre del material.</returns>
+        /// <returns>The material name.</returns>
         public string GetMaterialName()
         {
             return _materialName;
         }
 
         /// <summary>
-        /// Establece el nombre del material.
+        /// Sets the name of the material.
         /// </summary>
-        /// <param name="materialName">El nuevo nombre del material.</param>
+        /// <param name="materialName">The new material name.</param>
         public void SetMaterialName(string materialName)
         {
             _materialName = materialName;
         }
 
         /// <summary>
-        /// Obtiene el nivel de flexibilidad del material.
+        /// Gets the flexibility level of the material.
         /// </summary>
-        /// <returns>El nivel de flexibilidad.</returns>
+        /// <returns>The flexibility level.</returns>
         public float GetFlexibility()
         {
             return _flexibility;
         }
 
         /// <summary>
-        /// Establece el nivel de flexibilidad del material.
+        /// Sets the flexibility level of the material.
         /// </summary>
-        /// <param name="flexibility">El nuevo nivel de flexibilidad.</param>
+        /// <param name="flexibility">The new flexibility level.</param>
         public void SetFlexibility(float flexibility)
         {
             _flexibility = flexibility;
         }
 
         /// <summary>
-        /// Obtiene el nivel de dureza del material.
+        /// Gets the hardness level of the material.
         /// </summary>
-        /// <returns>El nivel de dureza.</returns>
+        /// <returns>The hardness level.</returns>
         public float GetHardness()
         {
             return _hardness;
         }
 
         /// <summary>
-        /// Establece el nivel de dureza del material.
+        /// Sets the hardness level of the material.
         /// </summary>
-        /// <param name="hardness">El nuevo nivel de dureza.</param>
+        /// <param name="hardness">The new hardness level.</param>
         public void SetHardness(float hardness)
         {
             _hardness = hardness;
         }
 
         /// <summary>
-        /// Obtiene el nivel de transpirabilidad del material.
+        /// Gets the breathability level of the material.
         /// </summary>
-        /// <returns>El nivel de transpirabilidad.</returns>
+        /// <returns>The breathability level.</returns>
         public float GetTranspirability()
         {
             return _transpirability;
         }
 
         /// <summary>
-        /// Establece el nivel de transpirabilidad del material.
+        /// Sets the breathability level of the material.
         /// </summary>
-        /// <param name="transpirability">El nuevo nivel de transpirabilidad.</param>
+        /// <param name="transpirability">The new breathability level.</param>
         public void SetTranspirability(float transpirability)
         {
             _transpirability = transpirability;
         }
 
         /// <summary>
-        /// Obtiene el nivel de aislamiento térmico del material.
+        /// Gets the thermal insulation level of the material.
         /// </summary>
-        /// <returns>El nivel de aislamiento térmico.</returns>
+        /// <returns>The thermal insulation level.</returns>
         public float GetThermalInsulation()
         {
             return _thermalInsulation;
         }
 
         /// <summary>
-        /// Establece el nivel de aislamiento térmico del material.
+        /// Sets the thermal insulation level of the material.
         /// </summary>
-        /// <param name="thermalInsulation">El nuevo nivel de aislamiento térmico.</param>
+        /// <param name="thermalInsulation">The new thermal insulation level.</param>
         public void SetThermalInsulation(float thermalInsulation)
         {
             _thermalInsulation = thermalInsulation;

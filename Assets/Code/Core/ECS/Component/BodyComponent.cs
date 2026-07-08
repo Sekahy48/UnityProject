@@ -3,14 +3,14 @@ using System;
 namespace ECS.Component
 {
     /// <summary>
-    /// Atributos físicos base del personaje. Cambian muy lentamente o nunca.
+    /// Base physical attributes of the character. Change very slowly or never.
     /// </summary>
     public class BodyComponent : BasicComponent
     {
         private float height;
         private float weight;
         private float age;
-        private int sex; // 0 = hombre, 1 = mujer
+        private int sex; // 0 = male, 1 = female
         private float fatPercentage;
 
         public BodyComponent(float height, float weight, float age, int sex)
@@ -38,14 +38,14 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Masa muscular estimada en kg.
+        /// Estimated muscle mass in kg.
         /// </summary>
         public float GetMuscleMass()
         {
             return weight * (1f - fatPercentage / 100f);
         }
 
-        // Getters y Setters
+        // Getters and Setters
         public float GetHeight() => height;
         public void SetHeight(float height) => this.height = height;
 
