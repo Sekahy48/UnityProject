@@ -171,8 +171,7 @@ namespace ECS.Component.InventoryComponents
 
         public IComponent Clone()
         {
-            //TODO
-            throw new NotImplementedException();
+            return new MaterialComponent(_materialType, _materialName, _flexibility, _hardness, _transpirability, _thermalInsulation);
         }
 
         public bool Equivalent(IComponent other)

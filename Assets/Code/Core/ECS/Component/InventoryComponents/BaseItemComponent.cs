@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using Observer;
 using Utils;
@@ -7,14 +6,17 @@ using Utils;
 namespace ECS.Component
 {
     /// <summary>
-    /// Basic component that implements IComponent and extends GenericSubject.
-    /// As part of its functionality it contains the basic things every ItemEntity
-    /// should have, as well as a name referring to the component type (inherited
-    /// by whoever implements this class). Can be composed inside other entity
-    /// types but this isn't expected to be leveraged.
+    /// Core component for any ItemEntity. Holds the typeId referencing the
+    /// item concept in the catalog, plus instance-specific mutable state
+    /// (durability, condition). Shared/immutable data (name, description,
+    /// weight, icon, dimensions, maxStackSize) will live in the catalog
+    /// prototype once M1 is complete.
     /// </summary>
 
-
+    /// <summary>
+    /// UI metadata enum for filtering/display purposes.
+    /// Mechanical logic should use component presence (HasComponent) instead.
+    /// </summary>
     public enum ItemType
     {
         WEAPON,
@@ -28,14 +30,13 @@ namespace ECS.Component
         GENERIC,
         PART
     }
-    
+
     public class BaseItemComponent : BasicComponent
     {
-
         /// <summary>
-        /// Type of the entity.
+        /// References the item concept this instance belongs to (catalog key).
         /// </summary>
-        private List<ItemType> _itemType;
+        private int _typeId;
 
         /// <summary>
         /// Weight of the entity.
@@ -78,30 +79,26 @@ namespace ECS.Component
         private String _iconPath;
 
         /// <summary>
-        /// Item dimensions while in inventory, how much space it takes up visually,
-        /// not in terms of calculating the remaining carry capacity of the inventory
-        /// that holds it.
+        /// Item dimensions in inventory grid (w×h cells). Mechanically
+        /// relevant — determines grid footprint.
         /// </summary>
-        private Vector2 _dimmensions;
-        
-        public BaseItemComponent(float weight, float volume, 
-                                Vector2 dimmensions,
-                                List<ItemType> itemType,
-                                float durability = _maxDurability, 
-                                float condition = maxCondition, 
+        private Vector2 _dimensions;
+
+        public BaseItemComponent(int typeId, float weight, float volume,
+                                Vector2 dimensions,
+                                float durability = _maxDurability,
+                                float condition = maxCondition,
                                 String description = "", String iconPath = "")
-        {   
-            ArgumentChecker.CheckNotNull(dimmensions, "Dimmensions cannot be null");
-            ArgumentChecker.CheckNotNull(itemType, "ItemType cannot be null");
+        {
+            ArgumentChecker.CheckNotNull(dimensions, "Dimensions cannot be null");
+            _typeId = typeId;
             _weight = weight;
             _volume = volume;
             _durability = durability;
             _condition = condition;
-            _dimmensions = dimmensions;
+            _dimensions = dimensions;
             _description = description;
             _iconPath = iconPath;
-            _itemType = new List<ItemType>();
-
         }
  
 
@@ -208,26 +205,17 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Gets the type of the component.
+        /// Gets the catalog typeId this item instance belongs to.
         /// </summary>
-        public List<ItemType> GetItemType()
+        public int GetTypeId()
         {
-            return _itemType;
+            return _typeId;
         }
 
-        /// <summary>
-        /// Sets the type of the component.
-        /// </summary>
-        public void SetItemType(List<ItemType> itemType)
-        {
-            _itemType = itemType;
-        }
-        
         public override IComponent Clone()
         {
-            return new BaseItemComponent(_weight, _volume,
-                                        _dimmensions,
-                                        _itemType,
+            return new BaseItemComponent(_typeId, _weight, _volume,
+                                        _dimensions,
                                         _durability,
                                         _condition,
                                         _description,
@@ -236,28 +224,15 @@ namespace ECS.Component
 
         public override bool Equivalent(IComponent other)
         {
-            return 
+            return
                 other is BaseItemComponent otherBase &&
+                this._typeId == otherBase._typeId &&
                 this._weight == otherBase._weight &&
                 this._volume == otherBase._volume &&
                 this._durability == otherBase._durability &&
                 this._condition == otherBase._condition &&
                 this._description == otherBase._description &&
-                this._iconPath == otherBase._iconPath &&
-                this.SameItemTypes(otherBase._itemType);
-        }
-
-        private bool SameItemTypes(List<ItemType> other)
-        {
-            if (this._itemType == null && other == null) return true;
-            if (this._itemType == null || other == null) return false;
-            if (this._itemType.Count != other.Count) return false;
-            
-            for (int i = 0; i < this._itemType.Count; i++)
-            {
-                if (this._itemType[i] != other[i]) return false;
-            }
-            return true;
+                this._iconPath == otherBase._iconPath;
         }
     }
 }

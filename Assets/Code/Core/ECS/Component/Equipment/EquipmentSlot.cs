@@ -55,6 +55,11 @@ namespace ECS.Component
             }
         }
         
+        public List<ItemEntity> GetItems()
+        {
+            return equippedItems;
+        }
+
         //TODO Make getters and a criteria-based remover
     }
 }

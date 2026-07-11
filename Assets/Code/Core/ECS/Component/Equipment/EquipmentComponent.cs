@@ -62,11 +62,14 @@ namespace ECS.Component
             foreach (KeyValuePair<EquipmentSlotType, EquipmentSlot> kvp in equipmentSlots)
             {
                 equipmentComponent.AddSlot(kvp.Key, kvp.Value.GetMaxAmount());
-                equipmentComponent.equipmentSlots[kvp.Key].SetItems(new List<ItemEntity>(kvp.Value.GetEquippedItemCount()));
+                List<ItemEntity> clonedItems = new List<ItemEntity>();
+                foreach (ItemEntity item in kvp.Value.GetItems())
+                {
+                    clonedItems.Add((ItemEntity)item.Clone());
+                }
+                equipmentComponent.equipmentSlots[kvp.Key].SetItems(clonedItems);
             }
             return equipmentComponent;
-
-            //TODO check whether any deep copy is missing
         }
 
         public bool Equivalent(IComponent other)
