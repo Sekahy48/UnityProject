@@ -35,8 +35,9 @@ public class GameMain : MonoBehaviour
         IEntityLinker linker = new Unity.UnityEntityLinker();
         linker.Link(player, "playerEntity");
 
-        // Configure static logger for Core classes
+        // Configure static logger and paths for Core classes
         CoreLogger.Instance = new Unity.UnityLogger();
+        CoreConfig.BasePath = Application.streamingAssetsPath;
 
         var dataCtx = new GameDataContext(entityManager);
 
