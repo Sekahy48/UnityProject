@@ -86,10 +86,15 @@
                 return components.Remove(target);
             }
 
+            protected virtual InGameEntity CreateCloneInstance(int id, string type)
+            {
+                return new InGameEntity(id, type);
+            }
+
             public IEntity Clone()
             {
-                var clone = new InGameEntity(IdGenerator.GenerateNewId(), type.ToString());
-                foreach (var elem in components.Values)
+                InGameEntity clone = CreateCloneInstance(IdGenerator.GenerateNewId(), type.ToString());
+                foreach (IComponent elem in components.Values)
                 {
                     clone.AddComponent(elem.Clone());
                 }

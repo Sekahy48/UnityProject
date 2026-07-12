@@ -6,5 +6,14 @@ namespace ECS.Entity
         {
         }
 
+        protected override InGameEntity CreateCloneInstance(int id, string type)
+        {
+            return new ItemEntity(id, type);
+        }
+
+        public new ItemEntity Clone()
+        {
+            return (ItemEntity)base.Clone();
+        }
     }
 }

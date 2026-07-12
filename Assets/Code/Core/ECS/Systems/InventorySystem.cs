@@ -9,13 +9,6 @@ namespace ECS.Systems
 {
     public class InventorySystem : IEventObserver
     {
-        private readonly ILogger _logger;
-
-        public InventorySystem(ILogger logger)
-        {
-            _logger = logger;
-        }
-
         public void ProcessEntity(IEntity entity)
         {
             InventoryComponent inventoryComponent = entity.GetComponent<InventoryComponent>();
@@ -23,7 +16,7 @@ namespace ECS.Systems
             {
                 float totalVolume = inventoryComponent.Inventory.GetTotalVolume();
                 float totalWeight = inventoryComponent.Inventory.GetTotalWeight();
-                _logger.Log("Total volume: " + totalVolume + ", Total weight: " + totalWeight);
+                CoreLogger.Instance.Log("Total volume: " + totalVolume + ", Total weight: " + totalWeight);
 
                 // Physical carry capacity check
                 if (entity.HasComponent(typeof(BodyComponent)))
@@ -33,21 +26,21 @@ namespace ECS.Systems
 
                     if (carryVolume < totalVolume)
                     {
-                        _logger.LogWarning("Volume exceeds carry capacity. Max: " + carryVolume);
+                        CoreLogger.Instance.LogWarning("Volume exceeds carry capacity. Max: " + carryVolume);
                     }
 
                     float weightRatio = totalWeight / carryWeight;
                     if (weightRatio > 0.6f && weightRatio <= 0.8f)
                     {
-                        _logger.Log("Heavy load. Speed reduced.");
+                        CoreLogger.Instance.Log("Heavy load. Speed reduced.");
                     }
                     else if (weightRatio > 0.8f && weightRatio < 1f)
                     {
-                        _logger.LogWarning("Overloaded. Speed heavily reduced, energy penalty.");
+                        CoreLogger.Instance.LogWarning("Overloaded. Speed heavily reduced, energy penalty.");
                     }
                     else if (weightRatio >= 1f)
                     {
-                        _logger.LogWarning("Cannot move due to excess weight.");
+                        CoreLogger.Instance.LogWarning("Cannot move due to excess weight.");
                     }
 
                 }

@@ -19,19 +19,20 @@
 **Goal**: Replace string-based item identification with numeric typeIds.
 
 **Tasks**:
-1. Create `ItemDefinition` class in Core — immutable template: typeId (int), name, weight, dimensions (w×h — now mechanically relevant as grid footprint), maxStackSize (int), itemTypes, description, iconPath, maxDurability, maxCondition. Volume field removed — grid cells replace it.
-2. Create `ItemCatalog` class in Core — loads and indexes ItemDefinitions by typeId
-3. Define JSON schema for item definitions (Stack&Go bridge format)
-4. Create JSON loader (Core interface + Unity implementation for file I/O)
-5. Refactor `BaseItemComponent` — replace duplicated fields with a reference to `ItemDefinition`. Only instance-specific data remains as fields (current durability, current condition). Getters for weight/dimensions/etc delegate to the definition. Remove `_volume` field — capacity is grid-based now.
-6. Refactor `ItemEntity` to carry its typeId explicitly
-7. Refactor `IInventoryElement` — `GetId()` returns int (typeId) instead of string name
-8. Update `InventoryObject` BFS methods to use typeId
-9. ~~Update `ItemObject` accordingly~~ (unnecessary — ItemObject is replaced by BatchItem in M2)
-10. Update `PrototypeFactory` to create items from catalog
-11. Create test JSON with sample items
+1. ~~Create `ItemDefinition` class~~ — replaced by prototype approach. `ItemCatalog` stores fully assembled `ItemEntity` prototypes (with all their components). Creating a new item = `prototype.Clone()`. No separate definition class needed.
+2. Create `ItemCatalog` class in Core/Item/ — `Dictionary<int, ItemEntity>` of prototypes indexed by typeId. JSON loader creates fully assembled `ItemEntity` prototypes (with BaseItemComponent + any other components) and registers them. When the game needs a new item, `catalog.CreateItem(typeId)` clones the prototype.
+3. Define JSON schema: Stack&Go exports `data.json` with items and their components (BaseItem, Material, Damage, etc.). Each component's `values` map to the corresponding ECS component fields. Recipes are exported too but ignored in Phase 1.
+4. Create JSON loader (Core interface `IItemCatalogLoader` + Unity implementation for file I/O). The loader reads `data.json`, creates `ItemEntity` prototypes with their components, and registers them in `ItemCatalog`.
+5. Persistent typeId assignment: a `TypeIdMapper` class maintains a `name → typeId` mapping persisted as `id_mapping.json`. On load: existing names keep their typeId, new names get `max(existing) + 1`, deleted item IDs are never reused. The mapper is a Core class; file I/O goes through the bridge interface.
+6. Refactor `BaseItemComponent` — remove `_volume` field (grid replaces it), add `_maxStackSize` (int), keep `_typeId` (already added). Fields remaining: typeId, weight, dimensions, durability, maxDurability, condition, maxCondition, description, iconPath, maxStackSize. All cloned per-instance from prototype.
+7. Refactor `ItemEntity` to carry its typeId explicitly
+8. Refactor `IInventoryElement` — `GetId()` returns int (typeId) instead of string name
+9. Update `InventoryObject` BFS methods to use typeId
+10. ~~Update `ItemObject` accordingly~~ (unnecessary — ItemObject is replaced by BatchItem in M2)
+11. Update `PrototypeFactory` to create items from catalog
+12. Create test JSON with sample items
 
-**Decided**: `BaseItemComponent` holds a reference to `ItemDefinition` (shared, immutable) + instance-specific mutable state (durability, condition). This avoids duplicating definition data per instance.
+**Decided**: No separate `ItemDefinition` class. `ItemCatalog` stores `ItemEntity` prototypes with all their components pre-assembled. Creating a new item = `catalog.CreateItem(typeId)` which clones the prototype. Data is duplicated per instance (acceptable trade-off for simplicity).
 
 ---
 
@@ -43,7 +44,7 @@
 1. Replace `ItemObject` with `BatchItem` — ALL leaf nodes are now `BatchItem`. Contains `List<(ItemEntity, int)>` sub-lots. A unique item (key, letter) is a BatchItem with one sub-lot of amount 1. `ItemObject` is deleted.
 2. Tree simplification: only 2 node types remain — `InventoryObject` (branch/container) and `BatchItem` (leaf, always). `IInventoryElement` interface unchanged.
 3. Equivalence-based grouping: items with same typeId live in the same BatchItem, sub-lots split by property differences (durability, condition, enchants)
-4. `AddItem` by default adds to the first compatible BatchItem found. Creates new sub-lot if same type but different state, new BatchItem if different type. Multiple BatchItems of the same type are allowed (player can manually split stacks or keep separate piles). Total amount in a BatchItem cannot exceed `ItemDefinition.maxStackSize`.
+4. `AddItem` by default adds to the first compatible BatchItem found. Creates new sub-lot if same type but different state, new BatchItem if different type. Multiple BatchItems of the same type are allowed (player can manually split stacks or keep separate piles). Total amount in a BatchItem cannot exceed `BaseItemComponent.maxStackSize`.
 5. `Consume(n)` picks random sub-lot (not FIFO, not alphabetical)
 6. `InspectStack()` returns the sub-lot breakdown for UI
 7. `GetTotalAmount()` sums across sub-lots
@@ -118,7 +119,7 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 **Tasks**:
 1. `TetrisGridState` already exists from M3. This milestone adds the UI rendering and interaction on top of it.
 2. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
-4. UI: render grid with item blocks sized by dimensions (w×h from ItemDefinition)
+4. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
 5. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
 6. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
 7. Split view layout: left panel (personal) + right panel (inventory)

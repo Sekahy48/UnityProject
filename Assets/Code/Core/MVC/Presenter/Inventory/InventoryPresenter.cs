@@ -13,17 +13,15 @@ namespace MVC.Presenter.Inventory
     public class InventoryPresenter : IPresenter
     {
         private readonly InventoryView _view;
-        private readonly ILogger _logger;
         private IEntity _entity;
         private int _activeTabIndex = 0;
         private int _pendingTabIndex = -1;
 
         private List<IInventoryElement> _tabInventories = new List<IInventoryElement>();
 
-        public InventoryPresenter(InventoryView view, ILogger logger)
+        public InventoryPresenter(InventoryView view)
         {
             _view = view;
-            _logger = logger;
             _view.OnTabClicked += OnTabClicked;
             _view.OnItemClicked += OnItemClicked;
             _view.OnCloseClicked += OnCloseClicked;
@@ -33,12 +31,12 @@ namespace MVC.Presenter.Inventory
 
         public void Open(IEntity entity, int tabIndex = 1)
         {
-            _logger.Log($"[InventoryPresenter] Open - IsReady: {_view.IsReady()}");
+            CoreLogger.Instance.Log($"[InventoryPresenter] Open - IsReady: {_view.IsReady()}");
             _entity = entity;
             if (!_view.IsReady())
             {
                 _pendingTabIndex = tabIndex;
-                _logger.Log($"[InventoryPresenter] Saved pending tab {tabIndex}");
+                CoreLogger.Instance.Log($"[InventoryPresenter] Saved pending tab {tabIndex}");
                 return;
             }
             OpenInternal(tabIndex);
@@ -46,7 +44,7 @@ namespace MVC.Presenter.Inventory
 
         private void OnViewReady()
         {
-            _logger.Log($"[InventoryPresenter] OnViewReady - pending: {_pendingTabIndex}, entity: {(_entity == null ? "NULL" : "OK")}");
+            CoreLogger.Instance.Log($"[InventoryPresenter] OnViewReady - pending: {_pendingTabIndex}, entity: {(_entity == null ? "NULL" : "OK")}");
             if (_pendingTabIndex >= 0 && _entity != null)
             {
                 int tab = _pendingTabIndex;

@@ -35,8 +35,8 @@ public class GameMain : MonoBehaviour
         IEntityLinker linker = new Unity.UnityEntityLinker();
         linker.Link(player, "playerEntity");
 
-        // Shared logger for Core classes
-        Core.ILogger logger = new Unity.UnityLogger();
+        // Configure static logger for Core classes
+        CoreLogger.Instance = new Unity.UnityLogger();
 
         var dataCtx = new GameDataContext(entityManager);
 
@@ -68,7 +68,7 @@ public class GameMain : MonoBehaviour
         var viewManager = new ViewManager();
         viewManager.InitializeViews(_uiRegistry);
         presenterManager.RegisterPresenter(PresenterType.INV,
-            new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV), logger));
+            new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV)));
     }
 
     void Update()
