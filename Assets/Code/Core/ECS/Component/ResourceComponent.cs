@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 
 namespace ECS.Component
 {
-    public class ResourceComponent : BasicComponent
+    public class ResourceComponent : BasicComponent, IJsonLoadable
     {
         private ResourceType type;
         private int amount;
         private int maxAmount; // Max amount of resources
         private bool renewable;
+
+        public ResourceComponent() {}
 
         public ResourceComponent(ResourceType type, int amount, bool renewable)
         {
@@ -63,6 +66,17 @@ namespace ECS.Component
             {
                 throw new NotSupportedException("Resource is not renewable");
             }
+        }
+
+        public void SetResourceType(ResourceType value) { type = value; }
+        public void SetAmount(int value) { amount = value; maxAmount = value; }
+        public void SetRenewable(bool value) { renewable = value; }
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("resourceType")) SetResourceType(Enum.Parse<ResourceType>(values["resourceType"].ToString()));
+            if (values.ContainsKey("amount")) SetAmount(Convert.ToInt32(values["amount"]));
+            if (values.ContainsKey("renewable")) SetRenewable(Convert.ToBoolean(values["renewable"]));
         }
 
         public override IComponent Clone()

@@ -3,10 +3,15 @@ using System.Collections.Generic;
 
 namespace ECS.Component
 {
-    public class FluidComponent : BasicComponent
+    public class FluidComponent : BasicComponent, IJsonLoadable
     {
         private Dictionary<ResourceType, float> fluids;
         private float maxCapacity;
+
+        public FluidComponent()
+        {
+            this.fluids = new Dictionary<ResourceType, float>();
+        }
 
         public FluidComponent(float maxCapacity)
         {
@@ -70,6 +75,13 @@ namespace ECS.Component
             }
 
             return this.maxCapacity - content;
+        }
+
+        public void SetMaxCapacity(float value) { maxCapacity = value; }
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("maxCapacity")) SetMaxCapacity(Convert.ToSingle(values["maxCapacity"]));
         }
 
         public override IComponent Clone()

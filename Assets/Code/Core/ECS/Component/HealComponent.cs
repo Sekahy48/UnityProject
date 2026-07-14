@@ -1,12 +1,17 @@
+using System;
+using System.Collections.Generic;
+
 namespace ECS.Component
 {
     /// <summary>
     /// Component representing an entity's healing capacity.
     /// </summary>
-    public class HealComponent : BasicComponent
+    public class HealComponent : BasicComponent, IJsonLoadable
     {
         private int healingAmount;       // Base healing amount
         private float bonusMultiplier;   // Bonus multiplier
+
+        public HealComponent() {}
 
         public HealComponent(int healingAmount, float bonusMultiplier)
         {
@@ -26,6 +31,12 @@ namespace ECS.Component
         {
             get => bonusMultiplier;
             set => bonusMultiplier = value;
+        }
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("healingAmount")) HealingAmount = Convert.ToInt32(values["healingAmount"]);
+            if (values.ContainsKey("bonusMultiplier")) BonusMultiplier = Convert.ToSingle(values["bonusMultiplier"]);
         }
 
         public int CalculateHealing()

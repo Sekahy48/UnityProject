@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ECS.Component.InventoryComponents
 {
@@ -14,7 +15,7 @@ namespace ECS.Component.InventoryComponents
     /// <summary>
     /// Gets the general category/type of the material.
     ///
-    public class MaterialComponent : IComponent
+    public class MaterialComponent : IComponent, IJsonLoadable
     {
         #region Atributes
         /// <summary>
@@ -48,6 +49,8 @@ namespace ECS.Component.InventoryComponents
         private float _thermalInsulation;
 
         #endregion
+
+        public MaterialComponent() {}
 
         public MaterialComponent(MaterialType type, String name, float flex, float hard, float transpir, float thermIns)
         {
@@ -167,6 +170,16 @@ namespace ECS.Component.InventoryComponents
         public void SetThermalInsulation(float thermalInsulation)
         {
             _thermalInsulation = thermalInsulation;
+        }
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("materialType")) SetMaterialType(Enum.Parse<MaterialType>(values["materialType"].ToString()));
+            if (values.ContainsKey("materialName")) SetMaterialName(values["materialName"].ToString());
+            if (values.ContainsKey("flexibility")) SetFlexibility(Convert.ToSingle(values["flexibility"]));
+            if (values.ContainsKey("hardness")) SetHardness(Convert.ToSingle(values["hardness"]));
+            if (values.ContainsKey("transpirability")) SetTranspirability(Convert.ToSingle(values["transpirability"]));
+            if (values.ContainsKey("thermalInsulation")) SetThermalInsulation(Convert.ToSingle(values["thermalInsulation"]));
         }
 
         public IComponent Clone()

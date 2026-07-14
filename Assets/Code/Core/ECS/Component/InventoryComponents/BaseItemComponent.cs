@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Observer;
 using Utils;
@@ -31,7 +32,7 @@ namespace ECS.Component
         PART
     }
 
-    public class BaseItemComponent : BasicComponent
+    public class BaseItemComponent : BasicComponent, IJsonLoadable
     {
         /// <summary>
         /// References the item concept this instance belongs to (catalog key).
@@ -44,9 +45,9 @@ namespace ECS.Component
         private float _weight;
 
         /// <summary>
-        /// Volume of the entity.
+        /// Max stack of the entity in the grid-like inventory.
         /// </summary>
-        private float _volume;
+        private int _maxStackSize;
 
         /// <summary>
         /// Durability of the entity.
@@ -66,7 +67,7 @@ namespace ECS.Component
         /// <summary>
         /// Max condition of the entity.
         /// </summary>
-        private const float maxCondition = 100;
+        private const float _maxCondition = 100;
 
         /// <summary>
         /// Description of the component.
@@ -84,16 +85,21 @@ namespace ECS.Component
         /// </summary>
         private Vector2 _dimensions;
 
-        public BaseItemComponent(int typeId, float weight, float volume,
+        public BaseItemComponent()
+        {
+            _dimensions = new Vector2(1, 1);
+        }
+
+        public BaseItemComponent(int typeId, float weight, int maxStackSize,
                                 Vector2 dimensions,
                                 float durability = _maxDurability,
-                                float condition = maxCondition,
+                                float condition = _maxCondition,
                                 String description = "", String iconPath = "")
         {
             ArgumentChecker.CheckNotNull(dimensions, "Dimensions cannot be null");
             _typeId = typeId;
             _weight = weight;
-            _volume = volume;
+            _maxStackSize = maxStackSize;
             _durability = durability;
             _condition = condition;
             _dimensions = dimensions;
@@ -120,20 +126,20 @@ namespace ECS.Component
         }
 
         /// <summary>
-        /// Gets the volume of the component.
+        /// Gets the maximun stack size.
         /// </summary>
-        /// <returns>the volume</returns>
-        public float GetVolume()
+        /// <returns>the maximun stack size</returns>
+        public int GetMaxStackSize()
         {
-            return _volume;
+            return _maxStackSize;
         }
 
         /// <summary>
-        /// Sets the volume of the component.
+        /// Sets the maximun stack size.
         /// </summary>
-        public void SetVolume(float volume)
+        public void SetMaxStackSize(int maxStackSize)
         {
-            _volume = volume;
+            _maxStackSize = maxStackSize;
         }
 
         /// <summary>
@@ -167,7 +173,7 @@ namespace ECS.Component
         /// </summary>
         public void SetCondition(float condition)
         {
-            this._condition = Math.Clamp(condition, 0, maxCondition);
+            this._condition = Math.Clamp(condition, 0, _maxCondition);
         }
 
         /// <summary>
@@ -212,9 +218,31 @@ namespace ECS.Component
             return _typeId;
         }
 
+        public void SetTypeId(int typeId)
+        {
+            _typeId = typeId;
+        }
+
+        public void SetDimensions(Vector2 dimensions)
+        {
+            _dimensions = dimensions;
+        }
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("weight")) SetWeight(Convert.ToSingle(values["weight"]));
+            if (values.ContainsKey("maxStackSize")) SetMaxStackSize(Convert.ToInt32(values["maxStackSize"]));
+            if (values.ContainsKey("durability")) SetDurability(Convert.ToInt32(values["durability"]));
+            if (values.ContainsKey("condition")) SetCondition(Convert.ToSingle(values["condition"]));
+            if (values.ContainsKey("description")) SetDescription(values["description"].ToString());
+            if (values.ContainsKey("iconPath")) SetIconPath(values["iconPath"].ToString());
+            if (values.ContainsKey("dimensionW") && values.ContainsKey("dimensionH"))
+                SetDimensions(new Vector2(Convert.ToSingle(values["dimensionW"]), Convert.ToSingle(values["dimensionH"])));
+        }
+
         public override IComponent Clone()
         {
-            return new BaseItemComponent(_typeId, _weight, _volume,
+            return new BaseItemComponent(_typeId, _weight, _maxStackSize,
                                         _dimensions,
                                         _durability,
                                         _condition,
@@ -228,7 +256,7 @@ namespace ECS.Component
                 other is BaseItemComponent otherBase &&
                 this._typeId == otherBase._typeId &&
                 this._weight == otherBase._weight &&
-                this._volume == otherBase._volume &&
+                this._maxStackSize == otherBase._maxStackSize &&
                 this._durability == otherBase._durability &&
                 this._condition == otherBase._condition &&
                 this._description == otherBase._description &&

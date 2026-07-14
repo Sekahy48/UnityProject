@@ -1,10 +1,13 @@
+using System;
+using System.Collections.Generic;
+
 namespace ECS.Component.InventoryComponents
 {
 
     /// <summary>
     /// Class responsible for storing an object's damage capabilities
     /// </summary>
-    public class DamageComponent : IComponent
+    public class DamageComponent : IComponent, IJsonLoadable
     {
 
         #region Atributes
@@ -24,6 +27,8 @@ namespace ECS.Component.InventoryComponents
         private DamageLevel _impactDmg;
 
         #endregion
+
+        public DamageComponent() {}
 
         public DamageComponent(DamageLevel punc, DamageLevel slash, DamageLevel impc)
         {
@@ -96,6 +101,13 @@ namespace ECS.Component.InventoryComponents
         }
         #endregion
  
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("punctureDmg")) SetPunctureDmg(Enum.Parse<DamageLevel>(values["punctureDmg"].ToString()));
+            if (values.ContainsKey("slashingDmg")) SetSlashingDmg(Enum.Parse<DamageLevel>(values["slashingDmg"].ToString()));
+            if (values.ContainsKey("impactDmg")) SetImpactDmg(Enum.Parse<DamageLevel>(values["impactDmg"].ToString()));
+        }
+
         #region Component
         public IComponent Clone()
         {

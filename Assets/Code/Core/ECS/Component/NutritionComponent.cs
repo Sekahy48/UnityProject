@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 
 namespace ECS.Component
 {
     /// <summary>
     /// Hunger, thirst, macronutrients and reserves. Relevant in Phase 3.
     /// </summary>
-    public class NutritionComponent : BasicComponent
+    public class NutritionComponent : BasicComponent, IJsonLoadable
     {
         private static readonly Random random = new Random();
 
@@ -27,6 +28,8 @@ namespace ECS.Component
         {
             return (float)(min + (max - min) * random.NextDouble());
         }
+
+        public NutritionComponent() {}
 
         public NutritionComponent(float maxHunger, float maxThirst)
         {
@@ -91,6 +94,21 @@ namespace ECS.Component
         public float GetFiber() => fiber;
         public void AddFiber(float fiber) => this.fiber += fiber;
         public void SetFiber(float fiber) => this.fiber = fiber;
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            if (values.ContainsKey("maxHunger")) SetMaxHunger(Convert.ToSingle(values["maxHunger"]));
+            if (values.ContainsKey("maxThirst")) SetMaxThirst(Convert.ToSingle(values["maxThirst"]));
+            if (values.ContainsKey("hunger")) SetHunger(Convert.ToSingle(values["hunger"]));
+            if (values.ContainsKey("thirst")) SetThirst(Convert.ToSingle(values["thirst"]));
+            if (values.ContainsKey("storedKcal")) SetStoredKcal(Convert.ToSingle(values["storedKcal"]));
+            if (values.ContainsKey("storedWater")) SetStoredWater(Convert.ToSingle(values["storedWater"]));
+            if (values.ContainsKey("protein")) SetProtein(Convert.ToSingle(values["protein"]));
+            if (values.ContainsKey("carbohydrates")) SetCarbohydrates(Convert.ToSingle(values["carbohydrates"]));
+            if (values.ContainsKey("fats")) SetFats(Convert.ToSingle(values["fats"]));
+            if (values.ContainsKey("micronutrients")) SetMicronutrients(Convert.ToSingle(values["micronutrients"]));
+            if (values.ContainsKey("fiber")) SetFiber(Convert.ToSingle(values["fiber"]));
+        }
 
         public override IComponent Clone()
         {

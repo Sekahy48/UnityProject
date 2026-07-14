@@ -19,18 +19,19 @@
 **Goal**: Replace string-based item identification with numeric typeIds.
 
 **Tasks**:
-1. ~~Create `ItemDefinition` class~~ — replaced by prototype approach. `ItemCatalog` stores fully assembled `ItemEntity` prototypes (with all their components). Creating a new item = `prototype.Clone()`. No separate definition class needed.
-2. Create `ItemCatalog` class in Core/Item/ — `Dictionary<int, ItemEntity>` of prototypes indexed by typeId. JSON loader creates fully assembled `ItemEntity` prototypes (with BaseItemComponent + any other components) and registers them. When the game needs a new item, `catalog.CreateItem(typeId)` clones the prototype.
-3. Define JSON schema: Stack&Go exports `data.json` with items and their components (BaseItem, Material, Damage, etc.). Each component's `values` map to the corresponding ECS component fields. Recipes are exported too but ignored in Phase 1.
-4. Create JSON loader (Core interface `IItemCatalogLoader` + Unity implementation for file I/O). The loader reads `data.json`, creates `ItemEntity` prototypes with their components, and registers them in `ItemCatalog`.
-5. Persistent typeId assignment: a `TypeIdMapper` class maintains a `name → typeId` mapping persisted as `id_mapping.json`. On load: existing names keep their typeId, new names get `max(existing) + 1`, deleted item IDs are never reused. The mapper is a Core class; file I/O goes through the bridge interface.
-6. Refactor `BaseItemComponent` — remove `_volume` field (grid replaces it), add `_maxStackSize` (int), keep `_typeId` (already added). Fields remaining: typeId, weight, dimensions, durability, maxDurability, condition, maxCondition, description, iconPath, maxStackSize. All cloned per-instance from prototype.
-7. Refactor `ItemEntity` to carry its typeId explicitly
-8. Refactor `IInventoryElement` — `GetId()` returns int (typeId) instead of string name
-9. Update `InventoryObject` BFS methods to use typeId
-10. ~~Update `ItemObject` accordingly~~ (unnecessary — ItemObject is replaced by BatchItem in M2)
-11. Update `PrototypeFactory` to create items from catalog
-12. Create test JSON with sample items
+
+- [x] 1. ~~Create `ItemDefinition` class~~ — replaced by prototype approach. `ItemCatalog` stores fully assembled `ItemEntity` prototypes (with all their components). Creating a new item = `prototype.Clone()`. No separate definition class needed.
+- [x] 2. Create `ItemCatalogue` class in Core/Item/ — `Dictionary<int, ItemEntity>` of prototypes indexed by typeId. JSON loader creates fully assembled `ItemEntity` prototypes (with BaseItemComponent + any other components) and registers them. When the game needs a new item, `catalog.CreateItem(typeId)` clones the prototype.
+- [x] 3. Define JSON schema: Stack&Go exports `data.json` with items and their components (BaseItem, Material, Damage, etc.). Each component's `values` map to the corresponding ECS component fields. Recipes are exported too but ignored in Phase 1.
+- [x] 4. Create `JsonItemCatalogLoader` in Core/Item/. The loader reads `data.json` (path from `CoreConfig.CatalogPath`), creates `ItemEntity` prototypes with their components via `IJsonLoadable.SetFromValues()`, and registers them in `ItemCatalogue`. File paths resolved via `CoreConfig` static class (replaces the original bridge interface approach).
+- [x] 5. Persistent typeId assignment: `TypeIdMapper` class maintains a `name → typeId` mapping persisted as `id_mapping.json` (path from `CoreConfig.MappingPath`). On load: existing names keep their typeId, new names get `max(existing) + 1`, deleted item IDs are never reused. File I/O via `System.IO` + `CoreConfig` static paths (replaces the original bridge interface approach).
+- [x] 6. Refactor `BaseItemComponent` — remove `_volume` field (grid replaces it), add `_maxStackSize` (int), keep `_typeId` (already added). Fields remaining: typeId, weight, dimensions, durability, maxDurability, condition, maxCondition, description, iconPath, maxStackSize. All cloned per-instance from prototype.
+- [x] 7. Item typeId lives in `BaseItemComponent._typeId` (not in `ItemEntity` directly). The loader assigns it via `TypeIdMapper.GetOrAssignId(name)` and sets it with `BaseItemComponent.SetTypeId()`. `ItemEntity` constructor auto-assigns `"ItemEntity"` as its entity type — no longer receives a type string parameter.
+- [ ] 8. Refactor `IInventoryElement` — `GetId()` returns int (typeId) instead of string name
+- [ ] 9. Update `InventoryObject` BFS methods to use typeId
+- ~~10. Update `ItemObject` accordingly~~ (unnecessary — ItemObject is replaced by BatchItem in M2)
+- [ ] 11. Update `PrototypeFactory` to create items from catalog
+- [ ] 12. Create test JSON with sample items
 
 **Decided**: No separate `ItemDefinition` class. `ItemCatalog` stores `ItemEntity` prototypes with all their components pre-assembled. Creating a new item = `catalog.CreateItem(typeId)` which clones the prototype. Data is duplicated per instance (acceptable trade-off for simplicity).
 
@@ -41,16 +42,17 @@
 **Goal**: Items stack visually but maintain internal sub-lots for different states.
 
 **Tasks**:
-1. Replace `ItemObject` with `BatchItem` — ALL leaf nodes are now `BatchItem`. Contains `List<(ItemEntity, int)>` sub-lots. A unique item (key, letter) is a BatchItem with one sub-lot of amount 1. `ItemObject` is deleted.
-2. Tree simplification: only 2 node types remain — `InventoryObject` (branch/container) and `BatchItem` (leaf, always). `IInventoryElement` interface unchanged.
-3. Equivalence-based grouping: items with same typeId live in the same BatchItem, sub-lots split by property differences (durability, condition, enchants)
-4. `AddItem` by default adds to the first compatible BatchItem found. Creates new sub-lot if same type but different state, new BatchItem if different type. Multiple BatchItems of the same type are allowed (player can manually split stacks or keep separate piles). Total amount in a BatchItem cannot exceed `BaseItemComponent.maxStackSize`.
-5. `Consume(n)` picks random sub-lot (not FIFO, not alphabetical)
-6. `InspectStack()` returns the sub-lot breakdown for UI
-7. `GetTotalAmount()` sums across sub-lots
-8. `GetTotalWeight` sums across sub-lots using per-entity weights (volume calculation removed — grid handles capacity)
-9. Create `ItemStateComponent` in Core — tracks item state (fresh, rotten, damaged, etc.) and decay rate. This is what differentiates sub-lots within a BatchItem (a rotten apple vs a fresh one). Decay logic itself is Phase 3, but the component and its data must exist now for sub-lot equivalence checks to work.
-10. Update `InventoryPresenter` to handle stack inspection
+
+- [ ] 1. Replace `ItemObject` with `BatchItem` — ALL leaf nodes are now `BatchItem`. Contains `List<(ItemEntity, int)>` sub-lots. A unique item (key, letter) is a BatchItem with one sub-lot of amount 1. `ItemObject` is deleted.
+- [ ] 2. Tree simplification: only 2 node types remain — `InventoryObject` (branch/container) and `BatchItem` (leaf, always). `IInventoryElement` interface unchanged.
+- [ ] 3. Equivalence-based grouping: items with same typeId live in the same BatchItem, sub-lots split by property differences (durability, condition, enchants)
+- [ ] 4. `AddItem` by default adds to the first compatible BatchItem found. Creates new sub-lot if same type but different state, new BatchItem if different type. Multiple BatchItems of the same type are allowed (player can manually split stacks or keep separate piles). Total amount in a BatchItem cannot exceed `BaseItemComponent.maxStackSize`.
+- [ ] 5. `Consume(n)` picks random sub-lot (not FIFO, not alphabetical)
+- [ ] 6. `InspectStack()` returns the sub-lot breakdown for UI
+- [ ] 7. `GetTotalAmount()` sums across sub-lots
+- [ ] 8. `GetTotalWeight` sums across sub-lots using per-entity weights (volume calculation removed — grid handles capacity)
+- [ ] 9. Create `ItemStateComponent` in Core — tracks item state (fresh, rotten, damaged, etc.) and decay rate. This is what differentiates sub-lots within a BatchItem (a rotten apple vs a fresh one). Decay logic itself is Phase 3, but the component and its data must exist now for sub-lot equivalence checks to work.
+- [ ] 10. Update `InventoryPresenter` to handle stack inspection
 
 **Decided**: Unified leaf node — no distinction between "single item" and "stack". Everything is a `BatchItem`. Eliminates special cases in composite tree logic.
 
@@ -63,17 +65,18 @@
 **Goal**: AddItem checks capacity limits and rejects/penalizes when exceeded.
 
 **Tasks**:
-1. Refactor `StorageComponent` — replace `maxVolume` (float) with `gridW` and `gridH` (int). Grid dimensions define capacity. `maxWeight` stays as float.
-2. Create `TetrisGridState` in Core — data structure that tracks which cells are occupied and by which BatchItem. Grid dimensions come from `StorageComponent.gridW × gridH`. Core only, no UI — rendering is M5.
-3. `AddItem` / `StackOnto` check grid space (via TetrisGridState: can the item's dimensions fit in remaining free cells?) and `StorageComponent.maxWeight` before adding
-4. `CarryCapacity` enforcement: total inventory weight vs character carry capacity
-5. Two capacity systems:
+
+- [ ] 1. Refactor `StorageComponent` — replace `maxVolume` (float) with `gridW` and `gridH` (int). Grid dimensions define capacity. `maxWeight` stays as float.
+- [ ] 2. Create `TetrisGridState` in Core — data structure that tracks which cells are occupied and by which BatchItem. Grid dimensions come from `StorageComponent.gridW × gridH`. Core only, no UI — rendering is M5.
+- [ ] 3. `AddItem` / `StackOnto` check grid space (via TetrisGridState: can the item's dimensions fit in remaining free cells?) and `StorageComponent.maxWeight` before adding
+- [ ] 4. `CarryCapacity` enforcement: total inventory weight vs character carry capacity
+- [ ] 5. Two capacity systems:
    - **Grid space** (hard limit): No free cells that fit the item's dimensions → transfer rejected. Partial if stackable and an existing BatchItem has room under maxStackSize. Notify player: inventory/container full.
    - **Weight** (two thresholds): Soft = transfer allowed but debuff (movement speed reduction, notify overloaded, health consequences stub for Phase 2). Hard (immobile) = transfer rejected entirely, too heavy to move.
-6. Return enum `TransferResult { Success, PartialStack, GridFull, Overloaded, Immobile }` — Success: all moved. PartialStack: some stacked onto existing BatchItem, rest didn't fit. GridFull: no space at all. Overloaded: moved but soft weight exceeded. Immobile: rejected, hard weight limit.
-7. `InventorySystem` fires events: `INVENTORY_FULL`, `OVERWEIGHT`, `IMMOBILE`
-8. Weight debuff integration: overweight → speed multiplier in `MovementComponent` (stub health effects for Phase 2)
-9. UI: weight bar + grid visual (free/occupied cells) update in real time, color-coded by threshold
+- [ ] 6. Return enum `TransferResult { Success, PartialStack, GridFull, Overloaded, Immobile }` — Success: all moved. PartialStack: some stacked onto existing BatchItem, rest didn't fit. GridFull: no space at all. Overloaded: moved but soft weight exceeded. Immobile: rejected, hard weight limit.
+- [ ] 7. `InventorySystem` fires events: `INVENTORY_FULL`, `OVERWEIGHT`, `IMMOBILE`
+- [ ] 8. Weight debuff integration: overweight → speed multiplier in `MovementComponent` (stub health effects for Phase 2)
+- [ ] 9. UI: weight bar + grid visual (free/occupied cells) update in real time, color-coded by threshold
 
 **Decided**: Grid space is a hard limit (reject/partial). Weight has two thresholds — soft (debuff, allowed) and hard (reject, immobile). Health consequences of overload are stubbed as interface for Phase 2.
 
@@ -84,16 +87,17 @@
 **Goal**: Equipment panel with ordered layers, drag & drop, slot disabling.
 
 **Tasks**:
-1. `EquipmentSlot` — ensure List<ItemEntity> is explicitly ordered (index 0 = outermost layer)
-2. Add `enabled` flag to `EquipmentSlot` (default true, false = amputated/injured) and `maxLayers` int (hard cap on stacked items per slot)
-3. Create `ClothingComponent` (rename TBD: `WearComponent` or `WearableComponent`) in Core — determines which `EquipmentSlotType` a wearable item targets. An item is equippable if and only if it has this component (ECS-idiomatic: `HasComponent<ClothingComponent>()`). Fields: targetSlot (EquipmentSlotType), topLayer (bool — if true, nothing can be equipped on top of this item in that slot), garmentCategory (enum: Shirt, Vest, Plate, Robe, Glove, Boot, Helmet, Hood, Satchel... — extensible), layerOrder (int, for Phase 2 damage penetration ordering).
-4. Add layer validation: can this item go in this slot? (check ClothingComponent.targetSlot)
-5. Equipment changes fire `EQUIPMENT_CHANGED` event
-6. Equipping an item removes it from inventory, unequipping adds it back
-7. UI: render 3×4 equipment grid with layer indicators
-8. UI: click slot to see/manage layers
-9. UI: drag from inventory → equipment slot
-10. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect]
+
+- [ ] 1. `EquipmentSlot` — ensure List<ItemEntity> is explicitly ordered (index 0 = outermost layer)
+- [ ] 2. Add `enabled` flag to `EquipmentSlot` (default true, false = amputated/injured) and `maxLayers` int (hard cap on stacked items per slot)
+- [ ] 3. Create `ClothingComponent` (rename TBD: `WearComponent` or `WearableComponent`) in Core — determines which `EquipmentSlotType` a wearable item targets. An item is equippable if and only if it has this component (ECS-idiomatic: `HasComponent<ClothingComponent>()`). Fields: targetSlot (EquipmentSlotType), topLayer (bool — if true, nothing can be equipped on top of this item in that slot), garmentCategory (enum: Shirt, Vest, Plate, Robe, Glove, Boot, Helmet, Hood, Satchel... — extensible), layerOrder (int, for Phase 2 damage penetration ordering).
+- [ ] 4. Add layer validation: can this item go in this slot? (check ClothingComponent.targetSlot)
+- [ ] 5. Equipment changes fire `EQUIPMENT_CHANGED` event
+- [ ] 6. Equipping an item removes it from inventory, unequipping adds it back
+- [ ] 7. UI: render 3×4 equipment grid with layer indicators
+- [ ] 8. UI: click slot to see/manage layers
+- [ ] 9. UI: drag from inventory → equipment slot
+- [ ] 10. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect]
 
 **Decided**: Equipment grid is 3×4. Layout:
 ```
@@ -117,16 +121,17 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 **Goal**: Inventory displayed as tetris grid where grid IS the capacity system. Split layout with personal panel.
 
 **Tasks**:
-1. `TetrisGridState` already exists from M3. This milestone adds the UI rendering and interaction on top of it.
-2. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
-4. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
-5. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
-6. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
-7. Split view layout: left panel (personal) + right panel (inventory)
-8. Health placeholder in personal panel
-9. Weight stats bar below inventory grid
-10. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
-11. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
+
+- [ ] 1. `TetrisGridState` already exists from M3. This milestone adds the UI rendering and interaction on top of it.
+- [ ] 2. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
+- [ ] 3. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
+- [ ] 4. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
+- [ ] 5. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
+- [ ] 6. Split view layout: left panel (personal) + right panel (inventory)
+- [ ] 7. Health placeholder in personal panel
+- [ ] 8. Weight stats bar below inventory grid
+- [ ] 9. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
+- [ ] 10. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 
@@ -137,13 +142,14 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 **Goal**: Open external inventories (chests, carts) and transfer items between them.
 
 **Tasks**:
-1. External container opens as additional panel (extra column). Support opening TWO external containers simultaneously (e.g. cart-to-cart transfer without going through personal inventory).
-2. World item pickup: actions (chopping, mining, etc.) spawn items as world entities with position. Pickup goes to **hands** (carry buffer) → player loads into cart/chest/storage (world containers). Bulky items (logs, planks, ore) do NOT go into personal inventory — personal inventory is pocket/backpack scale only. Crafting uses **proximity**: pulls materials from ALL accessible sources — personal inventory, backpack, AND nearby world containers (cart, chest, etc.). Hands buffer details TBD: capacity, interaction with equipped tool, slot reuse vs dedicated carry state.
-3. Drag & drop between your inventory and external container
-4. Transfer respects both containers' grid space and weight limits
-5. Container closes when player moves away (distance check or explicit close)
-6. NPC/cart/wheelbarrow inventories work the same way — carts are central to logistics
-7. Backpack/bag as equipped container: inventory panel gets tabs (pockets, backpack, shoulder bag, etc.). Clicking a tab switches the grid view to that container's grid. Each tab has its own `TetrisGridState` and `StorageComponent`.
+
+- [ ] 1. External container opens as additional panel (extra column). Support opening TWO external containers simultaneously (e.g. cart-to-cart transfer without going through personal inventory).
+- [ ] 2. World item pickup: actions (chopping, mining, etc.) spawn items as world entities with position. Pickup goes to **hands** (carry buffer) → player loads into cart/chest/storage (world containers). Bulky items (logs, planks, ore) do NOT go into personal inventory — personal inventory is pocket/backpack scale only. Crafting uses **proximity**: pulls materials from ALL accessible sources — personal inventory, backpack, AND nearby world containers (cart, chest, etc.). Hands buffer details TBD: capacity, interaction with equipped tool, slot reuse vs dedicated carry state.
+- [ ] 3. Drag & drop between your inventory and external container
+- [ ] 4. Transfer respects both containers' grid space and weight limits
+- [ ] 5. Container closes when player moves away (distance check or explicit close)
+- [ ] 6. NPC/cart/wheelbarrow inventories work the same way — carts are central to logistics
+- [ ] 7. Backpack/bag as equipped container: inventory panel gets tabs (pockets, backpack, shoulder bag, etc.). Clicking a tab switches the grid view to that container's grid. Each tab has its own `TetrisGridState` and `StorageComponent`.
 
 **Decided**: Backpacks/bags add grid space but share the character's weight limit. Total carry weight = personal inventory contents + backpack item weight + backpack contents weight. The backpack's own `StorageComponent` defines its grid dimensions (extra grid space), but weight rolls up to the character's `CarryCapacity`. The value of a backpack is extra grid cells — it lets you carry more items that you couldn't fit in pockets alone.
 
@@ -154,12 +160,13 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 **Goal**: Edge cases, polish, and full flow testing.
 
 **Tasks**:
-1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?)
-2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells
-3. Edge cases: item removed from middle of grid → gap handling
-4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
-5. UI polish: drag feedback, placement preview, invalid placement indicator
-6. Performance: stress test with large grids (cart/chest with many items)
+
+- [ ] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?)
+- [ ] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells
+- [ ] 3. Edge cases: item removed from middle of grid → gap handling
+- [ ] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
+- [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
+- [ ] 6. Performance: stress test with large grids (cart/chest with many items)
 
 **Note**: The old "organization bonus" concept is no longer needed — with grid-as-capacity, good organization is its own reward (more items fit). If a bonus mechanic is desired later, it can be added as a Phase 2+ feature.
 
