@@ -10,22 +10,22 @@ namespace MVC.Model
     /// </summary>
     public class Logic
     {
-        private readonly EntityManager entityManager;
+        private readonly EntityManager _entityManager;
         private MapManager MapManager;
 
-        public Logic()
+        public Logic(EntityManager entityManager)
         {
-            entityManager = new EntityManager();
+            _entityManager = entityManager;
         }
 
         public EntityManager GetEntityManager()
         {
-            return entityManager;
+            return _entityManager;
         }
 
         public List<IEntity> GetEntitiesWithComponent(Type componentName)
         {
-            return entityManager.GetEntitiesWithComponent(componentName);
+            return _entityManager.GetEntitiesWithComponent(componentName);
         }
 
         public void SetCurrentMap(string map)
@@ -41,7 +41,7 @@ namespace MVC.Model
 
         public IEntity GetPlayer()
         {
-            return entityManager.GetPlayer();
+            return _entityManager.GetPlayer();
         }
     }
 }

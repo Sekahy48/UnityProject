@@ -1,3 +1,5 @@
+using ECS.Component;
+
 namespace ECS.Entity
 {
     public class ItemEntity : InGameEntity
@@ -14,6 +16,23 @@ namespace ECS.Entity
         public new ItemEntity Clone()
         {
             return (ItemEntity)base.Clone();
+        }
+
+        public string GetDisplayName()
+        {
+
+            string displayName;
+
+            if (this.GetComponent<NameComponent>() != null)
+            {
+                displayName = this.GetComponent<NameComponent>().DisplayName;  
+            }
+            else
+            {
+                displayName = this.GetComponent<BaseItemComponent>().GetGenericName();
+            }
+
+            return displayName;
         }
     }
 }

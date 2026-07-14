@@ -2,7 +2,7 @@ namespace MVC.View.UI.Inventory
 {
     public class ItemDisplayData
     {
-        public string Id;
+        public int Id;
         public string Name;
         public int Amount;
         public string IconPath;

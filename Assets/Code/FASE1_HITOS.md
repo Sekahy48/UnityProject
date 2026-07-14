@@ -27,11 +27,13 @@
 - [x] 5. Persistent typeId assignment: `TypeIdMapper` class maintains a `name → typeId` mapping persisted as `id_mapping.json` (path from `CoreConfig.MappingPath`). On load: existing names keep their typeId, new names get `max(existing) + 1`, deleted item IDs are never reused. File I/O via `System.IO` + `CoreConfig` static paths (replaces the original bridge interface approach).
 - [x] 6. Refactor `BaseItemComponent` — remove `_volume` field (grid replaces it), add `_maxStackSize` (int), keep `_typeId` (already added). Fields remaining: typeId, weight, dimensions, durability, maxDurability, condition, maxCondition, description, iconPath, maxStackSize. All cloned per-instance from prototype.
 - [x] 7. Item typeId lives in `BaseItemComponent._typeId` (not in `ItemEntity` directly). The loader assigns it via `TypeIdMapper.GetOrAssignId(name)` and sets it with `BaseItemComponent.SetTypeId()`. `ItemEntity` constructor auto-assigns `"ItemEntity"` as its entity type — no longer receives a type string parameter.
-- [ ] 8. Refactor `IInventoryElement` — `GetId()` returns int (typeId) instead of string name
-- [ ] 9. Update `InventoryObject` BFS methods to use typeId
-- ~~10. Update `ItemObject` accordingly~~ (unnecessary — ItemObject is replaced by BatchItem in M2)
-- [ ] 11. Update `PrototypeFactory` to create items from catalog
+- [x] 8. Refactor `IInventoryElement` — `GetId()` returns int (typeId) instead of string name. Remove `GetTotalVolume()` from interface and all implementations (volume replaced by grid).
+- [x] 9. Update `InventoryObject` BFS methods to use typeId
+- [x] 10. Update `ItemObject` accordingly (adapt to int-based IDs, remove volume references — eases BatchItem transition in M2)
+- [x] 11. Update `PrototypeFactory` to create items from catalog
 - [ ] 12. Create test JSON with sample items
+- [x] 13. Delete obsolete `ItemDatabase`, `ConcreteItemBuilder`, and `IItemBuilder` (replaced by `ItemCatalogue` + prototype pattern)
+- [x] 14. Fix `InventoryView.OnItemClicked` event signature from `Action<string>` to `Action<int>`, update `ItemDisplayData.Id` to int
 
 **Decided**: No separate `ItemDefinition` class. `ItemCatalog` stores `ItemEntity` prototypes with all their components pre-assembled. Creating a new item = `catalog.CreateItem(typeId)` which clones the prototype. Data is duplicated per instance (acceptable trade-off for simplicity).
 
@@ -184,3 +186,5 @@ The `ItemType` enum currently acts as an explicit category. But with ECS composi
 - [ ] Stack&Go full bridge (automated JSON export → item catalog)
 - [ ] Save/load inventory state (serialization)
 - [ ] Item tooltips with detailed stats
+- [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)
+- [ ] Move `prototypes` dictionary out of `EntityManager` — entity creation should go through `PrototypeFactory`, not be managed internally by `EntityManager`

@@ -13,21 +13,14 @@ namespace ECS.Systems
         {
             InventoryComponent inventoryComponent = entity.GetComponent<InventoryComponent>();
             if (inventoryComponent != null)
-            {
-                float totalVolume = inventoryComponent.Inventory.GetTotalVolume();
+            { 
                 float totalWeight = inventoryComponent.Inventory.GetTotalWeight();
-                CoreLogger.Instance.Log("Total volume: " + totalVolume + ", Total weight: " + totalWeight);
+                CoreLogger.Instance.Log("Total weight: " + totalWeight);
 
                 // Physical carry capacity check
                 if (entity.HasComponent(typeof(BodyComponent)))
                 {
-                    float carryWeight = CarryCapacity.GetMaxCarryWeight(entity);
-                    float carryVolume = CarryCapacity.GetMaxCarryVolume(entity);
-
-                    if (carryVolume < totalVolume)
-                    {
-                        CoreLogger.Instance.LogWarning("Volume exceeds carry capacity. Max: " + carryVolume);
-                    }
+                    float carryWeight = CarryCapacity.GetMaxCarryWeight(entity); 
 
                     float weightRatio = totalWeight / carryWeight;
                     if (weightRatio > 0.6f && weightRatio <= 0.8f)

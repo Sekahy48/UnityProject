@@ -8,6 +8,10 @@ using MVC.Presenter.Inventory;
 using MVC.View;
 using Core;
 using Core.Contexts;
+using Item;
+using MVC.Model;
+using Factories;
+
 
 /// <summary>
 /// Unity entry point. Builds the contexts, links entities and starts up.
@@ -21,8 +25,13 @@ public class GameMain : MonoBehaviour
     void Awake()
     {
         // ---- Create Core contexts ----
-        var logic = new MVC.Model.Logic();
-        var entityManager = logic.GetEntityManager();
+        ItemCatalogue itemCatalogue = new ItemCatalogue();
+        JsonItemCatalogLoader jsonItemCatalogLoader = new JsonItemCatalogLoader();
+        jsonItemCatalogLoader.LoadInto(itemCatalogue);
+
+        
+        EntityManager entityManager = new EntityManager(new PrototypeFactory(itemCatalogue));
+        Logic logic = new Logic(entityManager);
 
         IEntity player = entityManager.CreateEntity("playerEntity");
         if (player == null)

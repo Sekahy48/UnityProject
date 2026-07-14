@@ -1,6 +1,7 @@
 using ECS.Component;
 using ECS.Entity;
 using Inventory;
+using Item;
 
 namespace Factories
 {
@@ -8,9 +9,16 @@ namespace Factories
     /// Creates entity prototypes with pure Core components.
     /// Does NOT add UnityEntityComponent — IEntityLinker does that from Unity.
     /// </summary>
-    public static class PrototypeFactory
+    public class PrototypeFactory
     {
-        public static IEntity CreateResourceNodePrototype()
+        private ItemCatalogue _itemCatalogue;
+
+        public PrototypeFactory(ItemCatalogue itemCatalogue)
+        {
+            _itemCatalogue = itemCatalogue;
+        }
+
+        public IEntity CreateResourceNodePrototype()
         {
             ResourceType type = ResourceType.WOOD;
             var e = new InGameEntity(IdGenerator.GenerateNewId(), "resourceNode");
@@ -18,7 +26,7 @@ namespace Factories
             return e;
         }
 
-        public static IEntity CreateAliveEntityPrototype()
+        public IEntity CreateAliveEntityPrototype()
         {
             var e = new InGameEntity(IdGenerator.GenerateNewId(), "aliveEntity");
             e.AddComponent(new HealthComponent(100));
@@ -31,7 +39,7 @@ namespace Factories
         /// Position initialized to (0,0,0) — TransformSyncSystem will sync it
         /// with the GameObject's actual Transform after the Link.
         /// </summary>
-        public static IEntity CreatePlayerEntityPrototype()
+        public IEntity CreatePlayerEntityPrototype()
         {
             var e = new InGameEntity(IdGenerator.GenerateNewId(), "playerEntity");
             e.AddComponent(new HealthComponent(100));
@@ -53,5 +61,10 @@ namespace Factories
 
             return e;
         }
+    
+        public ItemEntity CreateItemFromPrototype(int typeId)
+        {
+            return _itemCatalogue.CreateItem(typeId);
+        } 
     }
 }

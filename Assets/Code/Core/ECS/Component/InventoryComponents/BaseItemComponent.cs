@@ -38,6 +38,11 @@ namespace ECS.Component
         /// References the item concept this instance belongs to (catalog key).
         /// </summary>
         private int _typeId;
+        
+        /// <summary>
+        /// Generic name of the item/concept name. Ex: Sword (not "Tizona" or "Excalibur").
+        /// </summary>
+        private string _genericName;
 
         /// <summary>
         /// Weight of the entity.
@@ -90,7 +95,7 @@ namespace ECS.Component
             _dimensions = new Vector2(1, 1);
         }
 
-        public BaseItemComponent(int typeId, float weight, int maxStackSize,
+        public BaseItemComponent(int typeId, string genericName, float weight, int maxStackSize,
                                 Vector2 dimensions,
                                 float durability = _maxDurability,
                                 float condition = _maxCondition,
@@ -98,6 +103,7 @@ namespace ECS.Component
         {
             ArgumentChecker.CheckNotNull(dimensions, "Dimensions cannot be null");
             _typeId = typeId;
+            _genericName = genericName;
             _weight = weight;
             _maxStackSize = maxStackSize;
             _durability = durability;
@@ -223,6 +229,16 @@ namespace ECS.Component
             _typeId = typeId;
         }
 
+        public string GetGenericName()
+        {
+            return _genericName;
+        }
+
+        public void SetGenericName(string genericName)
+        {
+            _genericName = genericName;
+        }
+
         public void SetDimensions(Vector2 dimensions)
         {
             _dimensions = dimensions;
@@ -242,7 +258,7 @@ namespace ECS.Component
 
         public override IComponent Clone()
         {
-            return new BaseItemComponent(_typeId, _weight, _maxStackSize,
+            return new BaseItemComponent(_typeId, _genericName, _weight, _maxStackSize,
                                         _dimensions,
                                         _durability,
                                         _condition,

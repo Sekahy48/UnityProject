@@ -9,25 +9,25 @@ namespace Inventory
     public class InventoryObject : IInventoryElement
     {
         private List<IInventoryElement> _inventory;
-        private string _id;
+        private int _id;
         private ItemEntity _item;
 
         public InventoryObject(ItemEntity item)
         {
             AC.CheckNotNull(item, item.GetCompoundIdentification().ToString());
-            this._id = item.GetName();
+            this._id = item.GetComponent<BaseItemComponent>().GetTypeId();
             this._item = item;
             this._inventory = new List<IInventoryElement>();
         }
 
         public InventoryObject()
         {
-            this._id = "root";
+            this._id = 0;
             this._item = null;
             this._inventory = new List<IInventoryElement>();
         }
 
-        public string GetId() => this._id;
+        public int GetId() => this._id;
         public ItemEntity GetItemEntity() => this._item;
         public bool IsLeaf() => false;
         public int GetAmount() => 1;
@@ -36,7 +36,7 @@ namespace Inventory
 
         //#region BFS helper
 
-        private IInventoryElement BfsFind(string id)
+        private IInventoryElement BfsFind(int id)
         {
             Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
             foreach (IInventoryElement elem in _inventory)
@@ -54,7 +54,7 @@ namespace Inventory
             return null;
         }
 
-        private List<IInventoryElement> BfsFindAll(string id)
+        private List<IInventoryElement> BfsFindAll(int id)
         {
             List<IInventoryElement> results = new List<IInventoryElement>();
             Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
@@ -124,7 +124,7 @@ namespace Inventory
                 AddItem(item, amount);
         }
 
-        public int ModifyAmount(string id, int amount)
+        public int ModifyAmount(int id, int amount)
         {
             AC.CheckNotNull(id, "id");
             IInventoryElement found = BfsFind(id);
@@ -136,13 +136,13 @@ namespace Inventory
             return modified;
         }
 
-        public bool Contains(string id)
+        public bool Contains(int id)
         {
             AC.CheckNotNull(id, "id");
             return BfsFind(id) != null;
         }
 
-        public int GetAmount(string id)
+        public int GetAmount(int id)
         {
             AC.CheckNotNull(id, "id");
             int total = 0;
@@ -151,19 +151,19 @@ namespace Inventory
             return total;
         }
 
-        public void DeleteItem(string id)
+        public void DeleteItem(int id)
         {
             AC.CheckNotNull(id, "id");
             ModifyAmount(id, -GetAmount(id));
         }
 
-        public IInventoryElement Find(string id)
+        public IInventoryElement Find(int id)
         {
             AC.CheckNotNull(id, "id");
             return BfsFind(id);
         }
 
-        public List<IInventoryElement> FindNodes(string id)
+        public List<IInventoryElement> FindNodes(int id)
         {
             AC.CheckNotNull(id, "id");
             return BfsFindAll(id);
@@ -199,7 +199,7 @@ namespace Inventory
             AddItemHere(item, amount);
         }
 
-        public int ModifyAmountHere(string id, int amount)
+        public int ModifyAmountHere(int id, int amount)
         {
             AC.CheckNotNull(id, "id");
             foreach (IInventoryElement elem in _inventory)
@@ -215,13 +215,13 @@ namespace Inventory
             return 0;
         }
 
-        public bool ContainsHere(string id)
+        public bool ContainsHere(int id)
         {
             AC.CheckNotNull(id, "id");
             return FindHere(id) != null;
         }
 
-        public int GetAmountHere(string id)
+        public int GetAmountHere(int id)
         {
             AC.CheckNotNull(id, "id");
             int total = 0;
@@ -231,7 +231,7 @@ namespace Inventory
             return total;
         }
 
-        public void DeleteItemHere(string id)
+        public void DeleteItemHere(int id)
         {
             AC.CheckNotNull(id, "id");
             List<IInventoryElement> snapshot = new List<IInventoryElement>(_inventory);
@@ -240,7 +240,7 @@ namespace Inventory
                     _inventory.Remove(elem);
         }
 
-        public IInventoryElement FindHere(string id)
+        public IInventoryElement FindHere(int id)
         {
             AC.CheckNotNull(id, "id");
             foreach (IInventoryElement elem in _inventory)
@@ -248,7 +248,7 @@ namespace Inventory
             return null;
         }
 
-        public List<IInventoryElement> FindNodesHere(string id)
+        public List<IInventoryElement> FindNodesHere(int id)
         {
             AC.CheckNotNull(id, "id");
             List<IInventoryElement> results = new List<IInventoryElement>();
@@ -299,15 +299,7 @@ namespace Inventory
             foreach (IInventoryElement elem in _inventory)
                 total += elem.GetTotalWeight();
             return total;
-        }
-
-        public float GetTotalVolume()
-        {
-            float total = 0f;
-            foreach (IInventoryElement elem in _inventory)
-                total += elem.GetTotalVolume();
-            return total;
-        }
+        } 
 
         public bool Equivalent(IInventoryElement other)
         {

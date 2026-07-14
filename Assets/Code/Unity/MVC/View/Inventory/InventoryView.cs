@@ -23,13 +23,12 @@ namespace MVC.View
         private VisualElement _statsBar;
         private VisualElement _itemScroll;
 
-        private Label _weightLabel;
-        private Label _volumeLabel;
+        private Label _weightLabel; 
 
         private bool _isReady = false;
 
         public event Action<int> OnTabClicked;
-        public event Action<string> OnItemClicked;
+        public event Action<int> OnItemClicked;
         public event Action OnCloseClicked;
         public event Action OnReady;
 
@@ -59,8 +58,7 @@ namespace MVC.View
             _tabList     = _root.Q<VisualElement>("tab-list");
             _itemGrid    = _root.Q<VisualElement>("item-grid");
             _titleBar    = _root.Q<VisualElement>("title-bar");
-            _weightLabel = _root.Q<Label>("weight-label");
-            _volumeLabel = _root.Q<Label>("volume-label");
+            _weightLabel = _root.Q<Label>("weight-label"); 
             _contentPanel = _root.Q<VisualElement>("content-panel");
             _statsBar     = _root.Q<VisualElement>("stats-bar");
             _itemScroll   = _root.Q<VisualElement>("item-scroll");
@@ -114,7 +112,7 @@ namespace MVC.View
                 VisualElement card = _itemTemplate.CloneTree();
                 card.Q<Label>("item-name").text = item.Name;
                 card.Q<Label>("item-amount").text = item.Amount > 1 ? item.Amount.ToString() : "";
-                string capturedId = item.Id;
+                int capturedId = item.Id;
                 card.RegisterCallback<ClickEvent>(_ => OnItemClicked?.Invoke(capturedId));
                 _itemGrid.Add(card);
             }
@@ -138,10 +136,9 @@ namespace MVC.View
                 existing.style.display = DisplayStyle.None;
         }
     
-        public void UpdateStats(float currentWeight, float maxWeight, float currentVolume, float maxVolume)
+        public void UpdateStats(float currentWeight, float maxWeight)
         {
-            _weightLabel.text = $"Peso: {currentWeight:F1}/{maxWeight:F1} kg";
-            _volumeLabel.text = $"Volumen: {currentVolume:F1}/{maxVolume:F1} L";
+            _weightLabel.text = $"Peso: {currentWeight:F1}/{maxWeight:F1} kg"; 
         }
 
         private void RegisterDrag()

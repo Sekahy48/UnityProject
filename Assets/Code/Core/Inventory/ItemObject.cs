@@ -7,18 +7,18 @@ namespace Inventory
 {
     public class ItemObject : IInventoryElement
     {
-        private string _id;
+        private int _id;
         private ItemEntity _item;
         private int _amount;
 
         public ItemObject(ItemEntity item, int amount)
         {
-            this._id = item.GetName();
+            this._id = item.GetComponent<BaseItemComponent>().GetTypeId();
             this._item = item;
             this._amount = Math.Max(0, amount);
         }
 
-        public string GetId() => _id;
+        public int GetId() => _id;
         public ItemEntity GetItemEntity() => _item;
         public bool IsLeaf() => true;
         public int GetAmount() => _amount;
@@ -31,7 +31,7 @@ namespace Inventory
         public void AddItemHere(ItemEntity item, int amount) { }
         public void StackOntoHere(ItemEntity item, int amount) { }
 
-        public int ModifyAmount(string id, int amount)
+        public int ModifyAmount(int id, int amount)
         {
             if (!this._id.Equals(id)) return 0;
             int before = _amount;
@@ -39,23 +39,23 @@ namespace Inventory
             return Math.Abs(_amount - before);
         }
 
-        public int ModifyAmountHere(string id, int amount) => ModifyAmount(id, amount);
+        public int ModifyAmountHere(int id, int amount) => ModifyAmount(id, amount);
 
-        public bool Contains(string id) => this._id.Equals(id);
-        public bool ContainsHere(string id) => Contains(id);
+        public bool Contains(int id) => this._id.Equals(id);
+        public bool ContainsHere(int id) => Contains(id);
 
-        public int GetAmount(string id) => this._id.Equals(id) ? _amount : 0;
-        public int GetAmountHere(string id) => GetAmount(id);
+        public int GetAmount(int id) => this._id.Equals(id) ? _amount : 0;
+        public int GetAmountHere(int id) => GetAmount(id);
 
-        public void DeleteItem(string id) { if (this._id.Equals(id)) _amount = 0; }
-        public void DeleteItemHere(string id) => DeleteItem(id);
+        public void DeleteItem(int id) { if (this._id.Equals(id)) _amount = 0; }
+        public void DeleteItemHere(int id) => DeleteItem(id);
 
-        public IInventoryElement Find(string id) => this._id.Equals(id) ? this : null;
-        public IInventoryElement FindHere(string id) => Find(id);
+        public IInventoryElement Find(int id) => this._id.Equals(id) ? this : null;
+        public IInventoryElement FindHere(int id) => Find(id);
 
-        public List<IInventoryElement> FindNodes(string id) =>
+        public List<IInventoryElement> FindNodes(int id) =>
             this._id.Equals(id) ? new List<IInventoryElement> { this } : new List<IInventoryElement>();
-        public List<IInventoryElement> FindNodesHere(string id) => FindNodes(id);
+        public List<IInventoryElement> FindNodesHere(int id) => FindNodes(id);
 
         public void ClearInventory() { }
         public void CleanTree() { }
@@ -66,13 +66,7 @@ namespace Inventory
         {
             BaseItemComponent baseItem = _item.GetComponent<BaseItemComponent>();
             return baseItem.GetWeight() * _amount;
-        }
-
-        public float GetTotalVolume()
-        {
-            BaseItemComponent baseItem = _item.GetComponent<BaseItemComponent>();
-            return baseItem.GetVolume() * _amount;
-        }
+        } 
 
         public bool Equivalent(IInventoryElement other)
         {

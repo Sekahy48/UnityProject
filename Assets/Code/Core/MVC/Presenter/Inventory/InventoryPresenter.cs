@@ -113,16 +113,15 @@ namespace MVC.Presenter.Inventory
             _view.ShowInventoryPanel();
             foreach (IInventoryElement elem in inventory.FlattenInventory())
             {
-                ItemEntity itemEntity = elem.GetItemEntity();
-                BaseItemComponent baseItem = itemEntity
-                    .GetComponent<BaseItemComponent>();
+                ItemEntity itemEntity = elem.GetItemEntity(); 
 
+                BaseItemComponent baseItemComponent = itemEntity.GetComponent<BaseItemComponent>();  
                 items.Add(new ItemDisplayData
                 {
-                    Id = itemEntity.GetName(),
-                    Name = itemEntity.GetName(),
+                    Id = baseItemComponent.GetTypeId(),
+                    Name = itemEntity.GetDisplayName(),
                     Amount = elem.GetAmount(),
-                    IconPath = baseItem?.GetIconPath(),
+                    IconPath = baseItemComponent?.GetIconPath(),
                     IsContainer = itemEntity.HasComponent(typeof(StorageComponent)),
                     TabIndex = GetTabIndexForContainer(itemEntity)
                 });
@@ -132,7 +131,7 @@ namespace MVC.Presenter.Inventory
             UpdateStats();
         }
 
-        private void OnItemClicked(string itemId)
+        private void OnItemClicked(int itemId)
         {
             InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
             IInventoryElement found = invComp?.Inventory.Find(itemId);
@@ -153,12 +152,10 @@ namespace MVC.Presenter.Inventory
 
             if (invComp == null || !_entity.HasComponent(typeof(BodyComponent))) return;
 
-            float currentWeight = invComp.Inventory.GetTotalWeight();
-            float currentVolume = invComp.Inventory.GetTotalVolume();
-            float maxWeight = CarryCapacity.GetMaxCarryWeight(_entity);
-            float maxVolume = CarryCapacity.GetMaxCarryVolume(_entity);
+            float currentWeight = invComp.Inventory.GetTotalWeight(); 
+            float maxWeight = CarryCapacity.GetMaxCarryWeight(_entity); 
 
-            _view.UpdateStats(currentWeight, maxWeight, currentVolume, maxVolume);
+            _view.UpdateStats(currentWeight, maxWeight);
         }
 
         private int GetTabIndexForContainer(ItemEntity entity) => -1;

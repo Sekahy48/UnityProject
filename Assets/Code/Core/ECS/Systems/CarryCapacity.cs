@@ -49,39 +49,6 @@ namespace ECS.Systems
             }
 
             return carryBase * factorSex * factorAge * factorHunger * factorThirst * factorFatigue;
-        }
-
-        public static float GetMaxCarryVolume(IEntity entity)
-        {
-            BodyComponent body = entity.GetComponent<BodyComponent>();
-            EnergyComponent energy = entity.GetComponent<EnergyComponent>();
-            NutritionComponent nutrition = entity.GetComponent<NutritionComponent>();
-
-            if (body == null) return 0f;
-
-            float muscleMass = body.GetMuscleMass();
-            float heightCm = body.GetHeight() * 100f;
-            float volumeBase = 8.0f + (heightCm - 170f) * 0.05f + muscleMass * 0.1f;
-
-            float factorHunger = 1.0f;
-            float factorThirst = 1.0f;
-            float factorFatigue = 1.0f;
-
-            if (nutrition != null)
-            {
-                float maxHunger = nutrition.GetMaxHunger();
-                float maxThirst = nutrition.GetMaxThirst();
-                if (maxHunger > 0) factorHunger  = 1.0f - (nutrition.GetHunger() / maxHunger) * 0.30f;
-                if (maxThirst > 0) factorThirst  = 1.0f - (nutrition.GetThirst() / maxThirst) * 0.40f;
-            }
-
-            if (energy != null)
-            {
-                float maxFatigue = energy.GetMaxFatigue();
-                if (maxFatigue > 0) factorFatigue = 1.0f - (energy.GetFatigue() / maxFatigue) * 0.35f;
-            }
-
-            return volumeBase * factorHunger * factorThirst * factorFatigue;
-        }
+        } 
     }
 }
