@@ -36,6 +36,39 @@ namespace Item
             return prototype.Clone();
         }
 
+        public IEnumerable<ItemEntity> GetAll()
+        {
+            return prototipes.Values;
+        }
 
+        public void LogCatalogContents()
+        {
+            CoreLogger.Instance.Log($"=== ItemCatalogue: {prototipes.Count} prototypes ===");
+
+            foreach (var kvp in prototipes)
+            {
+                ItemEntity proto = kvp.Value;
+                BaseItemComponent baseItem = proto.GetComponent<BaseItemComponent>();
+
+                string name = baseItem != null ? baseItem.GetGenericName() : "???";
+                string line = $"  [{kvp.Key}] {name}";
+
+                // Listar componentes
+                List<string> compNames = new List<string>();
+                foreach (IComponent comp in proto.GetComponents())
+                {
+                    string compName = comp.GetType().Name;
+                    if (comp is BaseItemComponent) continue; // ya sale arriba
+                    compNames.Add(compName);
+                }
+
+                if (compNames.Count > 0)
+                    line += " | " + string.Join(", ", compNames);
+
+                CoreLogger.Instance.Log(line);
+            }
+
+            CoreLogger.Instance.Log("=== End of catalog ===");
+        }
     }
 }

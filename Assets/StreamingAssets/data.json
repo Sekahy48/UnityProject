@@ -1,0 +1,193 @@
+{
+  "collection": "Artisan",
+  "items": [
+    {
+      "name": "Espada de hierro",
+      "description": "Una hoja forjada en hierro con empuñadura de cuero. Equilibrada y fiable, es el arma predilecta de soldados y mercenarios por igual.",
+      "imagePath": "images/espada.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 3,
+            "maxStackSize": 1,
+            "dimensionW": 1,
+            "weight": 3.5
+          }
+        },
+        {
+          "type": "Damage",
+          "values": {
+            "impactDmg": "MLOW",
+            "slashingDmg": "HIGH",
+            "punctureDmg": "MEDIUM"
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.65,
+            "materialName": "Common steel",
+            "thermalInsulation": 0,
+            "flexibility": 0.5,
+            "materialType": "METAL",
+            "transpirability": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Arco corto",
+      "description": "Un arco ligero tallado en madera de tejo. Sacrifica alcance por velocidad, ideal para emboscadas y combate a corta distancia",
+      "imagePath": "images/arco.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 3,
+            "maxStackSize": 1,
+            "dimensionW": 2,
+            "weight": 1.8
+          }
+        },
+        {
+          "type": "Damage",
+          "values": {
+            "impactDmg": "MLOW",
+            "slashingDmg": "LOW",
+            "punctureDmg": "HIGH"
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.85,
+            "materialName": "Hard wood",
+            "thermalInsulation": 0.6,
+            "flexibility": 0.3,
+            "materialType": "WOOD",
+            "transpirability": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Manzana",
+      "description": "Una manzana roja y jugosa, recién recogida. Calma el hambre al instante y su dulzor levanta el ánimo en los días más largos.",
+      "imagePath": "images/manzana.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 1,
+            "maxStackSize": 10,
+            "dimensionW": 1,
+            "weight": 0.2
+          }
+        },
+        {
+          "type": "Nutrition",
+          "values": {
+            "carbohydrates": 25,
+            "fiber": 4.4,
+            "fats": 0.3,
+            "protein": 0.5,
+            "micronutrients": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "Odre",
+      "description": "Un pellejo curtido cosido con hilo encerado. Mantiene el agua fresca durante horas de marcha bajo el sol.",
+      "imagePath": "images/odre.png",
+      "components": [
+        {
+          "type": "Fluid",
+          "values": {
+            "maxCapacity": 1.5
+          }
+        },
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 2,
+            "maxStackSize": 1,
+            "dimensionW": 1,
+            "weight": 0.5
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.15,
+            "materialName": "Leather",
+            "thermalInsulation": 0.85,
+            "flexibility": 1,
+            "materialType": "CLOTH",
+            "transpirability": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Venda",
+      "description": "Tiras de lino limpio enrolladas con cuidado. Detienen el sangrado y protegen las heridas de la suciedad del camino.",
+      "imagePath": "images/venda.png",
+      "components": [
+        {
+          "type": "Heal",
+          "values": {
+            "healingAmount": 25,
+            "bonusMultiplier": 1.15
+          }
+        },
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 1,
+            "maxStackSize": 5,
+            "dimensionW": 1,
+            "weight": 0.1
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.1,
+            "materialName": "Linen fabric",
+            "thermalInsulation": 0.75,
+            "flexibility": 1,
+            "materialType": "CLOTH",
+            "transpirability": 0.95
+          }
+        }
+      ]
+    },
+    {
+      "name": "Arcón pequeño",
+      "description": "Un arcón de madera reforzado con remaches de bronce. Cabe bajo un catre y guarda lo justo para no perderlo todo en un saqueo.",
+      "imagePath": "images/chest.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 2,
+            "maxStackSize": 1,
+            "dimensionW": 3,
+            "weight": 8
+          }
+        },
+        {
+          "type": "Storage",
+          "values": {
+            "maxWeight": 100,
+            "weightRatio": 0.9,
+            "maxVolume": 10
+          }
+        }
+      ]
+    }
+  ],
+  "recipes": []
+}

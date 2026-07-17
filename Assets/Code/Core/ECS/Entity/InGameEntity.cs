@@ -86,6 +86,11 @@
                 return components.Remove(target);
             }
 
+            public IEnumerable<IComponent> GetComponents()
+            {
+                return components.Values;
+            }
+
             protected virtual InGameEntity CreateCloneInstance(int id, string type)
             {
                 return new InGameEntity(id, type);

@@ -31,7 +31,7 @@
 - [x] 9. Update `InventoryObject` BFS methods to use typeId
 - [x] 10. Update `ItemObject` accordingly (adapt to int-based IDs, remove volume references — eases BatchItem transition in M2)
 - [x] 11. Update `PrototypeFactory` to create items from catalog
-- [ ] 12. Create test JSON with sample items
+- [x] 12. Create test JSON with sample items (6 items: Espada de hierro, Arco corto, Manzana, Odre, Venda, Arcón pequeño — exported from Stack&Go, placed in StreamingAssets/)
 - [x] 13. Delete obsolete `ItemDatabase`, `ConcreteItemBuilder`, and `IItemBuilder` (replaced by `ItemCatalogue` + prototype pattern)
 - [x] 14. Fix `InventoryView.OnItemClicked` event signature from `Action<string>` to `Action<int>`, update `ItemDisplayData.Id` to int
 

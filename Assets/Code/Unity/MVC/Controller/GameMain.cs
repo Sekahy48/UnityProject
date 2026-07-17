@@ -24,12 +24,18 @@ public class GameMain : MonoBehaviour
 
     void Awake()
     {
+
+        // Configure static logger and paths for Core classes
+        CoreLogger.Instance = new Unity.UnityLogger();
+        CoreConfig.BasePath = Application.streamingAssetsPath;
+        
         // ---- Create Core contexts ----
         ItemCatalogue itemCatalogue = new ItemCatalogue();
         JsonItemCatalogLoader jsonItemCatalogLoader = new JsonItemCatalogLoader();
         jsonItemCatalogLoader.LoadInto(itemCatalogue);
+        itemCatalogue.LogCatalogContents();
 
-        
+
         EntityManager entityManager = new EntityManager(new PrototypeFactory(itemCatalogue));
         Logic logic = new Logic(entityManager);
 
@@ -43,10 +49,6 @@ public class GameMain : MonoBehaviour
         // Link Core entity with Unity GameObject via specialized linker
         IEntityLinker linker = new Unity.UnityEntityLinker();
         linker.Link(player, "playerEntity");
-
-        // Configure static logger and paths for Core classes
-        CoreLogger.Instance = new Unity.UnityLogger();
-        CoreConfig.BasePath = Application.streamingAssetsPath;
 
         var dataCtx = new GameDataContext(entityManager);
 
