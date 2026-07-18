@@ -45,16 +45,14 @@
 
 **Tasks**:
 
-- [ ] 1. Replace `ItemObject` with `BatchItem` — ALL leaf nodes are now `BatchItem`. Contains `List<(ItemEntity, int)>` sub-lots. A unique item (key, letter) is a BatchItem with one sub-lot of amount 1. `ItemObject` is deleted.
-- [ ] 2. Tree simplification: only 2 node types remain — `InventoryObject` (branch/container) and `BatchItem` (leaf, always). `IInventoryElement` interface unchanged.
-- [ ] 3. Equivalence-based grouping: items with same typeId live in the same BatchItem, sub-lots split by property differences (durability, condition, enchants)
-- [ ] 4. `AddItem` by default adds to the first compatible BatchItem found. Creates new sub-lot if same type but different state, new BatchItem if different type. Multiple BatchItems of the same type are allowed (player can manually split stacks or keep separate piles). Total amount in a BatchItem cannot exceed `BaseItemComponent.maxStackSize`.
-- [ ] 5. `Consume(n)` picks random sub-lot (not FIFO, not alphabetical)
-- [ ] 6. `InspectStack()` returns the sub-lot breakdown for UI
-- [ ] 7. `GetTotalAmount()` sums across sub-lots
-- [ ] 8. `GetTotalWeight` sums across sub-lots using per-entity weights (volume calculation removed — grid handles capacity)
-- [ ] 9. Create `ItemStateComponent` in Core — tracks item state (fresh, rotten, damaged, etc.) and decay rate. This is what differentiates sub-lots within a BatchItem (a rotten apple vs a fresh one). Decay logic itself is Phase 3, but the component and its data must exist now for sub-lot equivalence checks to work.
-- [ ] 10. Update `InventoryPresenter` to handle stack inspection
+- [x] 1. Create `BatchItem` as internal data structure for `ItemObject`. `ItemObject` keeps its role as composite leaf (implements `IInventoryElement`) but replaces its `_item` + `_amount` fields with a `BatchItem` that holds `List<(ItemEntity, int)>` sub-lots. `BatchItem` owns a `typeId` (set from the first entity added, immutable). `ItemObject.GetId()` delegates to `BatchItem.TypeId`. `ItemObject` is NOT deleted — it remains the composite leaf wrapper.
+- [x] 2. Add unique `nodeId` (int, autoincremental via `NodeIdGenerator`) to both `ItemObject` and `InventoryObject`, separate from `typeId`. `GetNodeId()` added to `IInventoryElement`. Needed for grid positioning (M3) and UI selection (M5). Search-by-nodeId operations deferred — UI elements will hold direct references to nodes instead of searching by ID. NodeId search infrastructure will be added later only if a real use case appears (serialization, networking, undo).
+- [x] 3. Equivalence-based grouping: items with same typeId live in the same BatchItem, sub-lots split by property differences (durability, condition, enchants)
+- [x] 4. Item addition and stacking logic: `StackOnto` finds first compatible BatchItem by typeId (BFS) and delegates to `BatchItem.AddAmount()`; overflow creates new nodes via `AddItem`. `AddItem` always creates leaf nodes (ItemObject), looping if amount exceeds maxStackSize. `AddContainer` creates branch nodes (InventoryObject), separated from item logic. `BatchItem.AddAmount()` merges into existing sub-lot if Equivalent, creates new sub-lot if different state, respects maxStackSize cap. Multiple ItemObjects of the same typeId are allowed (split stacks, overflow).
+- [x] 5. `BatchItem.ConsumeRandom()` consumes 1 unit from a random sub-lot. `ConsumeAmount(item, n)` consumes from a specific sub-lot matched by Equivalent. `ConsumeAll()` clears the batch.
+- [x] 6. `BatchItem.GetSubLots()` returns a copy of the sub-lot list for UI inspection
+- [x] 7. `BatchItem.GetTotalAmount()` sums amounts across all sub-lots
+- [x] 8. `BatchItem.GetTotalWeight()` sums (weight × amount) per sub-lot
 
 **Decided**: Unified leaf node — no distinction between "single item" and "stack". Everything is a `BatchItem`. Eliminates special cases in composite tree logic.
 
@@ -134,6 +132,7 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 - [ ] 8. Weight stats bar below inventory grid
 - [ ] 9. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
 - [ ] 10. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
+- [ ] 11. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 
@@ -154,6 +153,8 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 - [ ] 7. Backpack/bag as equipped container: inventory panel gets tabs (pockets, backpack, shoulder bag, etc.). Clicking a tab switches the grid view to that container's grid. Each tab has its own `TetrisGridState` and `StorageComponent`.
 
 **Decided**: Backpacks/bags add grid space but share the character's weight limit. Total carry weight = personal inventory contents + backpack item weight + backpack contents weight. The backpack's own `StorageComponent` defines its grid dimensions (extra grid space), but weight rolls up to the character's `CarryCapacity`. The value of a backpack is extra grid cells — it lets you carry more items that you couldn't fit in pockets alone.
+
+**Refactor pendiente**: Extract `InventoryService` — move game-logic operations (Transfer, StackOnto with capacity checks, consume-for-crafting, proximity search) out of the composite tree into a service layer. The composite keeps structural operations (add/remove children, traverse, clean). The service composes them for complex flows (e.g. `InventoryService.Transfer(source, target, nodeId, amount)`). Also clean up `IInventoryElement`: remove `*Here` variants, `SetAmount`, `AddSeveralItems`, and leaf methods that throw exceptions. Consider splitting interface (structural vs query).
 
 ---
 

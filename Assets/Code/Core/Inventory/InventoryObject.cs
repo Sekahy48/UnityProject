@@ -10,25 +10,29 @@ namespace Inventory
     {
         private List<IInventoryElement> _inventory;
         private int _id;
+        private int _nodeId;
         private ItemEntity _item;
 
         public InventoryObject(ItemEntity item)
         {
             AC.CheckNotNull(item, item.GetCompoundIdentification().ToString());
-            this._id = item.GetComponent<BaseItemComponent>().GetTypeId();
-            this._item = item;
-            this._inventory = new List<IInventoryElement>();
+            _id = item.GetComponent<BaseItemComponent>().GetTypeId();
+            _nodeId = NodeIdGenerator.GenerateId();
+            _item = item;
+            _inventory = new List<IInventoryElement>();
         }
 
         public InventoryObject()
         {
-            this._id = 0;
-            this._item = null;
-            this._inventory = new List<IInventoryElement>();
+            _id = 0;
+            _nodeId = NodeIdGenerator.GenerateId();
+            _item = null;
+            _inventory = new List<IInventoryElement>();
         }
 
-        public int GetId() => this._id;
-        public ItemEntity GetItemEntity() => this._item;
+        public int GetTypeId() => _id;
+        public int GetNodeId() => _nodeId;
+        public ItemEntity GetItemEntity() => _item;
         public bool IsLeaf() => false;
         public int GetAmount() => 1;
         public void SetAmount(int amount) { } // containers don't have an amount
@@ -45,7 +49,7 @@ namespace Inventory
             while (queue.Count > 0)
             {
                 IInventoryElement current = queue.Dequeue();
-                if (current.GetId().Equals(id))
+                if (current.GetTypeId().Equals(id))
                     return current;
                 if (!current.IsLeaf())
                     foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
@@ -64,7 +68,7 @@ namespace Inventory
             while (queue.Count > 0)
             {
                 IInventoryElement current = queue.Dequeue();
-                if (current.GetId().Equals(id))
+                if (current.GetTypeId().Equals(id))
                     results.Add(current);
                 if (!current.IsLeaf())
                     foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
@@ -82,7 +86,7 @@ namespace Inventory
             while (queue.Count > 0)
             {
                 IInventoryElement current = queue.Dequeue();
-                if (current.IsLeaf() && current.GetItemEntity().Equivalent(item))
+                if (current.IsLeaf() && current.GetTypeId() == item.GetComponent<BaseItemComponent>().GetTypeId())
                     return current;
                 if (!current.IsLeaf())
                     foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
@@ -98,12 +102,20 @@ namespace Inventory
         public void AddItem(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, "item");
-            AC.CheckPositive(amount, "amount");
-            bool isContainer = item.HasComponent(typeof(StorageComponent));
-            IInventoryElement node = isContainer
-                ? (IInventoryElement)new InventoryObject(item)
-                : new ItemObject(item, amount);
-            _inventory.Add(node);
+            AC.CheckPositive(amount, "amount"); 
+
+            while (amount > 0)
+            {   
+                ItemObject newNode = new ItemObject(item, amount);
+                amount = amount - newNode.GetAmount();
+                _inventory.Add(newNode);
+            } 
+        }
+
+        public void AddContainer(ItemEntity item)
+        {
+            AC.CheckNotNull(item, "item");
+            _inventory.Add(new InventoryObject(item));
         }
 
         public void StackOnto(ItemEntity item, int amount)
@@ -111,27 +123,20 @@ namespace Inventory
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
             IInventoryElement match = BfsFindEquivalent(item);
-            if (match != null)
-                match.SetAmount(match.GetAmount() + amount);
-            else
-                AddItem(item, amount);
+            if (match != null) 
+                amount = ((ItemObject)match).GetBatch().AddAmount(item, amount); 
+
+            if (amount > 0)
+                AddItem(item, amount); 
         }
 
-        public void AddSeveralItems(List<(ItemEntity item, int amount)> items)
-        {
-            AC.CheckNotNull(items, "items");
-            foreach (var (item, amount) in items)
-                AddItem(item, amount);
-        }
 
         public int ModifyAmount(int id, int amount)
         {
             AC.CheckNotNull(id, "id");
             IInventoryElement found = BfsFind(id);
             if (found == null) return 0;
-            int before = found.GetAmount();
-            found.SetAmount(Math.Max(0, found.GetAmount() + amount));
-            int modified = Math.Abs(found.GetAmount() - before);
+            int modified = found.ModifyAmount(id, amount);
             CleanTree();
             return modified;
         }
@@ -154,7 +159,9 @@ namespace Inventory
         public void DeleteItem(int id)
         {
             AC.CheckNotNull(id, "id");
-            ModifyAmount(id, -GetAmount(id));
+            foreach (IInventoryElement node in BfsFindAll(id))
+                node.DeleteItem(id);
+            CleanTree();
         }
 
         public IInventoryElement Find(int id)
@@ -173,30 +180,20 @@ namespace Inventory
 
         //#region Local operations
 
-        public void AddItemHere(ItemEntity item, int amount)
-        {
-            AC.CheckNotNull(item, "item");
-            AC.CheckPositive(amount, "amount");
-            bool isContainer = item.HasComponent(typeof(StorageComponent));
-            IInventoryElement node = isContainer
-                ? (IInventoryElement)new InventoryObject(item)
-                : new ItemObject(item, amount);
-            _inventory.Add(node);
-        }
-
         public void StackOntoHere(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
             foreach (IInventoryElement elem in _inventory)
             {
-                if (elem.IsLeaf() && elem.GetItemEntity().Equivalent(item))
+                if (elem.IsLeaf() && elem.GetTypeId() == item.GetComponent<BaseItemComponent>().GetTypeId())
                 {
-                    elem.SetAmount(elem.GetAmount() + amount);
-                    return;
+                    amount = ((ItemObject)elem).GetBatch().AddAmount(item, amount);
+                    break;
                 }
             }
-            AddItemHere(item, amount);
+            if (amount > 0)
+                AddItem(item, amount);
         }
 
         public int ModifyAmountHere(int id, int amount)
@@ -204,12 +201,11 @@ namespace Inventory
             AC.CheckNotNull(id, "id");
             foreach (IInventoryElement elem in _inventory)
             {
-                if (elem.GetId().Equals(id))
+                if (elem.GetTypeId().Equals(id))
                 {
-                    int before = elem.GetAmount();
-                    elem.SetAmount(Math.Max(0, elem.GetAmount() + amount));
+                    int modified = elem.ModifyAmount(id, amount);
                     CleanTree();
-                    return Math.Abs(elem.GetAmount() - before);
+                    return modified;
                 }
             }
             return 0;
@@ -226,7 +222,7 @@ namespace Inventory
             AC.CheckNotNull(id, "id");
             int total = 0;
             foreach (IInventoryElement elem in _inventory)
-                if (elem.GetId().Equals(id))
+                if (elem.GetTypeId().Equals(id))
                     total += elem.GetAmount();
             return total;
         }
@@ -236,7 +232,7 @@ namespace Inventory
             AC.CheckNotNull(id, "id");
             List<IInventoryElement> snapshot = new List<IInventoryElement>(_inventory);
             foreach (IInventoryElement elem in snapshot)
-                if (elem.GetId().Equals(id))
+                if (elem.GetTypeId().Equals(id))
                     _inventory.Remove(elem);
         }
 
@@ -244,7 +240,7 @@ namespace Inventory
         {
             AC.CheckNotNull(id, "id");
             foreach (IInventoryElement elem in _inventory)
-                if (elem.GetId().Equals(id)) return elem;
+                if (elem.GetTypeId().Equals(id)) return elem;
             return null;
         }
 
@@ -253,7 +249,7 @@ namespace Inventory
             AC.CheckNotNull(id, "id");
             List<IInventoryElement> results = new List<IInventoryElement>();
             foreach (IInventoryElement elem in _inventory)
-                if (elem.GetId().Equals(id)) results.Add(elem);
+                if (elem.GetTypeId().Equals(id)) results.Add(elem);
             return results;
         }
 
@@ -306,7 +302,7 @@ namespace Inventory
             AC.CheckNotNull(other, "other");
             if (!(other is InventoryObject otherInv)) return false;
 
-            bool generalCheck = this._id.Equals(other.GetId())
+            bool generalCheck = this._id.Equals(other.GetTypeId())
                              && this.IsLeaf() == other.IsLeaf()
                              && (this._item == null ? otherInv._item == null
                                                     : this._item.Equivalent(otherInv._item));
