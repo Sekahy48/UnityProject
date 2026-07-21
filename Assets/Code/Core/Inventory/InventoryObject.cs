@@ -8,7 +8,11 @@ namespace Inventory
 {
     public class InventoryObject : IInventoryElement
     {
+        private const int BASE_GRID_W = 10;
+        private const int BASE_GRID_H = 8;
+
         private List<IInventoryElement> _inventory;
+        private TetrisGridState _grid;
         private int _id;
         private int _nodeId;
         private ItemEntity _item;
@@ -20,6 +24,9 @@ namespace Inventory
             _nodeId = NodeIdGenerator.GenerateId();
             _item = item;
             _inventory = new List<IInventoryElement>();
+
+            StorageComponent storage = item.GetComponent<StorageComponent>();
+            _grid = new TetrisGridState(storage.GridH, storage.GridW);
         }
 
         public InventoryObject()
@@ -28,6 +35,7 @@ namespace Inventory
             _nodeId = NodeIdGenerator.GenerateId();
             _item = null;
             _inventory = new List<IInventoryElement>();
+            _grid = new TetrisGridState(BASE_GRID_H, BASE_GRID_W);
         }
 
         public int GetTypeId() => _id;
@@ -37,6 +45,9 @@ namespace Inventory
         public int GetAmount() => 1;
         public void SetAmount(int amount) { } // containers don't have an amount
         public List<IInventoryElement> GetChildren() => new List<IInventoryElement>(_inventory);
+        public TetrisGridState GetGrid() => _grid;
+
+
 
         //#region BFS helper
 
@@ -50,6 +61,24 @@ namespace Inventory
             {
                 IInventoryElement current = queue.Dequeue();
                 if (current.GetTypeId().Equals(id))
+                    return current;
+                if (!current.IsLeaf())
+                    foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
+                        queue.Enqueue(child);
+            }
+            return null;
+        }
+
+        private IInventoryElement BfsFindByNodeId(int nodeId)
+        {
+            Queue<IInventoryElement> queue = new Queue<IInventoryElement>();
+            foreach (IInventoryElement elem in _inventory)
+                queue.Enqueue(elem);
+
+            while (queue.Count > 0)
+            {
+                IInventoryElement current = queue.Dequeue();
+                if (current.GetNodeId().Equals(nodeId))
                     return current;
                 if (!current.IsLeaf())
                     foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
@@ -95,39 +124,49 @@ namespace Inventory
             return null;
         }
 
-        //#endregion
+        //#endregion 
 
         //#region Global operations
 
-        public void AddItem(ItemEntity item, int amount)
+        public int AddItem(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount"); 
-
-            while (amount > 0)
+            int remaining = 0;
+            
+            while (amount > 0 && remaining == 0)
             {   
                 ItemObject newNode = new ItemObject(item, amount);
-                amount = amount - newNode.GetAmount();
-                _inventory.Add(newNode);
+                if (_grid.TryFirstPlace(newNode))
+                { 
+                    amount = amount - newNode.GetAmount();
+                    _inventory.Add(newNode); 
+                } else
+                {
+                    remaining = amount;
+                }
             } 
+
+            return remaining;
         }
 
         public void AddContainer(ItemEntity item)
         {
             AC.CheckNotNull(item, "item");
-            _inventory.Add(new InventoryObject(item));
+            _inventory.Add(new InventoryObject(item)); 
         }
 
-        public void StackOnto(ItemEntity item, int amount)
+        public int StackOnto(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
             IInventoryElement match = BfsFindEquivalent(item);
-            if (match != null) 
-                amount = ((ItemObject)match).GetBatch().AddAmount(item, amount); 
+            if (match != null && match.IsLeaf()) 
+                amount = match.StackOntoHere(item, amount); 
 
             if (amount > 0)
-                AddItem(item, amount); 
+                amount = AddItem(item, amount); 
+            return amount;
         }
 
 
@@ -180,7 +219,7 @@ namespace Inventory
 
         //#region Local operations
 
-        public void StackOntoHere(ItemEntity item, int amount)
+        public int StackOntoHere(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
@@ -188,12 +227,13 @@ namespace Inventory
             {
                 if (elem.IsLeaf() && elem.GetTypeId() == item.GetComponent<BaseItemComponent>().GetTypeId())
                 {
-                    amount = ((ItemObject)elem).GetBatch().AddAmount(item, amount);
+                    amount = elem.StackOntoHere(item, amount);
                     break;
                 }
             }
             if (amount > 0)
-                AddItem(item, amount);
+                amount = AddItem(item, amount);
+            return amount;
         }
 
         public int ModifyAmountHere(int id, int amount)
@@ -251,6 +291,39 @@ namespace Inventory
             foreach (IInventoryElement elem in _inventory)
                 if (elem.GetTypeId().Equals(id)) results.Add(elem);
             return results;
+        }
+
+        //#endregion
+
+        //#region Node operations
+
+        public int StackOntoNode(int nodeId, ItemEntity item, int amount)
+        {
+            IInventoryElement node = FindNodeById(nodeId);
+            return node != null? node.StackOntoHere(item, amount) : amount;
+        }
+
+        public IInventoryElement FindNodeById(int nodeId)
+        {
+            return BfsFindByNodeId(nodeId);
+        }
+
+        public int AddItemAt(ItemEntity item, int amount, int row, int col) 
+        {
+            AC.CheckNotNull(item, "item");
+            AC.CheckPositive(amount, "amount");
+            AC.CheckPositive(row, "row");
+            AC.CheckPositive(col, "col");
+
+            BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
+            if (_grid.CanPlace(row, col, baseInfo.GetDimensionH(), baseInfo.GetDimensionW())){
+                ItemObject node = new ItemObject(item, amount);
+                amount = amount - node.GetAmount();
+                _grid.Place(node, row, col);
+                _inventory.Add(node);
+            }
+
+            return amount;
         }
 
         //#endregion

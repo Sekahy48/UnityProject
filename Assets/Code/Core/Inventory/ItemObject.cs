@@ -33,6 +33,11 @@ namespace Inventory
 
         //#region Leaf operations
 
+        public int StackOntoHere(ItemEntity item, int amount)
+        {
+            return _batch.AddAmount(item, amount);
+        }
+
         public void SetAmount(int amount)
         {
             throw new InvalidOperationException(
@@ -123,9 +128,23 @@ namespace Inventory
 
         //#endregion
 
+        //#region nodes
+
+        public int StackOntoNode(int nodeId, ItemEntity item, int amount)
+        {
+            throw new InvalidOperationException("StackOnto is not supported on leaf nodes.");
+        }
+
+        public IInventoryElement FindNodeById(int nodeId)
+        {
+            return nodeId == _nodeId ? this : null;
+        }
+
+        //#endregion
+
         //#region Transparent Composite — Not applicable to leaves
 
-        public void AddItem(ItemEntity item, int amount)
+        public int AddItem(ItemEntity item, int amount)
         {
             throw new InvalidOperationException("AddItem is not supported on leaf nodes.");
         }
@@ -135,16 +154,16 @@ namespace Inventory
             throw new InvalidOperationException("AddContainer is not supported on leaf nodes.");
         }
 
-        public void StackOnto(ItemEntity item, int amount)
+        public int StackOnto(ItemEntity item, int amount)
         {
             throw new InvalidOperationException("StackOnto is not supported on leaf nodes.");
         }
 
-        public void StackOntoHere(ItemEntity item, int amount)
-        {
-            throw new InvalidOperationException("StackOntoHere is not supported on leaf nodes.");
-        }
+        
+
+
 
         //#endregion
+
     }
 }

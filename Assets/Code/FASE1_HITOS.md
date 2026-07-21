@@ -58,17 +58,21 @@
 
 **Decided**: Pulling items out of a stack via inspect creates a new BatchItem in the same inventory. It's a real data operation, not just visual.
 
+**Tasks (pending)**:
+
+- [x] 9. Add `StackOnToNode(int nodeId, ItemEntity item, int amount)` to composite (IInventoryElement + implementations). Finds node by nodeId, calls `node.StackOntoHere()`. No fallback. Returns remaining. Also add `AddItemAt(ItemEntity item, int amount, int row, int col)` only on InventoryObject (not in interface — grid coordinates are branch-specific). Creates one node at specified cell, no loop. Returns remaining. Refactor: `ItemObject.StackOntoHere` now delegates to `_batch.AddAmount()` instead of throwing — allows `StackOnto`, `StackOntoHere` and `StackOntoNode` in InventoryObject to use the interface without explicit casts.
+
 ---
 
 ## Milestone 3 — Weight & grid space enforcement
 
-**Goal**: AddItem checks capacity limits and rejects/penalizes when exceeded.
+**Goal**: Inventory operations (add, stack, transfer) check grid space and weight limits, rejecting or penalizing when exceeded.
 
 **Tasks**:
 
-- [ ] 1. Refactor `StorageComponent` — replace `maxVolume` (float) with `gridW` and `gridH` (int). Grid dimensions define capacity. `maxWeight` stays as float.
-- [ ] 2. Create `TetrisGridState` in Core — data structure that tracks which cells are occupied and by which BatchItem. Grid dimensions come from `StorageComponent.gridW × gridH`. Core only, no UI — rendering is M5.
-- [ ] 3. `AddItem` / `StackOnto` check grid space (via TetrisGridState: can the item's dimensions fit in remaining free cells?) and `StorageComponent.maxWeight` before adding
+- [x] 1. Refactor `StorageComponent` — replaced `maxVolume` (float) with `gridW` and `gridH` (int). Removed `weightRatio` (grid gives containers their mechanical advantage, no need for weight multiplier). `maxWeight` stays as float.
+- [x] 2. Create `TetrisGridState` in Core — 2D int matrix (nodeId per cell, -1 if free) + list of `GridElement` (ItemObject reference + row/col position). `CanPlace`, `Place`, `Remove`, `FindFirstFit`, `GetFreeCellCount`. `GridElement` in separate file. Core only, no UI — rendering is M5.
+- [ ] 3. Grid + weight enforcement on inventory operations. Grid checks in composite (`AddItem`, `StackOnto`, `StackOntoHere`, `AddItemAt` use TetrisGridState). Weight checks in `InventorySystem` wrapping composite calls: `TryAddItem`, `TryStackOntoHere` (renamed from TryStackOnto — always immediate level, with fallback to AddItem), `TryStackOnToNode`, `TryAddItemAt`. All Try methods: weight first → delegate to composite (grid) → return remaining.
 - [ ] 4. `CarryCapacity` enforcement: total inventory weight vs character carry capacity
 - [ ] 5. Two capacity systems:
    - **Grid space** (hard limit): No free cells that fit the item's dimensions → transfer rejected. Partial if stackable and an existing BatchItem has room under maxStackSize. Notify player: inventory/container full.
@@ -135,6 +139,13 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 - [ ] 11. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
+
+**Decided**: Click-to-grab, click-to-place interaction (not drag & drop). Left click picks up a stack into the cursor. Clicking again places it. Overflow stays in cursor. Three placement cases:
+1. **Over matching item** → `TryStackOnToNode`. Overflow by maxStackSize stays in cursor.
+2. **Over empty cell** → `TryAddItemAt`. Weight rejection keeps items in cursor. Grid always fits (one stack, one cell group).
+3. **Over non-matching / occupied** → items stay in cursor, nothing happens.
+Shift+click / right-click / context menu → `TryStackOntoHere` (immediate level with fallback to AddItem for auto-placement). Used for quick transfers.
+Closing inventory / ESC with items in cursor → items return to their original position.
 
 ---
 

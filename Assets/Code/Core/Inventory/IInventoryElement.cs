@@ -14,7 +14,8 @@ namespace Inventory
         /// Adds a new leaf node to this node's inventory.
         /// If the amount exceeds stacking limits, creates multiple nodes.
         /// </summary>
-        void AddItem(ItemEntity item, int amount);
+        /// <returns> The amount of item that couldnt be added due to internal limitations </returns>
+        int  AddItem(ItemEntity item, int amount);
 
         /// <summary>
         /// Adds a new container node to this node's inventory.
@@ -24,8 +25,9 @@ namespace Inventory
         /// <summary>
         /// Tries to stack the item onto the first equivalent node found.
         /// If none is found, creates a new node.
-        /// </summary>
-        void StackOnto(ItemEntity item, int amount);
+        /// </summary> 
+        /// <returns> The amount of item that couldnt be added due to internal limitations </returns>
+        int StackOnto(ItemEntity item, int amount);
 
         /// <summary>
         /// Modifies the amount of an item in the global inventory.
@@ -61,7 +63,7 @@ namespace Inventory
 
         //#region Local operations (immediate level only)
 
-        void StackOntoHere(ItemEntity item, int amount);
+        int StackOntoHere(ItemEntity item, int amount);
         int ModifyAmountHere(int id, int amount);
         bool ContainsHere(int id);
         int GetAmountHere(int id);
@@ -70,6 +72,26 @@ namespace Inventory
         List<IInventoryElement> FindNodesHere(int id);
 
         //#endregion
+
+        //#region Node operations
+
+        /// <summary>
+        /// Stacks a certain amount of item in a preexistent node of the same item type.
+        /// </summary>
+        /// <param name="nodeId">Id of the tree node.</param>
+        /// <param name="item">Item to add - needs to be the same type as the internal item of the node.</param>
+        /// <param name="amount">Amount to be added</param>
+        /// <returns> The remaining amount that couldnt be added. </returns>
+        int StackOntoNode(int nodeId, ItemEntity item, int amount);
+        
+        /// <summary>
+        /// Returns the ndoe with a certain nodeId if tis found. Otherwise returns null.
+        /// </summary>
+        /// <param name="nodeId">Id of the node to be found.</param>
+        /// <returns>Found node or null.</returns>
+        IInventoryElement FindNodeById(int nodeId);
+        
+        //#enregion
 
         //#region Getters & Utilities
 
