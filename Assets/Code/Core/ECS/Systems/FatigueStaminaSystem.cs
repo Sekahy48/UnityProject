@@ -15,6 +15,8 @@ namespace ECS.Systems
         private const float FATIGUE_DRAIN_PER_STAMINA = 0.01f;
         private const float FATIGUE_BURST_DRAIN = 5f;
 
+        private bool _staminaRestrictionActive = false;
+
         /// <summary>
         /// IGameSystem: processes all entities with EnergyComponent + MovementComponent.
         /// </summary>
@@ -49,9 +51,10 @@ namespace ECS.Systems
                     RestoreStamina(deltaTime, energy);
                     changed = true;
                 }
-                if (energy.IsStaminaFull() && movement != null)
+                if (energy.IsStaminaFull() && movement != null && _staminaRestrictionActive)
                 {
-                    movement.SetCanRun(true);
+                    movement.RemoveRunRestriction();
+                    _staminaRestrictionActive = false;
                 }
             }
             else
@@ -60,9 +63,10 @@ namespace ECS.Systems
                 {
                     DrainStamina(deltaTime, energy);
                     changed = true;
-                    if (energy.IsStaminaEmpty())
+                    if (energy.IsStaminaEmpty() && !_staminaRestrictionActive)
                     {
-                        movement.SetCanRun(false);
+                        movement.AddRunRestriction();
+                        _staminaRestrictionActive = true;
                     }
                 }
             }

@@ -130,6 +130,11 @@ namespace Inventory
 
         //#region nodes
 
+        public List<(ItemEntity, int)> ConsumeRandom(int amount)
+        {
+            return _batch.ConsumeRandom(amount);
+        }
+
         public int StackOntoNode(int nodeId, ItemEntity item, int amount)
         {
             throw new InvalidOperationException("StackOnto is not supported on leaf nodes.");

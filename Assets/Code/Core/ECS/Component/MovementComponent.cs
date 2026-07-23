@@ -8,10 +8,11 @@ namespace ECS.Component
     {
         private float _speed;
         private float _runMultiplier = 2.5f;
+        private float _weightSpeedMultiplier = 1.0f;
         private float _dirX, _dirY;
         private bool _isMoving;
         private bool _isRunning = false;
-        private bool _canRun;
+        private int _runRestrictions = 0;
         private bool _wantsToJump = false;
         private float _mouseSensitivity = 1f;
 
@@ -36,7 +37,9 @@ namespace ECS.Component
         // ---- Speed ----
 
         public void SetSpeed(float speed) => _speed = speed;
-        public float GetSpeed() => _speed;
+        public float GetSpeed() => _speed * _weightSpeedMultiplier;
+        public void SetWeightSpeedMultiplier(float mult) => _weightSpeedMultiplier = mult;
+        public float GetWeightSpeedMultiplier() => _weightSpeedMultiplier;
 
         // ---- Run multiplier ----
 
@@ -53,6 +56,7 @@ namespace ECS.Component
 
         public void SetMouseSensitivity(float sensitivity) => _mouseSensitivity = sensitivity;
         public float GetMouseSensitivity() => _mouseSensitivity;
+ 
 
         // ---- Movement state ----
 
@@ -72,13 +76,9 @@ namespace ECS.Component
         public void SetIsJumping(bool jump) => _wantsToJump = jump;
         public bool IsJumping() => _wantsToJump;
 
-        public void SetCanRun(bool canRun)
-        {
-            SetIsRunning(false);
-            _canRun = canRun;
-        }
-
-        public bool CanRun() => _canRun;
+        public void AddRunRestriction() { _runRestrictions++; SetIsRunning(false); }
+        public void RemoveRunRestriction() { _runRestrictions = System.Math.Max(0, _runRestrictions - 1); }
+        public bool CanRun() => _runRestrictions == 0;
 
         // ---- IComponent ----
 

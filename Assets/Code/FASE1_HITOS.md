@@ -72,17 +72,10 @@
 
 - [x] 1. Refactor `StorageComponent` — replaced `maxVolume` (float) with `gridW` and `gridH` (int). Removed `weightRatio` (grid gives containers their mechanical advantage, no need for weight multiplier). `maxWeight` stays as float.
 - [x] 2. Create `TetrisGridState` in Core — 2D int matrix (nodeId per cell, -1 if free) + list of `GridElement` (ItemObject reference + row/col position). `CanPlace`, `Place`, `Remove`, `FindFirstFit`, `GetFreeCellCount`. `GridElement` in separate file. Core only, no UI — rendering is M5.
-- [ ] 3. Grid + weight enforcement on inventory operations. Grid checks in composite (`AddItem`, `StackOnto`, `StackOntoHere`, `AddItemAt` use TetrisGridState). Weight checks in `InventorySystem` wrapping composite calls: `TryAddItem`, `TryStackOntoHere` (renamed from TryStackOnto — always immediate level, with fallback to AddItem), `TryStackOnToNode`, `TryAddItemAt`. All Try methods: weight first → delegate to composite (grid) → return remaining.
-- [ ] 4. `CarryCapacity` enforcement: total inventory weight vs character carry capacity
-- [ ] 5. Two capacity systems:
-   - **Grid space** (hard limit): No free cells that fit the item's dimensions → transfer rejected. Partial if stackable and an existing BatchItem has room under maxStackSize. Notify player: inventory/container full.
-   - **Weight** (two thresholds): Soft = transfer allowed but debuff (movement speed reduction, notify overloaded, health consequences stub for Phase 2). Hard (immobile) = transfer rejected entirely, too heavy to move.
-- [ ] 6. Return enum `TransferResult { Success, PartialStack, GridFull, Overloaded, Immobile }` — Success: all moved. PartialStack: some stacked onto existing BatchItem, rest didn't fit. GridFull: no space at all. Overloaded: moved but soft weight exceeded. Immobile: rejected, hard weight limit.
-- [ ] 7. `InventorySystem` fires events: `INVENTORY_FULL`, `OVERWEIGHT`, `IMMOBILE`
-- [ ] 8. Weight debuff integration: overweight → speed multiplier in `MovementComponent` (stub health effects for Phase 2)
-- [ ] 9. UI: weight bar + grid visual (free/occupied cells) update in real time, color-coded by threshold
-
-**Decided**: Grid space is a hard limit (reject/partial). Weight has two thresholds — soft (debuff, allowed) and hard (reject, immobile). Health consequences of overload are stubbed as interface for Phase 2.
+- [x] 3. Grid + weight enforcement on inventory operations. Grid checks in composite (`AddItem`, `StackOnto`, `StackOntoHere`, `StackOntoNode`, `AddItemAt` use TetrisGridState). Weight checks in `InventorySystem` wrapping composite calls: `TryStackOntoHere` (stacks first, overflow creates new nodes — covers all automatic add cases), `TryStackOnToNode`, `TryAddItemAt`. All Try methods share `GetFitByWeight` (weight first) → delegate to composite (grid) → return remaining. `TryAddItem` removed (redundant with `TryStackOntoHere`). `InventoryComponent.Inventory` changed from `IInventoryElement` to `InventoryObject` — root is always a branch node. `ConsumeRandom(int amount)` added to `IInventoryElement` — leaf delegates to batch, branch throws. Extraction orchestration deferred to `InventoryService` (M6). `CleanTree` now also removes deleted nodes from grid via `_grid.Remove(nodeId)`.
+- [x] 4. `InventorySystem` fires events: `INVENTORY_FULL`, `EXTRA_WEIGHT`, `OVERWEIGHT`, `IMMOBILE`. Fired from `EvaluateAndFireEvents(entity, fullGrid)` called in each Try method. Weight thresholds: EXTRA_WEIGHT (0.70), OVERWEIGHT (0.85), IMMOBILE (1.0). Used by: UI (HUD indicators), movement system (speed reduction), AI (NPCs stop picking up items).
+- [x] 5. Weight debuff integration: `MovementSystem` listens to weight events and sets `_weightSpeedMultiplier` on `MovementComponent` (EXTRA_WEIGHT=0.80, OVERWEIGHT=0.50, IMMOBILE=0.0). Run restriction via `AddRunRestriction`/`RemoveRunRestriction` semaphore pattern on OVERWEIGHT/IMMOBILE. `FatigueStaminaSystem` migrated to same pattern. Stub health effects for Phase 2. Normal weight restoration deferred to InventoryService (M6) — triggered when items are consumed/removed.
+**Decided**: Two capacity systems. Grid space is a hard limit: no free cells that fit → transfer rejected; partial if stackable and existing BatchItem has room under maxStackSize. Weight has two thresholds — soft (transfer allowed but debuff: movement speed reduction, notify overloaded, health consequences stub for Phase 2) and hard (immobile, transfer rejected entirely). Health consequences of overload are stubbed as interface for Phase 2.
 
 ---
 
@@ -133,7 +126,7 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 - [ ] 5. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
 - [ ] 6. Split view layout: left panel (personal) + right panel (inventory)
 - [ ] 7. Health placeholder in personal panel
-- [ ] 8. Weight stats bar below inventory grid
+- [ ] 8. Weight stats bar below inventory grid — color-coded by threshold (EXTRA_WEIGHT, OVERWEIGHT, IMMOBILE). Grid visual shows free/occupied cells in real time.
 - [ ] 9. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
 - [ ] 10. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
 - [ ] 11. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
@@ -165,7 +158,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 
 **Decided**: Backpacks/bags add grid space but share the character's weight limit. Total carry weight = personal inventory contents + backpack item weight + backpack contents weight. The backpack's own `StorageComponent` defines its grid dimensions (extra grid space), but weight rolls up to the character's `CarryCapacity`. The value of a backpack is extra grid cells — it lets you carry more items that you couldn't fit in pockets alone.
 
-**Refactor pendiente**: Extract `InventoryService` — move game-logic operations (Transfer, StackOnto with capacity checks, consume-for-crafting, proximity search) out of the composite tree into a service layer. The composite keeps structural operations (add/remove children, traverse, clean). The service composes them for complex flows (e.g. `InventoryService.Transfer(source, target, nodeId, amount)`). Also clean up `IInventoryElement`: remove `*Here` variants, `SetAmount`, `AddSeveralItems`, and leaf methods that throw exceptions. Consider splitting interface (structural vs query).
+**Refactor pendiente**: Extract `InventoryService` — move game-logic operations (Transfer, StackOnto with capacity checks, consume-for-crafting, proximity search) out of the composite tree into a service layer. The composite keeps structural operations (add/remove children, traverse, clean). The service composes them for complex flows (e.g. `InventoryService.Transfer(source, target, nodeId, amount)`). Also clean up `IInventoryElement`: remove `*Here` variants, `SetAmount`, `AddSeveralItems`, and leaf methods that throw exceptions. Consider splitting interface (structural vs query). Service orchestrators return `TransferResult` enum (`Success`, `PartialStack`, `GridFull`, `Overloaded`, `Immobile`) — qualitative result since src/dst/cursor are already updated internally.
 
 ---
 
@@ -200,3 +193,4 @@ The `ItemType` enum currently acts as an explicit category. But with ECS composi
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)
 - [ ] Move `prototypes` dictionary out of `EntityManager` — entity creation should go through `PrototypeFactory`, not be managed internally by `EntityManager`
+- [ ] Filtered consumption for crafting: `ConsumeFiltered(Predicate<ItemEntity> filter, int amount)` in `BatchItem` + wrapper in `InventorySystem`. Recipes need items matching not just typeId but specific state (e.g., hot iron ingot vs cold). `Equivalent()` may be too strict — evaluate whether a looser matching system is needed (partial match, predicate-based). Uses `BfsFindAll(typeId)` + filter per sub-lot. Additive, no structural refactor needed.

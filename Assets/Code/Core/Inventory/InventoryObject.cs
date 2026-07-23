@@ -336,7 +336,17 @@ namespace Inventory
         {
             foreach (IInventoryElement elem in _inventory)
                 elem.CleanTree();
-            _inventory.RemoveAll(e => e.GetAmount() <= 0);
+
+            _inventory.RemoveAll(e =>
+            {
+                if (e.GetAmount() <= 0)
+                {
+                    if (e.IsLeaf())
+                        _grid.Remove(e.GetNodeId());
+                    return true;
+                }
+                return false;
+            });
         }
 
         public List<IInventoryElement> FlattenInventory()
@@ -369,6 +379,7 @@ namespace Inventory
                 total += elem.GetTotalWeight();
             return total;
         } 
+ 
 
         public bool Equivalent(IInventoryElement other)
         {
@@ -404,6 +415,11 @@ namespace Inventory
             foreach (IInventoryElement elem in _inventory)
                 clone._inventory.Add(elem.Clone());
             return clone;
+        }
+
+        public List<(ItemEntity, int)> ConsumeRandom(int amount)
+        {
+            throw new InvalidOperationException("AddContainer is not supported on leaf nodes."); 
         }
 
         //#endregion

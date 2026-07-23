@@ -26,10 +26,7 @@ namespace Events
             return entity;
         }
 
-        public IComponent GetComponent()
-        {
-            return component;
-        }
+        public T GetComponent<T>() where T : class, IComponent => component as T;
 
     }
 }

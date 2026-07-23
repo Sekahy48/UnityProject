@@ -91,6 +91,12 @@ namespace Inventory
         /// <returns>Found node or null.</returns>
         IInventoryElement FindNodeById(int nodeId);
         
+        /// <summary>
+        /// Consumes N units randomly across sub-lots. Returns what was consumed grouped by sub-lot.
+        /// Only supported on leaf nodes.
+        /// </summary>
+        List<(ItemEntity, int)> ConsumeRandom(int amount);
+
         //#enregion
 
         //#region Getters & Utilities

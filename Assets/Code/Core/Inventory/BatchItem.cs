@@ -124,6 +124,40 @@ namespace Inventory
         }
 
         /// <summary>
+        /// Consumes N units randomly across sub-lots. Returns what was consumed grouped by sub-lot.
+        /// </summary>
+        /// <param name="amount">Number of units to consume.</param>
+        /// <returns>List of (ItemEntity, int) pairs representing what was consumed from each sub-lot.</returns>
+        public List<(ItemEntity, int)> ConsumeRandom(int amount)
+        {
+            List<(ItemEntity item, int count)> consumed = new List<(ItemEntity, int)>();
+            int toConsume = Math.Min(amount, GetTotalAmount());
+
+            for (int i = 0; i < toConsume; i++)
+            {
+                if (_items.Count == 0) break;
+                int rndmIndex = _random.Next(0, _items.Count);
+                ItemEntity item = _items[rndmIndex].item;
+                ConsumeAmount(item, 1);
+
+                bool found = false;
+                for (int j = 0; j < consumed.Count; j++)
+                {
+                    if (consumed[j].item.Equivalent(item))
+                    {
+                        consumed[j] = (consumed[j].item, consumed[j].count + 1);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    consumed.Add((item, 1));
+            }
+
+            return consumed;
+        }
+
+        /// <summary>
         /// Consumes up to the requested amount from the sub-lot matching the given item.
         /// </summary>
         /// <param name="item">Item identifying the sub-lot (matched by Equivalent).</param>
