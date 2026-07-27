@@ -18,9 +18,9 @@
         {
           "type": "Damage",
           "values": {
-            "impactDmg": "MLOW",
-            "slashingDmg": "HIGH",
-            "punctureDmg": "MEDIUM"
+            "impactDmg": "MLow",
+            "slashingDmg": "High",
+            "punctureDmg": "Medium"
           }
         },
         {
@@ -30,7 +30,7 @@
             "materialName": "Common steel",
             "thermalInsulation": 0,
             "flexibility": 0.5,
-            "materialType": "METAL",
+            "materialType": "Metal",
             "transpirability": 0
           }
         }
@@ -53,9 +53,9 @@
         {
           "type": "Damage",
           "values": {
-            "impactDmg": "MLOW",
-            "slashingDmg": "LOW",
-            "punctureDmg": "HIGH"
+            "impactDmg": "MLow",
+            "slashingDmg": "Low",
+            "punctureDmg": "High"
           }
         },
         {
@@ -65,7 +65,7 @@
             "materialName": "Hard wood",
             "thermalInsulation": 0.6,
             "flexibility": 0.3,
-            "materialType": "WOOD",
+            "materialType": "Wood",
             "transpirability": 0.2
           }
         }
@@ -124,7 +124,7 @@
             "materialName": "Leather",
             "thermalInsulation": 0.85,
             "flexibility": 1,
-            "materialType": "CLOTH",
+            "materialType": "Cloth",
             "transpirability": 0.2
           }
         }
@@ -158,7 +158,7 @@
             "materialName": "Linen fabric",
             "thermalInsulation": 0.75,
             "flexibility": 1,
-            "materialType": "CLOTH",
+            "materialType": "Cloth",
             "transpirability": 0.95
           }
         }

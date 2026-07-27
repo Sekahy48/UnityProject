@@ -6,10 +6,10 @@ namespace ECS.Component.InventoryComponents
     /// </summary>
     public enum DamageLevel
     {
-        LOW,
-        MLOW,
-        MEDIUM,
-        MHIGH,
-        HIGH
+        Low,
+        MLow,
+        Medium,
+        MHigh,
+        High
     }
 }

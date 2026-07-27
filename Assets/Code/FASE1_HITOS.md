@@ -85,16 +85,13 @@
 
 **Tasks**:
 
-- [ ] 1. `EquipmentSlot` — ensure List<ItemEntity> is explicitly ordered (index 0 = outermost layer)
-- [ ] 2. Add `enabled` flag to `EquipmentSlot` (default true, false = amputated/injured) and `maxLayers` int (hard cap on stacked items per slot)
-- [ ] 3. Create `ClothingComponent` (rename TBD: `WearComponent` or `WearableComponent`) in Core — determines which `EquipmentSlotType` a wearable item targets. An item is equippable if and only if it has this component (ECS-idiomatic: `HasComponent<ClothingComponent>()`). Fields: targetSlot (EquipmentSlotType), topLayer (bool — if true, nothing can be equipped on top of this item in that slot), garmentCategory (enum: Shirt, Vest, Plate, Robe, Glove, Boot, Helmet, Hood, Satchel... — extensible), layerOrder (int, for Phase 2 damage penetration ordering).
-- [ ] 4. Add layer validation: can this item go in this slot? (check ClothingComponent.targetSlot)
-- [ ] 5. Equipment changes fire `EQUIPMENT_CHANGED` event
-- [ ] 6. Equipping an item removes it from inventory, unequipping adds it back
-- [ ] 7. UI: render 3×4 equipment grid with layer indicators
-- [ ] 8. UI: click slot to see/manage layers
-- [ ] 9. UI: drag from inventory → equipment slot
-- [ ] 10. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect]
+- [x] 1. `EquipmentSlot` — List<ItemEntity> ordered by layer (last = outermost). `Add` for equip on top, `RemoveAt(Count-1)` to remove outer layer, iterate backwards for damage.
+- [x] 2. Add `enabled` flag to `EquipmentSlot` (default true, false = incapacitated — missing limb, broken bone, severe injury) and `maxLayers` int (hard cap on stacked items per slot). `EquipItem` guarded by `_enabled`. Renamed `maxAmount` → `maxLayers`.
+- [x] 3. Create `WearableComponent` in Core/ItemComponents — determines which `EquipmentSlotType` a wearable item targets. An item is equippable if and only if it has this component (ECS-idiomatic: `HasComponent<WearableComponent>()`). Fields: targetSlot (EquipmentSlotType), topLayer (bool — if true, nothing can be equipped on top of this item in that slot), garmentCategory (enum: Shirt, Vest, Plate, Robe, Glove, Boot, Helmet, Hood, Satchel... — extensible).
+- [x] 4. Layer validation in `EquipItem`: checks enabled, maxLayers, targetSlot, duplicate garmentCategory, topLayer. Returns `EquipResult` enum (Success, SlotDisabled, MaxLayersReached, WrongSlot, DuplicateCategory, NotWearable, TopLayerBlocked). TopLocked items inserted below topLayer via `Insert(Count-1)`.
+- [x] 5. Add `UnequipItem` to `EquipmentSlot` (returns bool via `List.Remove`) and `EquipmentComponent` (delegates to slot, throws `InvalidOperationException` on absent WearableComponent or item not found). Removes from any layer position (consistent with equip-below-topLayer rule).
+- [x] 6. Create `EquipmentSystem` (new system, SRP — separate from InventorySystem). `TryEquip` and `TryUnequip` return `EquipResult`, log via `EquipResult.GetMessage()` extension method, and fire `EquipmentChanged` event on success.
+*Tasks 7–10 (equipment UI) moved to M5 — all UI work consolidated there.*
 
 **Decided**: Equipment grid is 3×4. Layout:
 ```
@@ -106,7 +103,7 @@
 Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved slots use the same `enabled=false` mechanism as amputation — unlocked when gameplay needs them (belt, cloak, etc). `EquipmentSlotType` enum needs updating to add shoulders and reserved.
 
 **Decided**: Layer order is validated. Two rules:
-1. **topLayer** (component data): `ClothingComponent` has a `topLayer` bool. Rigid/structured items (armor, chestplate) are topLayer — nothing can be equipped on top of them. Covers: no shirt over chestplate, no armor over armor.
+1. **topLayer** (component data): `WearableComponent` has a `topLayer` bool. Rigid/structured items (armor, chestplate) are topLayer — nothing can be equipped on top of them. Covers: no shirt over chestplate, no armor over armor.
 2. **No duplicate garment category** (system logic, NOT component data): `InventorySystem` enforces that you can't equip two items with the same `garmentCategory` in the same slot. Iron plate armor and studded leather armor are both `Plate` → can't stack. A shirt and a camisole are both `Shirt` → can't stack. One Shirt + one Vest + one Plate = OK. System-level validation, can be relaxed in the future if needed.
 - `maxLayers` on `EquipmentSlot` remains as a hard safety cap.
 - Equip order: new items always go on top (outermost). To change order, unequip and re-equip.
@@ -119,17 +116,30 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 
 **Tasks**:
 
+Foundation:
 - [ ] 1. `TetrisGridState` already exists from M3. This milestone adds the UI rendering and interaction on top of it.
-- [ ] 2. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
-- [ ] 3. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
-- [ ] 4. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
-- [ ] 5. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
-- [ ] 6. Split view layout: left panel (personal) + right panel (inventory)
-- [ ] 7. Health placeholder in personal panel
-- [ ] 8. Weight stats bar below inventory grid — color-coded by threshold (EXTRA_WEIGHT, OVERWEIGHT, IMMOBILE). Grid visual shows free/occupied cells in real time.
-- [ ] 9. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
-- [ ] 10. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
-- [ ] 11. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
+- [ ] 2. Split view layout: left panel (personal) + right panel (inventory). Replaces current tab-based UI.
+
+Left panel (personal):
+- [ ] 3. Health placeholder in personal panel
+- [ ] 4. UI: render 3×4 equipment grid with layer indicators (from M4)
+- [ ] 5. UI: click slot to see/manage layers (from M4)
+
+Right panel (inventory):
+- [ ] 6. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
+- [ ] 7. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
+- [ ] 8. Weight stats bar below inventory grid — color-coded by threshold (ExtraWeight, Overweight, Immobile). Grid visual shows free/occupied cells in real time.
+
+Interaction:
+- [ ] 9. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
+- [ ] 10. UI: drag from inventory → equipment slot (from M4)
+- [ ] 11. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
+- [ ] 12. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
+
+Polish:
+- [ ] 13. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
+- [ ] 14. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
+- [ ] 15. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 
@@ -160,6 +170,8 @@ Closing inventory / ESC with items in cursor → items return to their original 
 
 **Refactor pendiente**: Extract `InventoryService` — move game-logic operations (Transfer, StackOnto with capacity checks, consume-for-crafting, proximity search) out of the composite tree into a service layer. The composite keeps structural operations (add/remove children, traverse, clean). The service composes them for complex flows (e.g. `InventoryService.Transfer(source, target, nodeId, amount)`). Also clean up `IInventoryElement`: remove `*Here` variants, `SetAmount`, `AddSeveralItems`, and leaf methods that throw exceptions. Consider splitting interface (structural vs query). Service orchestrators return `TransferResult` enum (`Success`, `PartialStack`, `GridFull`, `Overloaded`, `Immobile`) — qualitative result since src/dst/cursor are already updated internally.
 
+**Refactor pendiente**: Extract `EquipmentService` — orchestrates cross-system operations between `EquipmentSystem` and `InventorySystem`. Handles: TryEquip (remove from inventory → equip in slot), TryUnequip (check inventory space via InventorySystem → remove from slot → add to inventory), drop-to-ground fallback on unequip failure. Neither system knows the other; the service composes both. (Moved from M4 T7 — equipping removes from inventory, unequipping adds back. Unequip can fail if inventory full by grid or weight. On failure: cancel or drop to ground.)
+
 ---
 
 ## Milestone 7 — Polish & integration testing
@@ -181,7 +193,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 
 ## Design note — Composition-derived types
 
-The `ItemType` enum currently acts as an explicit category. But with ECS composition, item type emerges naturally from which components an entity has: equippable = has `ClothingComponent`, consumable = has `NutritionComponent`, weapon = has `DamageComponent`, etc. When implementing game logic, prefer querying component presence (`HasComponent<T>()`) over switching on `ItemType`. The enum can stay as UI metadata (inventory tab filters, icon badges) but should not drive mechanical decisions. This keeps the system open to new item archetypes without modifying enums or adding switch cases.
+The `ItemType` enum currently acts as an explicit category. But with ECS composition, item type emerges naturally from which components an entity has: equippable = has `WearableComponent`, consumable = has `NutritionComponent`, weapon = has `DamageComponent`, etc. When implementing game logic, prefer querying component presence (`HasComponent<T>()`) over switching on `ItemType`. The enum can stay as UI metadata (inventory tab filters, icon badges) but should not drive mechanical decisions. This keeps the system open to new item archetypes without modifying enums or adding switch cases.
 
 ---
 

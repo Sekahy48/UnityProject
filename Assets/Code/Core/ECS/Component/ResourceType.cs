@@ -3,9 +3,9 @@ namespace ECS.Component
     public enum ResourceType {
 
     // General
-    WOOD, STONE, IRON, GOLD, WHEAT, VEGETABLES, MEAT,
+    Wood, Stone, Iron, Gold, Wheat, Vegetables, Meat,
 
     // Fluid
-    WATER, SALT_WATER, OIL, BEER, MILK
+    Water, SaltWater, Oil, Beer, Milk
 }
 }

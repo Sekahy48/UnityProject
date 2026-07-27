@@ -103,9 +103,9 @@ namespace ECS.Component.InventoryComponents
  
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("punctureDmg")) SetPunctureDmg(Enum.Parse<DamageLevel>(values["punctureDmg"].ToString()));
-            if (values.ContainsKey("slashingDmg")) SetSlashingDmg(Enum.Parse<DamageLevel>(values["slashingDmg"].ToString()));
-            if (values.ContainsKey("impactDmg")) SetImpactDmg(Enum.Parse<DamageLevel>(values["impactDmg"].ToString()));
+            if (values.ContainsKey("punctureDmg")) SetPunctureDmg(Enum.Parse<DamageLevel>(values["punctureDmg"].ToString(), true));
+            if (values.ContainsKey("slashingDmg")) SetSlashingDmg(Enum.Parse<DamageLevel>(values["slashingDmg"].ToString(), true));
+            if (values.ContainsKey("impactDmg")) SetImpactDmg(Enum.Parse<DamageLevel>(values["impactDmg"].ToString(), true));
         }
 
         #region Component

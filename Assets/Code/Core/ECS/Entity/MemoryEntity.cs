@@ -21,7 +21,7 @@ namespace ECS.Entity
         // Default constructor (no parameters)
         public MemoryEntity()
         {
-            basePrio = Priorities.OMNIP;
+            basePrio = Priorities.Omnip;
             creationTime = DateTime.Now;
         }
 

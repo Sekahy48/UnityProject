@@ -91,17 +91,17 @@ namespace ECS.Systems
                 float weightRatio = totalWeight / carryWeight;
                 if (weightRatio > EXTRA_WEIGHT && weightRatio <= OVERWEIGHT)
                 {
-                    EventBus.GetInstance().Post(new GameEvent(GameEventType.EXTRA_WEIGHT , entity, movementComponent));
+                    EventBus.GetInstance().Post(new GameEvent(GameEventType.ExtraWeight , entity, movementComponent));
                     CoreLogger.Instance.Log("Heavy load. Speed reduced."); 
                 }
                 else if (weightRatio > OVERWEIGHT && weightRatio < IMMOBILE)
                 {
-                    EventBus.GetInstance().Post(new GameEvent(GameEventType.OVERWEIGHT , entity, movementComponent));
+                    EventBus.GetInstance().Post(new GameEvent(GameEventType.Overweight , entity, movementComponent));
                     CoreLogger.Instance.LogWarning("Overloaded. Speed heavily reduced, energy penalty.");
                 }
                 else if (weightRatio >= IMMOBILE)
                 {
-                    EventBus.GetInstance().Post(new GameEvent(GameEventType.IMMOBILE , entity, movementComponent));
+                    EventBus.GetInstance().Post(new GameEvent(GameEventType.Immobile , entity, movementComponent));
                     CoreLogger.Instance.LogWarning("Cannot move due to excess weight.");
                 } 
 
@@ -113,7 +113,7 @@ namespace ECS.Systems
 
             if (fullGrid)
             {
-                EventBus.GetInstance().Post(new GameEvent(GameEventType.INVENTORY_FULL , entity, inventoryComponent));
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryFull , entity, inventoryComponent));
                 CoreLogger.Instance.LogWarning("Inventory overflow: cannot transfere more object due to insufficient grid space.");
             }
         }
@@ -134,7 +134,7 @@ namespace ECS.Systems
     
         public void UpdateOnEvent(GameEvent gameEvent)
         {
-            if (gameEvent.GetEventType() == GameEventType.INVENTORY_CHANGED)
+            if (gameEvent.GetEventType() == GameEventType.InventoryChanged)
             {
                 ProcessEntity(gameEvent.GetEntity());
             }

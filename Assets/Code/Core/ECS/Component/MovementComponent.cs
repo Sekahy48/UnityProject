@@ -1,3 +1,5 @@
+using System;
+
 namespace ECS.Component
 {
     /// <summary>
@@ -77,7 +79,7 @@ namespace ECS.Component
         public bool IsJumping() => _wantsToJump;
 
         public void AddRunRestriction() { _runRestrictions++; SetIsRunning(false); }
-        public void RemoveRunRestriction() { _runRestrictions = System.Math.Max(0, _runRestrictions - 1); }
+        public void RemoveRunRestriction() { _runRestrictions = Math.Max(0, _runRestrictions - 1); }
         public bool CanRun() => _runRestrictions == 0;
 
         // ---- IComponent ----

@@ -19,18 +19,18 @@ namespace ECS.Systems
             bool shouldRestrict = false;
             switch (gameEvent.GetEventType())
             {
-                case GameEventType.EXTRA_WEIGHT:
+                case GameEventType.ExtraWeight:
                     multiplier = EXTRA_WEIGHT_SPEED;
                     break;
-                case GameEventType.OVERWEIGHT:
+                case GameEventType.Overweight:
                     multiplier = OVERWEIGHT_SPEED;
                     shouldRestrict = true;
                     break;
-                case GameEventType.IMMOBILE:
+                case GameEventType.Immobile:
                     multiplier = IMMOBILE_SPEED;
                     shouldRestrict = true;
                     break;
-                case GameEventType.NORMAL_WEIGHT:
+                case GameEventType.NormalWeight:
                     multiplier = NORMAL_SPEED;
                     break;
             }

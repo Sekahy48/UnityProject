@@ -1,73 +1,79 @@
 using System;
 using System.Collections.Generic;
+using ECS.Component.ItemComponents;
 using ECS.Entity;
-using Utils;
-
-namespace ECS.Component
+using AC = Utils.ArgumentChecker;
+namespace ECS.Component.Equipment
 {
     public class EquipmentComponent : IComponent
     {
-        private List<EquipmentSlotType> allowedSlots;
-        private Dictionary<EquipmentSlotType, EquipmentSlot> equipmentSlots;
+        private List<EquipmentSlotType> _allowedSlots;
+        private Dictionary<EquipmentSlotType, EquipmentSlot> _equipmentSlots;
 
         public EquipmentComponent(List<EquipmentSlotType> allowedSlots)
         {
-            this.allowedSlots = allowedSlots;
-            equipmentSlots = new Dictionary<EquipmentSlotType, EquipmentSlot>();
+            this._allowedSlots = allowedSlots;
+            _equipmentSlots = new Dictionary<EquipmentSlotType, EquipmentSlot>();
         }
 
         public bool AddSlot(EquipmentSlotType slotType, int capacity)
         {   
-            ArgumentChecker.CheckNotNull(slotType, nameof(slotType));
-            ArgumentChecker.CheckPositive(capacity, nameof(capacity));
+            AC.CheckNotNull(slotType, nameof(slotType));
+            AC.CheckPositive(capacity, nameof(capacity));
 
-            bool added = false;
+            bool added = false; 
 
-            if (!allowedSlots.Contains(slotType))
-                return false;
-
-            if (equipmentSlots.ContainsKey(slotType))
-                return false;
-            else
+            if (_allowedSlots.Contains(slotType) && !_equipmentSlots.ContainsKey(slotType))
             {
-                equipmentSlots[slotType] = new EquipmentSlot(slotType, capacity);
+                _equipmentSlots[slotType] = new EquipmentSlot(slotType, capacity);
                 added = true; 
             }
             return added;
         }
 
-        public bool EquipItem(EquipmentSlotType slotType, ItemEntity item)
+        public EquipResult EquipItem(EquipmentSlotType slotType, ItemEntity item)
         {
-            ArgumentChecker.CheckNotNull(item, nameof(item));
-            ArgumentChecker.CheckNotNull(slotType, nameof(slotType));
+            AC.CheckNotNull(item, nameof(item));
+            AC.CheckNotNull(slotType, nameof(slotType));
 
-            bool equiped = false;
+            EquipResult equiped;
 
-            if (!allowedSlots.Contains(slotType))
-                return false;
-
-            if (!equipmentSlots.ContainsKey(slotType))
-                return false;
-            else {
-                equiped = equipmentSlots[slotType].EquipItem(item);
+            if (!_allowedSlots.Contains(slotType) || !_equipmentSlots.ContainsKey(slotType))
+            {
+                equiped = EquipResult.NoSlotFits; 
+            }
+            else 
+            {
+                equiped = _equipmentSlots[slotType].EquipItem(item);
             }
              
 
             return equiped;
         }
 
+        public void UnequipItem(ItemEntity item)
+        {
+            AC.CheckNotNull(item, nameof(item)); 
+            
+            WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
+            if (wearableComponent == null) throw new InvalidOperationException("Cannot unequip an item with no WearableComponent.");
+            EquipmentSlot slot = _equipmentSlots[wearableComponent.GetTargetSlot()];
+            if (!slot.UnequipItem(item)) throw new InvalidOperationException("Cannot unequip an item that is not equiped.");
+            
+        }
+
         public IComponent Clone()
         {
-            EquipmentComponent equipmentComponent = new EquipmentComponent(new List<EquipmentSlotType>(allowedSlots));
-            foreach (KeyValuePair<EquipmentSlotType, EquipmentSlot> kvp in equipmentSlots)
+            EquipmentComponent equipmentComponent = new EquipmentComponent(new List<EquipmentSlotType>(_allowedSlots));
+            foreach (KeyValuePair<EquipmentSlotType, EquipmentSlot> kvp in _equipmentSlots)
             {
-                equipmentComponent.AddSlot(kvp.Key, kvp.Value.GetMaxAmount());
+                equipmentComponent.AddSlot(kvp.Key, kvp.Value.GetMaxLayers());
                 List<ItemEntity> clonedItems = new List<ItemEntity>();
                 foreach (ItemEntity item in kvp.Value.GetItems())
                 {
                     clonedItems.Add((ItemEntity)item.Clone());
                 }
-                equipmentComponent.equipmentSlots[kvp.Key].SetItems(clonedItems);
+                equipmentComponent._equipmentSlots[kvp.Key].SetItems(clonedItems);
             }
             return equipmentComponent;
         }
@@ -76,23 +82,23 @@ namespace ECS.Component
         {
             if (other is EquipmentComponent otherEquipment)
             {
-                if (allowedSlots.Count != otherEquipment.allowedSlots.Count)
+                if (_allowedSlots.Count != otherEquipment._allowedSlots.Count)
                     return false;
 
-                foreach (EquipmentSlotType slotType in allowedSlots)
+                foreach (EquipmentSlotType slotType in _allowedSlots)
                 {
-                    if (!otherEquipment.allowedSlots.Contains(slotType))
+                    if (!otherEquipment._allowedSlots.Contains(slotType))
                         return false;
 
-                    if (equipmentSlots.ContainsKey(slotType) != otherEquipment.equipmentSlots.ContainsKey(slotType))
+                    if (_equipmentSlots.ContainsKey(slotType) != otherEquipment._equipmentSlots.ContainsKey(slotType))
                         return false;
 
-                    if (equipmentSlots.ContainsKey(slotType)) {
-                        EquipmentSlot thisSlot = equipmentSlots[slotType];
-                        EquipmentSlot otherSlot = otherEquipment.equipmentSlots[slotType];
+                    if (_equipmentSlots.ContainsKey(slotType)) {
+                        EquipmentSlot thisSlot = _equipmentSlots[slotType];
+                        EquipmentSlot otherSlot = otherEquipment._equipmentSlots[slotType];
 
                         if (thisSlot.GetEquippedItemCount() != otherSlot.GetEquippedItemCount() ||
-                            thisSlot.GetMaxAmount() != otherSlot.GetMaxAmount())
+                            thisSlot.GetMaxLayers() != otherSlot.GetMaxLayers())
                             return false;
                     }
                 }

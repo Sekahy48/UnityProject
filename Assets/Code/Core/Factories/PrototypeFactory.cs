@@ -20,7 +20,7 @@ namespace Factories
 
         public IEntity CreateResourceNodePrototype()
         {
-            ResourceType type = ResourceType.WOOD;
+            ResourceType type = ResourceType.Wood;
             var e = new InGameEntity(IdGenerator.GenerateNewId(), "resourceNode");
             e.AddComponent(new ResourceComponent(type, 0, false));
             return e;

@@ -74,7 +74,7 @@ namespace ECS.Component
 
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("resourceType")) SetResourceType(Enum.Parse<ResourceType>(values["resourceType"].ToString()));
+            if (values.ContainsKey("resourceType")) SetResourceType(Enum.Parse<ResourceType>(values["resourceType"].ToString(), true));
             if (values.ContainsKey("amount")) SetAmount(Convert.ToInt32(values["amount"]));
             if (values.ContainsKey("renewable")) SetRenewable(Convert.ToBoolean(values["renewable"]));
         }

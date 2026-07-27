@@ -5,11 +5,11 @@ namespace ECS.Component.InventoryComponents
 {
     public enum MaterialType
     {
-        WOOD,
-        CLOTH,
-        METAL,
-        STONE,
-        BONE
+        Wood,
+        Cloth,
+        Metal,
+        Stone,
+        Bone
     }
     
     /// <summary>
@@ -174,7 +174,7 @@ namespace ECS.Component.InventoryComponents
 
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("materialType")) SetMaterialType(Enum.Parse<MaterialType>(values["materialType"].ToString()));
+            if (values.ContainsKey("materialType")) SetMaterialType(Enum.Parse<MaterialType>(values["materialType"].ToString(), true));
             if (values.ContainsKey("materialName")) SetMaterialName(values["materialName"].ToString());
             if (values.ContainsKey("flexibility")) SetFlexibility(Convert.ToSingle(values["flexibility"]));
             if (values.ContainsKey("hardness")) SetHardness(Convert.ToSingle(values["hardness"]));

@@ -28,7 +28,7 @@ namespace ECS.Component
             if (left <= 0)
                 return -1;
 
-            float toAdd = System.Math.Min(amount, left);
+            float toAdd = Math.Min(amount, left);
 
             if (fluids.ContainsKey(fluid))
                 fluids[fluid] += toAdd;

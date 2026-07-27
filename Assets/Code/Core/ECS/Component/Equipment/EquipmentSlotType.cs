@@ -1,4 +1,4 @@
-namespace ECS.Component {
+namespace ECS.Component.Equipment {
     public enum EquipmentSlotType
     {
         Head,

@@ -19,16 +19,16 @@ namespace ECS.Component
     /// </summary>
     public enum ItemType
     {
-        WEAPON,
-        TOOL,
-        FOOD,
-        BEVERAGE,
-        CONSUMABLE,
-        MATERIAL,
-        PLACEABLE,
-        DOCUMENT,
-        GENERIC,
-        PART
+        Weapon,
+        Tool,
+        Food,
+        Beverage,
+        Consumable,
+        Material,
+        Placeable,
+        Document,
+        Generic,
+        Part
     }
 
     public class BaseItemComponent : BasicComponent, IJsonLoadable
