@@ -1,108 +1,181 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements; 
+using UnityEngine.UIElements;
 using MVC.View.UI.Inventory;
+using ECS.Component.Equipment;
+using ECS.Component;
+using Unity.Services;
 
 namespace MVC.View
 {
     public class InventoryView : IView
     {
+        #region Fields
+
         private UIDocument _uiDocument;
-        private VisualTreeAsset _tabTemplate;
         private VisualTreeAsset _itemTemplate;
-        private VisualTreeAsset _equipmentPanelTemplate;
 
         private VisualElement _root;
-        private VisualElement _tabList;
+
+        private List<VisualElement> _leftTabs,
+                                    _leftPanels,
+                                    _equipmentSlots;
+
         private VisualElement _itemGrid;
         private VisualElement _titleBar;
+        private VisualElement _equipmentContainer;
 
-        // Campos nuevos
-        private VisualElement _contentPanel;
-        private VisualElement _statsBar;
-        private VisualElement _itemScroll;
+        private Label _weightLabel;
 
-        private Label _weightLabel; 
+        private VisualElement _inspectionStrip,
+                              _inspectIcon;
+        private Label _inspectName,
+                      _inspectDescription,
+                      _inspectWeight,
+                      _inspectDurability,
+                      _inspectSize;
 
         private bool _isReady = false;
+        private bool _isDragging;
+        private Vector2 _dragOffset;
 
-        public event Action<int> OnTabClicked;
+        #endregion
+
+        #region Events
+
         public event Action<int> OnItemClicked;
         public event Action OnCloseClicked;
         public event Action OnReady;
 
-        private bool _isDragging;
-        private Vector2 _dragOffset;
+        #endregion
 
-        public InventoryView(UIDocument uiDocument, VisualTreeAsset tabTemplate, VisualTreeAsset itemTemplate, VisualTreeAsset equipmentPanelTemplate)
+        #region Initialization
+
+        public InventoryView(UIDocument uiDocument, VisualTreeAsset itemTemplate)
         {
             _uiDocument = uiDocument;
-            _tabTemplate = tabTemplate;
             _itemTemplate = itemTemplate;
-            _equipmentPanelTemplate = equipmentPanelTemplate;
+            _leftTabs = new List<VisualElement>();
+            _leftPanels = new List<VisualElement>();
         }
 
         public void Initialize()
         {
             _root = _uiDocument.rootVisualElement.Q<VisualElement>("inventory-root");
-            Debug.Log($"[InventoryView] Initialize - _root es {(_root == null ? "NULL" : "OK")}");
             _root.RegisterCallback<GeometryChangedEvent>(OnRootReady);
         }
 
         private void OnRootReady(GeometryChangedEvent e)
         {
-            Debug.Log("[InventoryView] OnRootReady disparado");
             _root.UnregisterCallback<GeometryChangedEvent>(OnRootReady);
 
-            _tabList     = _root.Q<VisualElement>("tab-list");
-            _itemGrid    = _root.Q<VisualElement>("item-grid");
-            _titleBar    = _root.Q<VisualElement>("title-bar");
-            _weightLabel = _root.Q<Label>("weight-label"); 
-            _contentPanel = _root.Q<VisualElement>("content-panel");
-            _statsBar     = _root.Q<VisualElement>("stats-bar");
-            _itemScroll   = _root.Q<VisualElement>("item-scroll");
+            // Left tabs
+            VisualElement leftTabs = _root.Q<VisualElement>("left-tabs-bar");
+            _leftTabs = new List<VisualElement>(leftTabs.Children());
 
-            Debug.Log($"[InventoryView] OnRootReady - _tabList:{(_tabList == null ? "NULL" : "OK")} _titleBar:{(_titleBar == null ? "NULL" : "OK")}");
+            // Left panels
+            VisualElement leftPanels = _root.Q<VisualElement>("left-panel");
+            _leftPanels = new List<VisualElement>(leftPanels.Children());
 
-            _root.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke(); 
+            // Equipment slots
+            VisualElement equipmentPanel = _root.Q<VisualElement>("equipment-panel");
+            _equipmentSlots = equipmentPanel.Query(className: "equip-slot").ToList();
+
+            // Core elements
+            _itemGrid           = _root.Q<VisualElement>("item-grid");
+            _titleBar           = _root.Q<VisualElement>("title-bar");
+            _weightLabel        = _root.Q<Label>("weight-label");
+            _equipmentContainer = _root.Q<VisualElement>("equipment-container");
+
+            // Inspection strip
+            _inspectionStrip    = _root.Q<VisualElement>("inspection-strip");
+            _inspectIcon        = _root.Q<VisualElement>("inspect-icon");
+            _inspectIcon.RegisterCallback<GeometryChangedEvent>(evt =>
+            {
+                _inspectIcon.style.width = evt.newRect.height;
+            });
+            _inspectName        = _root.Q<Label>("inspect-name");
+            _inspectDescription = _root.Q<Label>("inspect-description");
+            _inspectWeight      = _root.Q<Label>("inspect-weight");
+            _inspectDurability  = _root.Q<Label>("inspect-durability");
+            _inspectSize        = _root.Q<Label>("inspect-size");
+
+            _root.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
             RegisterDrag();
             _isReady = true;
             
+            InitSideBarAndLeftPanels();
+
             Hide();
             OnReady?.Invoke();
         }
 
+        public void GenerateGrid(int rows, int cols)
+        {
+            VisualElement grid = new VisualElement();
+            grid.AddToClassList("inventory-grid");
+            for (int i = 0; i < rows; i++)
+            {
+                VisualElement row = new VisualElement();
+                grid.Add(row);
+                row.AddToClassList("inventory-grid-row");
+                for (int j = 0; j < cols; j++)
+                {
+                    VisualElement cell = new VisualElement();
+                    cell.AddToClassList("inventory-grid-cell");
+                    row.Add(cell);
+                }
+            }
+
+            SetInternallGrid(grid);
+        } 
+
+        private void InitSideBarAndLeftPanels()
+        {  
+            // Assing visibility
+            foreach (VisualElement panel in _leftPanels)
+            {
+                if (panel.name == "equipment-panel") panel.style.display = DisplayStyle.Flex;
+                else panel.style.display = DisplayStyle.None; 
+            }
+
+            foreach (VisualElement tab in _leftTabs)
+            {
+                tab.RegisterCallback<ClickEvent>(evt =>
+                {
+                    string relationClass = GetRelationClass(tab);
+                    foreach (VisualElement panel in _leftPanels)
+                    {
+                        panel.style.display = panel.ClassListContains(relationClass)
+                            ? DisplayStyle.Flex
+                            : DisplayStyle.None;
+                    }
+                    Debug.Log("Panel izquerdo cambiado a " + relationClass);
+                });
+            }
+        }
+
+        #endregion
+
+        #region Visibility
+
         public bool IsReady() => _isReady;
         public void Show() => _root.style.display = DisplayStyle.Flex;
-        public void Hide() {
+        public void Hide()
+        {
             _root.style.display = DisplayStyle.None;
             ResetPosition();
         }
         public bool IsVisible() => _root.style.display == DisplayStyle.Flex;
 
-        public void RenderTabs(List<TabDisplayData> tabs)
-        {
-            _tabList.Clear();
-            foreach (TabDisplayData tab in tabs)
-            {
-                VisualElement tabElement = _tabTemplate.CloneTree();
-                tabElement.Q<Label>("tab-label").text = tab.Label;
-                int capturedIndex = tab.Index;
-                tabElement.RegisterCallback<ClickEvent>(_ => OnTabClicked?.Invoke(capturedIndex));
-                _tabList.Add(tabElement);
-            }
-        }
+        #endregion
 
-        public void SetActiveTab(int index)
-        {
-            int i = 0;
-            foreach (VisualElement tab in _tabList.Children())
-            {
-                tab.EnableInClassList("tab-item--active", i == index);
-                i++;
-            }
-        }
+        #region Getters 
+
+        #endregion
+
+        #region Inventory Rendering
 
         public void RenderItems(List<ItemDisplayData> items)
         {
@@ -118,28 +191,103 @@ namespace MVC.View
             }
         }
 
-        public void ShowEquipmentPanel()
-        { 
-            _itemScroll.style.display = DisplayStyle.None;
-            VisualElement existing = _contentPanel.Q<VisualElement>("equipment-panel");
-            if (existing == null)
-                _contentPanel.Add(_equipmentPanelTemplate.CloneTree());
-            else
-                existing.style.display = DisplayStyle.Flex;
-        }   
-
-        public void ShowInventoryPanel()
-        { 
-            _itemScroll.style.display = DisplayStyle.Flex;
-            VisualElement existing = _contentPanel.Q<VisualElement>("equipment-panel");
-            if (existing != null)
-                existing.style.display = DisplayStyle.None;
+        public void SetInternallGrid(VisualElement grid)
+        {
+            _itemGrid.Clear();
+            _itemGrid.Add(grid);
         }
-    
+
         public void UpdateStats(float currentWeight, float maxWeight)
         {
-            _weightLabel.text = $"Peso: {currentWeight:F1}/{maxWeight:F1} kg"; 
+            _weightLabel.text = $"Peso: {currentWeight:F1}/{maxWeight:F1} kg";
         }
+
+        #endregion
+
+        #region Inspection Strip
+
+        public void UpdateInspection(ItemDisplayData item)
+        {
+            _inspectName.text = item.Name;
+            _inspectDescription.text = item.Description;
+            _inspectWeight.text = $"Peso: {item.Weight:F1} kg";
+            _inspectDurability.text = $"Durabilidad: {item.Durability}";
+            _inspectSize.text = $"Tamaño: {item.DimensionW}x{item.DimensionH}";
+        }
+
+        public void ClearInspection()
+        {
+            _inspectName.text = "";
+            _inspectDescription.text = "";
+            _inspectWeight.text = "";
+            _inspectDurability.text = "";
+            _inspectSize.text = "";
+        }
+
+        #endregion
+
+        #region Equipment Rendering
+
+        public void UpdateEquipmentSlots(EquipmentComponent equipment)
+        {
+            foreach (VisualElement viewSlot in _equipmentSlots)
+            { 
+                EquipmentSlot realSlot = equipment.GetEquipmentSlot(GetEquipmentSlotType(viewSlot));
+                if (!realSlot.IsEnabled()) 
+                    SetDisabledSlotTexture(viewSlot);
+                else if (realSlot.GetEquippedItemCount() == 0) 
+                    SetEmptySlotTexture(viewSlot);
+                else
+                {
+                    SetEquipedItemTexture(viewSlot, realSlot.GetTopItem().GetComponent<BaseItemComponent>().GetIconPath());
+                    //Y aqyum su gat más items hacer lo del desplegable
+                } 
+            }
+        }
+        
+        #endregion
+
+        #region Equipment Rendering - Helpers
+
+        private EquipmentSlotType GetEquipmentSlotType(VisualElement element)
+        {
+            string slotName = element.name.Replace("slot-", "");
+            if (Enum.TryParse<EquipmentSlotType>(slotName, true, out var type)) 
+                return type;
+            throw new InvalidOperationException($"Equipment slot '{element.name}' has no matching EquipmentSlotType");
+        }
+
+
+        private void SetDisabledSlotTexture(VisualElement element)
+        {
+            string path = "images/slot/" + element.name + ".png";
+        }
+
+        private void SetEmptySlotTexture(VisualElement element)
+        {
+            // TODO
+        }
+
+        private void SetEquipedItemTexture(VisualElement element, string iconPath)
+        {
+            Texture2D tex = TextureCache.Instance.Get(iconPath);
+            if (tex != null)
+                element.style.backgroundImage = new StyleBackground(tex);    
+        }
+
+        #endregion
+
+        #region Helpers
+        private string GetRelationClass(VisualElement element)
+        {
+            foreach (string cls in element.GetClasses())
+                if (cls != "left-tab" && cls != "internal-personal-panel") return cls;
+            return null;
+        }
+
+        #endregion
+
+        #region Drag
 
         private void RegisterDrag()
         {
@@ -152,8 +300,7 @@ namespace MVC.View
         {
             _isDragging = true;
             _dragOffset = new Vector2(e.position.x, e.position.y) - new Vector2(
-                _root.layout.x,
-                _root.layout.y);
+                _root.layout.x, _root.layout.y);
             _titleBar.CapturePointer(e.pointerId);
             e.StopPropagation();
         }
@@ -178,5 +325,7 @@ namespace MVC.View
             _root.style.left = StyleKeyword.Null;
             _root.style.top = StyleKeyword.Null;
         }
+
+        #endregion
     }
 }

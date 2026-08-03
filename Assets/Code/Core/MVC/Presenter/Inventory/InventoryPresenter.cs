@@ -2,11 +2,15 @@ using System;
 using System.Collections.Generic;
 using Core;
 using ECS.Component;
+using ECS.Component.Equipment;
 using ECS.Entity;
 using ECS.Systems;
 using Inventory;
 using MVC.View;
 using MVC.View.UI.Inventory;
+using Unity;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace MVC.Presenter.Inventory
 {
@@ -14,132 +18,93 @@ namespace MVC.Presenter.Inventory
     {
         private readonly InventoryView _view;
         private IEntity _entity;
-        private int _activeTabIndex = 0;
-        private int _pendingTabIndex = -1;
-
-        private List<IInventoryElement> _tabInventories = new List<IInventoryElement>();
+        private bool _pendingOpen = false;
 
         public InventoryPresenter(InventoryView view)
         {
             _view = view;
-            _view.OnTabClicked += OnTabClicked;
             _view.OnItemClicked += OnItemClicked;
             _view.OnCloseClicked += OnCloseClicked;
             _view.OnReady += OnViewReady;
             view.Initialize();
         }
 
-        public void Open(IEntity entity, int tabIndex = 1)
+        public void Open(IEntity entity)
         {
-            CoreLogger.Instance.Log($"[InventoryPresenter] Open - IsReady: {_view.IsReady()}");
             _entity = entity;
             if (!_view.IsReady())
             {
-                _pendingTabIndex = tabIndex;
-                CoreLogger.Instance.Log($"[InventoryPresenter] Saved pending tab {tabIndex}");
+                _pendingOpen = true;
                 return;
             }
-            OpenInternal(tabIndex);
+            OpenInternal();
         }
 
         private void OnViewReady()
         {
-            CoreLogger.Instance.Log($"[InventoryPresenter] OnViewReady - pending: {_pendingTabIndex}, entity: {(_entity == null ? "NULL" : "OK")}");
-            if (_pendingTabIndex >= 0 && _entity != null)
+            if (_pendingOpen && _entity != null)
             {
-                int tab = _pendingTabIndex;
-                _pendingTabIndex = -1;
-                OpenInternal(tab);
+                _pendingOpen = false;
+                OpenInternal();
             }
         }
 
-        private void OpenInternal(int tabIndex)
+        private void OpenInternal()
         {
-            BuildTabs();
-            OnTabClicked(tabIndex);
+            //RenderInventory();
+
+            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
+            TetrisGridState grid = invComp.Inventory.GetGrid();
+            _view.GenerateGrid(grid.GetGridH(), grid.GetGridW()); 
             _view.Show();
         }
 
         public void Close() => _view.Hide();
         public bool IsOpen() => _view.IsVisible();
-        public void NavigateToTab(int tabIndex) => OnTabClicked(tabIndex);
-        public int GetActiveTabIndex() => _activeTabIndex;
 
         public void Refresh()
         {
             if (_entity == null || !_view.IsVisible()) return;
-            BuildTabs();
-            OnTabClicked(_activeTabIndex);
+            RenderInventory();
         }
 
-        private void BuildTabs()
+        private void RenderInventory()
         {
-            _tabInventories.Clear();
-            List<TabDisplayData> tabs = new List<TabDisplayData>();
-
-            tabs.Add(new TabDisplayData { Index = 0, Label = "EQ", IsEquipment = true });
-            tabs.Add(new TabDisplayData { Index = 1, Label = "INV", IsBaseInventory = true });
-
-            _tabInventories.Add(null);
             InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
-            _tabInventories.Add(invComp?.Inventory);
-
-            _view.RenderTabs(tabs);
-            UpdateStats();
-        }
-
-        private void OnTabClicked(int index)
-        {
-            _activeTabIndex = index;
-            _view.SetActiveTab(index);
-
-            if (index == 0)
-            {
-                _view.ShowEquipmentPanel();
-                return;
-            }
-
-            IInventoryElement inventory = index < _tabInventories.Count
-                ? _tabInventories[index]
-                : null;
-
-            if (inventory == null)
+            if (invComp == null)
             {
                 _view.RenderItems(new List<ItemDisplayData>());
                 return;
             }
 
             List<ItemDisplayData> items = new List<ItemDisplayData>();
-            _view.ShowInventoryPanel();
-            foreach (IInventoryElement elem in inventory.FlattenInventory())
+            foreach (IInventoryElement elem in invComp.Inventory.FlattenInventory())
             {
-                ItemEntity itemEntity = elem.GetItemEntity(); 
-
-                BaseItemComponent baseItemComponent = itemEntity.GetComponent<BaseItemComponent>();  
+                ItemEntity itemEntity = elem.GetItemEntity();
+                BaseItemComponent baseItem = itemEntity.GetComponent<BaseItemComponent>();
                 items.Add(new ItemDisplayData
                 {
-                    Id = baseItemComponent.GetTypeId(),
+                    Id = baseItem.GetTypeId(),
                     Name = itemEntity.GetDisplayName(),
                     Amount = elem.GetAmount(),
-                    IconPath = baseItemComponent?.GetIconPath(),
-                    IsContainer = itemEntity.HasComponent(typeof(StorageComponent)),
-                    TabIndex = GetTabIndexForContainer(itemEntity)
+                    IconPath = baseItem?.GetIconPath(),
+                    Description = baseItem?.GetDescription(),
+                    Weight = baseItem != null ? baseItem.GetWeight() : 0f,
+                    Durability = baseItem != null ? baseItem.GetDurability() : 0,
+                    DimensionW = baseItem != null ? baseItem.GetDimensionW() : 1,
+                    DimensionH = baseItem != null ? baseItem.GetDimensionH() : 1,
+                    IsContainer = itemEntity.HasComponent(typeof(StorageComponent))
                 });
             }
 
             _view.RenderItems(items);
+            _view.ClearInspection();
             UpdateStats();
         }
 
         private void OnItemClicked(int itemId)
         {
-            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
-            IInventoryElement found = invComp?.Inventory.Find(itemId);
-            if (found != null && found.GetItemEntity().HasComponent(typeof(StorageComponent)))
-            {
-                int tabIndex = GetTabIndexForContainer(found.GetItemEntity());
-                if (tabIndex >= 0) OnTabClicked(tabIndex);
-            }
+            // TODO: rellenar inspection strip con datos del item
         }
 
         private void OnCloseClicked() => Close();
@@ -147,17 +112,16 @@ namespace MVC.Presenter.Inventory
         private void UpdateStats()
         {
             if (_entity == null) return;
-
             InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
-
             if (invComp == null || !_entity.HasComponent(typeof(BodyComponent))) return;
 
-            float currentWeight = invComp.Inventory.GetTotalWeight(); 
-            float maxWeight = CarryCapacity.GetMaxCarryWeight(_entity); 
-
+            float currentWeight = invComp.Inventory.GetTotalWeight();
+            float maxWeight = CarryCapacity.GetMaxCarryWeight(_entity);
             _view.UpdateStats(currentWeight, maxWeight);
-        }
+        } 
 
-        private int GetTabIndexForContainer(ItemEntity entity) => -1;
+        
+
+        
     }
 }

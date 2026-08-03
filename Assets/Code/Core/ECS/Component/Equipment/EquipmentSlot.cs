@@ -85,7 +85,12 @@ namespace ECS.Component.Equipment
         {
             return _equippedItems;
         }
-
+        
+        public ItemEntity GetTopItem()
+        {
+            return _equippedItems[0];
+        }
+        
         public bool ContainsGarmentCategory(GarmentCategory category)
         { 
             foreach (ItemEntity item in _equippedItems)

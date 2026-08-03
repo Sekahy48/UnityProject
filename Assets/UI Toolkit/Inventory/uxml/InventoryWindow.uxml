@@ -1,38 +1,101 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
     <Style src="../uss/InventoryWindow.uss"/>
-    <ui:VisualElement name="inventory-root" class="inventory-root">
-        
-        <!-- Barra de título para drag -->
-        <ui:VisualElement name="title-bar" class="title-bar">
-            <ui:Label name="title-label" text="Inventario" class="title-label"/>
-            <ui:Button name="close-button" text="✕" class="close-button"/>
+    <ui:VisualElement name="inventory-root" class="inventory-root"> 
+
+        <!-- Tabs de eleccion -->
+        <ui:VisualElement name="left-tabs-bar" class="left-tabs-bar">
+            <ui:VisualElement name="equipment-tab" class="left-tab equipment-related">
+            
+            </ui:VisualElement>
+            <ui:VisualElement name="health-tab" class="left-tab health-related">
+            
+            </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Cuerpo principal -->
-        <ui:VisualElement name="inventory-body" class="inventory-body">
-            
-            <!-- Panel izquierdo: tabs -->
-            <ui:VisualElement name="tab-panel" class="tab-panel">
-                <ui:ScrollView name="tab-scroll" class="tab-scroll">
-                    <ui:VisualElement name="tab-list" class="tab-list"/>
-                </ui:ScrollView>
-            </ui:VisualElement>
+        <!-- Paneles principales: personal (izq) + inventario (dcha) -->
+        <ui:VisualElement name="main-area" class="main-area">
 
-            <!-- Panel derecho: contenido -->
-            <ui:VisualElement name="content-panel" class="content-panel">
-                
-                <!-- Cabecera con stats de peso/volumen -->
-                <ui:VisualElement name="stats-bar" class="stats-bar">
-                    <ui:Label name="weight-label" text="Peso: 0/0 kg" class="stat-label"/>
-                    <ui:Label name="volume-label" text="Volumen: 0/0 L" class="stat-label"/>
+            <!-- Barra de título para drag -->
+            <ui:VisualElement name="title-bar" class="title-bar">
+                <ui:Label name="title-label" text="Inventario" class="title-label"/>
+                <ui:Button name="close-button" text="✕" class="close-button"/>
+            </ui:VisualElement>
+            
+
+            
+
+            <ui:VisualElement name="content-area" class="content-area">
+                <!-- Zona principal -->
+                <ui:VisualElement name="player-panels" class="player-panels">
+                    <!-- Panel personal: equipment + health placeholder -->
+                    <ui:VisualElement name="left-panel" class="left-panel">
+                        <ui:VisualElement name="health-panel" class="internal-personal-panel health-related">
+                            <ui:VisualElement name="health-placeholder" class="health-placeholder">
+                                <ui:Label text="Health" class="section-label"/>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <ui:VisualElement name="equipment-panel" class="internal-personal-panel equipment-panel equipment-related">
+                            <ui:VisualElement name="equipment-cross" class="equipment-cross">
+                                <!-- Cruz -->
+                                <ui:VisualElement class="equip-row">
+                                    <ui:VisualElement class="equip-spacer"/>
+                                    <ui:VisualElement name="slot-head" class="equip-slot"/>
+                                    <ui:VisualElement class="equip-spacer"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="equip-row">
+                                    <ui:VisualElement name="slot-lefthand" class="equip-slot"/>
+                                    <ui:VisualElement name="slot-chest" class="equip-slot"/>
+                                    <ui:VisualElement name="slot-righthand" class="equip-slot"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="equip-row">
+                                    <ui:VisualElement class="equip-spacer"/>
+                                    <ui:VisualElement name="slot-legs" class="equip-slot"/>
+                                    <ui:VisualElement class="equip-spacer"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="equip-row">
+                                    <ui:VisualElement class="equip-spacer"/>
+                                    <ui:VisualElement name="slot-feet" class="equip-slot"/>
+                                    <ui:VisualElement class="equip-spacer"/>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Columna lateral -->
+                            <ui:VisualElement class="equip-side">
+                                <ui:VisualElement name="slot-back" class="equip-slot"/>
+                                <ui:VisualElement name="slot-hip" class="equip-slot"/>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Panel inventario: weight bar + tetris grid -->
+                    <ui:VisualElement name="inventory-panel" class="inventory-panel">
+                        <ui:VisualElement name="stats-bar" class="stats-bar">
+                            <ui:Label name="weight-label" text="Peso: 0/0 kg" class="stat-label"/>
+                        </ui:VisualElement>
+                        <ui:ScrollView name="item-scroll" class="item-scroll">
+                            <ui:VisualElement name="item-grid" class="item-grid"/>
+                        </ui:ScrollView>
+                    </ui:VisualElement>
                 </ui:VisualElement>
 
-                <!-- Grid de items -->
-                <ui:ScrollView name="item-scroll" class="item-scroll">
-                    <ui:VisualElement name="item-grid" class="item-grid"/>
-                </ui:ScrollView>
-
+                <!-- Franja inferior: info del item seleccionado -->
+                <ui:VisualElement name="inspection-strip" class="inspection-strip">
+                    <ui:VisualElement name="inspect-icon" class="inspect-icon"/>
+                    <ui:VisualElement name="inspect-info" class="inspect-info">
+                        <ui:Label name="inspect-name" class="inspect-name"/>
+                        <ui:Label name="inspect-description" class="inspect-description"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="inspect-stats" class="inspect-stats">
+                        <ui:Label name="inspect-weight" class="inspect-stat"/>
+                        <ui:Label name="inspect-durability" class="inspect-stat"/>
+                        <ui:Label name="inspect-size" class="inspect-stat"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+
+        
+
     </ui:VisualElement>
 </ui:UXML>

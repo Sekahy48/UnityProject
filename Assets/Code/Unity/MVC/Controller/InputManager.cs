@@ -71,18 +71,10 @@ namespace MVC.Controller
             InventoryPresenter presenter = presenterManager
                 .GetPresenter<InventoryPresenter>(PresenterType.INV);
 
-            if (tabIndex == -1)
-            {
-                presenter.Close();
-                return;
-            }
-
-            if (!presenter.IsOpen())
-                presenter.Open(_activeStrategy.GetPlayer(), tabIndex);
-            else if (presenter.GetActiveTabIndex() == tabIndex)
+            if (tabIndex == -1 || presenter.IsOpen())
                 presenter.Close();
             else
-                presenter.NavigateToTab(tabIndex);
+                presenter.Open(_activeStrategy.GetPlayer());
         }
     }
 }

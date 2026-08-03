@@ -93,14 +93,15 @@
 - [x] 6. Create `EquipmentSystem` (new system, SRP — separate from InventorySystem). `TryEquip` and `TryUnequip` return `EquipResult`, log via `EquipResult.GetMessage()` extension method, and fire `EquipmentChanged` event on success.
 *Tasks 7–10 (equipment UI) moved to M5 — all UI work consolidated there.*
 
-**Decided**: Equipment grid is 3×4. Layout:
+**Decided**: Equipment layout is cross + side column (not a grid). Layout:
 ```
-(L.Shoulder)  (Head)    (R.Shoulder)
-(L.Hand)      (Torso)   (R.Hand)
-(reserved)    (Legs)    (reserved)
-(reserved)    (Feet)    (reserved)
+Cross (body):              Side column:
+       [Head]              [Back]  (multi-slot: 2 shoulder bags / 1 backpack)
+[LHand][Chest][RHand]      [Hip]   (tool belt, sword sheath, pouch)
+       [Legs]
+       [Feet]
 ```
-Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved slots use the same `enabled=false` mechanism as amputation — unlocked when gameplay needs them (belt, cloak, etc). `EquipmentSlotType` enum needs updating to add shoulders and reserved.
+`Hands` enum removed — gloves are a wearable layer on LeftHand/RightHand (garmentCategory: Glove). Equipping gloves applies to both hands; unequipping from either hand removes both. Weapons/tools are a separate layer (garmentCategory: Weapon/Tool) and are per-hand. Face/Neck items (mask, goggles, scarf, necklace) are layers on Head slot with their own garmentCategory.
 
 **Decided**: Layer order is validated. Two rules:
 1. **topLayer** (component data): `WearableComponent` has a `topLayer` bool. Rigid/structured items (armor, chestplate) are topLayer — nothing can be equipped on top of them. Covers: no shirt over chestplate, no armor over armor.
@@ -117,29 +118,30 @@ Shoulders: bags, backpacks (1 shoulder = satchel, both = backpack). 4 reserved s
 **Tasks**:
 
 Foundation:
-- [ ] 1. `TetrisGridState` already exists from M3. This milestone adds the UI rendering and interaction on top of it.
-- [ ] 2. Split view layout: left panel (personal) + right panel (inventory). Replaces current tab-based UI.
+- [x] 1. Render inventory grid in UI based on player's TetrisGridState dimensions.
+- [x] 2. Split view layout: left panel (personal) + right panel (inventory). Replaces current tab-based UI.
 
-Left panel (personal):
-- [ ] 3. Health placeholder in personal panel
-- [ ] 4. UI: render 3×4 equipment grid with layer indicators (from M4)
-- [ ] 5. UI: click slot to see/manage layers (from M4)
+Left panel (personal — tabbed):
+- [x] 3. Tab system in left panel to switch between Health and Equipment views (inventory panel stays fixed)
+- [x] 4. Health tab: placeholder (future Zomboid-style health UI)
+- [ ] 5. Equipment tab: render cross + side column layout with slot VisualElements (from M4)
+- [ ] 6. Equipment tab: click slot to see/manage layers (from M4)
 
 Right panel (inventory):
-- [ ] 6. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
-- [ ] 7. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
-- [ ] 8. Weight stats bar below inventory grid — color-coded by threshold (ExtraWeight, Overweight, Immobile). Grid visual shows free/occupied cells in real time.
+- [ ] 7. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
+- [ ] 8. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
+- [ ] 9. Weight stats bar below inventory grid — color-coded by threshold (ExtraWeight, Overweight, Immobile). Grid visual shows free/occupied cells in real time.
 
 Interaction:
-- [ ] 9. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
-- [ ] 10. UI: drag from inventory → equipment slot (from M4)
-- [ ] 11. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
-- [ ] 12. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
+- [ ] 10. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
+- [ ] 11. UI: drag from inventory → equipment slot (from M4)
+- [ ] 12. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
+- [ ] 13. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
 
 Polish:
-- [ ] 13. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
-- [ ] 14. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
-- [ ] 15. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
+- [ ] 14. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
+- [ ] 15. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
+- [ ] 16. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 

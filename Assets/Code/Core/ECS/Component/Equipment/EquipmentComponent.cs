@@ -16,6 +16,11 @@ namespace ECS.Component.Equipment
             _equipmentSlots = new Dictionary<EquipmentSlotType, EquipmentSlot>();
         }
 
+        public EquipmentSlot GetEquipmentSlot(EquipmentSlotType type)
+        {
+            return _equipmentSlots[type];
+        }
+        
         public bool AddSlot(EquipmentSlotType slotType, int capacity)
         {   
             AC.CheckNotNull(slotType, nameof(slotType));

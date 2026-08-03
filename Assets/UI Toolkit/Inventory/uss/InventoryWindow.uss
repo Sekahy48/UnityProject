@@ -2,14 +2,10 @@
     position: absolute;
     right: 50px;
     top: 50px;
-    width: 30%;
-    min-height: 400px;
-    height: 85%;
-    background-color: rgba(20, 20, 20, 0.95);
-    border-radius: 6px;
-    border-width: 1px;
-    border-color: rgba(80, 80, 80, 0.8);
-    flex-direction: column;
+    width: 50%;
+    min-height: 360px;
+    height: 66%; 
+    flex-direction: row;
     align-self: flex-start;
 }
 
@@ -43,63 +39,88 @@
     cursor: pointer;
 }
 
-.inventory-body {
+/* ===== Wrappers ===== */
+.main-area {
+    flex-direction: column;
+    flex-grow: 1; 
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.8);
+}
+
+.content-area {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* ===== Split view: personal + inventario ===== */
+
+.player-panels {
     flex-direction: row;
     flex-grow: 1;
 }
 
-.tab-panel {
-    width: 56px;
-    background-color: rgba(15, 15, 15, 0.9);
+.left-panel {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 33%;
+    flex-direction: column;
     border-right-width: 1px;
     border-color: rgba(60, 60, 60, 0.8);
-    padding-top: 6px;
-    padding-bottom: 6px;
 }
 
-.tab-list {
+.inventory-panel {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 67%;
     flex-direction: column;
-    align-items: center;
 }
 
-.tab-item {
-    width: 40px;
+/* ===== Left tabs ===== */
+
+.left-tabs-bar{
+    flex-direction: column; 
+    width: 48px;
+    padding-top: 32px;
+}
+
+.left-tab {
+    width: 48px;
     height: 40px;
-    margin-bottom: 6px;
-    background-color: rgba(50, 50, 50, 0.8);
-    border-radius: 4px;
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 6px;
     border-width: 1px;
-    border-color: rgba(80, 80, 80, 0.6);
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+    border-color: rgba(80, 80, 80, 0.8);
+
+    margin-top: 4px;
+    margin-bottom: 4px;
+
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
 }
 
-.tab-item:hover {
-    background-color: rgba(70, 70, 70, 0.9);
-    border-color: rgba(150, 150, 150, 0.8);
-}
+/* ===== Personal panel ===== */
 
-.tab-item--active {
-    background-color: rgba(60, 80, 60, 0.9);
-    border-color: rgba(100, 160, 100, 0.8);
-}
-
-.tab-icon {
-    width: 28px;
-    height: 28px;
-}
-
-.tab-label {
-    font-size: 8px;
-    color: rgba(160, 160, 160, 1);
-    -unity-text-align: middle-center;
-}
-
-.content-panel {
+.health-placeholder { 
     flex-grow: 1;
-    flex-direction: column;
+    padding: 8px;
+    border-bottom-width: 1px;
+    border-color: rgba(60, 60, 60, 0.8);
+    background-image: url('../images/health_placeholder.png');
+    -unity-background-scale-mode: scale-to-fit;
+} 
+
+.section-label {
+    color: rgba(160, 160, 160, 1);
+    font-size: 11px;
 }
+
+.internal-personal-panel {
+    flex-grow: 1;
+}
+
+/* ===== Inventory panel ===== */
 
 .stats-bar {
     height: 28px;
@@ -169,4 +190,110 @@
     padding-bottom: 4px;
     width: 100%;
     overflow: hidden;
+}
+
+/* ===== Inspection strip ===== */
+
+.inspection-strip {
+    height: 130px;
+    flex-direction: row;
+    border-top-width: 1px;
+    border-color: rgba(60, 60, 60, 0.8);
+    padding: 8px;
+}
+
+.inspect-icon {
+    width: 70px;
+    height: 100%;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.6);
+    border-radius: 4px;
+    background-color: rgba(40, 40, 40, 0.8);
+}
+
+.inspect-info {
+    flex-grow: 1;
+    padding-left: 10px;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.inspect-name {
+    font-size: 13px;
+    color: rgba(220, 220, 220, 1);
+    -unity-font-style: bold;
+}
+
+.inspect-description {
+    font-size: 10px;
+    color: rgba(160, 160, 160, 1);
+    margin-top: 4px;
+}
+
+.inspect-stats {
+    width: 120px;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: 8px;
+}
+
+.inspect-stat {
+    font-size: 10px;
+    color: rgba(180, 180, 180, 1);
+    margin-bottom: 2px;
+}
+
+/* ===== Inventory Grid ===== */
+
+.inventory-grid {
+    flex-direction: column;
+}
+
+.inventory-grid-row {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.inventory-grid-cell {
+    width: 60px;
+    height: 60px;
+    border-width: 2px;
+    border-color: rgba(70, 70, 70, 0.6);
+    background-color: rgba(40, 40, 40, 0.8);
+}
+
+
+/* ===== Equipment Panel ===== */
+.equipment-panel {
+    flex-direction: row;
+    flex-grow: 1;
+    padding: 8px;
+}
+
+.equipment-cross {
+    flex-direction: column;
+    padding: 8px;
+}
+
+.equip-side {
+    flex-direction: column;
+    padding: 8px;
+}
+.equip-row {
+    flex-direction: row;
+}
+
+.equip-slot {
+    width: 60px;
+    height: 60px;
+    border-width: 2px; 
+    margin: 1px;
+    border-color: rgba(70, 70, 70, 0.6); 
+    background-color: rgba(40, 40, 40, 0.8);
+}
+
+.equip-spacer {
+    width: 60px;
+    height: 60px; 
+    margin: 1px;
 }
