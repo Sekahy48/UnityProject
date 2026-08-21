@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ECS.Component;
 using ECS.Entity;
+using AC = Utils.ArgumentChecker;
 
 namespace Inventory
 {
@@ -9,6 +10,22 @@ namespace Inventory
     /// Groups items of the same typeId into sub-lots differentiated by state (durability, condition, etc.).
     /// Each sub-lot is a pair (ItemEntity, amount). Items within the same sub-lot are Equivalent.
     /// Total amount across all sub-lots cannot exceed maxStackSize.
+    ///
+    /// <para>
+    /// <b>Invariant — sub-lot entities are immutable while held here.</b>
+    /// A single <see cref="ItemEntity"/> instance may be shared by several sub-lots, by several
+    /// BatchItems, and by several ItemObjects placed at different grid positions: when a lot is
+    /// split (because it exceeds maxStackSize, or because part of it is moved) the reference is
+    /// copied, not the object. Mutating an entity obtained from <see cref="GetSubLots"/> would
+    /// therefore silently alter every stack sharing it.
+    /// </para>
+    /// <para>
+    /// To change the state of some units (wear, spoilage, enchantment...), follow copy-on-write:
+    /// clone the entity, subtract that amount from the original sub-lot, apply the change to the
+    /// clone, and add it back as a new sub-lot. Since the clone is no longer
+    /// <c>Equivalent</c> to the original it will land in its own sub-lot, which is exactly the
+    /// distinction sub-lots exist to represent.
+    /// </para>
     /// </summary>
     public class BatchItem
     {
@@ -21,6 +38,7 @@ namespace Inventory
         {
             _typeId = item.GetComponent<BaseItemComponent>().GetTypeId();
             _maxStackSize = item.GetComponent<BaseItemComponent>().GetMaxStackSize();
+            AC.CheckPositive(_maxStackSize, "maxStackSize");
 
             _items = new List<(ItemEntity, int)>
             {

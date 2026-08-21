@@ -18,9 +18,9 @@
         {
           "type": "Damage",
           "values": {
-            "impactDmg": "MLow",
-            "slashingDmg": "High",
-            "punctureDmg": "Medium"
+            "impactDmg": "MLOW",
+            "slashingDmg": "HIGH",
+            "punctureDmg": "MEDIUM"
           }
         },
         {
@@ -30,7 +30,7 @@
             "materialName": "Common steel",
             "thermalInsulation": 0,
             "flexibility": 0.5,
-            "materialType": "Metal",
+            "materialType": "METAL",
             "transpirability": 0
           }
         }
@@ -53,9 +53,9 @@
         {
           "type": "Damage",
           "values": {
-            "impactDmg": "MLow",
-            "slashingDmg": "Low",
-            "punctureDmg": "High"
+            "impactDmg": "MLOW",
+            "slashingDmg": "LOW",
+            "punctureDmg": "HIGH"
           }
         },
         {
@@ -65,7 +65,7 @@
             "materialName": "Hard wood",
             "thermalInsulation": 0.6,
             "flexibility": 0.3,
-            "materialType": "Wood",
+            "materialType": "WOOD",
             "transpirability": 0.2
           }
         }
@@ -124,7 +124,7 @@
             "materialName": "Leather",
             "thermalInsulation": 0.85,
             "flexibility": 1,
-            "materialType": "Cloth",
+            "materialType": "CLOTH",
             "transpirability": 0.2
           }
         }
@@ -158,7 +158,7 @@
             "materialName": "Linen fabric",
             "thermalInsulation": 0.75,
             "flexibility": 1,
-            "materialType": "Cloth",
+            "materialType": "CLOTH",
             "transpirability": 0.95
           }
         }
@@ -184,6 +184,76 @@
             "maxWeight": 100,
             "weightRatio": 0.9,
             "maxVolume": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pechera",
+      "description": "bliblibli ",
+      "imagePath": "images/chest-plate.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 3,
+            "maxStackSize": 1,
+            "dimensionW": 3,
+            "weight": 8
+          }
+        },
+        {
+          "type": "Wearable",
+          "values": {
+            "garmentCategory": "Plate",
+            "topLayer": true,
+            "targetSlot": "Chest"
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.7,
+            "materialName": "Common steel",
+            "thermalInsulation": 0.1,
+            "flexibility": 0.1,
+            "materialType": "METAL",
+            "transpirability": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Camisa",
+      "description": "",
+      "imagePath": "images/shirt-icon.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 2,
+            "maxStackSize": 1,
+            "dimensionW": 2,
+            "weight": 0.4
+          }
+        },
+        {
+          "type": "Wearable",
+          "values": {
+            "garmentCategory": "Shirt",
+            "topLayer": false,
+            "targetSlot": "Chest"
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.05,
+            "materialName": "Linen",
+            "thermalInsulation": 0.2,
+            "flexibility": 0.9,
+            "materialType": "CLOTH",
+            "transpirability": 0.8
           }
         }
       ]

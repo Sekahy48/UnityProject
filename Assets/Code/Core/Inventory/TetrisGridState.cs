@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ECS.Component;
+using ECS.Entity;
 
 namespace Inventory
 {
@@ -59,20 +60,36 @@ namespace Inventory
         /// <summary>
         /// Checks if an item with the given dimensions can be placed at the specified position.
         /// </summary>
-        public bool CanPlace(int row, int col, int itemH, int itemW)
+        /// <param name="ignoreNodeId">
+        /// Node whose cells count as free. Needed to move a node onto a position overlapping
+        /// its own: the hand holds a reference and nothing leaves the grid until it is placed,
+        /// so the node's cells still hold its id and would block it against itself. Nudging a
+        /// 1x3 blade one row down is the common case.
+        /// -1 blocks nothing extra, since NodeIdGenerator starts at 1.
+        /// </param>
+        public bool CanPlace(int row, int col, int itemH, int itemW, int ignoreNodeId = -1)
         {
             if (row < 0 || col < 0) return false;
             if (row + itemH > _gridH || col + itemW > _gridW) return false;
 
             for (int r = row; r < row + itemH; r++)
                 for (int c = col; c < col + itemW; c++)
-                    if (_cells[r, c] != -1) return false;
+                    if (_cells[r, c] != -1 && _cells[r, c] != ignoreNodeId) return false;
 
             return true;
         }
 
+        public bool CanPlace(ItemEntity item)
+        {
+            BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
+            return FindFirstFit(baseInfo.GetDimensionH(), baseInfo.GetDimensionW()) != (-1, -1);
+        }
+
         /// <summary>
         /// Places a node at the specified position. Returns false if the space is not available.
+        /// A node may overlap its own previous cells, so this doubles as "move here": the old
+        /// cells are released first, otherwise they would stay marked with its id and the node
+        /// would hold more space than it occupies.
         /// </summary>
         public bool Place(ItemObject node, int row, int col)
         {
@@ -80,9 +97,11 @@ namespace Inventory
             int itemH = baseItem.GetDimensionH();
             int itemW = baseItem.GetDimensionW();
 
-            if (!CanPlace(row, col, itemH, itemW)) return false;
+            if (!CanPlace(row, col, itemH, itemW, node.GetNodeId())) return false;
 
             int nodeId = node.GetNodeId();
+            Remove(nodeId);   // no-op if it wasn't placed yet
+
             for (int r = row; r < row + itemH; r++)
                 for (int c = col; c < col + itemW; c++)
                     _cells[r, c] = nodeId;
@@ -132,11 +151,12 @@ namespace Inventory
         /// Scans left-to-right, top-to-bottom.
         /// Returns (row, col) or (-1, -1) if no space.
         /// </summary>
-        public (int row, int col) FindFirstFit(int itemH, int itemW)
+        /// <param name="ignoreNodeId">Node whose cells count as free — see CanPlace.</param>
+        public (int row, int col) FindFirstFit(int itemH, int itemW, int ignoreNodeId = -1)
         {
             for (int r = 0; r <= _gridH - itemH; r++)
                 for (int c = 0; c <= _gridW - itemW; c++)
-                    if (CanPlace(r, c, itemH, itemW)) return (r, c);
+                    if (CanPlace(r, c, itemH, itemW, ignoreNodeId)) return (r, c);
 
             return (-1, -1);
         }

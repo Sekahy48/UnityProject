@@ -15,7 +15,7 @@ namespace ECS.Component.Equipment
         public EquipmentSlot(EquipmentSlotType type, int maxLayers)
         {
             AC.CheckNotNull(type, nameof(type));
-            AC.CheckPositive(_maxLayers, nameof(_maxLayers));
+            AC.CheckPositive(maxLayers, nameof(maxLayers));
             _slotType = type;
             _maxLayers = maxLayers;
             _equippedItems = new List<ItemEntity>();
@@ -88,7 +88,7 @@ namespace ECS.Component.Equipment
         
         public ItemEntity GetTopItem()
         {
-            return _equippedItems[0];
+            return _equippedItems[_equippedItems.Count - 1];
         }
         
         public bool ContainsGarmentCategory(GarmentCategory category)

@@ -8,7 +8,7 @@ namespace Utils
         {
             if (arg == null)
             {
-                throw new ArgumentNullException("Argument Checker: " + argName + " no puede ser null");
+                throw new ArgumentNullException(argName, "Argument Checker: " + argName + " no puede ser null");
             }
         }
 

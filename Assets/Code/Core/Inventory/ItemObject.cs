@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ECS.Component;
 using ECS.Entity;
+using AC = Utils.ArgumentChecker;
 
 namespace Inventory
 {
@@ -66,6 +67,92 @@ namespace Inventory
                 }
                 return consumed;
             }
+            return 0;
+        }
+
+        /// <summary>
+        /// Modifies ONE specific sub-lot, identified by an equivalent item.
+        /// Unlike ModifyAmount(int typeId, int) this never consumes at random: use it
+        /// when the caller knows exactly which variant it is moving (the hand holding a
+        /// specific sub-lot, for instance) rather than "any N units of this type".
+        /// Empty sub-lots are dropped by BatchItem itself; emptying the whole node is
+        /// the caller's problem — see InventoryObject.ModifyAmount(ItemObject, ItemEntity, int),
+        /// which removes the node and frees its grid cells.
+        /// </summary>
+        /// <param name="item">Item identifying the sub-lot (matched by Equivalent).</param>
+        /// <param name="amount">Positive adds, negative consumes.</param>
+        /// <returns>Units actually applied, always positive.</returns>
+        public int ModifyAmount(ItemEntity item, int amount)
+        {
+            AC.CheckNotNull(item, nameof(item));
+
+            // Un nodo solo contiene items de un typeId. Pedirle que modifique otro es un
+            // error del llamante, no un caso legitimo: sin esta guarda, AddAmount devolveria
+            // todo sin anadir y ConsumeAmount devolveria 0, indistinguible de "estaba vacio".
+            int itemTypeId = item.GetComponent<BaseItemComponent>().GetTypeId();
+            if (itemTypeId != GetTypeId())
+                throw new InvalidOperationException(
+                    $"ItemObject.ModifyAmount: item of typeId {itemTypeId} does not belong " +
+                    $"to this node, which holds typeId {GetTypeId()}.");
+
+            if (amount > 0)
+            {
+                int remaining = _batch.AddAmount(item, amount);
+                return amount - remaining;
+            }
+
+            if (amount < 0)
+                return _batch.ConsumeAmount(item, -amount);
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Takes units out and reports WHICH variants came out, grouped by sub-lot.
+        ///
+        /// ModifyAmount returns a bare count, which loses that information: a node holding
+        /// 10 rusty and 10 pristine swords consumes at random, and the caller would have to
+        /// guess what it just removed. Anything transferring items elsewhere needs the real
+        /// breakdown, or the destination silently receives N copies of one variant and the
+        /// others cease to exist.
+        /// </summary>
+        /// <param name="item">Sub-lot to take from, or null to take at random across the node.</param>
+        /// <param name="amount">Units to take. Taking more than there is takes what there is.</param>
+        /// <returns>Pairs of (variant, units taken). Empty if nothing came out.</returns>
+        public List<(ItemEntity item, int amount)> Extract(ItemEntity item, int amount)
+        {
+            AC.CheckPositive(amount, nameof(amount));
+
+            List<(ItemEntity item, int amount)> extracted = new List<(ItemEntity, int)>();
+
+            if (item == null)
+            {
+                foreach ((ItemEntity variant, int count) in _batch.ConsumeRandom(amount))
+                    extracted.Add((variant, count));
+            }
+            else
+            {
+                int taken = ModifyAmount(item, -amount);
+                if (taken > 0) extracted.Add((item, taken));
+            }
+
+            return extracted;
+        }
+
+        /// <summary>
+        /// Units available in one sub-lot, or in the whole node when <paramref name="item"/>
+        /// is null. Mirrors ModifyAmount(ItemEntity, int): same granularity, same null
+        /// semantics, so a caller can ask "how much can I take?" and then take it without
+        /// switching between two different APIs.
+        /// </summary>
+        /// <param name="item">Sub-lot to measure (matched by Equivalent), or null for the whole node.</param>
+        public int GetAmount(ItemEntity item)
+        {
+            if (item == null) return _batch.GetTotalAmount();
+
+            foreach ((ItemEntity subItem, int amount) lot in _batch.GetSubLots())
+                if (lot.subItem.Equivalent(item)) return lot.amount;
+
             return 0;
         }
 

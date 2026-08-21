@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using ECS.Component;
 using Events;
 using Observer;
 
 namespace ECS.Systems
 {
-    public class MovementSystem : IEventObserver
+    public class MovementSystem : IReactiveSystem
     {
         private const float EXTRA_WEIGHT_SPEED = 0.80f;
         private const float OVERWEIGHT_SPEED = 0.50f;
@@ -12,6 +13,17 @@ namespace ECS.Systems
         private const float NORMAL_SPEED = 1.0f;
 
         private bool _weightRestrictionActive = false;
+
+        private static readonly GameEventType[] _subscribedEvents =
+        {
+            GameEventType.ExtraWeight,
+            GameEventType.Overweight,
+            GameEventType.Immobile,
+            GameEventType.NormalWeight
+        };
+
+        public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
+
 
         public void UpdateOnEvent(GameEvent gameEvent)
         {

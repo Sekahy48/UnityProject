@@ -1,4 +1,5 @@
 using ECS.Systems;
+using Item;
 
 namespace Core.Contexts
 {
@@ -8,11 +9,13 @@ namespace Core.Contexts
     /// </summary>
     public class GameDataContext
     {
-        public EntityManager EntityManager { get; }
+        public EntityManager _entityManager { get; }
+        public ItemCatalogue _itemCatalogue {get; }
 
-        public GameDataContext(EntityManager entityManager)
+        public GameDataContext(EntityManager entityManager, ItemCatalogue itemCatalogue)
         {
-            EntityManager = entityManager;
+            _entityManager = entityManager;
+            _itemCatalogue = itemCatalogue;
         }
     }
 }

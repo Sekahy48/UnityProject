@@ -1,8 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../uss/InventoryWindow.uss"/>
-    <ui:VisualElement name="item-card" class="item-card">
-        <ui:VisualElement name="item-icon" class="item-icon"/>
-        <ui:Label name="item-amount" text="" class="item-amount"/>
-        <ui:Label name="item-name" text="" class="item-name"/>
-    </ui:VisualElement>
-</ui:UXML>

@@ -6,7 +6,7 @@ using Observer;
 
 namespace ECS.Systems
 {
-    public class FatigueStaminaSystem : GenericSubject, IGameSystem
+    public class FatigueStaminaSystem : GenericSubject, IPeriodicSystem
     {
         private const float STAMINA_REGEN_RATE = 5f;
         private const float FATIGUE_REGEN_RATE = 0.5f;

@@ -1,6 +1,13 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
     <Style src="../uss/InventoryWindow.uss"/>
-    <ui:VisualElement name="inventory-root" class="inventory-root"> 
+
+<!-- Contenedor de todas las ventanas de inventario. Existen en el mismo UIDocument
+     (y por tanto en el mismo panel) a proposito: paneles distintos no comparten arbol,
+     asi que arrastrar un item de una ventana a otra seria imposible y la captura de
+     puntero no cruzaria entre ellos. Huecos fijos, no ventanas libres. -->
+<ui:VisualElement name="ui-root" class="ui-root">
+
+    <ui:VisualElement name="inventory-root" class="inventory-root">
 
         <!-- Tabs de eleccion -->
         <ui:VisualElement name="left-tabs-bar" class="left-tabs-bar">
@@ -18,6 +25,7 @@
             <!-- Barra de título para drag -->
             <ui:VisualElement name="title-bar" class="title-bar">
                 <ui:Label name="title-label" text="Inventario" class="title-label"/>
+                <ui:Button name="dev-catalog-button" text="DEV: Items Catalog" class="dev-button"/>
                 <ui:Button name="close-button" text="✕" class="close-button"/>
             </ui:VisualElement>
             
@@ -70,12 +78,16 @@
 
                     <!-- Panel inventario: weight bar + tetris grid -->
                     <ui:VisualElement name="inventory-panel" class="inventory-panel">
-                        <ui:VisualElement name="stats-bar" class="stats-bar">
-                            <ui:Label name="weight-label" text="Peso: 0/0 kg" class="stat-label"/>
+                        <!-- Carril de peso: fondo fijo. El relleno va en absoluto (su width es el
+                             % de carga) y la etiqueta despues, para que se pinte encima sin
+                             competir por el espacio ni verse recortada cuando el relleno es corto. -->
+                        <ui:VisualElement name="weight-rail" class="weight-rail">
+                            <ui:VisualElement name="weight-bar" class="weight-bar"/>
+                            <ui:Label name="weight-label" text="0/0 kg" class="weight-label"/>
                         </ui:VisualElement>
-                        <ui:ScrollView name="item-scroll" class="item-scroll">
-                            <ui:VisualElement name="item-grid" class="item-grid"/>
-                        </ui:ScrollView>
+                        <!-- Punto de montaje: GenerateGrid lo vacia y le mete la grid tetris.
+                             Existe para poder hacer Clear() sin borrar el weight-rail hermano. -->
+                        <ui:VisualElement name="grid-mount" class="grid-mount"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
 
@@ -93,9 +105,38 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
+
+            <ui:VisualElement name="subslots-popup" class="subslots-popup">
+            </ui:VisualElement>
         </ui:VisualElement>
 
-        
+    </ui:VisualElement>
+
+    <!-- Hueco lateral A: puede alojar el catalogo de desarrollo o, desde M6, un
+         contenedor externo (arcon, carro, NPC). Cada contenido es UN solo hijo,
+         para que alternarlos o trasplantarlos a otro hueco sea trivial. -->
+    <ui:VisualElement name="side-panel-a" class="side-panel">
+
+        <ui:VisualElement name="item-catalog" class="panel-content">
+
+            <ui:VisualElement name="catalog-title-bar" class="title-bar">
+                <ui:Label text="Items Catalog" class="title-label"/>
+                <ui:Button name="catalog-close-button" text="✕" class="close-button"/>
+            </ui:VisualElement>
+
+            <ui:TextField name="catalog-search" class="catalog-search"/>
+
+            <ui:ScrollView name="catalog-scroll" class="catalog-scroll"/>
+
+        </ui:VisualElement>
 
     </ui:VisualElement>
+
+    <!-- Hueco lateral B: vacio hasta M6. Permite transferir entre dos contenedores
+         externos sin pasar por el inventario del jugador. -->
+    <ui:VisualElement name="side-panel-b" class="side-panel"/>
+
+</ui:VisualElement>
+
+<ui:VisualElement name="tooltip" class="tooltip"/>
 </ui:UXML>

@@ -20,19 +20,13 @@ namespace ECS.Entity
 
         public string GetDisplayName()
         {
+            NameComponent nameComp = GetComponent<NameComponent>();
+            return nameComp != null ? nameComp.DisplayName : GetGenericName();
+        }
 
-            string displayName;
-
-            if (this.GetComponent<NameComponent>() != null)
-            {
-                displayName = this.GetComponent<NameComponent>().DisplayName;  
-            }
-            else
-            {
-                displayName = this.GetComponent<BaseItemComponent>().GetGenericName();
-            }
-
-            return displayName;
+        public string GetGenericName()
+        {
+            return GetComponent<BaseItemComponent>().GetGenericName();
         }
     }
 }

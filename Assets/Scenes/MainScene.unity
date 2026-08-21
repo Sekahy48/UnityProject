@@ -669,6 +669,7 @@ GameObject:
   m_Component:
   - component: {fileID: 899944976}
   - component: {fileID: 899944977}
+  - component: {fileID: 899944978}
   m_Layer: 0
   m_Name: InventoryUIDocument
   m_TagString: Untagged
@@ -710,6 +711,18 @@ MonoBehaviour:
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
   m_WorldSpaceHeight: 1080
+--- !u!114 &899944978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 899944975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76785f80ebd8ab64aa7157b459332f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1243093404
 GameObject:
   m_ObjectHideFlags: 0
@@ -755,9 +768,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inventoryDocument: {fileID: 899944977}
-  _inventoryTabTemplate: {fileID: 9197481963319205126, guid: d815d9be1d2c4e9419c6d1319c907c0d, type: 3}
-  _inventoryItemTemplate: {fileID: 9197481963319205126, guid: 5c72bcacca16c054397f3918e69a372f, type: 3}
-  _equipmentPanelTemplate: {fileID: 9197481963319205126, guid: 7875a8a0b3cfb2c4bba3a0d95a7cd0d0, type: 3}
 --- !u!1 &1399650003
 GameObject:
   m_ObjectHideFlags: 0

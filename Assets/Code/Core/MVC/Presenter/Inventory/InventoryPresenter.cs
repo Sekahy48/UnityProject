@@ -6,26 +6,26 @@ using ECS.Component.Equipment;
 using ECS.Entity;
 using ECS.Systems;
 using Inventory;
+using Item;
 using MVC.View;
 using MVC.View.UI.Inventory;
-using Unity;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MVC.Presenter.Inventory
 {
     public class InventoryPresenter : IPresenter
     {
         private readonly InventoryView _view;
+        private readonly ItemCatalogue _itemCatalog;
         private IEntity _entity;
         private bool _pendingOpen = false;
 
-        public InventoryPresenter(InventoryView view)
+        public InventoryPresenter(InventoryView view, ItemCatalogue itemCatalogue)
         {
             _view = view;
-            _view.OnItemClicked += OnItemClicked;
             _view.OnCloseClicked += OnCloseClicked;
             _view.OnReady += OnViewReady;
+            _view.OnSlotLayersRequested += OnSlotLayersRequested;
+            _itemCatalog = itemCatalogue;
             view.Initialize();
         }
 
@@ -51,11 +51,20 @@ namespace MVC.Presenter.Inventory
 
         private void OpenInternal()
         {
-            //RenderInventory();
-
             InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
             TetrisGridState grid = invComp.Inventory.GetGrid();
-            _view.GenerateGrid(grid.GetGridH(), grid.GetGridW()); 
+            _view.GenerateGrid(grid.GetGridH(), grid.GetGridW());
+
+            _view.UpdateEquipmentSlots(_entity.GetComponent<EquipmentComponent>());
+            
+            List<ItemDisplayData> catalogDTO = new List<ItemDisplayData>();
+            foreach (ItemEntity item in _itemCatalog.GetAll())
+            {
+                catalogDTO.Add(BuildDisplayData(item, 1));
+            }
+            _view.FillItemCatalog(catalogDTO);
+            RenderInventory();
+
             _view.Show();
         }
 
@@ -68,46 +77,50 @@ namespace MVC.Presenter.Inventory
             RenderInventory();
         }
 
+        /// <summary>
+        /// Repaints the tetris grid contents: one block per placed GridElement,
+        /// positioned by its (row, col) and sized by the item's dimensions.
+        /// </summary>
         private void RenderInventory()
         {
-            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
-            if (invComp == null)
-            {
-                _view.RenderItems(new List<ItemDisplayData>());
-                return;
-            }
+            TetrisGridState grid = _entity.GetComponent<InventoryComponent>().Inventory.GetGrid();
 
-            List<ItemDisplayData> items = new List<ItemDisplayData>();
-            foreach (IInventoryElement elem in invComp.Inventory.FlattenInventory())
+            List<GridItemDisplayData> items = new List<GridItemDisplayData>();
+            foreach (GridElement element in grid.GetElements())
             {
-                ItemEntity itemEntity = elem.GetItemEntity();
-                BaseItemComponent baseItem = itemEntity.GetComponent<BaseItemComponent>();
-                items.Add(new ItemDisplayData
+                ItemObject node = element.GetNode();
+                items.Add(new GridItemDisplayData
                 {
-                    Id = baseItem.GetTypeId(),
-                    Name = itemEntity.GetDisplayName(),
-                    Amount = elem.GetAmount(),
-                    IconPath = baseItem?.GetIconPath(),
-                    Description = baseItem?.GetDescription(),
-                    Weight = baseItem != null ? baseItem.GetWeight() : 0f,
-                    Durability = baseItem != null ? baseItem.GetDurability() : 0,
-                    DimensionW = baseItem != null ? baseItem.GetDimensionW() : 1,
-                    DimensionH = baseItem != null ? baseItem.GetDimensionH() : 1,
-                    IsContainer = itemEntity.HasComponent(typeof(StorageComponent))
+                    Item = BuildDisplayData(node.GetItemEntity(), node.GetAmount()),
+                    Row  = element.GetRow(),
+                    Col  = element.GetCol()
                 });
             }
 
-            _view.RenderItems(items);
+            _view.RenderGridItems(items, grid.GetGridH(), grid.GetGridW());
             _view.ClearInspection();
             UpdateStats();
         }
 
-        private void OnItemClicked(int itemId)
+        private void OnCloseClicked() => Close();
+
+        private void OnSlotLayersRequested(EquipmentSlotType type)
         {
-            // TODO: rellenar inspection strip con datos del item
+            EquipmentSlot slot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(type);
+            List<ItemDisplayData> layers = new List<ItemDisplayData>();
+
+            List<ItemEntity> content = slot.GetItems();
+            for (int i = content.Count - 2; i >= 0; i--)
+            {
+                layers.Add(BuildDisplayData(content[i], 1));
+            }
+            _view.RenderSubslots(layers);
         }
 
-        private void OnCloseClicked() => Close();
+        private void OnCatalogItemGrabbed(int typeId, int amount)
+        {
+            // TODO
+        }
 
         private void UpdateStats()
         {
@@ -117,11 +130,32 @@ namespace MVC.Presenter.Inventory
 
             float currentWeight = invComp.Inventory.GetTotalWeight();
             float maxWeight = CarryCapacity.GetMaxCarryWeight(_entity);
-            _view.UpdateStats(currentWeight, maxWeight);
+            _view.UpdateStats(currentWeight, maxWeight, CarryCapacity.ClassifyLoad(maxWeight > 0 ? currentWeight / maxWeight : 1f));
         } 
 
         
+        private ItemDisplayData BuildDisplayData(ItemEntity itemEntity, int amount)
+        {
+            BaseItemComponent baseItem = itemEntity.GetComponent<BaseItemComponent>();
+            if (baseItem == null)
+                throw new InvalidOperationException(
+                    $"Item '{itemEntity.GetDisplayName()}' has no BaseItemComponent");
 
+            return new ItemDisplayData
+            {
+                TypeId      = baseItem.GetTypeId(),
+                Name        = itemEntity.GetDisplayName(),
+                TypeName    = itemEntity.GetGenericName(),
+                Amount      = amount,
+                IconPath    = baseItem.GetIconPath(),
+                Description = baseItem.GetDescription(),
+                Weight      = baseItem.GetWeight(),
+                Durability  = baseItem.GetDurability(),
+                DimensionW  = baseItem.GetDimensionW(),
+                DimensionH  = baseItem.GetDimensionH(),
+                IsContainer = itemEntity.HasComponent(typeof(StorageComponent))
+            };
+        }
         
     }
 }

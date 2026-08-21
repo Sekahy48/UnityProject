@@ -1,12 +1,64 @@
-.inventory-root {
+/* Ocupa la pantalla entera: los porcentajes de las ventanas hijas se resuelven
+   contra este contenedor, asi que si no llenara el panel se descuadrarian.
+   space-evenly reparte lo que sobre en cuatro huecos iguales: margen izquierdo,
+   dos separaciones y margen derecho. La ventana de inventario mide lo que mida
+   su grid, asi que el sobrante varia segun el tamano del inventario. */
+.ui-root {
     position: absolute;
-    right: 50px;
-    top: 50px;
-    width: 50%;
-    min-height: 360px;
-    height: 66%; 
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     flex-direction: row;
-    align-self: flex-start;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+/* Ancho derivado del contenido, no un porcentaje: la grid mide gridW x 60px
+   fijos, asi que la ventana debe medir lo que mida su grid. Con un porcentaje
+   solo encajaba a una resolucion concreta, y volvia a desbordar en pantallas
+   estrechas o con inventarios de mas columnas (mochilas de M6). */
+.inventory-root {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 66%;
+    min-height: 360px;
+    flex-direction: row;
+}
+
+/* Huecos laterales. Mismo marco para cualquier contenido: hoy el catalogo de
+   desarrollo, en M6 contenedores externos. Ocultos hasta que algo los llene. */
+.side-panel {
+    flex-basis: 14%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-height: 360px;
+    height: 66%;
+    flex-direction: column;
+
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.8);
+
+    display: none;
+}
+
+/* ===== Items Catalog ===== */
+/* Contenido de un hueco lateral. Llena el hueco sin asumir su tamano, para que
+   pueda trasplantarse a otro o convivir alternandose con otro contenido. */
+.panel-content {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.catalog-search {
+    margin: 6px;
+    flex-shrink: 0;
+}
+
+.catalog-scroll {
+    flex-grow: 1;
 }
 
 .title-bar {
@@ -24,10 +76,54 @@
 .title-label {
     flex-grow: 1;
     color: rgba(200, 200, 200, 1);
-    font-size: 13px;
-    -unity-font-style: bold;
+    font-size: 18px; 
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
+.catalog-row {
+    flex-direction: row;
+    height: 60px;
+    margin: 2px;
+
+    background-color: rgb(207, 185, 151);  
+    border-width: 2px; 
+    border-color: rgba(90, 46, 5, 0.75); 
+}
+
+.catalog-row-label {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row-amount {
+    width: 50px;
+    flex-shrink: 0;
+}
+
+.add-button {
+    margin: 10px;
+}
+ 
+
+/* Herramienta de desarrollo: abre/cierra el catalogo de items.
+   Quitar (o esconder tras un flag de build) antes de publicar. */
+.dev-button {
+    height: 20px;
+    margin-right: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: rgba(70, 70, 70, 0.9);
+    border-radius: 3px;
+    border-width: 0;
+    color: rgba(200, 200, 200, 1);
+    font-size: 13px;
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
+}
+
+
+/* -------------------- */
 .close-button {
     width: 20px;
     height: 20px;
@@ -61,20 +157,26 @@
     flex-grow: 1;
 }
 
+/* Ancho fijo, no derivado del contenido: al cambiar de pestana, el panel de salud
+   solo tiene una imagen de fondo (que no aporta tamano intrinseco) y el panel
+   colapsaria, haciendo saltar el ancho de toda la ventana. */
 .left-panel {
     flex-grow: 0;
     flex-shrink: 0;
-    flex-basis: 33%;
+    width: 300px;
     flex-direction: column;
     border-right-width: 1px;
     border-color: rgba(60, 60, 60, 0.8);
 }
 
+/* Sin flex-basis: su ancho lo marca la grid montada dentro, y ese ancho es el
+   que acaba dimensionando la ventana entera. */
 .inventory-panel {
     flex-grow: 0;
     flex-shrink: 0;
-    flex-basis: 67%;
     flex-direction: column;
+
+    margin: 2px;
 }
 
 /* ===== Left tabs ===== */
@@ -119,77 +221,15 @@
 .internal-personal-panel {
     flex-grow: 1;
 }
+ 
+ 
 
-/* ===== Inventory panel ===== */
-
-.stats-bar {
-    height: 28px;
-    background-color: rgba(30, 30, 30, 0.9);
-    flex-direction: row;
-    align-items: center;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-bottom-width: 1px;
-    border-color: rgba(60, 60, 60, 0.8);
-}
-
-.stat-label {
-    color: rgba(180, 180, 180, 1);
-    font-size: 11px;
-    margin-right: 16px;
-}
-
-.item-scroll {
+/* Ocupa el hueco bajo la stats-bar y centra la grid en horizontal
+   (align-items actua sobre el eje cruzado: flex-direction es column por defecto). */
+.grid-mount {
     flex-grow: 1;
-}
-
-.item-grid {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 8px;
-}
-
-.item-card {
-    width: 72px;
-    height: 88px;
-    margin: 4px;
-    background-color: rgba(40, 40, 40, 0.8);
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: rgba(70, 70, 70, 0.6);
     align-items: center;
-    justify-content: flex-end;
-    cursor: pointer;
-    overflow: hidden;
-}
-
-.item-card:hover {
-    border-color: rgba(140, 140, 140, 0.8);
-    background-color: rgba(55, 55, 55, 0.9);
-}
-
-.item-icon {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    top: 6px;
-}
-
-.item-amount {
-    font-size: 10px;
-    color: rgba(220, 220, 220, 1);
-    -unity-text-align: middle-right;
-    padding-right: 4px;
-    width: 100%;
-}
-
-.item-name {
-    font-size: 9px;
-    color: rgba(160, 160, 160, 1);
-    -unity-text-align: middle-center;
-    padding-bottom: 4px;
-    width: 100%;
-    overflow: hidden;
+    padding: 8px;
 }
 
 /* ===== Inspection strip ===== */
@@ -262,6 +302,88 @@
     background-color: rgba(40, 40, 40, 0.8);
 }
 
+/* ===== Weight Bar ===== */
+
+.weight-rail {
+    height: 22px;
+    flex-shrink: 0;
+    background-color: rgba(0, 0, 0, 0.98);
+    justify-content: center;   
+    
+    align-items: center;
+}
+
+.weight-bar{
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.load-normal{
+    background-color: rgba(62, 141, 75, 0.98);
+}
+
+.load-extra{
+    background-color: rgba(204, 207, 14, 0.98); 
+}
+
+.load-over{
+    background-color: rgba(214, 117, 37, 0.98); 
+}
+
+.load-immobile{
+    background-color: rgba(163, 8, 8, 0.98);
+}
+
+.weight-label {
+    color: rgba(180, 180, 180, 1);
+    font-size: 15px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
+}
+
+/* ===== Items Layer ===== */
+.items-layer {
+    position: absolute;
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.item-block {
+    position: absolute; 
+    
+    border-width: 2px;  
+    border-color: rgba(29, 114, 7, 0.75); 
+    background-color: rgba(85, 11, 11, 0.93);
+
+    flex-direction: column;
+    padding: 3px;
+}
+
+.item-icon {
+    flex-grow: 1;                     
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.amount-label {
+    -unity-font-definition: url('../fonts/Vollkorn-Bold SDF.asset');  
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    padding-left: 3px;
+    padding-right: 3px;
+    font-size: 17px; 
+    color: rgba(255, 255, 255, 0.59);
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 3px;
+}
+
 
 /* ===== Equipment Panel ===== */
 .equipment-panel {
@@ -297,3 +419,49 @@
     height: 60px; 
     margin: 1px;
 }
+
+.subslots-popup {
+    position: absolute;
+    display: none;
+    flex-direction: row;
+    padding: 4px;
+    background-color: rgba(30, 30, 30, 0.98);
+    border-width: 1px;
+    border-color: rgba(120, 120, 120, 0.8);
+    border-radius: 4px;
+}
+
+.subslots-button {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    background-image: url('../images/subslots-inspect.png');
+    -unity-background-scale-mode: scale-to-fit;
+    display: none;
+}
+
+/* ===== Fonts ===== */
+.alegreyaSansSC {
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
+}
+
+/* ===== Colors =====*/
+.beigeColor {
+    color: rgb(207, 185, 151);
+}
+/* ===== Independient ===== */
+.tooltip {
+    position: absolute;
+    background-color: rgba(30, 30, 30, 0.98);
+    border-color: rgba(120, 120, 120, 0.8);
+    border-width: 2px;
+    display: none;  
+}
+
+.tooltip-text {
+    max-width: 280px;
+    white-space: normal;
+}
+

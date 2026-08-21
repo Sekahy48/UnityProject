@@ -117,6 +117,20 @@ Cross (body):              Side column:
 
 **Tasks**:
 
+Tooling:
+- [x] 0. **UI live-reload support (dev iteration speed).** UI Toolkit's Live Reload is enabled (Game view ⋮ menu) but editing a UXML/USS while playing logs `UI was recreated and no companion MonoBehaviour found, some UI functionality may have been lost`: Unity rebuilds the visual tree and then looks for a MonoBehaviour on the `UIDocument`'s GameObject to notify, so it can re-acquire element references. There is none — `InventoryView.Initialize()` runs once from the `InventoryPresenter` constructor, itself called from `GameMain.Awake()`. After a reload every cached reference (`_root`, `_itemGrid`, `_equipmentSlots`, `_leftTabs`, `_leftPanels`, `_subSlotsPopUp`, `_itemsLayer`) points at orphaned elements, so the panel looks reloaded but is dead. Note this is editor-only: C# changes can never hot-swap into a running process, and that is a separate problem (see Future: disabling Domain Reload requires auditing the static state in `NodeIdGenerator`, `TextureCache`, `EventBus`, `CoreLogger`, `CoreConfig`).
+
+  How it was solved:
+  1. `UIReloadNotifier : MonoBehaviour` (Unity/MVC/View/), attached in the scene to the same GameObject as the inventory `UIDocument`. Its whole body is `private void OnEnable() => OnUIRecreated?.Invoke();` over a `public static event Action OnUIRecreated`. The event is static because nothing creates the instance — Unity does, from the scene — so there is no natural reference to subscribe to. `GameMain.OnDestroy` unsubscribes: whoever subscribes, unsubscribes.
+  2. The view/presenter wiring moved out of `Awake` into `GameMain.BuildViewsAndPresenters()`, called from both `Awake` and the reload event — one code path, no editor-only variant that could drift from the real one.
+  3. **`GameContext` revived** instead of adding loose fields to `GameMain`: `presenterManager` already lived inside `GameSystemContext`, so the handler reaches it via `_gameContext.System.PresenterManager`. Dropped `CameraRegister` and `ViewManager` from `GameContext` — both self-instantiated and would have gone out of sync with the ones `Awake` builds. `viewManager` stays a local inside the build method, since each rebuild wants fresh views anyway.
+  4. `PresenterManager.ReplacePresenter` added. `RegisterPresenter` silently ignores an existing key (first registration wins, which protects against accidental duplicates), so a rebuild would have been a no-op and `InputManager` would have kept driving the dead view — failing silently.
+  5. Double-init guard by frame number (`_lastRebuildFrame == Time.frameCount`). Awake/OnEnable ordering across GameObjects is undefined, so if `GameMain` ran first the notifier's startup `OnEnable` would build a *second* view over the same VisualElements — duplicate click/drag handlers and two micro-buttons per equipment slot. A frame counter separates "startup, same frame" from "genuine reload, later frame".
+  6. Reopens via `IPresenter.IsOpen()` + `Open(_gameContext.Session.Player)`. Required giving `IPresenter` an actual contract (`Open`/`Close`/`IsOpen`/`Refresh`) — it was an empty marker interface.
+  7. Verified: editing USS while playing with the inventory open applies the change, keeps the window open, and leaves tabs, sub-slot popup and close button working. No more `no companion MonoBehaviour` warning.
+
+  Cleanup done alongside: removed the dead `Logic` wrapper instantiation from `Awake` (superseded by `GameDataContext`), and the orphaned `OnItemClicked` event (its only emitter was the deleted card-based `RenderItems`; it will come back in task 14 with a signature that identifies a *stack*, not a typeId).
+
 Foundation:
 - [x] 1. Render inventory grid in UI based on player's TetrisGridState dimensions.
 - [x] 2. Split view layout: left panel (personal) + right panel (inventory). Replaces current tab-based UI.
@@ -124,17 +138,23 @@ Foundation:
 Left panel (personal — tabbed):
 - [x] 3. Tab system in left panel to switch between Health and Equipment views (inventory panel stays fixed)
 - [x] 4. Health tab: placeholder (future Zomboid-style health UI)
-- [ ] 5. Equipment tab: render cross + side column layout with slot VisualElements (from M4)
-- [ ] 6. Equipment tab: click slot to see/manage layers (from M4)
+- [x] 5. Equipment tab: render cross + side column layout with slot VisualElements (from M4). Slot textures resolved by convention from the UXML element name (`slot-head` → `EquipmentSlotType.Head` via `Enum.TryParse`). Three visual states per slot: disabled, empty (`images/slots/<name>.png`) and equipped (top layer's `iconPath`). Runtime textures loaded and cached by `TextureCache` (Unity layer, reads from StreamingAssets); fixed UI art assigned via USS `url()`.
+- [ ] 6. Equipment tab: click slot to see/manage layers (from M4). **Viewing done**: micro-button rendered in each slot corner (`position: absolute`), visible only when the slot holds more than one layer. Toggling it opens/closes a single shared popup (last child of `main-area`, so it draws above everything) anchored to the slot's top-right corner via `worldBound` + `WorldToLocal`. Popup content rebuilt on every open (no caching). Sub-slots ordered outermost→innermost, skipping the layer already shown in the main slot. Click outside closes it (`ClickEvent` bubbling to root + `StopPropagation` on button and popup). **Pending**: managing layers (equip/unequip from sub-slots) — depends on drag & drop, tasks 10-13.
 
 Right panel (inventory):
-- [ ] 7. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent)
-- [ ] 8. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have
-- [ ] 9. Weight stats bar below inventory grid — color-coded by threshold (ExtraWeight, Overweight, Immobile). Grid visual shows free/occupied cells in real time.
+- [x] 7. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent). Blocks live in an `items-layer` created by `GenerateGrid` as the last child of the generated `inventory-grid` (so it matches the grid's exact size, unlike the outer `item-grid` container which stretches). Each block is `position: absolute` and sized/placed in **percentages** (`col * 100 / gridW`, etc.) instead of pixels — no cell-size constant duplicated between USS and C#, and the layout survives any change to `.inventory-grid-cell`. Data flows as `GridItemDisplayData` (composes `ItemDisplayData` + row/col) built from `TetrisGridState.GetElements()`.
+- [x] 8. UI: grid is fixed size (gridW × gridH), not scrollable — what you see is what you have. `ScrollView` removed: grid dimensions are designed to fit, so a scroller would be a patch for a problem deliberately avoided — and it would fight the pointer-drag gestures coming in task 10, since `ScrollView` captures drags to pan its content. Without it, a grid that doesn't fit overflows visibly instead of hiding the problem. The old `item-grid` wrapper survives (renamed `grid-mount`): it is the mount point `GenerateGrid` can `Clear()` without destroying its `stats-bar` sibling, and it carries the `flex-grow: 1` + `align-items: center` that place the fixed-size grid top-centre in the panel. `SetInternallGrid` renamed to `MountGrid` and made private — only `GenerateGrid` ever called it.
+- [x] 9. Weight bar above the inventory grid — colour-coded by threshold. Rail (fixed height, `flex-shrink: 0`) with the fill as an absolutely-positioned child whose `width` is `Length.Percent(ratio * 100)`, clamped to 100 for painting but **not** for classifying. The label is a sibling of the fill, not a child: inside it, the text spilled out of the panel whenever the fill was narrower than the text — worse the emptier the inventory.
+
+  Thresholds and classification live in `CarryCapacity` (`EXTRA_WEIGHT` / `OVERWEIGHT` / `IMMOBILE` + `ClassifyLoad`), a pure function returning the matching `GameEventType` — those values already are the vocabulary for these bands, so a parallel enum would only need keeping in sync. Single source of truth: `InventorySystem` uses it to pick which event to post (collapsing a 20-line if/else into three, with the per-band logging split out into `LogLoad`), and `InventoryPresenter` uses it to tell the view which band to paint. Being pure it can be called on demand when opening the inventory, where no event has fired — so **the presenter does not subscribe to the EventBus yet**: `Refresh()` recomputes everything from the model, and nothing changes weight mid-session until task 10. The view receives the band already decided and only maps it to a USS class, so no domain vocabulary leaks into it.
+
+  Colours live in USS (`.load-normal` / `.load-extra` / `.load-over` / `.load-immobile`) rather than `style.backgroundColor`, so palette tweaking benefits from the live reload built in task 0 instead of needing a recompile. Swapping is table-driven from a `Dictionary<GameEventType, string>`: remove all four, add the one — adding a fifth band is one entry, not five edited branches.
+
+  Prerequisite discovered while doing this: **the whole event subsystem was disconnected.** `EventBus.Subscribe` was never called anywhere, and neither `InventorySystem` nor `MovementSystem` was ever instantiated, so no weight event had ever fired and the movement debuff never applied. Fixed by splitting `IGameSystem` into `IPeriodicSystem` (has `Process`, driven by tick or frame) and `IReactiveSystem` (declares `SubscribedEvents`, driven by the bus), and making `SystemManager.RegisterReactiveGameSystem` subscribe on registration — registering *is* subscribing, so a reactive system can no longer end up alive but deaf. Also added the missing `else` posting `NormalWeight` (`MovementSystem` already handled it), without which returning below 0.70 never notified anyone.
 
 Interaction:
-- [ ] 10. UI: drag items within grid to reorganize (mechanical impact — frees space for new items)
-- [ ] 11. UI: drag from inventory → equipment slot (from M4)
+- [ ] 10. UI: move items within the grid to reorganize (mechanical impact — frees space for new items). Primary interaction is **click-to-grab / click-to-place** (see Decided note below); drag & drop is supported as a secondary gesture over the same "held item" state. Build alongside it a **dev creative panel**: search field + filtered list over `_itemCatalogue.GetAll()` (name + icon), amount field, click to `AddItem` + `Refresh`. Uncategorised for now. Needed to exercise the placement edge cases (full grid, no fit, stacking onto an existing lot, moving a 1x3 into a 1x2 gap) without editing `PrototypeFactory.AddTestItems` and restarting.
+- [ ] 11. UI: move items from inventory → equipment slot, and from equipment sub-slots back to inventory (from M4). Unblocks the pending half of task 6.
 - [ ] 12. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
 - [ ] 13. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
 
@@ -145,7 +165,16 @@ Polish:
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 
-**Decided**: Click-to-grab, click-to-place interaction (not drag & drop). Left click picks up a stack into the cursor. Clicking again places it. Overflow stays in cursor. Three placement cases:
+**Decided**: Click-to-grab, click-to-place is the **primary** interaction; drag & drop is supported as a **secondary** gesture. They are not two systems: both drive the same "held item" state, so validation and placement logic is written once. Disambiguated by a movement threshold on pointer events (no `ClickEvent`, which UI Toolkit synthesises from down+up and would fire spuriously on short drags):
+
+- `PointerDown` on an item → record origin, `CapturePointer`, mark pending
+- `PointerMove` beyond ~5px → it's a drag; item follows the cursor while the button is held
+- `PointerUp` under the threshold → it was a click; enter held mode (item follows the cursor until the next click)
+- `PointerUp` while dragging → place here
+
+The three placement cases below apply identically to both gestures. Note: the sub-slots popup currently closes via a `ClickEvent` handler on `_root`; that will need migrating to pointer events too, or drags will close it mid-operation.
+
+Left click picks up a stack into the cursor. Clicking again places it. Overflow stays in cursor. Three placement cases:
 1. **Over matching item** → `TryStackOnToNode`. Overflow by maxStackSize stays in cursor.
 2. **Over empty cell** → `TryAddItemAt`. Weight rejection keeps items in cursor. Grid always fits (one stack, one cell group).
 3. **Over non-matching / occupied** → items stay in cursor, nothing happens.
@@ -185,6 +214,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 - [ ] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?)
 - [ ] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells
 - [ ] 3. Edge cases: item removed from middle of grid → gap handling
+- [ ] 3b. Nested containers don't occupy grid cells. `InventoryObject.AddContainer` adds the child to `_inventory` but never calls `_grid.Place`, so a chest inside a backpack takes up no space and isn't rendered by `RenderGridItems` (which iterates `TetrisGridState.GetElements()`). Decide whether containers should occupy cells like any other item — they have `DimensionW/H` in `BaseItemComponent` already — and if so route `AddContainer` through the grid. Until then `InventoryObject.Clone()` copies them by list only, outside the grid.
 - [ ] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
 - [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
 - [ ] 6. Performance: stress test with large grids (cart/chest with many items)
@@ -201,6 +231,9 @@ The `ItemType` enum currently acts as an explicit category. But with ECS composi
 
 ## Future (not Phase 1)
 
+- [ ] Dependency injection via context aggregator / service layer. `GameContext` (Unity/MVC/Controller/) was written for this — groups the three Core sub-contexts (Data, Session, System) plus the Unity pieces, with a builder API, so each class receives only the sub-context it needs instead of the whole thing. It is currently **dead code**: nobody calls `new GameContext()`, and `GameMain.Awake()` builds everything with local variables and injects sub-contexts by hand. Decide whether to revive it as-is or move to a service-provider approach like the one in Stack&Go (`ServiceConsumer` + services supplied by a core controller). Until then, treat `GameContext` as inactive — it looks like live infrastructure and isn't.
+- [ ] Player-facing UI scale setting. `PanelSettings-Inventory` is set to `Constant Pixel Size` (1 UI unit = 1 screen pixel), which is the sharpest option and correct while developing at the monitor's native resolution — `Scale With Screen Size` was resampling every glyph and icon by a fractional factor and made the whole panel look soft. The trade-off is that on a 4K display the UI would render at half its physical size. Fix when it matters by exposing `panelSettings.scale` as an options slider rather than reverting the scale mode; integer factors (1x, 2x) keep it pixel-perfect. Related: judge UI sharpness with the Game view maximised (Shift+Space) or in a build — at 1920x1080 the editor layout can never show the game at 1:1.
+- [ ] Relocate pure rule helpers out of `ECS.Systems`. `CarryCapacity` sits in the systems namespace and is named like one, but it is a **static stateless class**: it implements neither `IPeriodicSystem` nor `IReactiveSystem`, is never registered, holds no state and processes no entities. It owns `GetMaxCarryWeight` plus the encumbrance thresholds and `ClassifyLoad`. Its own comment admits it is a placeholder ("when the real system loop is implemented, this will become a system with its own component"). Misleading as it stands — the meaningful split is *live registered object with side effects* (`InventorySystem`: posts events, mutates inventories, must be injected as an instance) versus *pure function anyone can call for free* (`CarryCapacity`). Consider a `Core/Rules/` namespace for the latter, and move it back when it genuinely becomes a system.
 - [ ] 3D item preview in inventory UI
 - [ ] Stack&Go full bridge (automated JSON export → item catalog)
 - [ ] Save/load inventory state (serialization)

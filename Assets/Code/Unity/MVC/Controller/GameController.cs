@@ -27,7 +27,7 @@ namespace MVC.Controller
         public void SetUpOnStart()
         {
             FatigueStaminaSystem staminaSystem = systemCtx.SystemManager
-                .GetGameSystem<FatigueStaminaSystem>();
+                .GetPeriodicSystem<FatigueStaminaSystem>();
             if (staminaSystem != null && hudManager != null)
             {
                 staminaSystem.Attach(hudManager);

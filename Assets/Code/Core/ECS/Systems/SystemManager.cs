@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using Events;
 
 namespace ECS.Systems
 {
     /// <summary>
     /// Manages and runs the game's systems.
-    /// - Game systems: run on every ClockSystem tick (affected by timeSpeed, pause, etc.)
+    /// - Game perodic systems: run on every ClockSystem tick (affected by timeSpeed, pause, etc.)
+    /// - Game reactive systems: run reacting to concrete game events
     /// - Engine systems: run every frame with real deltaTime (input, camera, UI)
     /// </summary>
     public class SystemManager
@@ -12,8 +14,9 @@ namespace ECS.Systems
         private readonly ClockSystem clock = ClockSystem.GetInstance();
         private readonly EntityManager entityManager;
 
-        private readonly List<IGameSystem> gameSystems = new();
-        private readonly List<IGameSystem> engineSystems = new();
+        private readonly List<IPeriodicSystem> gamePeriodicSystems = new();
+        private readonly List<IPeriodicSystem> engineSystems = new();
+        private readonly List<IReactiveSystem> gameReactiveSystems = new();
 
         private int pendingTicks = 0;
 
@@ -23,14 +26,24 @@ namespace ECS.Systems
             clock.Attach(new TickCounter(this));
         }
 
-        public void RegisterGameSystem(IGameSystem system)
+        public SystemManager RegisterPeriodicGameSystem(IPeriodicSystem system)
         {
-            gameSystems.Add(system);
+            gamePeriodicSystems.Add(system);
+            return this;
         }
 
-        public void RegisterEngineSystem(IGameSystem system)
+        public SystemManager RegisterEngineSystem(IPeriodicSystem system)
         {
             engineSystems.Add(system);
+            return this;
+        }
+
+        public SystemManager RegisterReactiveGameSystem(IReactiveSystem system)
+        {
+            gameReactiveSystems.Add(system);
+            foreach (GameEventType type in system.SubscribedEvents)
+                EventBus.GetInstance().Subscribe(type, system);
+            return this;
         }
 
         /// <summary>
@@ -50,7 +63,7 @@ namespace ECS.Systems
             while (pendingTicks > 0)
             {
                 pendingTicks--;
-                foreach (var system in gameSystems)
+                foreach (var system in gamePeriodicSystems)
                     system.Process(tickTime, entityManager);
             }
         }
@@ -58,11 +71,18 @@ namespace ECS.Systems
         /// <summary>
         /// Gets a registered system by type. Useful for connecting observers.
         /// </summary>
-        public T GetGameSystem<T>() where T : class, IGameSystem
+        public T GetPeriodicSystem<T>() where T : class, IPeriodicSystem
         {
-            foreach (var system in gameSystems)
+            foreach (var system in gamePeriodicSystems)
                 if (system is T typed) return typed;
             foreach (var system in engineSystems)
+                if (system is T typed) return typed;
+            return null;
+        }
+
+        public T GetReactiveSystem<T>() where T : class, IReactiveSystem
+        {
+            foreach (var system in gameReactiveSystems)
                 if (system is T typed) return typed;
             return null;
         }

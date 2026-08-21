@@ -4,6 +4,7 @@ using System.IO;
 using Core;
 using ECS.Component;
 using ECS.Component.InventoryComponents;
+using ECS.Component.ItemComponents;
 using ECS.Entity;
 using Newtonsoft.Json;
 
@@ -23,7 +24,8 @@ namespace Item
             { "Fluid", () => new FluidComponent() },
             { "Heal", () => new HealComponent() },
             { "Name", () => new NameComponent() },
-            { "Resource", () => new ResourceComponent() }
+            { "Resource", () => new ResourceComponent() },
+            { "Wearable", () => new WearableComponent() }
         };
 
         public JsonItemCatalogLoader()

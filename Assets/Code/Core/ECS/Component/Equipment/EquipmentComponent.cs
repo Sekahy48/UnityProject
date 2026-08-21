@@ -21,16 +21,16 @@ namespace ECS.Component.Equipment
             return _equipmentSlots[type];
         }
         
-        public bool AddSlot(EquipmentSlotType slotType, int capacity)
+        public bool AddSlot(EquipmentSlotType slotType, int maxLayers)
         {   
             AC.CheckNotNull(slotType, nameof(slotType));
-            AC.CheckPositive(capacity, nameof(capacity));
+            AC.CheckPositive(maxLayers, nameof(maxLayers));
 
             bool added = false; 
 
             if (_allowedSlots.Contains(slotType) && !_equipmentSlots.ContainsKey(slotType))
             {
-                _equipmentSlots[slotType] = new EquipmentSlot(slotType, capacity);
+                _equipmentSlots[slotType] = new EquipmentSlot(slotType, maxLayers);
                 added = true; 
             }
             return added;

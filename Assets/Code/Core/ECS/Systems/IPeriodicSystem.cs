@@ -6,7 +6,7 @@ namespace ECS.Systems
     /// Interface for game loop systems.
     /// Each system processes entities that have the components it's interested in.
     /// </summary>
-    public interface IGameSystem
+    public interface IPeriodicSystem
     {
         /// <summary>
         /// Processes a tick. The system queries EntityManager to get the relevant entities.

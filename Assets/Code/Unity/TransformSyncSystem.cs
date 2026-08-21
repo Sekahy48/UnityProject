@@ -14,7 +14,7 @@ namespace Unity
     /// - If not dirty → reads Transform and updates PositionComponent
     ///   (to reflect movements done by cameras, physics, animation, etc.)
     /// </summary>
-    public class TransformSyncSystem : IGameSystem
+    public class TransformSyncSystem : IPeriodicSystem
     {
         public void Process(float deltaTime, EntityManager entityManager)
         {

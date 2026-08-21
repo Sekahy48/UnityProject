@@ -126,28 +126,23 @@ namespace Inventory
 
         //#endregion 
 
-        //#region Global operations
+        //#region Global operations 
 
         public int AddItem(ItemEntity item, int amount)
         {
-            AC.CheckNotNull(item, "item");
-            AC.CheckPositive(amount, "amount"); 
-            int remaining = 0;
-            
-            while (amount > 0 && remaining == 0)
-            {   
-                ItemObject newNode = new ItemObject(item, amount);
-                if (_grid.TryFirstPlace(newNode))
-                { 
-                    amount = amount - newNode.GetAmount();
-                    _inventory.Add(newNode); 
-                } else
-                {
-                    remaining = amount;
-                }
-            } 
+            AC.CheckNotNull(item, nameof(item));
+            AC.CheckPositive(amount, nameof(amount));
 
-            return remaining;
+            while (amount > 0)
+            {
+                ItemObject newNode = new ItemObject(item, amount);
+                if (!_grid.TryFirstPlace(newNode)) return amount;   // no cabe: devuelve lo que sobra
+
+                _inventory.Add(newNode);
+                amount -= newNode.GetAmount();
+            }
+
+            return 0;
         }
 
         public void AddContainer(ItemEntity item)
@@ -170,14 +165,106 @@ namespace Inventory
         }
 
 
+        /// <summary>
+        /// Modifies the first node found holding this typeId, consuming at random across
+        /// its sub-lots. Use it for "remove N units of this item from wherever", e.g. a
+        /// recipe consuming materials. When the exact node and variant are known, prefer
+        /// the overload taking an ItemObject: it skips the BFS and the full CleanTree.
+        ///
+        /// Cleanup goes through CleanTree, not CleanNode: BfsFind searches the whole tree,
+        /// so the node may live inside a nested container — and only that container can
+        /// free the grid cells it sits on. CleanNode would find nothing and silently
+        /// leave an empty node holding its cells.
+        /// </summary>
         public int ModifyAmount(int id, int amount)
         {
             AC.CheckNotNull(id, "id");
             IInventoryElement found = BfsFind(id);
             if (found == null) return 0;
+
             int modified = found.ModifyAmount(id, amount);
-            CleanTree();
+
+            // Solo hay algo que limpiar si el nodo se ha vaciado. Consumir 3 de 20 no
+            // justifica recorrer el arbol entero, que es el caso mas frecuente.
+            if (found.GetAmount() <= 0) CleanTree();
+
             return modified;
+        }
+
+        /// <summary>
+        /// Modifies a node held directly by this inventory, and removes the node if it
+        /// ends up empty. Preferred over ModifyAmount(int, int) when the caller already
+        /// knows which node it is operating on — no BFS, and no full CleanTree traversal.
+        ///
+        /// <paramref name="item"/> selects the granularity:
+        /// pass it to target one specific sub-lot (moving the rusty swords, not the new
+        /// ones), or leave it null to treat the node as a whole, spreading the change
+        /// across its sub-lots at random — which is what "place one at a time from a mixed
+        /// stack" means, and there is no meaningful way to choose.
+        /// </summary>
+        /// <param name="node">Node to modify. Must be a direct child of this inventory.</param>
+        /// <param name="item">Sub-lot to target (matched by Equivalent), or null for the whole node.</param>
+        /// <param name="amount">Positive adds, negative consumes.</param>
+        /// <param name="clean">
+        /// Whether to drop the node when it ends up empty. Pass false inside a transaction
+        /// that may still put units back: cleaning would destroy the node and the rollback
+        /// would have to recreate it at its old coordinates. The caller is then responsible
+        /// for calling CleanNode once the operation settles.
+        /// </param>
+        /// <returns>Units actually applied, always positive.</returns>
+        public int ModifyAmount(ItemObject node, ItemEntity item, int amount, bool clean = true)
+        {
+            AC.CheckNotNull(node, nameof(node));
+
+            int modified = item != null
+                ? node.ModifyAmount(item, amount)
+                : node.ModifyAmount(node.GetTypeId(), amount);
+
+            if (clean && node.GetAmount() <= 0)
+                CleanNode(node);
+
+            return modified;
+        }
+
+        /// <summary>
+        /// Takes units out of a node held directly by this inventory, reporting which variants
+        /// came out. Same granularity rules as ModifyAmount: pass an item to take from one
+        /// sub-lot, or null to take at random across the node.
+        /// </summary>
+        /// <param name="clean">
+        /// Whether to drop the node if it ends up empty. Pass false inside a transaction that
+        /// may put units back — see InventorySystem.TryMoveItemTo.
+        /// </param>
+        /// <returns>Pairs of (variant, units taken). Feed THESE to the destination: the
+        /// breakdown is the point, a bare total would collapse mixed stacks into one variant.</returns>
+        public List<(ItemEntity item, int amount)> Extract(ItemObject node, ItemEntity item, int amount, bool clean = true)
+        {
+            AC.CheckNotNull(node, nameof(node));
+
+            List<(ItemEntity item, int amount)> extracted = node.Extract(item, amount);
+
+            if (clean && node.GetAmount() <= 0)
+                CleanNode(node);
+
+            return extracted;
+        }
+
+        /// <summary>
+        /// Removes an empty node from this inventory and frees its grid cells.
+        /// Targeted counterpart to CleanTree: use it when the emptied node is already
+        /// known, instead of walking the whole tree to rediscover it.
+        /// Only looks at direct children — a node inside a nested container must be
+        /// cleaned by that container, which is the one owning the grid it sits on.
+        /// </summary>
+        /// <returns>True if the node was found and removed.</returns>
+        public bool CleanNode(ItemObject node)
+        {
+            AC.CheckNotNull(node, nameof(node));
+
+            if (!_inventory.Remove(node)) return false;
+
+            _grid.Remove(node.GetNodeId());
+            return true;
         }
 
         public bool Contains(int id)
@@ -308,15 +395,39 @@ namespace Inventory
             return BfsFindByNodeId(nodeId);
         }
 
-        public int AddItemAt(ItemEntity item, int amount, int row, int col) 
+        /// <summary>
+        /// Puts units at a grid position, stacking onto whatever is already there when
+        /// compatible, and creating a node otherwise.
+        ///
+        /// <para>The stacking branch is what makes "drop onto an existing pile" work, and it
+        /// also lets several variants of a mixed stack land on the same spot: the first call
+        /// creates the node, the rest merge into it. Creating a node per call would make every
+        /// call after the first fail against the cells the first one just took.</para>
+        ///
+        /// <para>An occupied cell holding a different typeId rejects everything and returns the
+        /// full amount: BatchItem.AddAmount refuses items that are not its type, so "drop onto
+        /// something unrelated does nothing" falls out without a special case.</para>
+        ///
+        /// <para>Stacking skips CanPlace on purpose — the node is already placed and does not
+        /// grow. Only maxStackSize limits it.</para>
+        /// </summary>
+        /// <returns>Units that could not be added.</returns>
+        public int AddItemAt(ItemEntity item, int amount, int row, int col)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
             AC.CheckPositive(row, "row");
             AC.CheckPositive(col, "col");
 
+            // Cualquier celda del nodo vale: soltar sobre el centro de una espada de 1x3
+            // encuentra su nodo igual que soltar sobre su esquina de origen.
+            GridElement occupant = _grid.GetElementAt(row, col);
+            if (occupant != null)
+                return occupant.GetNode().StackOntoHere(item, amount);
+
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
-            if (_grid.CanPlace(row, col, baseInfo.GetDimensionH(), baseInfo.GetDimensionW())){
+            if (_grid.CanPlace(row, col, baseInfo.GetDimensionH(), baseInfo.GetDimensionW()))
+            {
                 ItemObject node = new ItemObject(item, amount);
                 amount = amount - node.GetAmount();
                 _grid.Place(node, row, col);
@@ -407,13 +518,36 @@ namespace Inventory
             return remaining.Count == 0;
         }
 
+        /// <summary>
+        /// Deep-clones the inventory, preserving each item's position in the grid.
+        /// Cloning only the element list is not enough: the new InventoryObject starts
+        /// with an empty TetrisGridState, so every placed node must be re-placed at its
+        /// original coordinates or the clone would report its items as unplaced.
+        /// </summary>
         public IInventoryElement Clone()
         {
             InventoryObject clone = this._item != null
                 ? new InventoryObject(this._item)
                 : new InventoryObject();
+
+            // Placed items: clone and restore their (row, col).
+            foreach (GridElement placed in _grid.GetElements())
+            {
+                ItemObject nodeClone = (ItemObject)placed.GetNode().Clone();
+                if (!clone._grid.Place(nodeClone, placed.GetRow(), placed.GetCol()))
+                    throw new InvalidOperationException(
+                        $"InventoryObject.Clone: could not re-place node {placed.GetNode().GetNodeId()} " +
+                        $"at ({placed.GetRow()}, {placed.GetCol()}) in the cloned grid.");
+
+                clone._inventory.Add(nodeClone);
+            }
+
+            // TODO: nested containers do not occupy grid cells yet (AddContainer bypasses
+            // the grid), so they live only in the element list. Cloned as-is for now.
             foreach (IInventoryElement elem in _inventory)
-                clone._inventory.Add(elem.Clone());
+                if (!elem.IsLeaf())
+                    clone._inventory.Add(elem.Clone());
+
             return clone;
         }
 

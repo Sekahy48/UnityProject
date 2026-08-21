@@ -16,8 +16,7 @@ namespace MVC.Controller
         public void InitializeViews(UIRegistry uiRegistry)
         {
              // Inventory View
-             views[PresenterType.INV] = new InventoryView(  uiRegistry.GetDocument(UIDocumentType.Inventory),
-                                                            uiRegistry.GetTemplate(UITemplateType.InventoryItem));
+             views[PresenterType.INV] = new InventoryView(uiRegistry.GetDocument(UIDocumentType.Inventory));
         }
 
         public T GetView<T>(PresenterType type) where T : IView

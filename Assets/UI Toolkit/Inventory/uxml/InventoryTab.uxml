@@ -1,7 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../uss/InventoryWindow.uss"/>
-    <ui:VisualElement name="tab-item" class="tab-item">
-        <ui:VisualElement name="tab-icon" class="tab-icon"/>
-        <ui:Label name="tab-label" text="" class="tab-label"/>
-    </ui:VisualElement>
-</ui:UXML>

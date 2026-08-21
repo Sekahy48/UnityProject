@@ -2,50 +2,61 @@ using System.Collections.Generic;
 using Core;
 using ECS.Component;
 using ECS.Entity;
-using Utils;
+using AC = Utils.ArgumentChecker;
 
 namespace Item
 {
     public class ItemCatalogue
     {
-        private readonly Dictionary<int, ItemEntity> prototipes;
+        private readonly Dictionary<int, ItemEntity> _prototypes;
 
         public ItemCatalogue()
         {
-            prototipes = new Dictionary<int, ItemEntity>();
+            _prototypes = new Dictionary<int, ItemEntity>();
         }
 
         public void AddPrototype(ItemEntity item)
         {
-            ArgumentChecker.CheckNotNull(item, nameof(item));
+            AC.CheckNotNull(item, nameof(item));
             int typeId = item.GetComponent<BaseItemComponent>().GetTypeId();
             
-            if (prototipes.ContainsKey(typeId)) CoreLogger.Instance.LogWarning($"ItemCatalogue: Prototype with typeId {typeId} already exists. Overwriting.");
+            if (_prototypes.ContainsKey(typeId)) CoreLogger.Instance.LogWarning($"ItemCatalogue: Prototype with typeId {typeId} already exists. Overwriting.");
             
-            prototipes[typeId] = item;
+            _prototypes[typeId] = item;
         }
 
         public ItemEntity CreateItem(int typeId)
         {
-            if (!prototipes.TryGetValue(typeId, out ItemEntity prototype))
+            if (!_prototypes.TryGetValue(typeId, out ItemEntity prototype))
             {
-                CoreLogger.Instance.LogError($"ItemCatalogue: Prototype with typeId {typeId} not found.");
-                return null;
+                throw new KeyNotFoundException($"ItemCatalogue: Prototype with typeId {typeId} not found.");
             }
 
             return prototype.Clone();
         }
 
+        public ItemEntity CreateItem(string name) => CreateItem(GetTypeIdByName(name));
+        
+        public int GetTypeIdByName(string name)
+        {
+            AC.CheckNotNull(name, nameof(name));
+            
+            foreach (ItemEntity proto in _prototypes.Values)
+                if (proto.GetGenericName() == name)
+                    return proto.GetComponent<BaseItemComponent>().GetTypeId();
+            throw new KeyNotFoundException($"ItemCatalogue: Prototype with name '{name}' not found. There is no matching key/typeId");
+        }
+
         public IEnumerable<ItemEntity> GetAll()
         {
-            return prototipes.Values;
+            return _prototypes.Values;
         }
 
         public void LogCatalogContents()
         {
-            CoreLogger.Instance.Log($"=== ItemCatalogue: {prototipes.Count} prototypes ===");
+            CoreLogger.Instance.Log($"=== ItemCatalogue: {_prototypes.Count} prototypes ===");
 
-            foreach (var kvp in prototipes)
+            foreach (var kvp in _prototypes)
             {
                 ItemEntity proto = kvp.Value;
                 BaseItemComponent baseItem = proto.GetComponent<BaseItemComponent>();

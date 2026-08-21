@@ -22,11 +22,9 @@ namespace MVC.Controller
         public GameSessionContext Session { get; private set; }
         public GameSystemContext System { get; private set; }
 
-        // ---- Unity pieces (do not go in Core) ----
-        public CameraRegister CameraRegister { get; } = new();
+        // ---- Unity pieces (do not go in Core) ---- 
         public InputManager InputManager { get; private set; }
-        public HUDManager HUDManager { get; private set; }
-        public ViewManager ViewManager { get; } = new();
+        public HUDManager HUDManager { get; private set; } 
 
         // ---- Builders ----
 
