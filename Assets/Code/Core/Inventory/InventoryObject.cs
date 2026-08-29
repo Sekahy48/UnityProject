@@ -20,7 +20,7 @@ namespace Inventory
         public InventoryObject(ItemEntity item)
         {
             AC.CheckNotNull(item, item.GetCompoundIdentification().ToString());
-            _id = item.GetComponent<BaseItemComponent>().GetTypeId();
+            _id = item.GetComponent<BaseItemComponent>().TypeId;
             _nodeId = NodeIdGenerator.GenerateId();
             _item = item;
             _inventory = new List<IInventoryElement>();
@@ -115,7 +115,7 @@ namespace Inventory
             while (queue.Count > 0)
             {
                 IInventoryElement current = queue.Dequeue();
-                if (current.IsLeaf() && current.GetTypeId() == item.GetComponent<BaseItemComponent>().GetTypeId())
+                if (current.IsLeaf() && current.GetTypeId() == item.GetComponent<BaseItemComponent>().TypeId)
                     return current;
                 if (!current.IsLeaf())
                     foreach (IInventoryElement child in ((InventoryObject)current).GetChildren())
@@ -143,6 +143,26 @@ namespace Inventory
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// Adds an already-built node to this inventory <b>without placing it on the grid</b>.
+        /// Unlike AddItem, which builds its own nodes and needs free cells, this takes a node
+        /// that already exists and only makes this inventory its owner.
+        ///
+        /// <para>Exists for staging containers: a node that has to belong to some inventory to
+        /// be operated on (HandBuffer.Grab requires an owner, and the move transaction extracts
+        /// the units through it) but is never rendered and never competes for space. Items spawned by
+        /// the dev creative panel start here.</para>
+        ///
+        /// <para>Do NOT use it for the player inventory or a real container: a node outside the
+        /// grid occupies no cells, is invisible to RenderGridItems, and CleanNode would find
+        /// nothing to free. Grid space is the capacity system, and this bypasses it.</para>
+        /// </summary>
+        public void AddNode(ItemObject node)
+        {
+            AC.CheckNotNull(node, nameof(node));
+            _inventory.Add(node);
         }
 
         public void AddContainer(ItemEntity item)
@@ -312,7 +332,7 @@ namespace Inventory
             AC.CheckPositive(amount, "amount");
             foreach (IInventoryElement elem in _inventory)
             {
-                if (elem.IsLeaf() && elem.GetTypeId() == item.GetComponent<BaseItemComponent>().GetTypeId())
+                if (elem.IsLeaf() && elem.GetTypeId() == item.GetComponent<BaseItemComponent>().TypeId)
                 {
                     amount = elem.StackOntoHere(item, amount);
                     break;
@@ -412,25 +432,36 @@ namespace Inventory
         /// grow. Only maxStackSize limits it.</para>
         /// </summary>
         /// <returns>Units that could not be added.</returns>
-        public int AddItemAt(ItemEntity item, int amount, int row, int col)
+        public int AddItemAt(ItemEntity item, int amount, int row, int col, int ignoreNodeId = -1)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
-            AC.CheckPositive(row, "row");
-            AC.CheckPositive(col, "col");
+            // Not CheckPositive: row 0 and column 0 are valid cells.
+            if (!_grid.IsInside(row, col))
+                throw new ArgumentOutOfRangeException(
+                    $"AddItemAt: cell ({row}, {col}) is outside a {_grid.GetGridH()}x{_grid.GetGridW()} grid.");
 
             // Cualquier celda del nodo vale: soltar sobre el centro de una espada de 1x3
             // encuentra su nodo igual que soltar sobre su esquina de origen.
+            //
+            // El nodo ignorado no cuenta como ocupante: es el que se esta moviendo, sigue en
+            // la grid porque nada sale de ella hasta soltar, y apilar sobre el devolveria las
+            // unidades a su sitio original en vez de moverlas.
             GridElement occupant = _grid.GetElementAt(row, col);
-            if (occupant != null)
+            if (occupant != null && occupant.GetNode().GetNodeId() != ignoreNodeId)
                 return occupant.GetNode().StackOntoHere(item, amount);
 
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
-            if (_grid.CanPlace(row, col, baseInfo.GetDimensionH(), baseInfo.GetDimensionW()))
+            if (_grid.CanPlace(row, col, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
             {
                 ItemObject node = new ItemObject(item, amount);
+
+                // Placing may still fail even after CanPlace said yes, so the result decides:
+                // adding the node anyway would leave it inside the inventory but off the grid,
+                // where nothing renders it and no cell points at it.
+                if (!_grid.Place(node, row, col, ignoreNodeId)) return amount;
+
                 amount = amount - node.GetAmount();
-                _grid.Place(node, row, col);
                 _inventory.Add(node);
             }
 

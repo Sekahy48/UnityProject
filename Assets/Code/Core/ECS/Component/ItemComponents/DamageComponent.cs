@@ -44,10 +44,7 @@ namespace ECS.Component.InventoryComponents
         /// <returns>
         /// A <see cref="DamageLevel"/> enum value representing the piercing damage effectiveness.
         /// </returns>
-        public DamageLevel GetPunctureDmg()
-        {
-            return _punctureDmg;
-        }
+        public DamageLevel PunctureDmg => _punctureDmg;
 
         /// <summary>
         /// Sets the object's **piercing** damage level.
@@ -65,10 +62,7 @@ namespace ECS.Component.InventoryComponents
         /// <returns>
         /// A <see cref="DamageLevel"/> enum value representing the slashing damage effectiveness.
         /// </returns>
-        public DamageLevel GetSlashingDmg()
-        {
-            return _slashingDmg;
-        }
+        public DamageLevel SlashingDmg => _slashingDmg;
 
         /// <summary>
         /// Sets the object's **slashing** damage level.
@@ -86,10 +80,7 @@ namespace ECS.Component.InventoryComponents
         /// <returns>
         /// A <see cref="DamageLevel"/> enum value representing the blunt damage effectiveness.
         /// </returns>
-        public DamageLevel GetImpactDmg()
-        {
-            return _impactDmg;
-        }
+        public DamageLevel ImpactDmg => _impactDmg;
 
         /// <summary>
         /// Sets the object's **blunt** damage level.

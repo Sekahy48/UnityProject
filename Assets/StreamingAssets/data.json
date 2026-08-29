@@ -182,8 +182,8 @@
           "type": "Storage",
           "values": {
             "maxWeight": 100,
-            "weightRatio": 0.9,
-            "maxVolume": 10
+            "gridH": 4,
+            "gridW": 6
           }
         }
       ]

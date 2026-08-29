@@ -89,7 +89,7 @@ namespace Inventory
             // Un nodo solo contiene items de un typeId. Pedirle que modifique otro es un
             // error del llamante, no un caso legitimo: sin esta guarda, AddAmount devolveria
             // todo sin anadir y ConsumeAmount devolveria 0, indistinguible de "estaba vacio".
-            int itemTypeId = item.GetComponent<BaseItemComponent>().GetTypeId();
+            int itemTypeId = item.GetComponent<BaseItemComponent>().TypeId;
             if (itemTypeId != GetTypeId())
                 throw new InvalidOperationException(
                     $"ItemObject.ModifyAmount: item of typeId {itemTypeId} does not belong " +

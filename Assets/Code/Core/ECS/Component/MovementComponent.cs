@@ -41,29 +41,29 @@ namespace ECS.Component
         public void SetSpeed(float speed) => _speed = speed;
         public float GetSpeed() => _speed * _weightSpeedMultiplier;
         public void SetWeightSpeedMultiplier(float mult) => _weightSpeedMultiplier = mult;
-        public float GetWeightSpeedMultiplier() => _weightSpeedMultiplier;
+        public float WeightSpeedMultiplier => _weightSpeedMultiplier;
 
         // ---- Run multiplier ----
 
         public void SetRunMultiplier(float mult) => _runMultiplier = mult;
-        public float GetRunMultiplier() => _runMultiplier;
+        public float RunMultiplier => _runMultiplier;
 
         // ---- Direction ----
 
         public void SetDirection(float x, float y) { _dirX = x; _dirY = y; }
-        public float GetDirX() => _dirX;
-        public float GetDirY() => _dirY;
+        public float DirX => _dirX;
+        public float DirY => _dirY;
 
         // ---- Mouse sensitivity ----
 
         public void SetMouseSensitivity(float sensitivity) => _mouseSensitivity = sensitivity;
-        public float GetMouseSensitivity() => _mouseSensitivity;
+        public float MouseSensitivity => _mouseSensitivity;
  
 
         // ---- Movement state ----
 
         public void SwitchIsMoving() => _isMoving = !_isMoving;
-        public bool IsMoving() => _isMoving;
+        public bool IsMoving => _isMoving;
 
         public void SetIsRunning(bool running)
         {
@@ -73,10 +73,10 @@ namespace ECS.Component
                 _isRunning = running;
         }
 
-        public bool IsRunning() => _isRunning;
+        public bool IsRunning => _isRunning;
 
         public void SetIsJumping(bool jump) => _wantsToJump = jump;
-        public bool IsJumping() => _wantsToJump;
+        public bool IsJumping => _wantsToJump;
 
         public void AddRunRestriction() { _runRestrictions++; SetIsRunning(false); }
         public void RemoveRunRestriction() { _runRestrictions = Math.Max(0, _runRestrictions - 1); }

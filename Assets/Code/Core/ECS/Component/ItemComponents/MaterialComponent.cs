@@ -68,10 +68,7 @@ namespace ECS.Component.InventoryComponents
         /// Gets the general type of the material.
         /// </summary>
         /// <returns>The material type.</returns>
-        public MaterialType GetMaterialType()
-        {
-            return _materialType;
-        }
+        public MaterialType MaterialType => _materialType;
 
         /// <summary>
         /// Sets the general type of the material.
@@ -86,10 +83,7 @@ namespace ECS.Component.InventoryComponents
         /// Gets the name of the material.
         /// </summary>
         /// <returns>The material name.</returns>
-        public string GetMaterialName()
-        {
-            return _materialName;
-        }
+        public string MaterialName => _materialName;
 
         /// <summary>
         /// Sets the name of the material.
@@ -104,10 +98,7 @@ namespace ECS.Component.InventoryComponents
         /// Gets the flexibility level of the material.
         /// </summary>
         /// <returns>The flexibility level.</returns>
-        public float GetFlexibility()
-        {
-            return _flexibility;
-        }
+        public float Flexibility => _flexibility;
 
         /// <summary>
         /// Sets the flexibility level of the material.
@@ -122,10 +113,7 @@ namespace ECS.Component.InventoryComponents
         /// Gets the hardness level of the material.
         /// </summary>
         /// <returns>The hardness level.</returns>
-        public float GetHardness()
-        {
-            return _hardness;
-        }
+        public float Hardness => _hardness;
 
         /// <summary>
         /// Sets the hardness level of the material.
@@ -140,10 +128,7 @@ namespace ECS.Component.InventoryComponents
         /// Gets the breathability level of the material.
         /// </summary>
         /// <returns>The breathability level.</returns>
-        public float GetTranspirability()
-        {
-            return _transpirability;
-        }
+        public float Transpirability => _transpirability;
 
         /// <summary>
         /// Sets the breathability level of the material.
@@ -158,10 +143,7 @@ namespace ECS.Component.InventoryComponents
         /// Gets the thermal insulation level of the material.
         /// </summary>
         /// <returns>The thermal insulation level.</returns>
-        public float GetThermalInsulation()
-        {
-            return _thermalInsulation;
-        }
+        public float ThermalInsulation => _thermalInsulation;
 
         /// <summary>
         /// Sets the thermal insulation level of the material.

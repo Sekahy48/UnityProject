@@ -60,11 +60,11 @@ namespace Factories
             e.AddComponent(body);
 
             var energy = new EnergyComponent(100f, 100f, 100f, 100f);
-            energy.CalculateBasalMetabolism(body.GetWeight(), body.GetHeight() * 100f, body.GetAge(), body.GetSex());
+            energy.CalculateBasalMetabolism(body.Weight, body.Height * 100f, body.Age, body.Sex);
             e.AddComponent(energy);
 
             var nutrition = new NutritionComponent(100f, 100f);
-            nutrition.GenerateStoredWater(body.GetWeight(), body.GetSex());
+            nutrition.GenerateStoredWater(body.Weight, body.Sex);
             e.AddComponent(nutrition);
 
             return e;

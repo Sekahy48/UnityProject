@@ -46,19 +46,19 @@ namespace ECS.Component
         }
 
         // Getters and Setters
-        public float GetHeight() => height;
+        public float Height => height;
         public void SetHeight(float height) => this.height = height;
 
-        public float GetWeight() => weight;
+        public float Weight => weight;
         public void SetWeight(float weight) => this.weight = weight;
 
-        public float GetAge() => age;
+        public float Age => age;
         public void SetAge(float age) => this.age = age;
 
-        public int GetSex() => sex;
+        public int Sex => sex;
         public void SetSex(int sex) => this.sex = sex;
 
-        public float GetFatPercentage() => fatPercentage;
+        public float FatPercentage => fatPercentage;
         public void SetFatPercentage(float fatPercentage) => this.fatPercentage = fatPercentage;
 
         public override IComponent Clone()

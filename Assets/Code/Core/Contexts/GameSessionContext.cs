@@ -1,5 +1,7 @@
+using ECS.Component;
 using ECS.Entity;
 using ECS.Systems;
+using Inventory;
 
 namespace Core.Contexts
 {
@@ -9,12 +11,27 @@ namespace Core.Contexts
     /// </summary>
     public class GameSessionContext
     {
-        public IEntity Player { get; private set; }
+        public IEntity _player { get; private set; }
+        public ItemEntity _firstInventorySrc { get; private set; }
+        public ItemEntity _secondInventorySrc { get; private set; }
+
         public ClockSystem Clock => ClockSystem.GetInstance();
 
         public void SetPlayer(IEntity player)
         {
-            Player = player;
+            _player = player;
         }
+
+        public void SetFirstInventorySrc(ItemEntity inventoySrc)
+        {
+            _firstInventorySrc = inventoySrc;
+            _firstInventorySrc.AddComponent(new InventoryComponent( new InventoryObject(_firstInventorySrc)));
+        }
+
+            public void SetSecondInventorySrc(ItemEntity inventoySrc)
+            {
+                _secondInventorySrc = inventoySrc;
+                _secondInventorySrc.AddComponent(new InventoryComponent( new InventoryObject(_secondInventorySrc)));
+            }
     }
 }

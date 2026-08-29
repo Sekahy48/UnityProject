@@ -29,11 +29,11 @@ namespace Unity
                 var unity = entity.GetComponent<UnityEntityComponent>();
                 Transform t = unity.GetGameObject().transform;
 
-                if (pos.IsDirty())
+                if (pos.IsDirty)
                 {
                     // Core modified the position → apply to Transform
-                    t.position = new Vector3(pos.GetX(), pos.GetY(), pos.GetZ());
-                    t.rotation = new Quaternion(pos.GetRotX(), pos.GetRotY(), pos.GetRotZ(), pos.GetRotW());
+                    t.position = new Vector3(pos.X, pos.Y, pos.Z);
+                    t.rotation = new Quaternion(pos.RotX, pos.RotY, pos.RotZ, pos.RotW);
                     pos.ClearDirty();
                 }
                 else

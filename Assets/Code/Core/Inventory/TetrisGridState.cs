@@ -35,16 +35,23 @@ namespace Inventory
         public List<GridElement> GetElements() => new List<GridElement>(_elements);
 
         /// <summary>
-        /// Returns the nodeId at the given cell, or -1 if free.
+        /// Whether the given cell exists in this grid.
         /// </summary>
-        public int GetCellAt(int row, int col) => _cells[row, col];
+        public bool IsInside(int row, int col) =>
+            row >= 0 && col >= 0 && row < _gridH && col < _gridW;
 
         /// <summary>
-        /// Returns the GridElement placed at the given cell, or null if free.
+        /// Returns the nodeId at the given cell, or -1 if free or outside the grid.
+        /// </summary>
+        public int GetCellAt(int row, int col) => IsInside(row, col) ? _cells[row, col] : -1;
+
+        /// <summary>
+        /// Returns the GridElement placed at the given cell, or null if free or outside
+        /// the grid.
         /// </summary>
         public GridElement GetElementAt(int row, int col)
         {
-            int nodeId = _cells[row, col];
+            int nodeId = GetCellAt(row, col);
             if (nodeId == -1) return null;
 
             foreach (GridElement elem in _elements)
@@ -82,7 +89,7 @@ namespace Inventory
         public bool CanPlace(ItemEntity item)
         {
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
-            return FindFirstFit(baseInfo.GetDimensionH(), baseInfo.GetDimensionW()) != (-1, -1);
+            return FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW) != (-1, -1);
         }
 
         /// <summary>
@@ -91,13 +98,20 @@ namespace Inventory
         /// cells are released first, otherwise they would stay marked with its id and the node
         /// would hold more space than it occupies.
         /// </summary>
-        public bool Place(ItemObject node, int row, int col)
+        /// <param name="ignoreNodeId">
+        /// Extra node whose cells count as free, on top of this node's own — see CanPlace.
+        /// Needed when the move is done by building a NEW node and dropping the old one: the
+        /// new id owns no cell yet, so without this the placement collides with the node it
+        /// is replacing.
+        /// </param>
+        public bool Place(ItemObject node, int row, int col, int ignoreNodeId = -1)
         {
             BaseItemComponent baseItem = node.GetItemEntity().GetComponent<BaseItemComponent>();
-            int itemH = baseItem.GetDimensionH();
-            int itemW = baseItem.GetDimensionW();
+            int itemH = baseItem.DimensionH;
+            int itemW = baseItem.DimensionW;
 
-            if (!CanPlace(row, col, itemH, itemW, node.GetNodeId())) return false;
+            if (!CanPlace(row, col, itemH, itemW, node.GetNodeId())
+             && !CanPlace(row, col, itemH, itemW, ignoreNodeId)) return false;
 
             int nodeId = node.GetNodeId();
             Remove(nodeId);   // no-op if it wasn't placed yet
@@ -113,7 +127,7 @@ namespace Inventory
         public bool TryFirstPlace(ItemObject node)
         { 
             BaseItemComponent baseInfo = node.GetItemEntity().GetComponent<BaseItemComponent>();
-            (int row, int col) coords = FindFirstFit(baseInfo.GetDimensionH(), baseInfo.GetDimensionW());
+            (int row, int col) coords = FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW);
             return Place(node, coords.row, coords.col);
         }
 

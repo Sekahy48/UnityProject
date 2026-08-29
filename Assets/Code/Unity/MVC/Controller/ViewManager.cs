@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using MVC.Presenter;
 using MVC.View;
+using MVC.View.Inventory;
 
 namespace MVC.Controller
 {
@@ -16,7 +17,8 @@ namespace MVC.Controller
         public void InitializeViews(UIRegistry uiRegistry)
         {
              // Inventory View
-             views[PresenterType.INV] = new InventoryView(uiRegistry.GetDocument(UIDocumentType.Inventory));
+             views[PresenterType.INV] = new InventoryView(uiRegistry.GetDocument(UIDocumentType.Inventory),
+                                                          uiRegistry.GetTemplate(UITemplateType.InventoryPanel));
         }
 
         public T GetView<T>(PresenterType type) where T : IView

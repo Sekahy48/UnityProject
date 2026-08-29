@@ -1,6 +1,7 @@
 using System;
 using ECS.Component;
 using ECS.Entity;
+using MVC.View.Inventory;
 using Observer;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,7 +17,9 @@ namespace Strategy
 
         protected Vector2 rotation = Vector2.zero;
 
-        public event Action<int> OnInventoryRequested;
+        public event Action OnInventoryToggleRequested;
+        public event Action OnInventoryCancelRequested; 
+        public event Action<PanelType> OnInventoryPanelToggleRequested;
 
         protected BaseCameraStrategy(IEntity player, string cameraName)
         {
@@ -31,7 +34,7 @@ namespace Strategy
         public virtual void Deactivate() => Camera.enabled = false;
 
         protected internal MovementComponent GetMov() => player.GetComponent<MovementComponent>();
-        public IEntity GetPlayer() => player;
+         
 
         public void Execute(float deltaTime)
         {
@@ -48,8 +51,8 @@ namespace Strategy
                 return;
 
             var mov = GetMov();
-            animator.SetBool("IsRunning", mov.IsRunning());
-            animator.SetBool("IsJumping", mov.IsJumping());
+            animator.SetBool("IsRunning", mov.IsRunning);
+            animator.SetBool("IsJumping", mov.IsJumping);
 
             float smoothHorizontal = Mathf.Lerp(animator.GetFloat("VelX"), horizontal, deltaTime * 10f);
             float smoothVertical = Mathf.Lerp(animator.GetFloat("VelY"), vertical, deltaTime * 10f);
@@ -60,18 +63,23 @@ namespace Strategy
 
         protected void HandleInventoryInput()
         {
-            if (Keyboard.current.iKey.wasPressedThisFrame)
+            if (Keyboard.current.iKey.wasPressedThisFrame) 
+                OnInventoryToggleRequested?.Invoke(); 
+            else if (Keyboard.current.escapeKey.wasPressedThisFrame) 
+                OnInventoryCancelRequested?.Invoke(); 
+            else if (Keyboard.current.shiftKey.isPressed)
             {
-                OnInventoryRequested?.Invoke(1);
+                PanelType panel;
+                if (Keyboard.current.digit1Key.wasPressedThisFrame) 
+                    panel = PanelType.A;
+                else if (Keyboard.current.digit2Key.wasPressedThisFrame)
+                    panel = PanelType.B;
+                else return;
+
+                Debug.Log(panel.ToString());
+                OnInventoryPanelToggleRequested?.Invoke(panel);
             }
-            else if (Keyboard.current.pKey.wasPressedThisFrame)
-            {
-                OnInventoryRequested?.Invoke(0);
-            }
-            else if (Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                OnInventoryRequested?.Invoke(-1);
-            }
+                
         }
 
         public Camera GetCamera() => Camera;
@@ -103,8 +111,8 @@ namespace Strategy
                 move.Normalize();
                 movComp.SetIsJumping(Keyboard.current.spaceKey.isPressed);
                 movComp.SetIsRunning(Keyboard.current.leftShiftKey.isPressed);
-                float speed = movComp.IsRunning() && movComp.CanRun()
-                    ? movComp.GetSpeed() * movComp.GetRunMultiplier()
+                float speed = movComp.IsRunning && movComp.CanRun()
+                    ? movComp.GetSpeed() * movComp.RunMultiplier
                     : movComp.GetSpeed();
 
                 tr.position += move * speed * deltaTime;

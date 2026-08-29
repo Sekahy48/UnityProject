@@ -36,8 +36,8 @@ namespace Inventory
 
         public BatchItem(ItemEntity item, int amount)
         {
-            _typeId = item.GetComponent<BaseItemComponent>().GetTypeId();
-            _maxStackSize = item.GetComponent<BaseItemComponent>().GetMaxStackSize();
+            _typeId = item.GetComponent<BaseItemComponent>().TypeId;
+            _maxStackSize = item.GetComponent<BaseItemComponent>().MaxStackSize;
             AC.CheckPositive(_maxStackSize, "maxStackSize");
 
             _items = new List<(ItemEntity, int)>
@@ -81,7 +81,7 @@ namespace Inventory
             float totalWeight = 0;
             foreach ((ItemEntity item, int amount) pair in _items)
             {
-                totalWeight += pair.item.GetComponent<BaseItemComponent>().GetWeight() * pair.amount;
+                totalWeight += pair.item.GetComponent<BaseItemComponent>().Weight * pair.amount;
             }
             return totalWeight;
         }
@@ -110,7 +110,7 @@ namespace Inventory
         /// <returns>Amount that could not be added due to maxStackSize limit.</returns>
         public int AddAmount(ItemEntity item, int amount)
         {
-            if (item.GetComponent<BaseItemComponent>().GetTypeId() != _typeId) return amount;
+            if (item.GetComponent<BaseItemComponent>().TypeId != _typeId) return amount;
 
             int toAdd = Math.Min(amount, _maxStackSize - GetTotalAmount());
             int remaining = amount - toAdd;

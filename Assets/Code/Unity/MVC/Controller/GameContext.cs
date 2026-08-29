@@ -15,12 +15,13 @@ namespace MVC.Controller
     /// GameMain uses this object to build everything and then inject
     /// the individual sub-contexts wherever needed.
     /// </summary>
-    public class GameContext
+    public class    GameContext
     {
         // ---- Core sub-contexts ----
         public GameDataContext Data { get; private set; }
         public GameSessionContext Session { get; private set; }
         public GameSystemContext System { get; private set; }
+        public GameInteractionContext Interaction { get; private set; }
 
         // ---- Unity pieces (do not go in Core) ---- 
         public InputManager InputManager { get; private set; }
@@ -43,6 +44,12 @@ namespace MVC.Controller
         public GameContext SetSystem(GameSystemContext system)
         {
             System = system;
+            return this;
+        }
+
+        public GameContext SetInteraction(GameInteractionContext interaction)
+        {
+            Interaction = interaction;
             return this;
         }
 

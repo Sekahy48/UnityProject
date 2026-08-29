@@ -7,7 +7,7 @@ namespace MVC.View
     public class UIRegistry : MonoBehaviour
     {
         [SerializeField] private UIDocument _inventoryDocument; 
-        // en el futuro: crafting, equipment, hud...
+        [SerializeField] private VisualTreeAsset _inventoryPanelTemplate; 
 
         public UIDocument GetDocument(UIDocumentType type)
         {
@@ -17,7 +17,19 @@ namespace MVC.View
                 _ => throw new ArgumentException($"Unknown document type: {type}")
             };
         } 
+
+        public VisualTreeAsset GetTemplate(UITemplateType type)
+        {
+            return type switch
+            {
+                UITemplateType.InventoryPanel => _inventoryPanelTemplate,
+                _ => throw new ArgumentException($"Unknown template type: {type}")
+            };
+        }
     }
 
     public enum UIDocumentType  { Inventory } 
+
+    public enum UITemplateType { InventoryPanel }
+
 }

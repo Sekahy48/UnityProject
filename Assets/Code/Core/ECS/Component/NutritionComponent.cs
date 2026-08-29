@@ -53,45 +53,45 @@ namespace ECS.Component
         }
 
         // Hunger
-        public float GetHunger() => hunger;
+        public float Hunger => hunger;
         public void SetHunger(float hunger) => this.hunger = Math.Max(0, Math.Min(hunger, maxHunger));
-        public float GetMaxHunger() => maxHunger;
+        public float MaxHunger => maxHunger;
         public void SetMaxHunger(float maxHunger) => this.maxHunger = maxHunger;
         public bool IsHungerFull() => hunger >= maxHunger;
         public bool IsHungerEmpty() => hunger <= 0;
 
         // Thirst
-        public float GetThirst() => thirst;
+        public float Thirst => thirst;
         public void SetThirst(float thirst) => this.thirst = Math.Max(0, Math.Min(thirst, maxThirst));
-        public float GetMaxThirst() => maxThirst;
+        public float MaxThirst => maxThirst;
         public void SetMaxThirst(float maxThirst) => this.maxThirst = maxThirst;
         public bool IsThirstFull() => thirst >= maxThirst;
         public bool IsThirstEmpty() => thirst <= 0;
 
         // Reserves
-        public float GetStoredKcal() => storedKcal;
+        public float StoredKcal => storedKcal;
         public void SetStoredKcal(float storedKcal) => this.storedKcal = storedKcal;
-        public float GetStoredWater() => storedWater;
+        public float StoredWater => storedWater;
         public void SetStoredWater(float storedWater) => this.storedWater = storedWater;
 
         // Macronutrients
-        public float GetProtein() => protein;
+        public float Protein => protein;
         public void AddProtein(float protein) => this.protein += protein;
         public void SetProtein(float protein) => this.protein = protein;
 
-        public float GetCarbohydrates() => carbohydrates;
+        public float Carbohydrates => carbohydrates;
         public void AddCarbohydrates(float carbohydrates) => this.carbohydrates += carbohydrates;
         public void SetCarbohydrates(float carbohydrates) => this.carbohydrates = carbohydrates;
 
-        public float GetFats() => fats;
+        public float Fats => fats;
         public void AddFats(float fats) => this.fats += fats;
         public void SetFats(float fats) => this.fats = fats;
 
-        public float GetMicronutrients() => micronutrients;
+        public float Micronutrients => micronutrients;
         public void AddMicronutrients(float micronutrients) => this.micronutrients += micronutrients;
         public void SetMicronutrients(float micronutrients) => this.micronutrients = micronutrients;
 
-        public float GetFiber() => fiber;
+        public float Fiber => fiber;
         public void AddFiber(float fiber) => this.fiber += fiber;
         public void SetFiber(float fiber) => this.fiber = fiber;
 

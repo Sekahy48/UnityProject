@@ -2,6 +2,7 @@ using System;
 using ECS.Component;
 using ECS.Entity;
 using Events;
+using Inventory;
 
 namespace ECS.Systems
 {
@@ -40,6 +41,40 @@ namespace ECS.Systems
             return GameEventType.NormalWeight;
         }
 
+        /// <summary>
+        /// Weight limit of whatever holds an inventory. A body carries what its muscles allow;
+        /// anything else (a chest, a cart) is limited by its own StorageComponent. Single rule,
+        /// so the UI bar and the transfer check can never disagree about the ceiling.
+        /// </summary>
+        public static float GetMaxLoad(IEntity entity)
+        {
+            if (entity.HasComponent(typeof(BodyComponent)))
+                return GetMaxCarryWeight(entity);
+
+            StorageComponent storage = entity.GetComponent<StorageComponent>();
+            return storage != null ? storage.MaxWeight : float.MaxValue;
+        }
+
+        /// <summary>
+        /// Cuantas de esas <paramref name="amount"/> unidades caben todavia por peso. Pura: no
+        /// toca nada, asi que sirve igual para ejecutar el movimiento y para pintar el veredicto
+        /// antes de soltar. Vive aqui, junto al techo que consulta, para que ambos usos no puedan
+        /// discrepar sobre cuanto queda libre.
+        /// </summary>
+        public static int FitByWeight(IEntity entity, InventoryObject inventory, ItemEntity item, int amount)
+        {
+            if (inventory == null) return 0;
+
+            float itemWeight = item.GetComponent<BaseItemComponent>().Weight;
+            if (itemWeight <= 0) return amount;   // sin peso no hay limite que aplicar
+
+            float free = GetMaxLoad(entity) - inventory.GetTotalWeight();
+            int fit = (int)(free / itemWeight);
+
+            // Sobrepasado el techo el hueco libre es negativo: no cabe nada, no "cabe menos que nada".
+            return Math.Min(amount, Math.Max(fit, 0));
+        }
+
         public static float GetMaxCarryWeight(IEntity entity)
         {
             BodyComponent body = entity.GetComponent<BodyComponent>();
@@ -50,9 +85,9 @@ namespace ECS.Systems
 
             float muscleMass = body.GetMuscleMass();
             float carryBase = muscleMass * 0.5f;
-            float factorSex = (body.GetSex() == 0) ? 1.0f : 0.85f;
+            float factorSex = (body.Sex == 0) ? 1.0f : 0.85f;
 
-            float age = body.GetAge();
+            float age = body.Age;
             float factorAge;
             if      (age < 18f)  factorAge = 0.6f  + (age - 10f) * 0.05f;
             else if (age <= 35f) factorAge = 1.0f;
@@ -66,16 +101,16 @@ namespace ECS.Systems
 
             if (nutrition != null)
             {
-                float maxHunger = nutrition.GetMaxHunger();
-                float maxThirst = nutrition.GetMaxThirst();
-                if (maxHunger > 0) factorHunger  = 1.0f - (nutrition.GetHunger() / maxHunger) * 0.30f;
-                if (maxThirst > 0) factorThirst  = 1.0f - (nutrition.GetThirst() / maxThirst) * 0.40f;
+                float maxHunger = nutrition.MaxHunger;
+                float maxThirst = nutrition.MaxThirst;
+                if (maxHunger > 0) factorHunger  = 1.0f - (nutrition.Hunger / maxHunger) * 0.30f;
+                if (maxThirst > 0) factorThirst  = 1.0f - (nutrition.Thirst / maxThirst) * 0.40f;
             }
 
             if (energy != null)
             {
-                float maxFatigue = energy.GetMaxFatigue();
-                if (maxFatigue > 0) factorFatigue = 1.0f - (energy.GetFatigue() / maxFatigue) * 0.35f;
+                float maxFatigue = energy.MaxFatigue;
+                if (maxFatigue > 0) factorFatigue = 1.0f - (energy.Fatigue / maxFatigue) * 0.35f;
             }
 
             return carryBase * factorSex * factorAge * factorHunger * factorThirst * factorFatigue;

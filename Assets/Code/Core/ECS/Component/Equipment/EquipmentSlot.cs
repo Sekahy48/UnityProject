@@ -33,10 +33,7 @@ namespace ECS.Component.Equipment
             return _equippedItems.Count;
         }
 
-        public int GetMaxLayers()
-        {
-            return _maxLayers;
-        }
+        public int MaxLayers => _maxLayers;
 
         public EquipResult EquipItem(ItemEntity item)
         {
@@ -46,15 +43,15 @@ namespace ECS.Component.Equipment
             if (wearableComponent == null) return EquipResult.NotWearable;
             if (!_enabled) return EquipResult.SlotDisabled;
             if (_equippedItems.Count >= _maxLayers) return EquipResult.MaxLayersReached;
-            if (!_slotType.Equals(wearableComponent.GetTargetSlot())) return EquipResult.WrongSlot;
-            if (ContainsGarmentCategory(wearableComponent.GetGarmentCategory())) return EquipResult.DuplicateCategory;
+            if (!_slotType.Equals(wearableComponent.TargetSlot)) return EquipResult.WrongSlot;
+            if (ContainsGarmentCategory(wearableComponent.GarmentCategory)) return EquipResult.DuplicateCategory;
 
             if (!_isTopLocked)
             {
                 _equippedItems.Add(item);
-                _isTopLocked = wearableComponent.IsTopLayer();
+                _isTopLocked = wearableComponent.IsTopLayer;
             }
-            else if (!wearableComponent.IsTopLayer())
+            else if (!wearableComponent.IsTopLayer)
             {
                 _equippedItems.Insert(_equippedItems.Count - 1, item);
             }
@@ -81,10 +78,7 @@ namespace ECS.Component.Equipment
             }
         }
         
-        public List<ItemEntity> GetItems()
-        {
-            return _equippedItems;
-        }
+        public List<ItemEntity> Items => _equippedItems;
         
         public ItemEntity GetTopItem()
         {
@@ -96,7 +90,7 @@ namespace ECS.Component.Equipment
             foreach (ItemEntity item in _equippedItems)
             {
                 WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
-                if (wearableComponent != null && wearableComponent.GetGarmentCategory().Equals(category))
+                if (wearableComponent != null && wearableComponent.GarmentCategory.Equals(category))
                 {
                     return true;    
                 }
@@ -104,12 +98,12 @@ namespace ECS.Component.Equipment
             return false;
         }
 
-        public bool IsTopLocked() => _isTopLocked;
+        public bool IsTopLocked => _isTopLocked;
 
         //TODO Make getters and a criteria-based remover
 
         public void Enable() => _enabled = true;
         public void Disable() => _enabled = false;
-        public bool IsEnabled() => _enabled;
+        public bool IsEnabled => _enabled;
     }
 }

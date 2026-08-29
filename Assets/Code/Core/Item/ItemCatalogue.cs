@@ -18,7 +18,7 @@ namespace Item
         public void AddPrototype(ItemEntity item)
         {
             AC.CheckNotNull(item, nameof(item));
-            int typeId = item.GetComponent<BaseItemComponent>().GetTypeId();
+            int typeId = item.GetComponent<BaseItemComponent>().TypeId;
             
             if (_prototypes.ContainsKey(typeId)) CoreLogger.Instance.LogWarning($"ItemCatalogue: Prototype with typeId {typeId} already exists. Overwriting.");
             
@@ -43,7 +43,7 @@ namespace Item
             
             foreach (ItemEntity proto in _prototypes.Values)
                 if (proto.GetGenericName() == name)
-                    return proto.GetComponent<BaseItemComponent>().GetTypeId();
+                    return proto.GetComponent<BaseItemComponent>().TypeId;
             throw new KeyNotFoundException($"ItemCatalogue: Prototype with name '{name}' not found. There is no matching key/typeId");
         }
 
@@ -61,7 +61,7 @@ namespace Item
                 ItemEntity proto = kvp.Value;
                 BaseItemComponent baseItem = proto.GetComponent<BaseItemComponent>();
 
-                string name = baseItem != null ? baseItem.GetGenericName() : "???";
+                string name = baseItem != null ? baseItem.GenericName : "???";
                 string line = $"  [{kvp.Key}] {name}";
 
                 // Listar componentes
