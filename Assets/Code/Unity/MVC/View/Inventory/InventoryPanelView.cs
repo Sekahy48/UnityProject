@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Events;
+using Inventory;
 using MVC.View.UI.Inventory;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -47,7 +48,7 @@ namespace MVC.View.Inventory
         /* Ultima celda sobre la que se emitio veredicto. El veredicto solo puede cambiar al
            cambiar de celda, asi que sin esto se reevalua y se reescriben estilos en cada pixel
            de movimiento. MinValue = ninguna, para que la primera siempre emita. */
-        private int _lastRow = int.MinValue, _lastCol = int.MinValue;
+        private GridPos? _lastCell;
 
         private Vector3 _pressOrigin; /*Position where last pointer down event ocurred*/
         private const float DRAG_THRESHOLD_SQR = 100f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
@@ -64,11 +65,11 @@ namespace MVC.View.Inventory
 
         #region Events
 
-        public event Action<int, int> OnCellPressed;
-        public event Action<int, int, bool> OnCellReleased;
+        public event Action<GridPos> OnCellPressed;
+        public event Action<GridPos, bool> OnCellReleased;
 
         public event Action<Vector3> OnPointerMovedOverGrid;
-        public event Action<int, int, Vector2> OnPointerMovedOverCell;
+        public event Action<GridPos, CellSize> OnPointerMovedOverCell;
 
         /* El panel no se oculta a si mismo: pide que lo cierren. Quien decide que ocupa
            cada hueco es InventoryView, y la visibilidad va con esa decision. */
@@ -120,8 +121,7 @@ namespace MVC.View.Inventory
             _gridH = rows;
             _gridW = cols;
             _fittedCell = 0f;   // dimensiones nuevas: el ajuste anterior ya no vale
-            _lastRow = int.MinValue;
-            _lastCol = int.MinValue;   // rejilla nueva: la celda recordada ya no existe
+            _lastCell = null;   // rejilla nueva: la celda recordada ya no existe
 
             VisualElement grid = new VisualElement();
             _grid = grid;
@@ -147,12 +147,12 @@ namespace MVC.View.Inventory
             {
                 OnPointerMovedOverGrid?.Invoke(evt.position);
 
-                (int row, int col) = PointToCoords(evt.position);
+                GridPos pos = PointToCoords(evt.position);
 
-                if (row == _lastRow && col == _lastCol) return;
-                _lastRow = row; _lastCol = col;
+                if (_lastCell.HasValue && _lastCell.Value == pos) return;
+                _lastCell = pos;
 
-                OnPointerMovedOverCell?.Invoke(row, col, GetCellSize());
+                OnPointerMovedOverCell?.Invoke(pos, GetCellSize());
             });
 
             // Salir de la rejilla no genera PointerMove, asi que sin esto la mano se queda
@@ -160,8 +160,8 @@ namespace MVC.View.Inventory
             // Outside por el mismo camino, sin un segundo evento que mantener en sincronia.
             _itemsLayer.RegisterCallback<PointerLeaveEvent>(_ =>
             {
-                _lastRow = int.MinValue; _lastCol = int.MinValue;
-                OnPointerMovedOverCell?.Invoke(-1, -1, GetCellSize());
+                _lastCell = null;
+                OnPointerMovedOverCell?.Invoke(GridPos.None, GetCellSize());
             });
 
             // Being a drop target IS stopping propagation: whatever does not stop the event
@@ -179,11 +179,7 @@ namespace MVC.View.Inventory
                 // el panel que hay bajo el cursor, que es el que debe colocar.
                 _pressOrigin = evt.position;
 
-                Vector2 position = _itemsLayer.WorldToLocal(evt.position);
-                Vector2 cell = GetCellSize();
-                int col = Mathf.FloorToInt(position.x / cell.x);
-                int row = Mathf.FloorToInt(position.y / cell.y);
-                OnCellPressed?.Invoke(row, col);
+                OnCellPressed?.Invoke(PointToCoords(evt.position));
             });
 
             _itemsLayer.RegisterCallback<PointerUpEvent>(evt =>
@@ -192,12 +188,8 @@ namespace MVC.View.Inventory
                 // aqui es lo que impide que la raiz lo tome por "soltado fuera".
                 evt.StopPropagation();
 
-                Vector2 position = _itemsLayer.WorldToLocal(evt.position);
-                Vector2 cell = GetCellSize();
-                int col = Mathf.FloorToInt(position.x / cell.x);
-                int row = Mathf.FloorToInt(position.y / cell.y);
                 bool dragged = (evt.position - _pressOrigin).sqrMagnitude > DRAG_THRESHOLD_SQR;
-                OnCellReleased?.Invoke(row, col, dragged);
+                OnCellReleased?.Invoke(PointToCoords(evt.position), dragged);
             });
 
 
@@ -320,7 +312,18 @@ namespace MVC.View.Inventory
         /// elements and the grid number of columns and rows
         /// </summary>
         /// <returns> Dimensions of a cell in the grid </returns>
-        public Vector2 GetCellSize()
+        public CellSize GetCellSize()
+        {
+            Vector2 px = CellSizePx();
+            return new CellSize(px.x, px.y);
+        }
+
+        /// <summary>
+        /// La misma medida en el tipo de Unity, para las cuentas internas de esta vista.
+        /// Fuera de aqui viaja como CellSize: los presenters viven en Core y no conocen
+        /// UnityEngine.
+        /// </summary>
+        private Vector2 CellSizePx()
         {
             if (_itemsLayer == null || _gridW <= 0 || _gridH <= 0) return Vector2.zero;
             return new Vector2(_itemsLayer.resolvedStyle.width  / _gridW,
@@ -332,15 +335,15 @@ namespace MVC.View.Inventory
         /// the grid when the cursor is beyond it — checking that is the caller's job, and it is
         /// what tells "over cell (2,3)" from "past the edge".
         /// </summary>
-        private (int row, int col) PointToCoords(Vector3 panelPosition)
+        private GridPos PointToCoords(Vector3 panelPosition)
         {
             Vector2 local = _itemsLayer.WorldToLocal(panelPosition);
-            Vector2 cell = GetCellSize();
+            Vector2 cell = CellSizePx();
 
-            if (cell.x <= 0 || cell.y <= 0) return (-1, -1);   // layout aun sin resolver
+            if (cell.x <= 0 || cell.y <= 0) return GridPos.None;   // layout aun sin resolver
 
-            return (Mathf.FloorToInt(local.y / cell.y),
-                    Mathf.FloorToInt(local.x / cell.x));
+            return new GridPos(Mathf.FloorToInt(local.y / cell.y),
+                               Mathf.FloorToInt(local.x / cell.x));
         }
 
         public void SetLabelText(String content)

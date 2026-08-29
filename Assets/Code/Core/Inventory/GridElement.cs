@@ -9,19 +9,21 @@ namespace Inventory
     public class GridElement
     {
         private readonly ItemObject _node;
-        private int _row;
-        private int _col;
+        private GridPos _pos;
 
-        public GridElement(ItemObject node, int row, int col)
+        public GridElement(ItemObject node, GridPos pos)
         {
             _node = node;
-            _row = row;
-            _col = col;
+            _pos = pos;
         }
 
         public ItemObject GetNode() => _node;
-        public int GetRow() => _row;
-        public int GetCol() => _col;
+        public GridPos GetPos() => _pos;
+
+        /* Atajos para quien solo necesita una de las dos coordenadas (los DTO de pintado,
+           por ejemplo) sin desempaquetar la celda entera. */
+        public int GetRow() => _pos.Row;
+        public int GetCol() => _pos.Col;
 
         /// <summary>
         /// Item dimensions derived from the node's entity.
@@ -32,10 +34,6 @@ namespace Inventory
         /// <summary>
         /// Updates position (for drag & drop repositioning).
         /// </summary>
-        public void SetPosition(int row, int col)
-        {
-            _row = row;
-            _col = col;
-        }
+        public void SetPosition(GridPos pos) => _pos = pos;
     }
 }

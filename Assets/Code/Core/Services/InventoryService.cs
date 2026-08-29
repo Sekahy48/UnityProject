@@ -46,11 +46,10 @@ namespace Services
         /// 
         /// </summary>
         /// <param name="destiny"></param>
-        /// <param name="row"></param>
-        /// <param name="col"></param>
+        /// <param name="pos">Destination cell.</param>
         /// <returns> What is left in the hand</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public int PlaceAmountFromHand(IEntity destiny, int row, int col)
+        public int PlaceAmountFromHand(IEntity destiny, GridPos pos)
         {
             HandBuffer hand = _interactionContext._handBuffer;
             ItemObject srcNode = hand.GetSourceNode();
@@ -58,7 +57,7 @@ namespace Services
             int ignoreNodeId = GetIgnoreNodeId(destiny);
 
             int moved = TryMoveItemTo(hand.GetEntity(), hand.GetSourceInventory(), srcNode,
-                                      hand.GetHeldSubLot(), hand.GetHeldAmount(), destiny, row, col,
+                                      hand.GetHeldSubLot(), hand.GetHeldAmount(), destiny, pos,
                                       ignoreNodeId);
             CoreLogger.Instance.Log(moved.ToString());
             int handMoved = hand.NotifyPlaced(moved);
@@ -97,11 +96,10 @@ namespace Services
         /// across the node — whatever comes out is what travels, variants preserved.</param>
         /// <param name="amount">Units to move.</param>
         /// <param name="dstEntity">Entity owning the destination inventory. May be the same as the source's.</param>
-        /// <param name="row">Destination row.</param>
-        /// <param name="col">Destination column.</param>
+        /// <param name="pos">Destination cell.</param>
         /// <returns>Units actually moved. Zero means nothing changed anywhere.</returns>
         public int TryMoveItemTo(IEntity srcEntity, InventoryObject srcInventory, ItemObject srcNode,
-                                 ItemEntity subLot, int amount, IEntity dstEntity, int row, int col,
+                                 ItemEntity subLot, int amount, IEntity dstEntity, GridPos pos,
                                  int ignoreNodeId = -1)
         {
             AC.CheckNotNull(srcInventory, nameof(srcInventory));
@@ -112,19 +110,19 @@ namespace Services
             // de la transaccion, con las unidades ya fuera del nodo origen y el rollback sin
             // ejecutar. Soltar fuera de la grid no es un error, simplemente no coloca.
             InventoryObject dstInventory = dstEntity.GetComponent<InventoryComponent>().Inventory;
-            if (!dstInventory.GetGrid().IsInside(row, col)) return 0;
+            if (!dstInventory.GetGrid().IsInside(pos)) return 0;
 
             InventorySystem inventorySystem = _systemContext.SystemManager.GetReactiveSystem<InventorySystem>();
 
             // Lo extraido llega desglosado por variante: un nodo mezclado consume al azar,
             // y pasarle al destino un solo item convertiria las demas variantes en copias.
-            List<(ItemEntity item, int amount)> taken =
+            List<SubLot> taken =
                 srcInventory.Extract(srcNode, subLot, amount, clean: false);
 
             int moved = 0;
             foreach ((ItemEntity variant, int count) in taken)
             {
-                int leftover = inventorySystem.TryAddItemAt(dstEntity, variant, count, row, col, ignoreNodeId);
+                int leftover = inventorySystem.TryAddItemAt(dstEntity, variant, count, pos, ignoreNodeId);
                 moved += count - leftover;
 
                 if (leftover > 0)
@@ -159,18 +157,18 @@ namespace Services
         }
 
         /// <summary>
-        /// Que pasaria si la mano se soltase en (row, col). Recorre las MISMAS decisiones que
+        /// Que pasaria si la mano se soltase en esa celda. Recorre las MISMAS decisiones que
         /// AddItemAt/TryAddItemAt y en el mismo orden: ocupante primero, luego hueco, luego
         /// peso. Si esto y la colocacion real dejan de coincidir es que una de las dos cambio
         /// sola, y el color estaria mintiendo.
         /// </summary>
-        public PlacementVerdict EvaluatePlacement(IEntity destiny, int row, int col)
+        public PlacementVerdict EvaluatePlacement(IEntity destiny, GridPos pos)
         {
             if (destiny == null || !IsHandCarrying()) return PlacementVerdict.Outside;
 
             InventoryObject dstInventory = destiny.GetComponent<InventoryComponent>().Inventory;
             TetrisGridState grid = dstInventory.GetGrid();
-            if (!grid.IsInside(row, col)) return PlacementVerdict.Outside;
+            if (!grid.IsInside(pos)) return PlacementVerdict.Outside;
 
             ItemEntity item = GetGrabbedItem();
             if (item == null) return PlacementVerdict.Outside;
@@ -180,7 +178,7 @@ namespace Services
             int amount = _interactionContext._handBuffer.GetHeldAmount();
 
             // Mismo orden que AddItemAt: el ocupante manda sobre el hueco.
-            GridElement occupant = grid.GetElementAt(row, col);
+            GridElement occupant = grid.GetElementAt(pos);
             if (occupant != null && occupant.GetNode().GetNodeId() != ignoreNodeId)
             {
                 ItemObject node = occupant.GetNode();
@@ -189,7 +187,7 @@ namespace Services
                 return sameType && hasRoom ? PlacementVerdict.Fits : PlacementVerdict.Blocked;
             }
 
-            if (!grid.CanPlace(row, col, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
+            if (!grid.CanPlace(pos, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
                 return PlacementVerdict.Blocked;
 
             // Reordenar dentro de un inventario no cambia su peso: ya se carga. Igual que

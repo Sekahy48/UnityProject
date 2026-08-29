@@ -25,7 +25,7 @@ namespace Inventory
 
         public int GetTypeId() => _batch.GetTypeId();
         public int GetNodeId() => _nodeId;
-        public ItemEntity GetItemEntity() => _batch.IsEmpty() ? null : _batch.GetSubLots()[0].Item1;
+        public ItemEntity GetItemEntity() => _batch.IsEmpty() ? null : _batch.GetSubLots()[0].Item;
         public BatchItem GetBatch() => _batch;
         public bool IsLeaf() => true;
         public int GetAmount() => _batch.GetTotalAmount();
@@ -119,21 +119,20 @@ namespace Inventory
         /// <param name="item">Sub-lot to take from, or null to take at random across the node.</param>
         /// <param name="amount">Units to take. Taking more than there is takes what there is.</param>
         /// <returns>Pairs of (variant, units taken). Empty if nothing came out.</returns>
-        public List<(ItemEntity item, int amount)> Extract(ItemEntity item, int amount)
+        public List<SubLot> Extract(ItemEntity item, int amount)
         {
             AC.CheckPositive(amount, nameof(amount));
 
-            List<(ItemEntity item, int amount)> extracted = new List<(ItemEntity, int)>();
+            List<SubLot> extracted = new List<SubLot>();
 
             if (item == null)
             {
-                foreach ((ItemEntity variant, int count) in _batch.ConsumeRandom(amount))
-                    extracted.Add((variant, count));
+                extracted.AddRange(_batch.ConsumeRandom(amount));
             }
             else
             {
                 int taken = ModifyAmount(item, -amount);
-                if (taken > 0) extracted.Add((item, taken));
+                if (taken > 0) extracted.Add(new SubLot(item, taken));
             }
 
             return extracted;
@@ -150,8 +149,8 @@ namespace Inventory
         {
             if (item == null) return _batch.GetTotalAmount();
 
-            foreach ((ItemEntity subItem, int amount) lot in _batch.GetSubLots())
-                if (lot.subItem.Equivalent(item)) return lot.amount;
+            foreach (SubLot lot in _batch.GetSubLots())
+                if (lot.Item.Equivalent(item)) return lot.Amount;
 
             return 0;
         }
@@ -202,13 +201,13 @@ namespace Inventory
         public IInventoryElement Clone()
         {
             // Clone first sub-lot's entity to create a new ItemObject
-            var subLots = _batch.GetSubLots();
+            List<SubLot> subLots = _batch.GetSubLots();
             if (subLots.Count == 0) throw new InvalidOperationException("Cannot clone an ItemObject which BatchItem is empty. This node should be removed already.");
 
-            ItemObject clone = new ItemObject(subLots[0].Item1.Clone(), subLots[0].Item2);
+            ItemObject clone = new ItemObject(subLots[0].Item.Clone(), subLots[0].Amount);
             for (int i = 1; i < subLots.Count; i++)
             {
-                clone._batch.AddAmount(subLots[i].Item1.Clone(), subLots[i].Item2);
+                clone._batch.AddAmount(subLots[i].Item.Clone(), subLots[i].Amount);
             }
             return clone;
         }
@@ -217,7 +216,7 @@ namespace Inventory
 
         //#region nodes
 
-        public List<(ItemEntity, int)> ConsumeRandom(int amount)
+        public List<SubLot> ConsumeRandom(int amount)
         {
             return _batch.ConsumeRandom(amount);
         }

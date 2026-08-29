@@ -7,7 +7,6 @@ using Inventory;
 using MVC.View.Inventory;
 using MVC.View.UI.Inventory;
 using Services;
-using UnityEngine;
 
 namespace MVC.Presenter.Inventory
 {
@@ -23,8 +22,8 @@ namespace MVC.Presenter.Inventory
         private bool _grabbedThisGesture;
         private IEntity _entity;
 
-        public event Action<Vector2> OnHandChanged; 
-        public event Action<PlacementVerdict, Vector2, int, int> OnHandStyleUpdate;
+        public event Action<CellSize> OnHandChanged; 
+        public event Action<PlacementVerdict, CellSize, int, int> OnHandStyleUpdate;
 
         public InventoryPanelPresenter(InventoryPanelView view, InventoryService service)
         {
@@ -51,21 +50,21 @@ namespace MVC.Presenter.Inventory
 
 
 
-        private void OnCellPressed(int row, int col)
+        private void OnCellPressed(GridPos pos)
         {
             _grabbedThisGesture = false;
             if (_service.IsHandCarrying()) return;
 
-            GrabAt(row, col);
+            GrabAt(pos);
             _grabbedThisGesture = _service.IsHandCarrying();   // false si la celda estaba vacia
         }
 
-        private void OnCellReleased(int row, int col, bool dragged)
+        private void OnCellReleased(GridPos pos, bool dragged)
         {
             if (!_service.IsHandCarrying()) return;
             if (_grabbedThisGesture && !dragged) return;   // agarre por clic: sigue en la mano
 
-            PlaceAt(row, col);
+            PlaceAt(pos);
 
             // Soltar el boton cierra el gesto: si el destino no admitio nada, el arrastre se
             // cancela en vez de dejar el item pegado al cursor. Cancelar es gratis porque las
@@ -78,20 +77,20 @@ namespace MVC.Presenter.Inventory
         /// El panel no juzga: pregunta al servicio, que responde por el mismo camino que usaria
         /// para colocar de verdad, y sube la respuesta.
         /// </summary>
-        private void EvaluateHandContent(int row, int col, Vector2 cellSize)
+        private void EvaluateHandContent(GridPos pos, CellSize cellSize)
         {
             if (_entity == null || !_service.IsHandCarrying()) return;
 
-            PlacementVerdict verdict = _service.EvaluatePlacement(_entity, row, col);
+            PlacementVerdict verdict = _service.EvaluatePlacement(_entity, pos);
 
             BaseItemComponent baseInfo = _service.GetGrabbedItem().GetComponent<BaseItemComponent>();
             OnHandStyleUpdate?.Invoke(verdict, cellSize, baseInfo.DimensionW, baseInfo.DimensionH);
         }
 
-        private void GrabAt(int row, int col)
+        private void GrabAt(GridPos pos)
         {
             InventoryObject inventory = _entity.GetComponent<InventoryComponent>().Inventory;
-            GridElement element = inventory.GetGrid().GetElementAt(row, col);
+            GridElement element = inventory.GetGrid().GetElementAt(pos);
             if (element == null) return;   // empty cell: nothing to grab
 
             ItemObject node = element.GetNode();
@@ -102,9 +101,9 @@ namespace MVC.Presenter.Inventory
             OnHandChanged?.Invoke(_panelView.GetCellSize()); 
         }
         
-        private void PlaceAt(int row, int col)
+        private void PlaceAt(GridPos pos)
         {
-            int left = _service.PlaceAmountFromHand(_entity, row, col);
+            int left = _service.PlaceAmountFromHand(_entity, pos);
 
             OnHandChanged?.Invoke(_panelView.GetCellSize()); 
         }

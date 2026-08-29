@@ -37,21 +37,21 @@ namespace Inventory
         /// <summary>
         /// Whether the given cell exists in this grid.
         /// </summary>
-        public bool IsInside(int row, int col) =>
-            row >= 0 && col >= 0 && row < _gridH && col < _gridW;
+        public bool IsInside(GridPos pos) =>
+            pos.Row >= 0 && pos.Col >= 0 && pos.Row < _gridH && pos.Col < _gridW;
 
         /// <summary>
         /// Returns the nodeId at the given cell, or -1 if free or outside the grid.
         /// </summary>
-        public int GetCellAt(int row, int col) => IsInside(row, col) ? _cells[row, col] : -1;
+        public int GetCellAt(GridPos pos) => IsInside(pos) ? _cells[pos.Row, pos.Col] : -1;
 
         /// <summary>
         /// Returns the GridElement placed at the given cell, or null if free or outside
         /// the grid.
         /// </summary>
-        public GridElement GetElementAt(int row, int col)
+        public GridElement GetElementAt(GridPos pos)
         {
-            int nodeId = GetCellAt(row, col);
+            int nodeId = GetCellAt(pos);
             if (nodeId == -1) return null;
 
             foreach (GridElement elem in _elements)
@@ -74,13 +74,13 @@ namespace Inventory
         /// 1x3 blade one row down is the common case.
         /// -1 blocks nothing extra, since NodeIdGenerator starts at 1.
         /// </param>
-        public bool CanPlace(int row, int col, int itemH, int itemW, int ignoreNodeId = -1)
+        public bool CanPlace(GridPos pos, int itemH, int itemW, int ignoreNodeId = -1)
         {
-            if (row < 0 || col < 0) return false;
-            if (row + itemH > _gridH || col + itemW > _gridW) return false;
+            if (pos.Row < 0 || pos.Col < 0) return false;
+            if (pos.Row + itemH > _gridH || pos.Col + itemW > _gridW) return false;
 
-            for (int r = row; r < row + itemH; r++)
-                for (int c = col; c < col + itemW; c++)
+            for (int r = pos.Row; r < pos.Row + itemH; r++)
+                for (int c = pos.Col; c < pos.Col + itemW; c++)
                     if (_cells[r, c] != -1 && _cells[r, c] != ignoreNodeId) return false;
 
             return true;
@@ -89,7 +89,7 @@ namespace Inventory
         public bool CanPlace(ItemEntity item)
         {
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
-            return FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW) != (-1, -1);
+            return !FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW).IsNone;
         }
 
         /// <summary>
@@ -104,31 +104,31 @@ namespace Inventory
         /// new id owns no cell yet, so without this the placement collides with the node it
         /// is replacing.
         /// </param>
-        public bool Place(ItemObject node, int row, int col, int ignoreNodeId = -1)
+        public bool Place(ItemObject node, GridPos pos, int ignoreNodeId = -1)
         {
             BaseItemComponent baseItem = node.GetItemEntity().GetComponent<BaseItemComponent>();
             int itemH = baseItem.DimensionH;
             int itemW = baseItem.DimensionW;
 
-            if (!CanPlace(row, col, itemH, itemW, node.GetNodeId())
-             && !CanPlace(row, col, itemH, itemW, ignoreNodeId)) return false;
+            if (!CanPlace(pos, itemH, itemW, node.GetNodeId())
+             && !CanPlace(pos, itemH, itemW, ignoreNodeId)) return false;
 
             int nodeId = node.GetNodeId();
             Remove(nodeId);   // no-op if it wasn't placed yet
 
-            for (int r = row; r < row + itemH; r++)
-                for (int c = col; c < col + itemW; c++)
+            for (int r = pos.Row; r < pos.Row + itemH; r++)
+                for (int c = pos.Col; c < pos.Col + itemW; c++)
                     _cells[r, c] = nodeId;
 
-            _elements.Add(new GridElement(node, row, col));
+            _elements.Add(new GridElement(node, pos));
             return true;
         }
 
         public bool TryFirstPlace(ItemObject node)
         { 
             BaseItemComponent baseInfo = node.GetItemEntity().GetComponent<BaseItemComponent>();
-            (int row, int col) coords = FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW);
-            return Place(node, coords.row, coords.col);
+            GridPos pos = FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW);
+            return !pos.IsNone && Place(node, pos);
         }
 
         /// <summary>
@@ -163,16 +163,19 @@ namespace Inventory
         /// <summary>
         /// Finds the first position where an item with the given dimensions fits.
         /// Scans left-to-right, top-to-bottom.
-        /// Returns (row, col) or (-1, -1) if no space.
+        /// Returns the cell, or GridPos.None if no space.
         /// </summary>
         /// <param name="ignoreNodeId">Node whose cells count as free — see CanPlace.</param>
-        public (int row, int col) FindFirstFit(int itemH, int itemW, int ignoreNodeId = -1)
+        public GridPos FindFirstFit(int itemH, int itemW, int ignoreNodeId = -1)
         {
             for (int r = 0; r <= _gridH - itemH; r++)
                 for (int c = 0; c <= _gridW - itemW; c++)
-                    if (CanPlace(r, c, itemH, itemW, ignoreNodeId)) return (r, c);
+                {
+                    GridPos pos = new GridPos(r, c);
+                    if (CanPlace(pos, itemH, itemW, ignoreNodeId)) return pos;
+                }
 
-            return (-1, -1);
+            return GridPos.None;
         }
 
         /// <summary>

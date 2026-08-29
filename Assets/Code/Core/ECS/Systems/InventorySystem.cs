@@ -75,7 +75,7 @@ namespace ECS.Systems
         /// Tries to add items at a specific grid position, checking weight first.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, int row, int col, int ignoreNodeId = -1)
+        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1)
         {
             // A node moving onto cells it already owns can only happen inside one inventory,
             // and reordering an inventory cannot change its total weight: the units are
@@ -89,7 +89,7 @@ namespace ECS.Systems
                 : GetFitByWeight(entity, item, amount, out invComp);
 
             if (toAdd <= 0) return amount;
-            int remaining = invComp.Inventory.AddItemAt(item, toAdd, row, col, ignoreNodeId);
+            int remaining = invComp.Inventory.AddItemAt(item, toAdd, pos, ignoreNodeId);
             EvaluateAndFireEvents(entity, remaining > 0);
             return remaining + (amount - toAdd);
         }  
