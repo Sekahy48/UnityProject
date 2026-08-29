@@ -1,0 +1,21 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="../uss/InventoryWindow.uss"/>
+<!-- Panel inventario: weight bar + tetris grid -->
+                    <ui:VisualElement name="inventory-panel" class="inventory-panel">
+                        <!-- Barra con nombre y posibles botones -->
+                        <ui:VisualElement name="inventory-bar" class="title-bar">
+                            <ui:Label name="title-label-panel" class="title-label"/>
+                            <ui:Button name="close-button-panel" text="✕" class="close-button"/>
+                        </ui:VisualElement>
+                        <!-- Carril de peso: fondo fijo. El relleno va en absoluto (su width es el
+                             % de carga) y la etiqueta despues, para que se pinte encima sin
+                             competir por el espacio ni verse recortada cuando el relleno es corto. -->
+                        <ui:VisualElement name="weight-rail" class="weight-rail">
+                            <ui:VisualElement name="weight-bar" class="weight-bar"/>
+                            <ui:Label name="weight-label" text="0/0 kg" class="weight-label"/>
+                        </ui:VisualElement>
+                        <!-- Punto de montaje: GenerateGrid lo vacia y le mete la grid tetris.
+                             Existe para poder hacer Clear() sin borrar el weight-rail hermano. -->
+                        <ui:VisualElement name="grid-mount" class="grid-mount"/>
+                    </ui:VisualElement>
+</ui:UXML>

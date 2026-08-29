@@ -21,15 +21,9 @@ namespace ECS.Component
             this._name = "ResourceComponent"; // Initializes the component name
         }
 
-        public ResourceType GetResourceType()
-        {
-            return type;
-        }
+        public ResourceType ResourceType => type;
 
-        public int GetAmount()
-        {
-            return amount;
-        }
+        public int Amount => amount;
 
         public void DecreaseAmount(int value)
         {
@@ -48,10 +42,7 @@ namespace ECS.Component
             }
         }
 
-        public bool IsRenewable()
-        {
-            return renewable;
-        }
+        public bool IsRenewable => renewable;
 
         public void Regenerate(double percentage, double time)
         {

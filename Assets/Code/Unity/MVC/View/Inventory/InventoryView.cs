@@ -8,57 +8,92 @@ using ECS.Component;
 using Unity.Services;
 using AC = Utils.ArgumentChecker;
 using Events;
+using Unity.VisualScripting;
+using ECS.Entity;
+using Services;
 
-namespace MVC.View
+namespace MVC.View.Inventory
 {
     public class InventoryView : IView
     {
         #region Fields
 
+        /* Structure */
         private UIDocument _uiDocument;
 
-        private VisualElement _root;
+        private VisualTreeAsset _panelTemplate;
 
-        private List<VisualElement> _leftTabs,
-                                    _leftPanels,
-                                    _equipmentSlots;
+        private VisualElement _mainRoot;
 
-        private VisualElement _subSlotsPopUp,
-                              _openPopupSlot;
-        private VisualElement _gridMount, _itemsLayer;
-        private VisualElement _titleBar;
-        private VisualElement _equipmentContainer;
-
-        /// <summary>Hueco lateral izquierdo. Hoy aloja el catalogo de desarrollo.</summary>
-        private VisualElement _sidePanelA;
-
-        /// <summary>Boton de desarrollo que abre/cierra el catalogo de items.</summary>
-        private Button _devCatalogButton;
-        private VisualElement _catalogScroll;
-
-        private VisualElement _weightBar;
-        private Label _weightLabel;
-
-        private VisualElement _inspectionStrip,
-                              _inspectIcon;
-        private VisualElement _tooltip;
+        private List<VisualElement> _leftPanels, /*List of interchangeable panels for the left side*/
+                                    _leftTabs;   /*List of clickable elements to change between _leftPanels*/
+        
+        /* Top Bar*/
+        private VisualElement       _titleBar;   /*Top bar of the main panel*/
+        private Button _devCatalogButton;        /*Button to open the item catalog - DEV TOOL*/
+        
+        /* Inspection Strip */
+        private VisualElement _inspectionStrip, /*Container of all the composing elements of the inspection strip*/
+                              _inspectIcon; /*Icon of the inspection strip*/
+                              
         private Label _inspectName,
                       _inspectDescription,
                       _inspectWeight,
                       _inspectDurability,
                       _inspectSize;
+        
+        /* Equipment */
+        private List<VisualElement> _equipmentSlots; /*List of equipment slots*/
+        private VisualElement _subSlotsPopUp,   /*Pop up where subslots information is shown*/
+                              _openedPopupSlot; /*Cached v.e. slot opened which subslots are being shown*/
+        
+        
+        /* Subpanels */ 
+        private VisualElement _catalogScroll; /*Scrollable container where items from the catalog are shown*/
+        private Dictionary<PanelType, InventoryPanelView> _panels;/* The panel slots at the right of the main content (player inventory) */
 
-        private bool _isReady = false;
+        private VisualElement _sidePanelsContainer; /*Panels container*/
+        private VisualElement _playerGridContainer, /* V.e where add the grid inventories */
+                              _sidePanelAContainer,
+                              _sidePanelBContainer;
+        
+        /* Ventana lateral A completa. Se muestra u oculta entera; su hueco interior es
+           _sidePanelAContainer, que es otra cosa. */
+        private VisualElement _sidePanelA;
+
+        /* Catalogo de desarrollo. Es OTRO contenido posible del hueco A, no un caso
+           especial: la ventana decide que ocupa cada hueco, y nunca son dos cosas. */
+        private VisualElement _itemCatalog;
+
+        /* Ventana lateral B completa, contraparte de _sidePanelA. */
+        private VisualElement _sidePanelBWindow;
+ 
+
+        
+
+        /* Overlays */
+        private VisualElement _tooltip;
+        private VisualElement _handBuffer;
+        
+        /* State Parameters*/
+        private bool _isReady = false; 
+        private Vector2 _handAnchorOffset;
+
+        /* Ultima posicion conocida del puntero. La mano se pinta al agarrar, no al moverse,
+           asi que sin esto aparece donde la dejo el agarre anterior hasta el primer
+           PointerMove: un parpadeo en mitad del panel. */
+        private Vector3 _lastPointerPosition;
+
+        /* Que ocupa el hueco A ahora, y que ocupaba antes de que el catalogo se lo pidiera
+           prestado. Sin esto, cerrar el catalogo deja el hueco vacio. */
+        private SidePanelContent _slotAContent = SidePanelContent.None;
+        private SidePanelContent _contentBeforeCatalog = SidePanelContent.None; /* Needed to know where to place the hand buffer while moving */
+
+        /* DEPRECATED */ 
         private bool _isDragging;
-        private Vector2 _dragOffset;
+        private Vector2 _dragOffset; 
 
-        private static readonly Dictionary<GameEventType, string> LoadClasses = new()
-        {
-            { GameEventType.NormalWeight, "load-normal"   },
-            { GameEventType.ExtraWeight,  "load-extra"    },
-            { GameEventType.Overweight,   "load-over"     },
-            { GameEventType.Immobile,     "load-immobile" },
-        };
+        
         #endregion
 
         #region Events
@@ -68,72 +103,107 @@ namespace MVC.View
         public event Action<EquipmentSlotType> OnSlotLayersRequested;
         public event Action<int, int> OnCatalogItemGrabbed;
 
+        
+
+        /// <summary>Click landed outside every drop target. The presenter decides what to cancel.</summary>
+        public event Action OnCancelRequested;
+
+        /// <summary>
+        /// The pointer was released outside every grid while dragging. Kept apart from
+        /// OnCancelRequested because it is a different intent: today it cancels, but this is
+        /// where dropping to the ground will hook in.
+        /// </summary>
+        public event Action OnReleasedOutsideGrid;
+
         #endregion
 
         #region Initialization
 
-        public InventoryView(UIDocument uiDocument)
+        public InventoryView(UIDocument uiDocument, VisualTreeAsset panelTemplate)
         {
             _uiDocument = uiDocument;
+            _panelTemplate = panelTemplate;
             _leftTabs = new List<VisualElement>();
             _leftPanels = new List<VisualElement>();
         }
 
         public void Initialize()
         {
-            _root = _uiDocument.rootVisualElement.Q<VisualElement>("inventory-root");
-            _root.RegisterCallback<GeometryChangedEvent>(OnRootReady);
+            _mainRoot = _uiDocument.rootVisualElement.Q<VisualElement>("inventory-root");
+            _mainRoot.RegisterCallback<GeometryChangedEvent>(OnRootReady);
         }
 
         private void OnRootReady(GeometryChangedEvent e)
         {
-            _root.UnregisterCallback<GeometryChangedEvent>(OnRootReady);
-            _root.RegisterCallback<ClickEvent>(_ => CloseSubslotsPopup());
+            _mainRoot.UnregisterCallback<GeometryChangedEvent>(OnRootReady);
+            _mainRoot.RegisterCallback<ClickEvent>(_ => CloseSubslotsPopup()); 
+            // Only reports the gesture: clearing the hand is a model operation and belongs to
+            // the presenter. Clearing it here would leave the HandBuffer holding units nothing
+            // on screen shows any more.
+            _uiDocument.rootVisualElement.RegisterCallback<PointerDownEvent>(_ => OnCancelRequested?.Invoke());
+
+            // Solo llegan aqui los up que NO aterrizaron en una rejilla: los paneles cortan
+            // la propagacion de los suyos.
+            _uiDocument.rootVisualElement.RegisterCallback<PointerUpEvent>(_ => OnReleasedOutsideGrid?.Invoke());
 
             // Left tabs
-            VisualElement leftTabs = _root.Q<VisualElement>("left-tabs-bar");
+            VisualElement leftTabs = _mainRoot.Q<VisualElement>("left-tabs-bar");
             _leftTabs = new List<VisualElement>(leftTabs.Children());
 
             // Left panels
-            VisualElement leftPanels = _root.Q<VisualElement>("left-panel");
-            _leftPanels = new List<VisualElement>(leftPanels.Children());
+            VisualElement leftPanel = _mainRoot.Q<VisualElement>("left-panel");
+            _leftPanels = new List<VisualElement>(leftPanel.Children());
 
             // Equipment slots
-            VisualElement equipmentPanel = _root.Q<VisualElement>("equipment-panel");
+            VisualElement equipmentPanel = _mainRoot.Q<VisualElement>("equipment-panel");
             _equipmentSlots = equipmentPanel.Query(className: "equip-slot").ToList();
             AddSubslotsButtons(_equipmentSlots);
             
-            _subSlotsPopUp = _root.Q<VisualElement>("subslots-popup");
+            _subSlotsPopUp = _mainRoot.Q<VisualElement>("subslots-popup");
             _subSlotsPopUp.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
-            // Core elements
-            _gridMount          = _root.Q<VisualElement>("grid-mount");
-            _titleBar           = _root.Q<VisualElement>("title-bar");
-            _weightLabel        = _root.Q<Label>("weight-label");
-            _weightBar = _root.Q<VisualElement>("weight-bar");
-            _equipmentContainer = _root.Q<VisualElement>("equipment-container");
-
-            _devCatalogButton = _root.Q<Button>("dev-catalog-button");
+            // Core elements 
+            _titleBar           = _mainRoot.Q<VisualElement>("title-bar");
+            
+            _devCatalogButton = _mainRoot.Q<Button>("dev-catalog-button");
             _devCatalogButton.clicked += SwitchItemCatalog;
             _catalogScroll = _uiDocument.rootVisualElement.Q<VisualElement>("catalog-scroll");
 
+            
             // Los huecos laterales son HERMANOS de inventory-root, no descendientes:
-            // hay que buscarlos desde la raiz del documento, no desde _root.
-            _sidePanelA = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a");
+            // hay que buscarlos desde la raiz del documento, no desde _mainRoot.
+            // Huecos DEDICADOS, no los contenedores que ya alojan otra cosa: la sub-vista
+            // de panel hace Clear() sobre su raiz antes de clonar la plantilla, asi que
+            // apuntar a "player-panels" borraria el equipo, y a "side-panel-a" el catalogo.
+            _sidePanelsContainer = _uiDocument.rootVisualElement.Q<VisualElement>("side-panels");
+
+            _sidePanelA          = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a");
+            _itemCatalog         = _uiDocument.rootVisualElement.Q<VisualElement>("item-catalog");
+            Button closeCatalogButton = _itemCatalog.Q<Button>("catalog-close-button");
+            closeCatalogButton.RegisterCallback<ClickEvent>(_ => SwitchItemCatalog());
+            _sidePanelAContainer = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a-slot");
+            _sidePanelBWindow    = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-b");
+            _sidePanelBContainer = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-b-slot");
+            _playerGridContainer = _uiDocument.rootVisualElement.Q<VisualElement>("player-grid-slot");
+            
             
             // Inspection strip
-            _inspectionStrip    = _root.Q<VisualElement>("inspection-strip");
-            _inspectIcon        = _root.Q<VisualElement>("inspect-icon");
+            _inspectionStrip    = _mainRoot.Q<VisualElement>("inspection-strip");
+            _inspectIcon        = _mainRoot.Q<VisualElement>("inspect-icon");
             MakeSquare(_inspectIcon);
-            _inspectName        = _root.Q<Label>("inspect-name");
-            _inspectDescription = _root.Q<Label>("inspect-description");
-            _inspectWeight      = _root.Q<Label>("inspect-weight");
-            _inspectDurability  = _root.Q<Label>("inspect-durability");
-            _inspectSize        = _root.Q<Label>("inspect-size");
+            _inspectName        = _mainRoot.Q<Label>("inspect-name");
+            _inspectDescription = _mainRoot.Q<Label>("inspect-description");
+            _inspectWeight      = _mainRoot.Q<Label>("inspect-weight");
+            _inspectDurability  = _mainRoot.Q<Label>("inspect-durability");
+            _inspectSize        = _mainRoot.Q<Label>("inspect-size");
 
             // Tooltip
             _tooltip = _uiDocument.rootVisualElement.Q<VisualElement>("tooltip");
-            //
-            _root.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
+            // Hand buffer
+            _handBuffer = _uiDocument.rootVisualElement.Q<VisualElement>("hand-buffer");
+            _handBuffer.style.display = DisplayStyle.None;
+            RegisterHandFollowsCursor();
+
+            _mainRoot.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
 
             // Ventanas fijas: el inventario ocupa un hueco del layout, no flota.
             // El drag se conserva sin usar por si vuelven las ventanas movibles.
@@ -143,8 +213,34 @@ namespace MVC.View
             
             InitSideBarAndLeftPanels(); 
 
+            InitGridPanels();        
+
             Hide();
             OnReady?.Invoke();
+        }
+
+        private void InitGridPanels()
+        {
+            _panels = new Dictionary<PanelType, InventoryPanelView>();
+             
+            InventoryPanelView panelA = new InventoryPanelView(_sidePanelAContainer, _panelTemplate);
+            InventoryPanelView panelB = new InventoryPanelView(_sidePanelBContainer, _panelTemplate);
+            InventoryPanelView playerPanel = new InventoryPanelView(_playerGridContainer, _panelTemplate);
+
+            panelA.OnPointerMovedOverGrid += MoveHandToCursor;
+            panelB.OnPointerMovedOverGrid += MoveHandToCursor; 
+            playerPanel.OnPointerMovedOverGrid += MoveHandToCursor;
+
+            // El panel pide cerrarse; quien lo cierra es el que reparte los huecos.
+            panelA.OnCloseRequested += () => ShowSideContent(PanelType.A, SidePanelContent.None);
+            panelB.OnCloseRequested += () => ShowSideContent(PanelType.B, SidePanelContent.None);
+
+            
+            _panels[PanelType.A]  = panelA;
+            _panels[PanelType.B] = panelB;
+            _panels[PanelType.Player] = playerPanel;
+            playerPanel.HideTopBar();
+            
         }
 
         private void AddSubslotsButtons(List<VisualElement> slots)
@@ -156,13 +252,13 @@ namespace MVC.View
 
                 subslotsButton.RegisterCallback<ClickEvent>(evt =>
                 {
-                    if (_openPopupSlot == slot)          // mismo slot y abierto -> cerrar
+                    if (_openedPopupSlot == slot)          // mismo slot y abierto -> cerrar
                     {
                         CloseSubslotsPopup();
                     }
                     else                                  // cerrado, o abierto en otro slot -> abrir aquí
                     {
-                        _openPopupSlot = slot;
+                        _openedPopupSlot = slot;
                         PositionAndShowPopup(slot);
                         OnSlotLayersRequested?.Invoke(GetEquipmentSlotType(slot));
                     }
@@ -189,29 +285,7 @@ namespace MVC.View
             _subSlotsPopUp.style.display = DisplayStyle.Flex;
         }
 
-        public void GenerateGrid(int rows, int cols)
-        {
-            VisualElement grid = new VisualElement();
-            grid.AddToClassList("inventory-grid");
-            for (int i = 0; i < rows; i++)
-            {
-                VisualElement row = new VisualElement();
-                grid.Add(row);
-                row.AddToClassList("inventory-grid-row");
-                for (int j = 0; j < cols; j++)
-                {
-                    VisualElement cell = new VisualElement();
-                    cell.AddToClassList("inventory-grid-cell");
-                    row.Add(cell);
-                }
-            }
-
-            _itemsLayer = new VisualElement();
-            _itemsLayer.AddToClassList("items-layer");
-            grid.Add(_itemsLayer);
-
-            MountGrid(grid); 
-        } 
+        
 
         private void InitSideBarAndLeftPanels()
         {  
@@ -243,81 +317,169 @@ namespace MVC.View
         #region Visibility
 
         public bool IsReady() => _isReady;
-        public void Show() => _root.style.display = DisplayStyle.Flex;
+        public void Show() => _mainRoot.style.display = DisplayStyle.Flex;
         public void Hide()
         {
-            _root.style.display = DisplayStyle.None;
-            _sidePanelA.style.display = DisplayStyle.None;
+            _mainRoot.style.display = DisplayStyle.None;
+            ShowSideContent(PanelType.A, SidePanelContent.None);
+            ShowSideContent(PanelType.B, SidePanelContent.None);
             ResetPosition();
         }
-        public bool IsVisible() => _root.style.display == DisplayStyle.Flex;
+        public bool IsVisible() => _mainRoot.style.display == DisplayStyle.Flex;
 
-        #endregion
-
-        #region Getters 
-
-        #endregion
-
-        #region Inventory Rendering
-
-        public void RenderGridItems(List<GridItemDisplayData> items, int gridH, int gridW)
+        /// <summary>
+        /// Decides what a side slot holds. A slot never shows two things at once, so this is
+        /// the single place that resolves the competition between the dev catalog and an
+        /// external container — no content has to know the others exist.
+        /// Only slot A can hold the catalog; B is inventory-only.
+        /// </summary>
+        public void ShowSideContent(PanelType slot, SidePanelContent content)
         {
-            _itemsLayer.Clear();
-            foreach (GridItemDisplayData item in items)
+            if (slot == PanelType.Player) return;   // el panel del jugador no se negocia
+
+            VisualElement window = slot == PanelType.A ? _sidePanelA : _sidePanelBWindow;
+            VisualElement grid   = slot == PanelType.A ? _sidePanelAContainer : _sidePanelBContainer;
+
+            window.style.display = content == SidePanelContent.None
+                                 ? DisplayStyle.None
+                                 : DisplayStyle.Flex;
+
+            grid.style.display = content == SidePanelContent.Inventory
+                               ? DisplayStyle.Flex
+                               : DisplayStyle.None;
+
+            if (slot == PanelType.A)
             {
-                Length offsetHPct, offsetVPct, heightPct, widthPct;
-
-                offsetHPct = Length.Percent(item.Col * 100f / gridW);
-                offsetVPct = Length.Percent(item.Row * 100f / gridH);
-                widthPct = Length.Percent(item.Item.DimensionW * 100f / gridW);
-                heightPct = Length.Percent(item.Item.DimensionH * 100f / gridH);
-
-                VisualElement itemCard = new VisualElement();
-                VisualElement itemBackground = new VisualElement();
-                itemBackground.AddToClassList("item-icon");
-
-                SetBackgroundTexture(itemBackground, item.Item.IconPath);
-
-                itemCard.style.top = offsetVPct;
-                itemCard.style.left = offsetHPct;
-                itemCard.style.height = heightPct;
-                itemCard.style.width = widthPct;
-                
-                itemCard.AddToClassList("item-block"); 
-                itemCard.Add(itemBackground);
-                AddAmountLabel(itemCard, item.Item.Amount);
-
-                _itemsLayer.Add(itemCard); 
-
+                _itemCatalog.style.display = content == SidePanelContent.Catalog
+                                           ? DisplayStyle.Flex
+                                           : DisplayStyle.None;
+                _slotAContent = content;
             }
+
+            RefreshSidePanelsContainer();
         }
 
-        private void MountGrid(VisualElement grid)
+        /// <summary>
+        /// The column of side bands reserves its width even with both bands hidden, so its
+        /// visibility follows theirs: shown while any band is open, gone when none is.
+        ///
+        /// Reads style and not resolvedStyle on purpose: ShowSideContent has just written the
+        /// bands' display and the engine has not resolved the pass yet, so resolvedStyle would
+        /// still report the previous state.
+        /// </summary>
+        private void RefreshSidePanelsContainer()
         {
-            _gridMount.Clear();
-            _gridMount.Add(grid);
+            bool anyOpen = _sidePanelA.style.display == DisplayStyle.Flex
+                        || _sidePanelBWindow.style.display == DisplayStyle.Flex;
+
+            _sidePanelsContainer.style.display = anyOpen ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        public void UpdateStats(float currentWeight, float maxWeight, GameEventType eventType)
+        /// <summary>
+        /// Whether a side slot is currently showing that content. Its window must be open AND
+        /// the content be the one on display: a hidden window with the grid mounted is not
+        /// visible, and an open window showing the catalog is not showing an inventory.
+        /// </summary>
+        public bool IsSideContentVisible(PanelType slot, SidePanelContent content)
         {
-            _weightLabel.text = $"{currentWeight:F1}/{maxWeight:F1} kg";
+            if (slot == PanelType.Player || content == SidePanelContent.None) return false;
 
-            float ratio = maxWeight > 0 ? currentWeight / maxWeight : 1f;
-            float painted = Math.Min(ratio, 1f) * 100f;
-            _weightBar.style.width = Length.Percent(painted); 
+            VisualElement window = slot == PanelType.A ? _sidePanelA : _sidePanelBWindow;
+            if (window.resolvedStyle.display != DisplayStyle.Flex) return false;
 
-            foreach (string cls in LoadClasses.Values)
-                _weightBar.RemoveFromClassList(cls);
-            _weightBar.AddToClassList(LoadClasses[eventType]);
+            VisualElement shown = content == SidePanelContent.Catalog
+                                ? _itemCatalog
+                                : (slot == PanelType.A ? _sidePanelAContainer : _sidePanelBContainer);
+
+            return shown.resolvedStyle.display == DisplayStyle.Flex;
         }
+
+        
+
+        #endregion
+
+        #region Hand Buffer Rendering 
+        
+        public void RenderHandBuffer(ItemDisplayData itemData, Vector2 cellSize)
+        {
+            _handBuffer.Clear();
+            UIElementUtils.SetBackgroundTexture(_handBuffer, itemData.IconPath);
+             
+            _handBuffer.style.width  = cellSize.x * itemData.DimensionW;
+            _handBuffer.style.height = cellSize.y * itemData.DimensionH;
+
+            Label amountLabel = new Label(itemData.Amount.ToString());
+            amountLabel.AddToClassList("amount-label");
+            _handBuffer.Add(amountLabel);
+            
+            _handAnchorOffset = cellSize / 2f;
+            _handBuffer.style.display = DisplayStyle.Flex;
+
+            // Ya visible: colocarla bajo el cursor antes de que el motor pinte el frame.
+            MoveHandToCursor(_lastPointerPosition);
+        }
+
+        public void RefreshHandBuffer(int amount)
+        {
+            _handBuffer.Clear();
+            Label amountLabel = new Label(amount.ToString());
+            amountLabel.AddToClassList("amount-label");
+            _handBuffer.Add(amountLabel);
+        }
+
+        public void ClearHandBuffer()
+        { 
+            _handBuffer.Clear();
+            _handBuffer.style.display = DisplayStyle.None;
+            _handBuffer.style.backgroundImage = null;
+            
+        }
+
+        public void UpdateHandDisplay(PlacementVerdict verdict, Vector2 cellSize, int wDim, int hDim)
+        {
+            _handBuffer.RemoveFromClassList("hand-buffer-fits");
+            _handBuffer.RemoveFromClassList("hand-buffer-collision");
+
+            switch (verdict)
+            {
+                case PlacementVerdict.Fits:
+                    _handBuffer.AddToClassList("hand-buffer-fits");
+                    break;
+                case PlacementVerdict.Blocked:
+                    _handBuffer.AddToClassList("hand-buffer-collision");
+                    break;
+                case PlacementVerdict.Outside:
+                    // Sin color y sin redimensionar: fuera de una rejilla no hay celda a la que
+                    // escalar, y estirar la mano al tamaño de la ultima visitada seria mentira.
+                    return;
+            }
+
+            if (cellSize.x <= 0 || cellSize.y <= 0) return;
+
+            _handAnchorOffset = cellSize / 2f; 
+            _handBuffer.style.width  = cellSize.x * wDim;
+            _handBuffer.style.height = cellSize.y * hDim;
+        }
+
         #endregion
 
         #region Dev Item catalog
 
+        /// <summary>
+        /// The catalog borrows slot A. Closing it gives the slot back to whatever it was
+        /// showing, instead of leaving it empty: opening a chest and peeking at the catalog
+        /// should not close the chest.
+        /// </summary>
         private void SwitchItemCatalog()
         {
-            bool visible = _sidePanelA.resolvedStyle.display == DisplayStyle.Flex;
-            _sidePanelA.style.display = visible ? DisplayStyle.None : DisplayStyle.Flex;
+            if (IsSideContentVisible(PanelType.A, SidePanelContent.Catalog))
+            {
+                ShowSideContent(PanelType.A, _contentBeforeCatalog);
+                return;
+            }
+
+            _contentBeforeCatalog = _slotAContent;
+            ShowSideContent(PanelType.A, SidePanelContent.Catalog);
         }
 
         public void FillItemCatalog(List<ItemDisplayData> items)
@@ -335,13 +497,13 @@ namespace MVC.View
             row.AddToClassList("catalog-row");
 
             VisualElement rowIcon = new VisualElement();
-            SetBackgroundTexture(rowIcon, item.IconPath);
+            UIElementUtils.SetBackgroundTexture(rowIcon, item.IconPath);
             MakeSquare(rowIcon);
 
             Label rowLabel = new Label(item.TypeName);
             rowLabel.AddToClassList("alegreyaSansSC");
             rowLabel.AddToClassList("catalog-row-label");
-            Label tooltipLabel = new Label(item.TypeName + "\n" + "\n" + item.Description);
+            Label tooltipLabel = new Label(item.TypeName + "\n\n" + item.Description + "\n\n" + "Peso: " + item.Weight);
             tooltipLabel.AddToClassList("alegreyaSansSC");
             tooltipLabel.AddToClassList("beigeColor");
             tooltipLabel.AddToClassList("tooltip-text");
@@ -408,13 +570,13 @@ namespace MVC.View
                 VisualElement popUpButton = viewSlot.Q<VisualElement>(className: "subslots-button");
                 popUpButton.style.display = DisplayStyle.None;
 
-                if (!realSlot.IsEnabled()) 
+                if (!realSlot.IsEnabled) 
                     SetDisabledSlotTexture(viewSlot);
                 else if (realSlot.GetEquippedItemCount() == 0) 
                     SetEmptySlotTexture(viewSlot);
                 else
                 {
-                    SetBackgroundTexture(viewSlot, realSlot.GetTopItem().GetComponent<BaseItemComponent>().GetIconPath());
+                    UIElementUtils.SetBackgroundTexture(viewSlot, realSlot.GetTopItem().GetComponent<BaseItemComponent>().IconPath);
                     //Guardar referencia al item contenido en el slot o al slot como objeto para permitir operaciones de movimiento de items
                     
                     if (realSlot.GetEquippedItemCount() > 1)
@@ -432,7 +594,7 @@ namespace MVC.View
             {
                 VisualElement subSlot = new VisualElement();
                 subSlot.AddToClassList("equip-slot");
-                SetBackgroundTexture(subSlot, item.IconPath);
+                UIElementUtils.SetBackgroundTexture(subSlot, item.IconPath);
 
                 _subSlotsPopUp.Add(subSlot);
             }
@@ -441,7 +603,7 @@ namespace MVC.View
         private void CloseSubslotsPopup()
         {
             _subSlotsPopUp.style.display = DisplayStyle.None;
-            _openPopupSlot = null;          
+            _openedPopupSlot = null;          
         }
 
         private void UpdateInternalEquipmentSlot(EquipmentSlot realSlot, VisualElement viewSlot)
@@ -491,18 +653,52 @@ namespace MVC.View
         private void SetDisabledSlotTexture(VisualElement element)
         {
             string path = "images/slots/" + element.name + "-disabled.png";
-            SetBackgroundTexture(element, path);
+            UIElementUtils.SetBackgroundTexture(element, path);
         }
 
         private void SetEmptySlotTexture(VisualElement element)
         {
             string path = "images/slots/" + element.name + ".png";
-            SetBackgroundTexture(element, path);
+            UIElementUtils.SetBackgroundTexture(element, path);
         } 
 
         #endregion
 
         #region Helpers
+                /// <summary>
+        /// Hace que la mano siga al cursor mientras lleva algo.
+        ///
+        /// <para>El callback va en la raiz del documento, no en el propio elemento: la mano
+        /// es PickingMode.Ignore, asi que no recibe eventos de puntero. Y tiene que ser
+        /// Ignore — si capturase el puntero estaria bajo el cursor todo el rato y se comeria
+        /// los PointerDown de las celdas de la grid, que es justo donde hay que soltar.</para>
+        ///
+        /// <para>Las coordenadas se convierten con WorldToLocal del PADRE: evt.position es
+        /// del panel, mientras que left/top son relativas al contenedor. Hoy coinciden porque
+        /// hand-buffer cuelga de la raiz, pero dejarian de hacerlo en cuanto se moviese.</para>
+        ///
+        /// <para>Con la mano oculta sale de inmediato: PointerMove dispara en cada frame con
+        /// movimiento y no hay nada que recolocar.</para>
+        /// </summary>
+        private void RegisterHandFollowsCursor()
+        {
+            _handBuffer.pickingMode = PickingMode.Ignore;
+
+            _uiDocument.rootVisualElement.RegisterCallback<PointerMoveEvent>(evt => MoveHandToCursor(evt.position));
+        }
+
+        private void MoveHandToCursor(Vector3 panelPosition)
+        {
+            _lastPointerPosition = panelPosition;
+            if (_handBuffer.style.display == DisplayStyle.None) return;
+
+            Vector2 local = _handBuffer.parent.WorldToLocal(panelPosition);
+            _handBuffer.style.left = local.x - _handAnchorOffset.x / 2;
+            _handBuffer.style.top  = local.y - _handAnchorOffset.y / 2;
+        }
+
+        
+
         private string GetRelationClass(VisualElement element)
         {
             foreach (string cls in element.GetClasses())
@@ -510,14 +706,7 @@ namespace MVC.View
             return null;
         }
 
-        private void SetBackgroundTexture(VisualElement element, string texturePath)
-        {
-            Texture2D tex = TextureCache.Instance.Get(texturePath);
-            if (tex != null)
-                element.style.backgroundImage = new StyleBackground(tex);
-            else
-                Debug.LogWarning($"No texture found at '{texturePath}'");
-        } 
+         
 
         private void RegisterDelayedAction(VisualElement element, Action action, long millsecs)
         {
@@ -548,14 +737,7 @@ namespace MVC.View
         {
             element.RegisterCallback<GeometryChangedEvent>(evt =>
                 element.style.width = evt.newRect.height);
-        }
-
-        private void AddAmountLabel(VisualElement element, int amount)
-        {
-            Label amountLabel = new Label(amount.ToString());
-            amountLabel.AddToClassList("amount-label");
-            element.Add(amountLabel);
-        }
+        } 
 
         #endregion
 
@@ -572,7 +754,7 @@ namespace MVC.View
         {
             _isDragging = true;
             _dragOffset = new Vector2(e.position.x, e.position.y) - new Vector2(
-                _root.layout.x, _root.layout.y);
+                _mainRoot.layout.x, _mainRoot.layout.y);
             _titleBar.CapturePointer(e.pointerId);
             e.StopPropagation();
         }
@@ -581,8 +763,8 @@ namespace MVC.View
         {
             if (!_isDragging) return;
             Vector2 newPos = new Vector2(e.position.x, e.position.y) - _dragOffset;
-            _root.style.left = newPos.x;
-            _root.style.top = newPos.y;
+            _mainRoot.style.left = newPos.x;
+            _mainRoot.style.top = newPos.y;
         }
 
         private void OnDragEnd(PointerUpEvent e)
@@ -594,10 +776,34 @@ namespace MVC.View
 
         private void ResetPosition()
         {
-            _root.style.left = StyleKeyword.Null;
-            _root.style.top = StyleKeyword.Null;
+            _mainRoot.style.left = StyleKeyword.Null;
+            _mainRoot.style.top = StyleKeyword.Null;
         }
 
         #endregion
+
+        #region Getters
+
+        public InventoryPanelView GetPanel(PanelType type)
+        {
+            return _panels[type];
+        }
+
+        #endregion
+    }
+
+    public enum PanelType
+    {
+        Player,
+        A,
+        B,
+    }
+
+    /// <summary>What a side slot is currently holding.</summary>
+    public enum SidePanelContent
+    {
+        None,
+        Catalog,
+        Inventory,
     }
 }

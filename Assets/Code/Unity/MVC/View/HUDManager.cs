@@ -28,8 +28,8 @@ namespace MVC.View
                 return;
             }
             // Logic to reduce the stamina bar in the HUD interface
-            //UnityEngine.Debug.Log("Stamina: " + fisiologic.GetStamina() + "/" + fisiologic.GetMaxStamina());
-            HUDUtils.GetInstance().ModifyFillable("StaminaBar", fisiologic.GetStamina() / fisiologic.GetMaxStamina());
+            //UnityEngine.Debug.Log("Stamina: " + fisiologic.Stamina + "/" + fisiologic.MaxStamina);
+            HUDUtils.GetInstance().ModifyFillable("StaminaBar", fisiologic.Stamina / fisiologic.MaxStamina);
         }
 
         public void UpdateFatigue()
@@ -41,8 +41,8 @@ namespace MVC.View
                 return;
             }
             // Logic to reduce the fatigue bar in the HUD interface
-            // UnityEngine.Debug.Log("Fatigue: " + fisiologic.GetFatigue() + "/" + fisiologic.GetMaxFatigue());
-            HUDUtils.GetInstance().ModifyFillable("FatigueBar", fisiologic.GetFatigue() / fisiologic.GetMaxFatigue());
+            // UnityEngine.Debug.Log("Fatigue: " + fisiologic.Fatigue + "/" + fisiologic.MaxFatigue);
+            HUDUtils.GetInstance().ModifyFillable("FatigueBar", fisiologic.Fatigue / fisiologic.MaxFatigue);
         }
     }
 }

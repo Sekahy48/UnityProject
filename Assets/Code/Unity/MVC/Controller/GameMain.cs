@@ -8,8 +8,12 @@ using MVC.Presenter.Inventory;
 using MVC.View;
 using Core;
 using Core.Contexts;
-using Item;  
+using Item;
 using Factories;
+using System.Collections.Generic;
+using Services;
+using MVC.View.Inventory;
+using ECS.Component;
 
 
 /// <summary>
@@ -23,78 +27,154 @@ public class GameMain : MonoBehaviour
     private GameContext _gameContext;
     private int _lastRebuildFrame = -1;
 
+    // If the number of services grows, make a service locator ( with dictionaries )
+    private InventoryService _inventoryService;
+
 
     void Awake()
     {
         _gameContext = new GameContext();
 
-        // Configure static logger and paths for Core classes
+        BootstrapCore();
+
+        GameDataContext dataCtx = BuildDataContext();
+
+        GameSessionContext sessionCtx = BuildSessionContext(dataCtx);
+        if (sessionCtx == null) return;
+
+        GameSystemContext systemCtx = BuildSystemContext(dataCtx._entityManager);
+
+        // Link contexts to super context (game context). The interaction context is built
+        // here and never again: BuildViewsAndPresenters runs on every UI live reload, and
+        // rebuilding it there would drop whatever the hand is holding.
+        _gameContext.SetData(dataCtx)
+                    .SetSession(sessionCtx)
+                    .SetSystem(systemCtx)
+                    .SetInteraction(new GameInteractionContext());
+
+        BuildUnityPieces(sessionCtx._player, systemCtx.PresenterManager);
+
+        // GameController receives only what it needs
+        _gameController = new GameController(systemCtx,
+                                             _gameContext.InputManager,
+                                             _gameContext.HUDManager);
+        _gameController.SetUpOnStart();
+
+        UIReloadNotifier.OnUIRecreated += BuildViewsAndPresenters;
+        BuildServices();
+        BuildViewsAndPresenters();
+    }
+
+    void Update()
+    {
+        _gameController.Update(Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Static wiring Core classes rely on. Runs first: the catalog loader resolves its
+    /// paths through CoreConfig, so it cannot be built before this.
+    /// </summary>
+    private void BootstrapCore()
+    {
         CoreLogger.Instance = new Unity.UnityLogger();
         CoreConfig.BasePath = Application.streamingAssetsPath;
-        
-        // ---- Create Core contexts ----
+    }
+
+    /// <summary>
+    /// World data: item catalog loaded from JSON and the entity manager built on it.
+    /// </summary>
+    private GameDataContext BuildDataContext()
+    {
         ItemCatalogue itemCatalogue = new ItemCatalogue();
         JsonItemCatalogLoader jsonItemCatalogLoader = new JsonItemCatalogLoader();
         jsonItemCatalogLoader.LoadInto(itemCatalogue);
         itemCatalogue.LogCatalogContents();
 
+        EntityManager entityManager = new EntityManager(new PrototypeFactory(itemCatalogue));
 
-        EntityManager entityManager = new EntityManager(new PrototypeFactory(itemCatalogue)); 
+        return new GameDataContext(entityManager, itemCatalogue);
+    }
 
-        IEntity player = entityManager.CreateEntity("playerEntity");
+    /// <summary>
+    /// Current session state: creates the player entity and links it to its GameObject.
+    /// Returns null if the player could not be created — startup cannot continue.
+    /// </summary>
+    private GameSessionContext BuildSessionContext(GameDataContext dataContext)
+    {
+        IEntity player = dataContext._entityManager.CreateEntity("playerEntity");
         if (player == null)
         {
             Debug.LogError("Player entity could not be created.");
-            return;
+            return null;
         }
 
         // Link Core entity with Unity GameObject via specialized linker
         IEntityLinker linker = new Unity.UnityEntityLinker();
         linker.Link(player, "playerEntity");
 
-        var dataCtx = new GameDataContext(entityManager, itemCatalogue);
+        GameSessionContext sessionCtx = new GameSessionContext();
+        sessionCtx.SetPlayer(player); 
+        AddDevTestingExtraInventories(sessionCtx, dataContext);
+        return sessionCtx;
+    }
 
-        var sessionCtx = new GameSessionContext();
-        sessionCtx.SetPlayer(player);
+    private void AddDevTestingExtraInventories(GameSessionContext sessionContext, GameDataContext dataContext)
+    { 
+        ItemEntity itemA = dataContext._itemCatalogue.CreateItem("Arcón pequeño");
+        ItemEntity itemB = dataContext._itemCatalogue.CreateItem("Arcón pequeño");
+        NameComponent nameComponentA = new NameComponent();
+        NameComponent nameComponentB = new NameComponent();
+        nameComponentA.SetDisplayName("Cofre A - inventario de prueba");
+        nameComponentB.SetDisplayName("Cofre B - inventario de prueba");
+        itemA.AddComponent(nameComponentA);
+        itemB.AddComponent(nameComponentB);
 
-        // SystemManager: register systems
-        var systemManager = new SystemManager(entityManager); 
-        systemManager.RegisterPeriodicGameSystem(new FatigueStaminaSystem()); 
+        sessionContext.SetFirstInventorySrc(itemA);
+        sessionContext.SetSecondInventorySrc(itemB);
+
+    }
+
+
+    /// <summary>
+    /// Infrastructure: the system manager with every system registered, and the presenter
+    /// registry. Registering a reactive system also subscribes it to the event bus.
+    /// </summary>
+    private GameSystemContext BuildSystemContext(EntityManager entityManager)
+    {
+        SystemManager systemManager = new SystemManager(entityManager);
+
+        systemManager.RegisterPeriodicGameSystem(new FatigueStaminaSystem());
         systemManager.RegisterEngineSystem(new Unity.TransformSyncSystem());
         systemManager.RegisterReactiveGameSystem(new MovementSystem())
                      .RegisterReactiveGameSystem(new InventorySystem());
 
-        var presenterManager = new PresenterManager();
-        var systemCtx = new GameSystemContext(systemManager, presenterManager); 
+        PresenterManager presenterManager = new PresenterManager();
 
-        // ---- Unity pieces ----
-        var hudManager = new HUDManager(player);
-        var cameraRegister = new CameraRegister();
-        var inputManager = new InputManager(cameraRegister, presenterManager);
+        return new GameSystemContext(systemManager, presenterManager);
+    }
 
-        // Link contexts to super context (game context)
-        _gameContext.SetData(dataCtx)
-                    .SetSession(sessionCtx)
-                    .SetSystem(systemCtx)
-                    .SetHUDManager(hudManager)
-                    .SetInputManager(inputManager);
+    /// <summary>
+    /// Unity-only pieces that do not belong in Core: HUD, cameras and input.
+    /// HUD and input are handed to the game context; CameraRegister deliberately is not
+    /// (it self-instantiates its cameras and a stored copy would drift from this one), so
+    /// it stays local — only InputManager and the startup activation need it.
+    /// </summary>
+    private void BuildUnityPieces(IEntity player, PresenterManager presenterManager)
+    {
+        HUDManager hudManager = new HUDManager(player);
+        CameraRegister cameraRegister = new CameraRegister();
+        InputManager inputManager = new InputManager(cameraRegister, presenterManager, _gameContext.Session);
 
-        // Cameras
         cameraRegister.InitizalizeCameras(player);
         cameraRegister.ActivateCamera(CameraRegister.CameraType.RTS);
 
-        // GameController receives only what it needs
-        _gameController = new GameController(systemCtx, inputManager, hudManager);
-        _gameController.SetUpOnStart(); 
-
-        UIReloadNotifier.OnUIRecreated += BuildViewsAndPresenters;
-        BuildViewsAndPresenters();
-        
+        _gameContext.SetHUDManager(hudManager)
+                    .SetInputManager(inputManager);
     }
 
-    void Update()
+    private void BuildServices()
     {
-        _gameController.Update(Time.deltaTime);
+        _inventoryService = new InventoryService(_gameContext.Interaction, _gameContext.System);
     }
 
    private void BuildViewsAndPresenters()
@@ -107,14 +187,15 @@ public class GameMain : MonoBehaviour
         IPresenter old = presenters.GetPresenter<IPresenter>(PresenterType.INV);
         bool wasOpen = old != null && old.IsOpen();
 
-        var viewManager = new ViewManager();
+        ViewManager viewManager = new ViewManager();
         viewManager.InitializeViews(_uiRegistry);
 
-        var presenter = new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV),
-                                               _gameContext.Data._itemCatalogue);
+        InventoryPresenter presenter = new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV),
+                                                              _gameContext.Data._itemCatalogue,
+                                                              _inventoryService);
         presenters.ReplacePresenter(PresenterType.INV, presenter);
 
-        if (wasOpen) presenter.Open(_gameContext.Session.Player);
+        if (wasOpen) presenter.Open(_gameContext.Session._player);
     }
 
     private void OnDestroy() => UIReloadNotifier.OnUIRecreated -= BuildViewsAndPresenters;

@@ -26,8 +26,8 @@ namespace Inventory
         /// <summary>
         /// Item dimensions derived from the node's entity.
         /// </summary>
-        public int GetItemH() => _node.GetItemEntity().GetComponent<BaseItemComponent>().GetDimensionH();
-        public int GetItemW() => _node.GetItemEntity().GetComponent<BaseItemComponent>().GetDimensionW();
+        public int GetItemH() => _node.GetItemEntity().GetComponent<BaseItemComponent>().DimensionH;
+        public int GetItemW() => _node.GetItemEntity().GetComponent<BaseItemComponent>().DimensionW;
 
         /// <summary>
         /// Updates position (for drag & drop repositioning).

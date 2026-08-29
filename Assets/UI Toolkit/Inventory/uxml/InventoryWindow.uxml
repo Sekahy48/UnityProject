@@ -76,19 +76,11 @@
                         </ui:VisualElement>
                     </ui:VisualElement>
 
-                    <!-- Panel inventario: weight bar + tetris grid -->
-                    <ui:VisualElement name="inventory-panel" class="inventory-panel">
-                        <!-- Carril de peso: fondo fijo. El relleno va en absoluto (su width es el
-                             % de carga) y la etiqueta despues, para que se pinte encima sin
-                             competir por el espacio ni verse recortada cuando el relleno es corto. -->
-                        <ui:VisualElement name="weight-rail" class="weight-rail">
-                            <ui:VisualElement name="weight-bar" class="weight-bar"/>
-                            <ui:Label name="weight-label" text="0/0 kg" class="weight-label"/>
-                        </ui:VisualElement>
-                        <!-- Punto de montaje: GenerateGrid lo vacia y le mete la grid tetris.
-                             Existe para poder hacer Clear() sin borrar el weight-rail hermano. -->
-                        <ui:VisualElement name="grid-mount" class="grid-mount"/>
-                    </ui:VisualElement>
+                    <!-- Hueco de la rejilla del jugador. Contenedor VACIO a proposito: la
+                         sub-vista de panel hace Clear() sobre el antes de clonar su plantilla,
+                         asi que no puede compartir padre con el panel personal. -->
+                    <ui:VisualElement name="player-grid-slot" class="panel-slot"/>
+
                 </ui:VisualElement>
 
                 <!-- Franja inferior: info del item seleccionado -->
@@ -112,31 +104,38 @@
 
     </ui:VisualElement>
 
+    <ui:VisualElement name="side-panels" class="side-panels">
     <!-- Hueco lateral A: puede alojar el catalogo de desarrollo o, desde M6, un
          contenedor externo (arcon, carro, NPC). Cada contenido es UN solo hijo,
          para que alternarlos o trasplantarlos a otro hueco sea trivial. -->
-    <ui:VisualElement name="side-panel-a" class="side-panel">
+        <ui:VisualElement name="side-panel-a" class="side-panel">
 
-        <ui:VisualElement name="item-catalog" class="panel-content">
+            <ui:VisualElement name="item-catalog" class="panel-content">
 
-            <ui:VisualElement name="catalog-title-bar" class="title-bar">
-                <ui:Label text="Items Catalog" class="title-label"/>
-                <ui:Button name="catalog-close-button" text="✕" class="close-button"/>
+                <ui:VisualElement name="catalog-title-bar" class="title-bar">
+                    <ui:Label text="Items Catalog" class="title-label"/>
+                    <ui:Button name="catalog-close-button" text="✕" class="close-button"/>
+                </ui:VisualElement>
+
+                <ui:TextField name="catalog-search" class="catalog-search"/>
+
+                <ui:ScrollView name="catalog-scroll" class="catalog-scroll"/>
+
             </ui:VisualElement>
 
-            <ui:TextField name="catalog-search" class="catalog-search"/>
-
-            <ui:ScrollView name="catalog-scroll" class="catalog-scroll"/>
+            <ui:VisualElement name="side-panel-a-slot" class="panel-slot"/>
 
         </ui:VisualElement>
 
+        <!-- Hueco lateral B: vacio hasta M6. Permite transferir entre dos contenedores
+            externos sin pasar por el inventario del jugador. -->
+        <ui:VisualElement name="side-panel-b" class="side-panel">
+            <ui:VisualElement name="side-panel-b-slot" class="panel-slot"/>
+        </ui:VisualElement>
     </ui:VisualElement>
-
-    <!-- Hueco lateral B: vacio hasta M6. Permite transferir entre dos contenedores
-         externos sin pasar por el inventario del jugador. -->
-    <ui:VisualElement name="side-panel-b" class="side-panel"/>
 
 </ui:VisualElement>
 
 <ui:VisualElement name="tooltip" class="tooltip"/>
+<ui:VisualElement name="hand-buffer" class="hand-buffer"/>
 </ui:UXML>

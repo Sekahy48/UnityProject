@@ -1,5 +1,8 @@
+using Core.Contexts;
+using ECS.Entity;
 using MVC.Presenter;
 using MVC.Presenter.Inventory;
+using MVC.View.Inventory;
 using Strategy;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,21 +15,23 @@ namespace MVC.Controller
     /// </summary>
     public class InputManager
     {
-        private readonly CameraRegister cameraRegister;
-        private readonly PresenterManager presenterManager;
+        private readonly CameraRegister _cameraRegister;
+        private readonly PresenterManager _presenterManager;
+        private readonly GameSessionContext _sessionContext;
         private ICameraStrategy _activeStrategy;
 
-        public InputManager(CameraRegister cameraRegister, PresenterManager presenterManager)
+        public InputManager(CameraRegister cameraRegister, PresenterManager presenterManager, GameSessionContext sessionContext)
         {
-            this.cameraRegister = cameraRegister;
-            this.presenterManager = presenterManager;
+            this._cameraRegister = cameraRegister;
+            this._presenterManager = presenterManager;
+            this._sessionContext = sessionContext;
         }
 
         public void Update(float deltaTime)
         {
             if (_activeStrategy == null)
             {
-                _activeStrategy = cameraRegister.GetActiveCamera();
+                _activeStrategy = _cameraRegister.GetActiveCamera();
                 if (_activeStrategy == null)
                 {
                     Debug.LogError("No active camera strategy found in InputManager.");
@@ -36,7 +41,7 @@ namespace MVC.Controller
 
             if (Keyboard.current.f1Key.wasPressedThisFrame)
             {
-                ICameraStrategy nextStrategy = cameraRegister.NextCamera();
+                ICameraStrategy nextStrategy = _cameraRegister.NextCamera();
                 SetActiveStrategy(nextStrategy);
             }
 
@@ -47,34 +52,56 @@ namespace MVC.Controller
         {
             // Unsubscribe the previous one if it exists
             if (_activeStrategy != null && _activeStrategy is IInventoryInputSource invStrategy)
-                invStrategy.OnInventoryRequested -= OnInventoryRequested;
-
+            {
+                invStrategy.OnInventoryToggleRequested -= OnInventoryToggleRequested;
+                invStrategy.OnInventoryCancelRequested -= OnInventoryCancelRequested; 
+                invStrategy.OnInventoryPanelToggleRequested -= OnInventoryPanelToggleRequested;
+            }
             _activeStrategy = strategy;
 
             // Subscribe the new one
             if (_activeStrategy is IInventoryInputSource invStrategy2)
             {
-                invStrategy2.OnInventoryRequested += OnInventoryRequested;
+                invStrategy2.OnInventoryToggleRequested += OnInventoryToggleRequested;
+                invStrategy2.OnInventoryCancelRequested += OnInventoryCancelRequested; 
+                invStrategy2.OnInventoryPanelToggleRequested += OnInventoryPanelToggleRequested;
             }
             else
             {
-                InventoryPresenter presenter = presenterManager
+                InventoryPresenter presenter = _presenterManager
                     .GetPresenter<InventoryPresenter>(PresenterType.INV);
-                presenter.Close();
+                presenter.Close(false);
             }
 
             _activeStrategy.Activate();
         }
 
-        private void OnInventoryRequested(int tabIndex)
+        private void OnInventoryToggleRequested()
         {
-            InventoryPresenter presenter = presenterManager
+            InventoryPresenter presenter = _presenterManager
                 .GetPresenter<InventoryPresenter>(PresenterType.INV);
 
-            if (tabIndex == -1 || presenter.IsOpen())
+            if (presenter.IsOpen())
                 presenter.Close();
             else
-                presenter.Open(_activeStrategy.GetPlayer());
+                presenter.Open(_sessionContext._player);
+        }
+
+        private void OnInventoryCancelRequested()
+        {
+            InventoryPresenter presenter = _presenterManager
+                .GetPresenter<InventoryPresenter>(PresenterType.INV);
+
+            presenter.Close(false);
+        }
+
+        private void OnInventoryPanelToggleRequested(PanelType panel)
+        {
+            InventoryPresenter presenter = _presenterManager
+                .GetPresenter<InventoryPresenter>(PresenterType.INV);
+            
+            IEntity entity = panel == PanelType.A ? _sessionContext._firstInventorySrc : _sessionContext._secondInventorySrc;
+            presenter.ToggleExtraInventory(entity, panel);
         }
     }
 }

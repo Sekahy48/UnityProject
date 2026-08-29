@@ -25,8 +25,8 @@ namespace Strategy
         {
             MovementComponent movComp = GetMov();
 
-            float mouseX = Mouse.current.delta.x.ReadValue() * movComp.GetMouseSensitivity();
-            float mouseY = Mouse.current.delta.y.ReadValue() * movComp.GetMouseSensitivity();
+            float mouseX = Mouse.current.delta.x.ReadValue() * movComp.MouseSensitivity;
+            float mouseY = Mouse.current.delta.y.ReadValue() * movComp.MouseSensitivity;
 
             rotation.x += mouseX;
             rotation.y -= mouseY;

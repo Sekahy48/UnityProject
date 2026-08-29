@@ -32,18 +32,19 @@ namespace ECS.Systems
         private void ExecuteTaskComponent(IEntity entity, TaskComponent taskComponent)
         {
             if (taskComponent == null)
-                throw new NullReferenceException("Entity does not have TaskComponent. Unexpected behavior.");
+                throw new ArgumentNullException(nameof(taskComponent),
+                    "Entity does not have TaskComponent. Unexpected behavior.");
 
-            if (taskComponent.GetCurrentTask() == null)
+            if (taskComponent.CurrentTask == null)
                 taskComponent.SetCurrentTask(taskComponent.PollNextTask());
 
-            if (taskComponent.GetCurrentTask() != null)
+            if (taskComponent.CurrentTask != null)
             {
-                taskComponent.GetCurrentTask().Execute(entity);
+                taskComponent.CurrentTask.Execute(entity);
 
-                if (taskComponent.GetCurrentTask().IsCompleted(entity))
+                if (taskComponent.CurrentTask.IsCompleted(entity))
                 {
-                    taskComponent.RemoveTask(taskComponent.GetCurrentTask());
+                    taskComponent.RemoveTask(taskComponent.CurrentTask);
                     taskComponent.SetCurrentTask(null);
                 }
             }

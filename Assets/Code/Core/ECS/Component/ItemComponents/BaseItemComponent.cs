@@ -119,10 +119,7 @@ namespace ECS.Component
         /// Gets the weight of the component.
         /// </summary>
         /// <returns>the weight</returns>
-        public float GetWeight()
-        {
-            return _weight;
-        }
+        public float Weight => _weight;
 
         /// <summary>
         /// Sets the weight of the component.
@@ -136,10 +133,7 @@ namespace ECS.Component
         /// Gets the maximun stack size.
         /// </summary>
         /// <returns>the maximun stack size</returns>
-        public int GetMaxStackSize()
-        {
-            return _maxStackSize;
-        }
+        public int MaxStackSize => _maxStackSize;
 
         /// <summary>
         /// Sets the maximun stack size.
@@ -153,10 +147,7 @@ namespace ECS.Component
         /// Gets the durability of the component.
         /// </summary>
         /// <returns>the durability</returns>
-        public float GetDurability()
-        {
-            return _durability;
-        }
+        public float Durability => _durability;
 
         /// <summary>
         /// Sets the durability of the component.
@@ -170,10 +161,7 @@ namespace ECS.Component
         /// Gets the condition of the component.
         /// </summary>
         /// <returns>the condition</returns>
-        public float GetCondition()
-        {
-            return _condition;
-        }
+        public float Condition => _condition;
 
         /// <summary>
         /// Sets the condition of the component.
@@ -187,10 +175,7 @@ namespace ECS.Component
         /// Gets the description of the component.
         /// </summary>
         /// <returns>the description</returns>
-        public String GetDescription()
-        {
-            return _description;
-        }
+        public String Description => _description;
 
         /// <summary>
         /// Sets the description of the component.
@@ -204,10 +189,7 @@ namespace ECS.Component
         /// Gets the icon path of the component.
         /// </summary>
         /// <returns>the icon path</returns>
-        public String GetIconPath()
-        {
-            return _iconPath;
-        }
+        public String IconPath => _iconPath;
 
         /// <summary>
         /// Sets the icon path of the component.
@@ -220,28 +202,22 @@ namespace ECS.Component
         /// <summary>
         /// Gets the catalog typeId this item instance belongs to.
         /// </summary>
-        public int GetTypeId()
-        {
-            return _typeId;
-        }
+        public int TypeId => _typeId;
 
         public void SetTypeId(int typeId)
         {
             _typeId = typeId;
         }
 
-        public string GetGenericName()
-        {
-            return _genericName;
-        }
+        public string GenericName => _genericName;
 
         public void SetGenericName(string genericName)
         {
             _genericName = genericName;
         }
 
-        public int GetDimensionW() => _dimensionW;
-        public int GetDimensionH() => _dimensionH;
+        public int DimensionW => _dimensionW;
+        public int DimensionH => _dimensionH;
 
         public void SetDimensions(int w, int h)
         {

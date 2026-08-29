@@ -154,6 +154,28 @@ Right panel (inventory):
 
 Interaction:
 - [ ] 10. UI: move items within the grid to reorganize (mechanical impact — frees space for new items). Primary interaction is **click-to-grab / click-to-place** (see Decided note below); drag & drop is supported as a secondary gesture over the same "held item" state. Build alongside it a **dev creative panel**: search field + filtered list over `_itemCatalogue.GetAll()` (name + icon), amount field, click to `AddItem` + `Refresh`. Uncategorised for now. Needed to exercise the placement edge cases (full grid, no fit, stacking onto an existing lot, moving a 1x3 into a 1x2 gap) without editing `PrototypeFactory.AddTestItems` and restarting.
+
+  **Decided — where `HandBuffer` lives.** Not in `InventoryPresenter` (interaction state, not game state, and presenters are rebuilt on live reload — the hand must survive that). Not in `PresenterManager` (that is a registry; giving it state would add a second reason to change). Not in an ECS component either (nothing systemic consumes it, it is never serialised, and it holds a reference to *whichever* `InventoryObject` is being manipulated — a chest, a corpse — so it is not player-simulation state). It goes in a new **`GameInteractionContext`** — see Future section.
+
+  **Self-collision on move.** Since the hand moves nothing until placement, the source node's cells stay occupied, so nudging a node onto a position overlapping itself would fail against itself. `TetrisGridState.CanPlace`/`FindFirstFit` take `ignoreNodeId` (cells holding that id count as free) and `Place` calls `Remove` before writing, which covers it — but the decision belongs at the placement call, not in the grid: only the hand knows the source node (`GetSourceNode()`) and whether this placement empties it. Pass `ignoreNodeId = <source nodeId>` **only when the units leaving now empty the source node**, `-1` otherwise. Note the condition is *not* "grabbed == node total": with a node of 20 and `maxStackSize` 10, placing onto an empty cell moves only 10, the source survives with 10, and its cells are legitimately occupied. Compare against the amount that will actually move.
+  **Pendiente — feedback de validez al colocar.** Las clases `.hand-buffer-collision` y
+  `.hand-buffer-fits` ya existen en el USS (rojo de `.load-immobile`, verde de `.load-normal`)
+  pero nadie las aplica. Falta evaluar el destino en cada `PointerMove` y pintar la mano segun
+  el veredicto. Requisitos: consulta pura y barata (dispara en cada frame con movimiento) y
+  **mismo camino de validacion que la colocacion real**, o el fantasma se pinta verde y al
+  soltar falla. Un `Evaluate(...)` interno en `InventoryService`, con dos entradas publicas:
+  una que pregunta y otra que ejecuta. El veredicto vuelve como enum de dominio (`Valid`,
+  `WouldStack`, `Blocked`...), nunca como color: el presenter lo mapea a clase USS, igual que
+  ya se hace con `CarryCapacity.ClassifyLoad` y las bandas de peso.
+
+  **Bug pendiente — bloque fantasma tras una colocacion invalida.** Al soltar en una celda
+  ocupada, fuera de la grid o donde el item no cabe, la mano se cancela (correcto) pero el
+  bloque de origen se queda con `item-block-grabbed` puesto. Es un fallo de repintado, no de
+  dominio: el `IsGrabbed` se calcula al construir los DTOs, asi que despues de cancelar hay
+  que volver a renderizar **todos** los paneles — el nodo atenuado puede estar en un panel
+  distinto de aquel donde se solto. Revisar que la cancelacion pase siempre por el punto que
+  refresca a todos, y no solo por el panel que la origino.
+
 - [ ] 11. UI: move items from inventory → equipment slot, and from equipment sub-slots back to inventory (from M4). Unblocks the pending half of task 6.
 - [ ] 12. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
 - [ ] 13. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
@@ -230,6 +252,16 @@ The `ItemType` enum currently acts as an explicit category. But with ECS composi
 ---
 
 ## Future (not Phase 1)
+
+- [x] **`GameInteractionContext`** — fourth context alongside `GameDataContext` / `GameSessionContext` / `GameSystemContext`, holding per-player *interaction* state (as opposed to world data, session state or infrastructure). First and currently only inhabitant: `HandBuffer` (the held stack for click-to-grab / drag & drop). Expected to grow with the open external container, the currently selected node for the inspection strip, and similar UI-interaction state.
+
+  Rationale for a context rather than a presenter field or an ECS component: it must survive the presenter rebuild on UI live reload, it is shared by every presenter that can grab or place (own inventory, chest, corpse, dev creative panel), and there is exactly one per *player*.
+
+  **Coop/multiplayer angle (the reason it is its own box).** The eventual split is authoritative state (server) vs per-client state. `HandBuffer` never touches an inventory at all — it holds references and a count, and `NotifyPlaced` only discounts what someone else already moved — so the whole grab state is client-side by construction. The network boundary falls on the transaction that does move things (`InventoryService.PlaceAmountFromHand`, over `InventorySystem.TryMoveItemTo`), which becomes the request to the server. Note that `GameSystemContext` **already mixes both boxes today** — `SystemManager` is authoritative, `PresenterManager` is inherently per-client. `PresenterManager` is the expected second inhabitant of this context; moving it is the natural next step, not part of this task.
+
+  **Implementation note:** build it in `GameMain.Awake`, **not** in `BuildViewsAndPresenters` — that method runs again on every live reload, which would hand back an empty hand and defeat the whole point. Inject it into `InventoryPresenter`'s constructor; the presenter receives it, never creates it.
+
+  **Naming collision to resolve:** M6 T2 calls the bulky-item carry buffer "hands". That one *is* game state (persists with the inventory closed, counts toward weight) and will likely be an ECS component. Two different things called "hand" — consider renaming this one (`HeldStack`, `CursorHand`, `GrabState`) and leaving `Hands` to M6.
 
 - [ ] Dependency injection via context aggregator / service layer. `GameContext` (Unity/MVC/Controller/) was written for this — groups the three Core sub-contexts (Data, Session, System) plus the Unity pieces, with a builder API, so each class receives only the sub-context it needs instead of the whole thing. It is currently **dead code**: nobody calls `new GameContext()`, and `GameMain.Awake()` builds everything with local variables and injects sub-contexts by hand. Decide whether to revive it as-is or move to a service-provider approach like the one in Stack&Go (`ServiceConsumer` + services supplied by a core controller). Until then, treat `GameContext` as inactive — it looks like live infrastructure and isn't.
 - [ ] Player-facing UI scale setting. `PanelSettings-Inventory` is set to `Constant Pixel Size` (1 UI unit = 1 screen pixel), which is the sharpest option and correct while developing at the monitor's native resolution — `Scale With Screen Size` was resampling every glyph and icon by a fractional factor and made the whole panel look soft. The trade-off is that on a 4K display the UI would render at half its physical size. Fix when it matters by exposing `panelSettings.scale` as an options slider rather than reverting the scale mode; integer factors (1x, 2x) keep it pixel-perfect. Related: judge UI sharpness with the Game view maximised (Shift+Space) or in a build — at 1920x1080 the editor layout can never show the game at 1:1.

@@ -18,31 +18,51 @@
    fijos, asi que la ventana debe medir lo que mida su grid. Con un porcentaje
    solo encajaba a una resolucion concreta, y volvia a desbordar en pantallas
    estrechas o con inventarios de mas columnas (mochilas de M6). */
+/* Ancho FIJO, no derivado del contenido. Antes lo marcaba la rejilla de dentro, pero
+   desde que la rejilla se ajusta a su hueco eso es una dependencia circular: la rejilla
+   mide segun el hueco y el hueco medía segun la rejilla, y el layout no cerraba nunca
+   ("recursive layout"). Con la ventana fija, un inventario mas grande encoge la celda en
+   vez de estirar la ventana, que es la regla que ya seguia el resto del panel. */
 .inventory-root {
     flex-grow: 0;
     flex-shrink: 0;
+    width: 46%;
+    min-width: 900px;
     height: 66%;
     min-height: 360px;
     flex-direction: row;
 }
 
-/* Huecos laterales. Mismo marco para cualquier contenido: hoy el catalogo de
-   desarrollo, en M6 contenedores externos. Ocultos hasta que algo los llene. */
-.side-panel {
-    flex-basis: 14%;
+/* Columna de bandas a la derecha del inventario. Se oculta entera cuando no hay
+   ningun contenedor abierto, o seguiria reservando su ancho. */
+.side-panels {
+    flex-direction: column;
+    flex-basis: 34%;
     flex-grow: 0;
     flex-shrink: 0;
-    min-height: 360px;
-    height: 66%;
+    height: 80%;
+    justify-content: center;
+}
+
+.side-panel {
+    /* Reparto del alto entre las bandas abiertas. La proporcion importa: para que la
+       anchura no sea el cuello de botella de la celda, ancho/alto debe ser >= cols/filas
+       (1.5 con una rejilla 6x4). */
+    /* Mitad fija, no reparto elastico: con flex-grow la banda abierta ocuparia todo el
+       alto y encogeria al abrirse la otra, moviendo los items bajo el cursor en mitad de
+       un arrastre. La previsibilidad del layout vale mas que aprovechar el hueco. */
+    flex-grow: 0;
+    flex-basis: 50%;
+    flex-shrink: 1;
+    min-height: 200px;
+    margin-bottom: 12px;
     flex-direction: column;
 
     background-color: rgba(20, 20, 20, 0.95);
     border-radius: 6px;
     border-width: 1px;
     border-color: rgba(80, 80, 80, 0.8);
-
-    display: none;
-}
+}   
 
 /* ===== Items Catalog ===== */
 /* Contenido de un hueco lateral. Llena el hueco sin asumir su tamano, para que
@@ -169,11 +189,11 @@
     border-color: rgba(60, 60, 60, 0.8);
 }
 
-/* Sin flex-basis: su ancho lo marca la grid montada dentro, y ese ancho es el
-   que acaba dimensionando la ventana entera. */
+/* Ocupa lo que quede tras el panel personal, en vez de medir segun la rejilla: la
+   direccion de la dependencia va de la ventana al contenido, nunca al reves. */
 .inventory-panel {
-    flex-grow: 0;
-    flex-shrink: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
     flex-direction: column;
 
     margin: 2px;
@@ -285,18 +305,22 @@
 
 /* ===== Inventory Grid ===== */
 
+/* El tamano exterior lo escribe InventoryPanelView.FitGridToMount para que la rejilla
+   quepa en su hueco; filas y celdas se reparten ese espacio, asi que el lado de celda
+   depende del inventario y no de un valor fijo aqui. */
 .inventory-grid {
     flex-direction: column;
 }
 
 .inventory-grid-row {
     flex-direction: row;
+    flex-grow: 1;
     flex-shrink: 0;
 }
 
 .inventory-grid-cell {
-    width: 60px;
-    height: 60px;
+    flex-grow: 1;
+    flex-basis: 0;
     border-width: 2px;
     border-color: rgba(70, 70, 70, 0.6);
     background-color: rgba(40, 40, 40, 0.8);
@@ -465,3 +489,42 @@
     white-space: normal;
 }
 
+.hand-buffer {
+    /* Sigue al cursor: el presenter escribe left/top en cada PointerMove.
+       PickingMode.Ignore se pone desde C#: si captura el puntero, se come
+       los clics de la grid que hay debajo. */
+    position: absolute;
+    /* El tamaño lo fija el presenter segun dimensions del item (w x h en celdas),
+       igual que los bloques de items-layer. Aqui solo el aspecto. */
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.75);   /* icono atenuado: se lleva, no esta colocado */
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);                            /* neutro: sobre nada colocable */
+}
+
+/* Sobre celda ocupada: no cabe. Mismo rojo que .load-immobile. */
+.hand-buffer-collision {
+    background-color: rgba(163, 8, 8, 0.25);
+    border-color: rgba(163, 8, 8, 0.98);
+}
+
+/* Hueco valido, o stack compatible con sitio. Mismo verde que .load-normal. */
+.hand-buffer-fits {
+    background-color: rgba(62, 141, 75, 0.25);
+    border-color: rgba(62, 141, 75, 0.98);
+}
+
+
+.icon-fit {
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.item-block-grabbed {
+    opacity: 0.35;
+}
+
+/* Hueco donde se clona la plantilla de un panel de rejilla. Vacio en el UXML:
+   la sub-vista lo limpia antes de montar, asi que nada mas puede vivir aqui. */
+.panel-slot {
+    flex-grow: 1;
+    flex-direction: column;
+}

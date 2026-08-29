@@ -29,12 +29,19 @@ namespace ECS.Systems
             invComp = entity.GetComponent<InventoryComponent>();
             if (invComp == null) return 0;
 
-            float currentWeight = invComp.Inventory.GetTotalWeight();
-            float itemWeight = item.GetComponent<BaseItemComponent>().GetWeight();
-            float maxWeight = GetMaxWeight(entity);
+            // La regla vive en CarryCapacity: aqui solo se resuelve el componente, que el
+            // llamante reutiliza. Asi el veredicto de la UI consulta lo mismo que este camino.
+            return CarryCapacity.FitByWeight(entity, invComp.Inventory, item, amount);
+        }
 
-            int fitByWeight = itemWeight > 0 ? (int)((maxWeight - currentWeight) / itemWeight) : amount;
-            return Math.Min(amount, fitByWeight);
+        /// <summary>
+        /// Skips the weight check, still resolving the inventory. Returns 0 if the entity has
+        /// no inventory, same as GetFitByWeight.
+        /// </summary>
+        private int WholeAmount(IEntity entity, int amount, out InventoryComponent invComp)
+        {
+            invComp = entity.GetComponent<InventoryComponent>();
+            return invComp == null ? 0 : amount;
         }
 
         /// <summary>
@@ -68,75 +75,24 @@ namespace ECS.Systems
         /// Tries to add items at a specific grid position, checking weight first.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, int row, int col)
+        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, int row, int col, int ignoreNodeId = -1)
         {
-            int toAdd = GetFitByWeight(entity, item, amount, out InventoryComponent invComp);
+            // A node moving onto cells it already owns can only happen inside one inventory,
+            // and reordering an inventory cannot change its total weight: the units are
+            // already carried. Checking would also risk clamping the move for someone who is
+            // already overweight, leaving the source node alive over cells the new node took.
+            bool sameInventoryMove = ignoreNodeId != -1;
+
+            InventoryComponent invComp;
+            int toAdd = sameInventoryMove
+                ? WholeAmount(entity, amount, out invComp)
+                : GetFitByWeight(entity, item, amount, out invComp);
+
             if (toAdd <= 0) return amount;
-            int remaining = invComp.Inventory.AddItemAt(item, toAdd, row, col);
+            int remaining = invComp.Inventory.AddItemAt(item, toAdd, row, col, ignoreNodeId);
             EvaluateAndFireEvents(entity, remaining > 0);
             return remaining + (amount - toAdd);
-        } 
-
-        /// <summary>
-        /// Moves units that already exist somewhere into a grid position, as a transaction.
-        /// This is NOT the same job as the TryAdd* methods: those bring items in from outside
-        /// (loot, crafting output, the dev catalog) where there is no source to subtract from.
-        /// Here both ends exist, so the operation needs an origin, a rollback, and care with
-        /// double counting. It wraps TryAddItemAt rather than replacing it.
-        ///
-        /// <para>Order matters. Units are removed from the source FIRST, so that while the
-        /// destination validates weight and stack limits they are no longer counted at the
-        /// origin. Adding first would make a move inside one inventory fail against its own
-        /// weight, and dropping a stack back where it came from hit maxStackSize against
-        /// itself — both counted twice for the length of the operation.</para>
-        ///
-        /// <para>The source node is NOT cleaned until the end: leftovers have to go back, and
-        /// a cleaned node would have to be recreated at its old coordinates. It may sit empty
-        /// mid-transaction, holding its cells — harmless because nothing observes it, and
-        /// because CanPlace lets a node overlap its own cells.</para>
-        /// </summary>
-        /// <param name="srcEntity">Entity owning the source inventory. Its weight drops, so it
-        /// must re-evaluate too: unloading into a chest would otherwise leave the carrier's
-        /// overweight debuff applied, since TryAddItemAt only fires events for the destination.</param>
-        /// <param name="srcInventory">Container holding the node. Must be its direct parent.</param>
-        /// <param name="srcNode">Node the units come from.</param>
-        /// <param name="subLot">Variant to move (matched by Equivalent), or null to take at random
-        /// across the node — whatever comes out is what travels, variants preserved.</param>
-        /// <param name="amount">Units to move.</param>
-        /// <param name="dstEntity">Entity owning the destination inventory. May be the same as the source's.</param>
-        /// <param name="row">Destination row.</param>
-        /// <param name="col">Destination column.</param>
-        /// <returns>Units actually moved. Zero means nothing changed anywhere.</returns>
-        public int TryMoveItemTo(IEntity srcEntity, InventoryObject srcInventory, ItemObject srcNode,
-                                 ItemEntity subLot, int amount, IEntity dstEntity, int row, int col)
-        {
-            AC.CheckNotNull(srcInventory, nameof(srcInventory));
-            AC.CheckNotNull(srcNode, nameof(srcNode));
-            AC.CheckPositive(amount, nameof(amount));
-
-            // Lo extraido llega desglosado por variante: un nodo mezclado consume al azar,
-            // y pasarle al destino un solo item convertiria las demas variantes en copias.
-            List<(ItemEntity item, int amount)> taken =
-                srcInventory.Extract(srcNode, subLot, amount, clean: false);
-
-            int moved = 0;
-            foreach ((ItemEntity variant, int count) in taken)
-            {
-                int leftover = TryAddItemAt(dstEntity, variant, count, row, col);
-                moved += count - leftover;
-
-                if (leftover > 0)
-                    srcInventory.ModifyAmount(srcNode, variant, leftover, clean: false);
-            }
-
-            if (srcNode.GetAmount() <= 0)
-                srcInventory.CleanNode(srcNode);
-
-            if (srcEntity != null && srcEntity != dstEntity)
-                EvaluateAndFireEvents(srcEntity, false);
-
-            return moved;
-        }
+        }  
 
         public void EvaluateAndFireEvents(IEntity entity, bool fullGrid)
         {
@@ -196,14 +152,7 @@ namespace ECS.Systems
             }
         }
 
-        private float GetMaxWeight(IEntity entity)
-        {
-            if (entity.HasComponent(typeof(BodyComponent)))
-                return CarryCapacity.GetMaxCarryWeight(entity);
-
-            StorageComponent storage = entity.GetComponent<StorageComponent>();
-            return storage != null ? storage.MaxWeight : float.MaxValue;
-        }
+        private float GetMaxWeight(IEntity entity) => CarryCapacity.GetMaxLoad(entity);
 
         public void ProcessEntity(IEntity entity)
         {

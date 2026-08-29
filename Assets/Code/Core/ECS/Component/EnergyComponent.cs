@@ -38,27 +38,27 @@ namespace ECS.Component
         }
 
         // Stamina
-        public float GetStamina() => stamina;
+        public float Stamina => stamina;
         public void SetStamina(float stamina) => this.stamina = Math.Max(0, Math.Min(stamina, maxStamina));
-        public float GetMaxStamina() => maxStamina;
+        public float MaxStamina => maxStamina;
         public void SetMaxStamina(float maxStamina) => this.maxStamina = maxStamina;
         public bool IsStaminaFull() => stamina >= maxStamina;
         public bool IsStaminaEmpty() => stamina <= 0;
 
         // Fatigue
-        public float GetFatigue() => fatigue;
+        public float Fatigue => fatigue;
         public void SetFatigue(float fatigue) => this.fatigue = Math.Max(0, Math.Min(fatigue, maxFatigue));
-        public float GetMaxFatigue() => maxFatigue;
+        public float MaxFatigue => maxFatigue;
         public void SetMaxFatigue(float maxFatigue) => this.maxFatigue = maxFatigue;
         public bool IsFatigueFull() => fatigue >= maxFatigue;
         public bool IsFatigueEmpty() => fatigue <= 0;
 
         // Metabolism
-        public float GetEnergeticBalance() => energeticBalance;
+        public float EnergeticBalance => energeticBalance;
         public void SetEnergeticBalance(float energeticBalance) => this.energeticBalance = energeticBalance;
-        public float GetMetabolicRate() => metabolicRate;
+        public float MetabolicRate => metabolicRate;
         public void SetMetabolicRate(float metabolicRate) => this.metabolicRate = metabolicRate;
-        public float GetBasalMetabolicRate() => basalMetabolicRate;
+        public float BasalMetabolicRate => basalMetabolicRate;
         public void SetBasalMetabolicRate(float basalMetabolicRate) => this.basalMetabolicRate = basalMetabolicRate;
 
         public override IComponent Clone()

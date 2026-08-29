@@ -10,15 +10,15 @@ namespace MVC.Controller
     /// </summary>
     public class GameController
     {
-        private readonly GameSystemContext systemCtx;
-        private readonly InputManager inputManager;
-        private readonly HUDManager hudManager;
+        private readonly GameSystemContext _systemCtx;
+        private readonly InputManager _inputManager;
+        private readonly HUDManager _hudManager;
 
         public GameController(GameSystemContext systemCtx, InputManager inputManager, HUDManager hudManager)
         {
-            this.systemCtx = systemCtx;
-            this.inputManager = inputManager;
-            this.hudManager = hudManager;
+            _systemCtx = systemCtx;
+            _inputManager = inputManager;
+            _hudManager = hudManager;
         }
 
         /// <summary>
@@ -26,11 +26,11 @@ namespace MVC.Controller
         /// </summary>
         public void SetUpOnStart()
         {
-            FatigueStaminaSystem staminaSystem = systemCtx.SystemManager
+            FatigueStaminaSystem staminaSystem = _systemCtx.SystemManager
                 .GetPeriodicSystem<FatigueStaminaSystem>();
-            if (staminaSystem != null && hudManager != null)
+            if (staminaSystem != null && _hudManager != null)
             {
-                staminaSystem.Attach(hudManager);
+                staminaSystem.Attach(_hudManager);
             }
         }
 
@@ -40,10 +40,10 @@ namespace MVC.Controller
         public void Update(float deltaTime)
         {
             // 1. Input and camera (real time)
-            inputManager.Update(deltaTime);
+            _inputManager.Update(deltaTime);
 
             // 2. SystemManager: engine systems (every frame) + game systems (per tick)
-            systemCtx.SystemManager.Update(deltaTime);
+            _systemCtx.SystemManager.Update(deltaTime);
         }
     }
 }

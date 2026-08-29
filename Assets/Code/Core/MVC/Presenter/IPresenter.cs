@@ -5,7 +5,7 @@ namespace MVC.Presenter
     public interface IPresenter
     {
         void Open(IEntity entity);
-        void Close();
+        void Close(bool absolute);
         bool IsOpen();
         void Refresh();
     }

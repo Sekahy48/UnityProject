@@ -29,9 +29,9 @@ namespace ECS.Component
 
         // ---- Position ----
 
-        public float GetX() => _posX;
-        public float GetY() => _posY;
-        public float GetZ() => _posZ;
+        public float X => _posX;
+        public float Y => _posY;
+        public float Z => _posZ;
 
         public void SetPosition(float x, float y, float z)
         {
@@ -52,10 +52,10 @@ namespace ECS.Component
 
         // ---- Rotation (quaternion) ----
 
-        public float GetRotX() => _rotX;
-        public float GetRotY() => _rotY;
-        public float GetRotZ() => _rotZ;
-        public float GetRotW() => _rotW;
+        public float RotX => _rotX;
+        public float RotY => _rotY;
+        public float RotZ => _rotZ;
+        public float RotW => _rotW;
 
         public void SetRotation(float x, float y, float z, float w)
         {
@@ -93,7 +93,7 @@ namespace ECS.Component
 
         // ---- Dirty tracking for TransformSyncSystem ----
 
-        public bool IsDirty() => _dirty;
+        public bool IsDirty => _dirty;
         public void ClearDirty() => _dirty = false;
 
         // ---- IComponent ----

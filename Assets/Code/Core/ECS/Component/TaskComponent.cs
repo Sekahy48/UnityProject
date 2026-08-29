@@ -40,10 +40,7 @@ namespace ECS.Component
             return tasks.Count > 0 || currentTask != null;
         }
 
-        public ITask GetCurrentTask()
-        {
-            return currentTask;
-        }
+        public ITask CurrentTask => currentTask;
 
         public void SetCurrentTask(ITask task)
         {

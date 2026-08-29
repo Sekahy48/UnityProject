@@ -26,7 +26,7 @@ namespace ECS.Entity
 
         public string GetGenericName()
         {
-            return GetComponent<BaseItemComponent>().GetGenericName();
+            return GetComponent<BaseItemComponent>().GenericName;
         }
     }
 }

@@ -11,5 +11,11 @@ namespace MVC.View.UI.Inventory
         public ItemDisplayData Item;
         public int Row;
         public int Col;
+
+        /// <summary>
+        /// This node is the source of what the hand is holding. Nothing has left the grid
+        /// yet, so it is still drawn — dimmed, to show where the units came from.
+        /// </summary>
+        public bool IsGrabbed;
     }
 }

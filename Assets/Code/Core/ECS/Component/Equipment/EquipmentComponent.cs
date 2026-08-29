@@ -62,7 +62,7 @@ namespace ECS.Component.Equipment
             
             WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
             if (wearableComponent == null) throw new InvalidOperationException("Cannot unequip an item with no WearableComponent.");
-            EquipmentSlot slot = _equipmentSlots[wearableComponent.GetTargetSlot()];
+            EquipmentSlot slot = _equipmentSlots[wearableComponent.TargetSlot];
             if (!slot.UnequipItem(item)) throw new InvalidOperationException("Cannot unequip an item that is not equiped.");
             
         }
@@ -72,9 +72,9 @@ namespace ECS.Component.Equipment
             EquipmentComponent equipmentComponent = new EquipmentComponent(new List<EquipmentSlotType>(_allowedSlots));
             foreach (KeyValuePair<EquipmentSlotType, EquipmentSlot> kvp in _equipmentSlots)
             {
-                equipmentComponent.AddSlot(kvp.Key, kvp.Value.GetMaxLayers());
+                equipmentComponent.AddSlot(kvp.Key, kvp.Value.MaxLayers);
                 List<ItemEntity> clonedItems = new List<ItemEntity>();
-                foreach (ItemEntity item in kvp.Value.GetItems())
+                foreach (ItemEntity item in kvp.Value.Items)
                 {
                     clonedItems.Add((ItemEntity)item.Clone());
                 }
@@ -103,7 +103,7 @@ namespace ECS.Component.Equipment
                         EquipmentSlot otherSlot = otherEquipment._equipmentSlots[slotType];
 
                         if (thisSlot.GetEquippedItemCount() != otherSlot.GetEquippedItemCount() ||
-                            thisSlot.GetMaxLayers() != otherSlot.GetMaxLayers())
+                            thisSlot.MaxLayers != otherSlot.MaxLayers)
                             return false;
                     }
                 }

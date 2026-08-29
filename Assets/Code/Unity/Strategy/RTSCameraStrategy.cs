@@ -132,6 +132,5 @@ namespace Strategy
         }
 
         public Camera GetCamera() => Camera;
-        public IEntity GetPlayer() => null; // No player associated in RTS
     }
 }

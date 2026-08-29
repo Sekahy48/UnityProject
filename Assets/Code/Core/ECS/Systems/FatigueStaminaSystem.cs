@@ -36,7 +36,7 @@ namespace ECS.Systems
 
             if (energy == null) return;
 
-            bool drain = movement != null && movement.IsRunning();
+            bool drain = movement != null && movement.IsRunning;
             bool changed = false;
 
             if (!drain)
@@ -79,18 +79,18 @@ namespace ECS.Systems
 
         public void RestoreFatigue(float deltaTime, EnergyComponent component)
         {
-            component.SetFatigue(component.GetFatigue() + FATIGUE_REGEN_RATE * deltaTime);
+            component.SetFatigue(component.Fatigue + FATIGUE_REGEN_RATE * deltaTime);
         }
 
         public void RestoreStamina(float deltaTime, EnergyComponent component)
         {
-            component.SetStamina(component.GetStamina() + STAMINA_REGEN_RATE * deltaTime);
+            component.SetStamina(component.Stamina + STAMINA_REGEN_RATE * deltaTime);
         }
 
         public void DrainStamina(float deltaTime, EnergyComponent component)
         {
-            component.SetStamina(component.GetStamina() - STAMINA_DRAIN_PER_SECOND * deltaTime);
-            bool burst = component.GetStamina() <= 0;
+            component.SetStamina(component.Stamina - STAMINA_DRAIN_PER_SECOND * deltaTime);
+            bool burst = component.Stamina <= 0;
             DrainFatigue(deltaTime, component, burst);
         }
 
@@ -101,7 +101,7 @@ namespace ECS.Systems
             {
                 fatigueDrain += FATIGUE_BURST_DRAIN;
             }
-            component.SetFatigue(component.GetFatigue() - fatigueDrain);
+            component.SetFatigue(component.Fatigue - fatigueDrain);
         }
     }
 }

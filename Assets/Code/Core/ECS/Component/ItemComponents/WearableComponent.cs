@@ -19,9 +19,9 @@ namespace ECS.Component.ItemComponents
             _garmentCategory = garmentCategory;
         }
 
-        public EquipmentSlotType GetTargetSlot() => _targetSlot;
-        public bool IsTopLayer() => _topLayer;
-        public GarmentCategory GetGarmentCategory() => _garmentCategory;
+        public EquipmentSlotType TargetSlot => _targetSlot;
+        public bool IsTopLayer => _topLayer;
+        public GarmentCategory GarmentCategory => _garmentCategory;
 
         public void SetTargetSlot(EquipmentSlotType targetSlot) => _targetSlot = targetSlot;
         public void SetTopLayer(bool topLayer) => _topLayer = topLayer;

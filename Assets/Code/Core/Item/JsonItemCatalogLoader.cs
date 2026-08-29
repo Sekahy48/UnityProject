@@ -98,9 +98,9 @@ namespace Item
                             hasBaseItem = true;
                             baseItem.SetTypeId(typeId);
                             baseItem.SetGenericName(itemData.name);
-                            if (string.IsNullOrEmpty(baseItem.GetDescription()))
+                            if (string.IsNullOrEmpty(baseItem.Description))
                                 baseItem.SetDescription(itemData.description ?? "");
-                            if (string.IsNullOrEmpty(baseItem.GetIconPath()))
+                            if (string.IsNullOrEmpty(baseItem.IconPath))
                                 baseItem.SetIconPath(itemData.imagePath ?? "");
                         }
                     }
