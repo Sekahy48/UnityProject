@@ -11,7 +11,6 @@ using MVC.View;
 using MVC.View.Inventory;
 using MVC.View.UI.Inventory;
 using Services;
-using UnityEngine;
 using AC = Utils.ArgumentChecker;
 
 namespace MVC.Presenter.Inventory
@@ -141,18 +140,18 @@ namespace MVC.Presenter.Inventory
 
         }
 
-        private void HandChanged(Vector2 cellSize)
+        private void HandChanged(CellSize cellSize)
         {
             RefreshHand(cellSize);
             foreach (InventoryPanelPresenter pres in _panelPresenters.Values)
                 pres.RenderInventory();
         }
 
-        private void UpdateHandDisplay(PlacementVerdict verdict, Vector2 cellSize, int width, int height)
+        private void UpdateHandDisplay(PlacementVerdict verdict, CellSize cellSize, int width, int height)
             => _view.UpdateHandDisplay(verdict, cellSize, width, height);
 
         
-        private void RefreshHand(Vector2 cellSize)
+        private void RefreshHand(CellSize cellSize)
         {
             if (!_service.IsHandCarrying()) { _view.ClearHandBuffer(); return; }
 
@@ -188,7 +187,7 @@ namespace MVC.Presenter.Inventory
             if (!_service.IsHandCarrying()) return;
 
             _service.EmptyHand();
-            HandChanged(Vector2.zero);   // cellSize irrelevante: sin nada en la mano, se limpia
+            HandChanged(default);   // cellSize irrelevante: sin nada en la mano, se limpia
         }
 
         /// <summary>

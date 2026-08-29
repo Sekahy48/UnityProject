@@ -400,19 +400,19 @@ namespace MVC.View.Inventory
 
         #region Hand Buffer Rendering 
         
-        public void RenderHandBuffer(ItemDisplayData itemData, Vector2 cellSize)
+        public void RenderHandBuffer(ItemDisplayData itemData, CellSize cellSize)
         {
             _handBuffer.Clear();
             UIElementUtils.SetBackgroundTexture(_handBuffer, itemData.IconPath);
              
-            _handBuffer.style.width  = cellSize.x * itemData.DimensionW;
-            _handBuffer.style.height = cellSize.y * itemData.DimensionH;
+            _handBuffer.style.width  = cellSize.Width  * itemData.DimensionW;
+            _handBuffer.style.height = cellSize.Height * itemData.DimensionH;
 
             Label amountLabel = new Label(itemData.Amount.ToString());
             amountLabel.AddToClassList("amount-label");
             _handBuffer.Add(amountLabel);
             
-            _handAnchorOffset = cellSize / 2f;
+            _handAnchorOffset = new Vector2(cellSize.Width, cellSize.Height) / 2f;
             _handBuffer.style.display = DisplayStyle.Flex;
 
             // Ya visible: colocarla bajo el cursor antes de que el motor pinte el frame.
@@ -435,7 +435,7 @@ namespace MVC.View.Inventory
             
         }
 
-        public void UpdateHandDisplay(PlacementVerdict verdict, Vector2 cellSize, int wDim, int hDim)
+        public void UpdateHandDisplay(PlacementVerdict verdict, CellSize cellSize, int wDim, int hDim)
         {
             _handBuffer.RemoveFromClassList("hand-buffer-fits");
             _handBuffer.RemoveFromClassList("hand-buffer-collision");
@@ -454,11 +454,11 @@ namespace MVC.View.Inventory
                     return;
             }
 
-            if (cellSize.x <= 0 || cellSize.y <= 0) return;
+            if (cellSize.IsZero) return;
 
-            _handAnchorOffset = cellSize / 2f; 
-            _handBuffer.style.width  = cellSize.x * wDim;
-            _handBuffer.style.height = cellSize.y * hDim;
+            _handAnchorOffset = new Vector2(cellSize.Width, cellSize.Height) / 2f; 
+            _handBuffer.style.width  = cellSize.Width  * wDim;
+            _handBuffer.style.height = cellSize.Height * hDim;
         }
 
         #endregion

@@ -30,7 +30,7 @@ namespace Inventory
     public class BatchItem
     {
         private Random _random;
-        private readonly List<(ItemEntity item, int amount)> _items;
+        private readonly List<SubLot> _items;
         private readonly int _typeId;
         private readonly int _maxStackSize;
 
@@ -40,9 +40,9 @@ namespace Inventory
             _maxStackSize = item.GetComponent<BaseItemComponent>().MaxStackSize;
             AC.CheckPositive(_maxStackSize, "maxStackSize");
 
-            _items = new List<(ItemEntity, int)>
+            _items = new List<SubLot>
             {
-                (item, Math.Min(amount, _maxStackSize))
+                new SubLot(item, Math.Min(amount, _maxStackSize))
             };
  
             _random = new Random();
@@ -66,9 +66,9 @@ namespace Inventory
         public int GetTotalAmount()
         {
             int total = 0;
-            foreach ((ItemEntity item, int amount) pair in _items)
+            foreach (SubLot lot in _items)
             {
-                total += pair.amount;
+                total += lot.Amount;
             }
             return total;
         }
@@ -79,9 +79,9 @@ namespace Inventory
         public float GetTotalWeight()
         {
             float totalWeight = 0;
-            foreach ((ItemEntity item, int amount) pair in _items)
+            foreach (SubLot lot in _items)
             {
-                totalWeight += pair.item.GetComponent<BaseItemComponent>().Weight * pair.amount;
+                totalWeight += lot.TotalWeight;
             }
             return totalWeight;
         }
@@ -94,7 +94,7 @@ namespace Inventory
         /// <summary>
         /// Returns a copy of the sub-lot list for inspection.
         /// </summary>
-        public List<(ItemEntity, int)> GetSubLots() => new List<(ItemEntity, int)>(_items);
+        public List<SubLot> GetSubLots() => new List<SubLot>(_items);
 
         //#endregion
 
@@ -117,7 +117,7 @@ namespace Inventory
 
             if (toAdd > 0 && !SetAmount(item, toAdd + GetBatchAmount(item)))
             {
-                _items.Add((item, toAdd));
+                _items.Add(new SubLot(item, toAdd));
             }
 
             return remaining;
@@ -136,7 +136,7 @@ namespace Inventory
             if (_items.Count == 0) return null;
 
             int rndmIndex = _random.Next(0, _items.Count);
-            ItemEntity item = _items[rndmIndex].item;
+            ItemEntity item = _items[rndmIndex].Item;
             bool consumed = ConsumeAmount(item, 1) != 0;
             return consumed ? item : null;
         }
@@ -145,31 +145,31 @@ namespace Inventory
         /// Consumes N units randomly across sub-lots. Returns what was consumed grouped by sub-lot.
         /// </summary>
         /// <param name="amount">Number of units to consume.</param>
-        /// <returns>List of (ItemEntity, int) pairs representing what was consumed from each sub-lot.</returns>
-        public List<(ItemEntity, int)> ConsumeRandom(int amount)
+        /// <returns>What was consumed from each sub-lot.</returns>
+        public List<SubLot> ConsumeRandom(int amount)
         {
-            List<(ItemEntity item, int count)> consumed = new List<(ItemEntity, int)>();
+            List<SubLot> consumed = new List<SubLot>();
             int toConsume = Math.Min(amount, GetTotalAmount());
 
             for (int i = 0; i < toConsume; i++)
             {
                 if (_items.Count == 0) break;
                 int rndmIndex = _random.Next(0, _items.Count);
-                ItemEntity item = _items[rndmIndex].item;
+                ItemEntity item = _items[rndmIndex].Item;
                 ConsumeAmount(item, 1);
 
                 bool found = false;
                 for (int j = 0; j < consumed.Count; j++)
                 {
-                    if (consumed[j].item.Equivalent(item))
+                    if (consumed[j].Item.Equivalent(item))
                     {
-                        consumed[j] = (consumed[j].item, consumed[j].count + 1);
+                        consumed[j] = new SubLot(consumed[j].Item, consumed[j].Amount + 1);
                         found = true;
                         break;
                     }
                 }
                 if (!found)
-                    consumed.Add((item, 1));
+                    consumed.Add(new SubLot(item, 1));
             }
 
             return consumed;
@@ -202,9 +202,9 @@ namespace Inventory
         /// </summary>
         private int GetBatchAmount(ItemEntity item)
         {
-            foreach ((ItemEntity item, int amount) pair in _items)
+            foreach (SubLot lot in _items)
             {
-                if (pair.item.Equivalent(item)) return pair.amount;
+                if (lot.Item.Equivalent(item)) return lot.Amount;
             }
             return 0;
         }
@@ -218,8 +218,8 @@ namespace Inventory
         {
             for (int i = 0; i < _items.Count; i++)
             {
-                var lot = _items[i];
-                if (item.Equivalent(lot.item))
+                SubLot lot = _items[i];
+                if (item.Equivalent(lot.Item))
                 {
                     if (amount <= 0)
                     {
@@ -227,7 +227,7 @@ namespace Inventory
                     }
                     else
                     {
-                        _items[i] = (lot.item, amount);
+                        _items[i] = new SubLot(lot.Item, amount);
                     }
                     return true;
                 }

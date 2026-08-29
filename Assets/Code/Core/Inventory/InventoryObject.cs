@@ -257,11 +257,11 @@ namespace Inventory
         /// </param>
         /// <returns>Pairs of (variant, units taken). Feed THESE to the destination: the
         /// breakdown is the point, a bare total would collapse mixed stacks into one variant.</returns>
-        public List<(ItemEntity item, int amount)> Extract(ItemObject node, ItemEntity item, int amount, bool clean = true)
+        public List<SubLot> Extract(ItemObject node, ItemEntity item, int amount, bool clean = true)
         {
             AC.CheckNotNull(node, nameof(node));
 
-            List<(ItemEntity item, int amount)> extracted = node.Extract(item, amount);
+            List<SubLot> extracted = node.Extract(item, amount);
 
             if (clean && node.GetAmount() <= 0)
                 CleanNode(node);
@@ -432,14 +432,14 @@ namespace Inventory
         /// grow. Only maxStackSize limits it.</para>
         /// </summary>
         /// <returns>Units that could not be added.</returns>
-        public int AddItemAt(ItemEntity item, int amount, int row, int col, int ignoreNodeId = -1)
+        public int AddItemAt(ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1)
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
             // Not CheckPositive: row 0 and column 0 are valid cells.
-            if (!_grid.IsInside(row, col))
+            if (!_grid.IsInside(pos))
                 throw new ArgumentOutOfRangeException(
-                    $"AddItemAt: cell ({row}, {col}) is outside a {_grid.GetGridH()}x{_grid.GetGridW()} grid.");
+                    $"AddItemAt: cell {pos} is outside a {_grid.GetGridH()}x{_grid.GetGridW()} grid.");
 
             // Cualquier celda del nodo vale: soltar sobre el centro de una espada de 1x3
             // encuentra su nodo igual que soltar sobre su esquina de origen.
@@ -447,19 +447,19 @@ namespace Inventory
             // El nodo ignorado no cuenta como ocupante: es el que se esta moviendo, sigue en
             // la grid porque nada sale de ella hasta soltar, y apilar sobre el devolveria las
             // unidades a su sitio original en vez de moverlas.
-            GridElement occupant = _grid.GetElementAt(row, col);
+            GridElement occupant = _grid.GetElementAt(pos);
             if (occupant != null && occupant.GetNode().GetNodeId() != ignoreNodeId)
                 return occupant.GetNode().StackOntoHere(item, amount);
 
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
-            if (_grid.CanPlace(row, col, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
+            if (_grid.CanPlace(pos, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
             {
                 ItemObject node = new ItemObject(item, amount);
 
                 // Placing may still fail even after CanPlace said yes, so the result decides:
                 // adding the node anyway would leave it inside the inventory but off the grid,
                 // where nothing renders it and no cell points at it.
-                if (!_grid.Place(node, row, col, ignoreNodeId)) return amount;
+                if (!_grid.Place(node, pos, ignoreNodeId)) return amount;
 
                 amount = amount - node.GetAmount();
                 _inventory.Add(node);
@@ -565,10 +565,10 @@ namespace Inventory
             foreach (GridElement placed in _grid.GetElements())
             {
                 ItemObject nodeClone = (ItemObject)placed.GetNode().Clone();
-                if (!clone._grid.Place(nodeClone, placed.GetRow(), placed.GetCol()))
+                if (!clone._grid.Place(nodeClone, placed.GetPos()))
                     throw new InvalidOperationException(
                         $"InventoryObject.Clone: could not re-place node {placed.GetNode().GetNodeId()} " +
-                        $"at ({placed.GetRow()}, {placed.GetCol()}) in the cloned grid.");
+                        $"at {placed.GetPos()} in the cloned grid.");
 
                 clone._inventory.Add(nodeClone);
             }
@@ -582,7 +582,7 @@ namespace Inventory
             return clone;
         }
 
-        public List<(ItemEntity, int)> ConsumeRandom(int amount)
+        public List<SubLot> ConsumeRandom(int amount)
         {
             throw new InvalidOperationException("AddContainer is not supported on leaf nodes."); 
         }
