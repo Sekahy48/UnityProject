@@ -1,5 +1,29 @@
 # Phase 1 — Inventory: Implementation Milestones
 
+## Where we are right now
+
+**Current task: M5 task 10.** Milestone 5 is done except task 6 (half: viewing layers works, managing them needs the interaction) and task 10 itself.
+
+**Done and working:** the inventory window renders the tetris grid with item blocks, the equipment cross with its layer popup, and a weight bar that colour-codes by encumbrance band. A dev item catalog lives in a side panel and lists the prototypes with search. UI live-reload works, so USS edits apply without leaving play mode.
+
+**Built but not yet wired to any input:**
+
+- `HandBuffer` (Core/Inventory) — the "held items" state. Complete with docs, never instantiated by anyone.
+- `InventorySystem.TryMoveItemTo` — the transactional move: remove from source, add to destination, roll back the leftover per variant, clean the node last. Never called.
+- Supporting primitives added for it: `ItemObject.Extract` / `GetAmount(ItemEntity)` / `ModifyAmount(ItemEntity, int)`, `InventoryObject.Extract` / `CleanNode` / `ModifyAmount(node, item, amount, clean)`, `TetrisGridState`'s `ignoreNodeId`, and `AddItemAt` stacking onto a compatible node instead of always creating one.
+
+**The immediate next step is the window coordinator**, and it is still undecided:
+
+1. What it is called and where it lives.
+2. Whether it receives the views' events directly, or the presenters stay as intermediaries and talk up to it.
+3. It must own the `HandBuffer` and hold the three windows' presenters — it is the only thing that can see the player inventory, both side slots and the hand at once, which is exactly what "grabbed here, dropping there" needs.
+
+**Also pending on task 10**, once the coordinator exists: the pointer state machine (click-to-grab primary, drag secondary, disambiguated by a movement threshold — see the Decided note under M5), the visual for the item following the cursor, dimming the source block, and turning the catalog rows into grab sources instead of the current direct-add.
+
+**Two known holes, noted where they matter:** moving a whole node with mixed sub-lots inside one inventory has not been exercised, and the source-entity weight re-evaluation in `TryMoveItemTo` skips when source and destination share an entity. Neither can bite until items actually move.
+
+---
+
 ## Architecture decisions (locked)
 
 - **Item IDs**: typeId (int) from JSON catalog (Stack&Go). Instances tracked via sub-lots.
