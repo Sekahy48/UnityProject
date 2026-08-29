@@ -768,6 +768,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inventoryDocument: {fileID: 899944977}
+  _inventoryPanelTemplate: {fileID: 9197481963319205126, guid: 054d62f5f50d19940a50e54ea7db9875, type: 3}
 --- !u!1 &1399650003
 GameObject:
   m_ObjectHideFlags: 0
