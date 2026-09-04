@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Base physical attributes of the character. Change very slowly or never.

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using ECS.Component;
-using Events;
-using Observer;
+using Core.ECS.Component;
+using Core.Events;
+using Core.Observer;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     public class MovementSystem : IReactiveSystem
     {

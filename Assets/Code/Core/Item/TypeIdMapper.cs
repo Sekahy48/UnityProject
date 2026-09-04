@@ -3,7 +3,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Core;
 
-namespace Item
+namespace Core.Item
 {
     public class TypeIdMapper
     {

@@ -1,5 +1,5 @@
 using System;
-using ECS.Entity;
+using Core.ECS.Entity;
 using UnityEngine;
 
 namespace Strategy

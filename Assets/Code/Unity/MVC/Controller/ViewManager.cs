@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using MVC.Presenter;
+using Core.MVC.Presenter;
+using Core.MVC.View;
 using MVC.View;
 using MVC.View.Inventory;
 

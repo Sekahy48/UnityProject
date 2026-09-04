@@ -1,4 +1,4 @@
-namespace MVC.View.UI.Inventory
+namespace Core.MVC.View.UI.Inventory
 {
     /// <summary>
     /// An item together with its placement in the tetris grid.

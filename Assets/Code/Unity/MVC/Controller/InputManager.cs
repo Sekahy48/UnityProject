@@ -1,7 +1,7 @@
 using Core.Contexts;
-using ECS.Entity;
-using MVC.Presenter;
-using MVC.Presenter.Inventory;
+using Core.ECS.Entity;
+using Core.MVC.Presenter;
+using Core.MVC.Presenter.Inventory;
 using MVC.View.Inventory;
 using Strategy;
 using UnityEngine;

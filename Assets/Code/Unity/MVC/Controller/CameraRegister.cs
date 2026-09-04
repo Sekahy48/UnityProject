@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ECS.Entity;
+using Core.ECS.Entity;
 using Strategy;
 using UnityEngine;
 

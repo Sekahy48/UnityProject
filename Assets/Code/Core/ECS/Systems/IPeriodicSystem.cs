@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
     /// Interface for game loop systems.

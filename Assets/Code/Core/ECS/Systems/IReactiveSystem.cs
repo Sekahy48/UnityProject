@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Events;
-using Observer;
+using Core.Events;
+using Core.Observer;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
     /// Interface for game reactive systems.

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using ECS.Entity;
-using ECS.Systems;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
 
-namespace MVC.Model
+namespace Core.MVC.Model
 {
     /// <summary>
     /// Game model. No UnityEngine dependencies.

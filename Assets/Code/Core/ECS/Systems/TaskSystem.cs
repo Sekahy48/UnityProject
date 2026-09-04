@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using Events;
-using MVC.Model;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Events;
+using Core.MVC.Model;
+using Core.Observer;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     public class TaskSystem : IEventObserver
     {

@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 using System.Diagnostics;
-using ECS.Component;
-using ECS.Entity;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Observer;
 
 namespace MVC.View
 {

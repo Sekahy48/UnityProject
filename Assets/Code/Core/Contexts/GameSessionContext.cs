@@ -1,7 +1,7 @@
-using ECS.Component;
-using ECS.Entity;
-using ECS.Systems;
-using Inventory;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
+using Core.Inventory;
 
 namespace Core.Contexts
 {

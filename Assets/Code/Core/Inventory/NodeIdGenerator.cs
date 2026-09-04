@@ -1,4 +1,4 @@
-namespace Inventory
+namespace Core.Inventory
 {
     /// <summary>
     /// Generates unique IDs for composite tree nodes (ItemObject, InventoryObject).

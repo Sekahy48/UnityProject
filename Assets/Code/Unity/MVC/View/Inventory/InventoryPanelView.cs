@@ -1,9 +1,9 @@
 
 using System;
-using System.Collections.Generic;
-using Events;
-using Inventory;
-using MVC.View.UI.Inventory;
+using System.Collections.Generic; 
+using Core.Events;
+using Core.Inventory;
+using Core.MVC.View.UI.Inventory; 
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -12,12 +12,12 @@ namespace MVC.View.Inventory
     public class InventoryPanelView
     {
         #region Fields
-
+        private readonly  PanelType _panelType;
         private VisualTreeAsset _template;
 
         /* Hueco donde se clona la plantilla. Toda consulta del arbol sale de aqui, y por eso
            tres paneles pueden repetir los mismos name sin pisarse. */
-        private VisualElement _rootPanel;
+        public VisualElement RootPanel {get; private set;}
 
         private VisualElement _topBar;
         private Label _titelLabel; /*Label where the name of the inventory's entity is displayed*/
@@ -50,7 +50,7 @@ namespace MVC.View.Inventory
            de movimiento. MinValue = ninguna, para que la primera siempre emita. */
         private GridPos? _lastCell;
 
-        private Vector3 _pressOrigin; /*Position where last pointer down event ocurred*/
+        private Vector3 _pressLeftOrigin; /*Position where last pointer down event ocurred (left button)*/ 
         private const float DRAG_THRESHOLD_SQR = 100f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
 
         private static readonly Dictionary<GameEventType, string> LoadClasses = new()
@@ -65,7 +65,8 @@ namespace MVC.View.Inventory
 
         #region Events
 
-        public event Action<GridPos> OnCellPressed;
+        public event Action<GridPos> OnCellLeftPressed;
+        public event Action<GridPos, PanelType> OnCellRightPressed;
         public event Action<GridPos, bool> OnCellReleased;
 
         public event Action<Vector3> OnPointerMovedOverGrid;
@@ -80,26 +81,27 @@ namespace MVC.View.Inventory
         #region Initialization
 
         /// <param name="rootPanel">Hueco donde se clona la plantilla y vive el contenido.</param>
-        public InventoryPanelView(VisualElement rootPanel, VisualTreeAsset template)
+        public InventoryPanelView(VisualElement rootPanel, VisualTreeAsset template, PanelType type)
         {
-            _rootPanel = rootPanel;
+            RootPanel = rootPanel;
             _template  = template;
+            _panelType = type;
             BuildAndCache();
         }
 
         public void BuildAndCache()
         {
-            _rootPanel.Clear();
-            _template.CloneTree(_rootPanel);
+            RootPanel.Clear();
+            _template.CloneTree(RootPanel);
 
-            _gridMount = _rootPanel.Q<VisualElement>("grid-mount");
+            _gridMount = RootPanel.Q<VisualElement>("grid-mount");
 
-            _topBar = _rootPanel.Q<VisualElement>("inventory-bar");
-            _titelLabel = _rootPanel.Q<Label>("title-bar-panel");
-            _closeButton = _rootPanel.Q<Button>("close-button-panel");
+            _topBar = RootPanel.Q<VisualElement>("inventory-bar");
+            _titelLabel = RootPanel.Q<Label>("title-bar-panel");
+            _closeButton = RootPanel.Q<Button>("close-button-panel");
             _closeButton.RegisterCallback<ClickEvent>(_ => OnCloseRequested?.Invoke());
-            _weightLabel = _rootPanel.Q<Label>("weight-label");
-            _weightBar = _rootPanel.Q<VisualElement>("weight-bar");
+            _weightLabel = RootPanel.Q<Label>("weight-label");
+            _weightBar = RootPanel.Q<VisualElement>("weight-bar");
 
             // Una sola suscripcion por panel: MountGrid corre en cada Bind, y registrarlo ahi
             // acumulaba un callback por contenedor abierto.
@@ -170,16 +172,28 @@ namespace MVC.View.Inventory
             // from the cursor, never from the block that happened to be under it.
             _itemsLayer.RegisterCallback<PointerDownEvent>(evt =>
             {
-                evt.StopPropagation();
-
+                Vector3 position = evt.position;
                 // Sin CapturePointer a proposito: capturar manda todos los eventos del puntero
                 // a ESTE elemento hasta soltarlo, asi que un arrastre que empieza en un panel
                 // y termina en otro entregaria el PointerUp al panel de origen, con
                 // coordenadas ajenas a la rejilla donde se solto. Sin captura, el up lo recibe
                 // el panel que hay bajo el cursor, que es el que debe colocar.
-                _pressOrigin = evt.position;
-
-                OnCellPressed?.Invoke(PointToCoords(evt.position));
+                
+                // Nota personal 
+                // 0 = izdo
+                // 1 = dcho
+                // 2 = central
+                GridPos gridPos = PointToCoords(position);
+ 
+                if (evt.button == 0)
+                { 
+                    _pressLeftOrigin = evt.position; 
+                    OnCellLeftPressed.Invoke(gridPos); 
+                }     
+                else if (evt.button == 1)
+                {    
+                    OnCellRightPressed.Invoke(gridPos, _panelType);  
+                }  
             });
 
             _itemsLayer.RegisterCallback<PointerUpEvent>(evt =>
@@ -188,7 +202,7 @@ namespace MVC.View.Inventory
                 // aqui es lo que impide que la raiz lo tome por "soltado fuera".
                 evt.StopPropagation();
 
-                bool dragged = (evt.position - _pressOrigin).sqrMagnitude > DRAG_THRESHOLD_SQR;
+                bool dragged = (evt.position - _pressLeftOrigin).sqrMagnitude > DRAG_THRESHOLD_SQR;
                 OnCellReleased?.Invoke(PointToCoords(evt.position), dragged);
             });
 
@@ -345,6 +359,27 @@ namespace MVC.View.Inventory
             return new GridPos(Mathf.FloorToInt(local.y / cell.y),
                                Mathf.FloorToInt(local.x / cell.x));
         }
+
+        /// <summary>
+        /// Inverse of PointToCoords: gives the panel-space position of a cell's top-left corner.
+        /// Needed by whoever draws over the grid but does not receive pointer positions — the
+        /// context menu arrives as a GridPos and has to be placed somewhere.
+        /// Returns Vector3.zero for GridPos.None or before the layout resolves; callers that care
+        /// about the difference should check IsNone themselves.
+        /// </summary>
+        public Vector3 CoordsToPoint(GridPos pos)
+        {
+            if (_itemsLayer == null || pos.IsNone) return Vector3.zero;
+
+            Vector2 cell = CellSizePx();
+            if (cell.x <= 0 || cell.y <= 0) return Vector3.zero;   // layout aun sin resolver
+
+            // Col es el eje X y Row el Y, igual que en PointToCoords pero al reves. Si una cambia,
+            // la otra tiene que cambiar con ella.
+            
+            return _itemsLayer.LocalToWorld(new Vector2(pos.Col * cell.x, pos.Row * cell.y) + cell * 0.5f);
+        }
+
 
         public void SetLabelText(String content)
         {

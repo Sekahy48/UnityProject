@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Stamina, fatigue and metabolism. Changes every frame.

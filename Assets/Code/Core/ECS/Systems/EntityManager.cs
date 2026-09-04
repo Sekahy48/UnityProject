@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using Factories;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Factories;
+using Core.Observer;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
     /// Manages the game's entities. No UnityEngine dependencies.

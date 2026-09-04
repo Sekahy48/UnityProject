@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Events;
+using Core.Events;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
     /// Manages and runs the game's systems.

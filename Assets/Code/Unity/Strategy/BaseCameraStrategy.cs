@@ -1,8 +1,8 @@
 using System;
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
 using MVC.View.Inventory;
-using Observer;
+using Core.Observer;
 using UnityEngine;
 using UnityEngine.InputSystem;
 

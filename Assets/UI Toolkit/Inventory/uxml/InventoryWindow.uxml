@@ -52,9 +52,9 @@
                                     <ui:VisualElement class="equip-spacer"/>
                                 </ui:VisualElement>
                                 <ui:VisualElement class="equip-row">
-                                    <ui:VisualElement name="slot-lefthand" class="equip-slot"/>
-                                    <ui:VisualElement name="slot-chest" class="equip-slot"/>
                                     <ui:VisualElement name="slot-righthand" class="equip-slot"/>
+                                    <ui:VisualElement name="slot-chest" class="equip-slot"/>
+                                    <ui:VisualElement name="slot-lefthand" class="equip-slot"/>
                                 </ui:VisualElement>
                                 <ui:VisualElement class="equip-row">
                                     <ui:VisualElement class="equip-spacer"/>
@@ -136,6 +136,7 @@
 
 </ui:VisualElement>
 
-<ui:VisualElement name="tooltip" class="tooltip"/>
-<ui:VisualElement name="hand-buffer" class="hand-buffer"/>
+<ui:VisualElement name="hand-buffer" class="hand-buffer" picking-mode="Ignore"/>
+<ui:VisualElement name="tooltip" class="tooltip" picking-mode="Ignore"/>
+<ui:VisualElement name="ctx-menu" class="ctx-menu"/>
 </ui:UXML>

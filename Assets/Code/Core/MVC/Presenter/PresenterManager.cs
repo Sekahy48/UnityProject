@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MVC.Presenter 
+namespace Core.MVC.Presenter 
 {
     public class PresenterManager
     {

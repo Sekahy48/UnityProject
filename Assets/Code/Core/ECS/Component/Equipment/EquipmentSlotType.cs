@@ -1,14 +1,31 @@
-namespace ECS.Component.Equipment {
+using System.ComponentModel;
+
+namespace Core.ECS.Component.Equipment
+{
     public enum EquipmentSlotType
     {
+        [Description("Cabeza")]
         Head,
+
+        [Description("Pecho")]
         Chest,
+
+        [Description("Piernas")]
         Legs,
+
+        [Description("Pies")]
         Feet,
-        Hands,
+
+        [Description("Mano derecha")]
         RightHand,
-        LeftHand, 
+
+        [Description("Mano izquierda")]
+        LeftHand,
+
+        [Description("Espalda")]
         Back,
+
+        [Description("Cadera")]
         Hip
     }
 }

@@ -1,9 +1,9 @@
     using System;
     using System.Collections.Generic;
-    using ECS.Component;
-    using Handler;
+    using Core.ECS.Component;
+    using Core.Handler; 
 
-    namespace ECS.Entity
+    namespace Core.ECS.Entity
     {
         /// <summary>
         /// Represents concrete instances of entities usable in-game.
@@ -124,16 +124,7 @@
                         return false;
                 }
                 return true;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return 
-                    obj is InGameEntity other &&
-                    this.id.Equals(other.id) &&
-                    this.type.Equals(other.type) &&
-                    this.Equivalent(other);
-            }
+            } 
         }
     
     }

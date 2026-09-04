@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Observer;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     public class FatigueStaminaSystem : GenericSubject, IPeriodicSystem
     {

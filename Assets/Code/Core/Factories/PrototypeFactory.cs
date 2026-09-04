@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using Core;
-using ECS.Component;
-using ECS.Component.Equipment; 
-using ECS.Entity;
-using Inventory;
-using Item;
+using Core.ECS.Component;
+using Core.ECS.Component.Equipment; 
+using Core.ECS.Entity;
+using Core.Inventory;
+using Core.Item;
 
-namespace Factories
+namespace Core.Factories
 {
     /// <summary>
     /// Creates entity prototypes with pure Core components.

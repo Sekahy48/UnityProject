@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Pure C# movement component. No UnityEngine dependencies.

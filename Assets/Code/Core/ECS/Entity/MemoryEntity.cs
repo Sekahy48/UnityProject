@@ -1,8 +1,8 @@
 using System;
-using ECS.Component.Task; // Assuming Priorities is here
-using ECS.Entity; // For the IEntity class (or interface)
+using Core.ECS.Component.Task; // Assuming Priorities is here
+using Core.ECS.Entity; // For the IEntity class (or interface)
 
-namespace ECS.Entity
+namespace Core.ECS.Entity
 {
     public class MemoryEntity
     {

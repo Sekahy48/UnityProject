@@ -1,6 +1,6 @@
 
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
 using UnityEngine;
 using UnityEngine.InputSystem;
 

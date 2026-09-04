@@ -1,6 +1,8 @@
 using UnityEngine;
 
-namespace ECS.Component
+using Core.ECS.Component;
+
+namespace Unity.ECS.Component
 {
     public class UnityEntityComponent : IComponent
     {

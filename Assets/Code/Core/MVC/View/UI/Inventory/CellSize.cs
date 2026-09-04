@@ -1,4 +1,4 @@
-namespace MVC.View.UI.Inventory
+namespace Core.MVC.View.UI.Inventory
 {
     /// <summary>
     /// Lado de una celda de rejilla, en pixeles de UI. Dato de presentacion: Core no lo

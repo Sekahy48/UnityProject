@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using Core;
-using ECS.Component;
-using ECS.Entity;
-using AC = Utils.ArgumentChecker;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using AC = Core.Utils.ArgumentChecker;
 
-namespace Item
+namespace Core.Item
 {
     public class ItemCatalogue
     {

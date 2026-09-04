@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Implemented by components that can be loaded from JSON key-value pairs.

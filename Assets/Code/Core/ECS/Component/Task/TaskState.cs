@@ -1,4 +1,4 @@
-namespace ECS.Component.Task
+namespace Core.ECS.Component.Task
 {
     public enum TaskState
     {

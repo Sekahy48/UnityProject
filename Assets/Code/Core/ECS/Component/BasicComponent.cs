@@ -1,7 +1,7 @@
 using System;
-using Observer;
+using Core.Observer;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     public abstract class BasicComponent : GenericSubject, IComponent
     {

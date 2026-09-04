@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace ECS.Entity
+namespace Core.ECS.Entity
 {
     public static class IdGenerator
     {

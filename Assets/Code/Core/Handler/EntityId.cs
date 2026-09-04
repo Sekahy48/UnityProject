@@ -1,4 +1,4 @@
-namespace Handler
+namespace Core.Handler
 {
     public class EntityId : IHandler {
     private int id;

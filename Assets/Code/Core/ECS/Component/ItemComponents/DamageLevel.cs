@@ -1,4 +1,4 @@
-namespace ECS.Component.InventoryComponents
+namespace Core.ECS.Component.InventoryComponents
 {
     /// <summary>
     /// Enum whose members refer to an intensity scale

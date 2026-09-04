@@ -1,6 +1,6 @@
-using ECS.Entity;
+using Core.ECS.Entity;
 
-namespace MVC.Presenter 
+namespace Core.MVC.Presenter 
 {
     public interface IPresenter
     {

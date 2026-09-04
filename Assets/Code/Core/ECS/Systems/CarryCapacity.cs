@@ -1,10 +1,10 @@
 using System;
-using ECS.Component;
-using ECS.Entity;
-using Events;
-using Inventory;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Events;
+using Core.Inventory;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
     /// Calculates carry capacity from BodyComponent, EnergyComponent and NutritionComponent,

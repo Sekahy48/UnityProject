@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVC.View.UI.Inventory;
-using ECS.Component.Equipment;
-using ECS.Component;
-using Unity.Services;
-using AC = Utils.ArgumentChecker;
-using Events;
-using Unity.VisualScripting;
-using ECS.Entity;
-using Services;
+using Core.MVC.View.UI.Inventory;
+using Core.ECS.Component.Equipment;
+using Core.ECS.Component; 
+using AC = Core.Utils.ArgumentChecker; 
+using Core.Services; 
+using Core.MVC.View;
+using Core.Inventory;
+using System.Linq;
+using Core;
+using Core.ECS.Entity;
 
 namespace MVC.View.Inventory
 {
@@ -30,7 +31,7 @@ namespace MVC.View.Inventory
         
         /* Top Bar*/
         private VisualElement       _titleBar;   /*Top bar of the main panel*/
-        private Button _devCatalogButton;        /*Button to open the item catalog - DEV TOOL*/
+        private Button          _devCatalogButton;        /*Button to open the item catalog - DEV TOOL*/
         
         /* Inspection Strip */
         private VisualElement _inspectionStrip, /*Container of all the composing elements of the inspection strip*/
@@ -44,9 +45,18 @@ namespace MVC.View.Inventory
         
         /* Equipment */
         private List<VisualElement> _equipmentSlots; /*List of equipment slots*/
-        private VisualElement _subSlotsPopUp,   /*Pop up where subslots information is shown*/
-                              _openedPopupSlot; /*Cached v.e. slot opened which subslots are being shown*/
-        
+        private VisualElement _subSlotsPopUp;  /*Pop up where subslots information is shown*/ 
+        /* Slot o subslot sobre el que actua el gesto en curso. Se escribe al pulsar y se
+           consume al soltar, dentro del mismo gesto. NO se limpia al cerrar el popup: son
+           dos vidas distintas y mezclarlas fue la causa de que el equipo se corrompiera. */
+        public bool IsSubslotsPopupOpen => _popupOwnerSlot != null;
+
+        public VisualElement ActiveEquipmentSlot {get; private set;}
+
+        /* Slot cuyo popup de subslots esta abierto ahora mismo. Solo lo escribe quien abre
+           el popup y solo lo lee quien decide si el boton abre o cierra. */
+        private VisualElement _popupOwnerSlot;
+        private Vector3 _pressLeftOriginEquipment;
         
         /* Subpanels */ 
         private VisualElement _catalogScroll; /*Scrollable container where items from the catalog are shown*/
@@ -59,13 +69,13 @@ namespace MVC.View.Inventory
         
         /* Ventana lateral A completa. Se muestra u oculta entera; su hueco interior es
            _sidePanelAContainer, que es otra cosa. */
-        private VisualElement _sidePanelA;
+        private VisualElement _sidePanelAWindow;
 
         /* Catalogo de desarrollo. Es OTRO contenido posible del hueco A, no un caso
            especial: la ventana decide que ocupa cada hueco, y nunca son dos cosas. */
         private VisualElement _itemCatalog;
 
-        /* Ventana lateral B completa, contraparte de _sidePanelA. */
+        /* Ventana lateral B completa, contraparte de _sidePanelAWindow. */
         private VisualElement _sidePanelBWindow;
  
 
@@ -74,6 +84,7 @@ namespace MVC.View.Inventory
         /* Overlays */
         private VisualElement _tooltip;
         private VisualElement _handBuffer;
+        private VisualElement _ctxMenu;
         
         /* State Parameters*/
         private bool _isReady = false; 
@@ -83,6 +94,10 @@ namespace MVC.View.Inventory
            asi que sin esto aparece donde la dejo el agarre anterior hasta el primer
            PointerMove: un parpadeo en mitad del panel. */
         private Vector3 _lastPointerPosition;
+ 
+        /* Magic data */
+        private const string SUBMENU_NAME = "ctx-submenu";
+        private const float DRAG_THRESHOLD_SQR = 64f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
 
         /* Que ocupa el hueco A ahora, y que ocupaba antes de que el catalogo se lo pidiera
            prestado. Sin esto, cerrar el catalogo deja el hueco vacio. */
@@ -115,6 +130,19 @@ namespace MVC.View.Inventory
         /// </summary>
         public event Action OnReleasedOutsideGrid;
 
+        public event Action<int, bool> OnEquipmentSlotRightClicked;
+        public event Action<int, bool> OnSubSlotLeftPressed;
+        public event Action<int, bool, bool> OnSubSlotLeftReleased;
+
+        /// <summary>El puntero esta sobre un slot de equipo: (capa, es subslot, tamaño del slot).</summary>
+        public event Action<int, bool, CellSize> OnPointerMovedOverSlot;
+
+        /// <summary>El puntero ha salido de un slot de equipo.</summary>
+        public event Action OnPointerLeftSlot;
+
+        /* Slot al que el fantasma esta imantado ahora mismo. Null = sigue al cursor. */
+        private VisualElement _magnetSlot;
+
         #endregion
 
         #region Initialization
@@ -136,11 +164,11 @@ namespace MVC.View.Inventory
         private void OnRootReady(GeometryChangedEvent e)
         {
             _mainRoot.UnregisterCallback<GeometryChangedEvent>(OnRootReady);
-            _mainRoot.RegisterCallback<ClickEvent>(_ => CloseSubslotsPopup()); 
+           
             // Only reports the gesture: clearing the hand is a model operation and belongs to
             // the presenter. Clearing it here would leave the HandBuffer holding units nothing
             // on screen shows any more.
-            _uiDocument.rootVisualElement.RegisterCallback<PointerDownEvent>(_ => OnCancelRequested?.Invoke());
+            _uiDocument.rootVisualElement.RegisterCallback<PointerDownEvent>(DismissTransients, TrickleDown.TrickleDown);
 
             // Solo llegan aqui los up que NO aterrizaron en una rejilla: los paneles cortan
             // la propagacion de los suyos.
@@ -158,9 +186,9 @@ namespace MVC.View.Inventory
             VisualElement equipmentPanel = _mainRoot.Q<VisualElement>("equipment-panel");
             _equipmentSlots = equipmentPanel.Query(className: "equip-slot").ToList();
             AddSubslotsButtons(_equipmentSlots);
+            ManageEquipmentEvents(_equipmentSlots);
             
-            _subSlotsPopUp = _mainRoot.Q<VisualElement>("subslots-popup");
-            _subSlotsPopUp.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            _subSlotsPopUp = _mainRoot.Q<VisualElement>("subslots-popup"); 
             // Core elements 
             _titleBar           = _mainRoot.Q<VisualElement>("title-bar");
             
@@ -176,7 +204,7 @@ namespace MVC.View.Inventory
             // apuntar a "player-panels" borraria el equipo, y a "side-panel-a" el catalogo.
             _sidePanelsContainer = _uiDocument.rootVisualElement.Q<VisualElement>("side-panels");
 
-            _sidePanelA          = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a");
+            _sidePanelAWindow          = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a");
             _itemCatalog         = _uiDocument.rootVisualElement.Q<VisualElement>("item-catalog");
             Button closeCatalogButton = _itemCatalog.Q<Button>("catalog-close-button");
             closeCatalogButton.RegisterCallback<ClickEvent>(_ => SwitchItemCatalog());
@@ -202,6 +230,8 @@ namespace MVC.View.Inventory
             _handBuffer = _uiDocument.rootVisualElement.Q<VisualElement>("hand-buffer");
             _handBuffer.style.display = DisplayStyle.None;
             RegisterHandFollowsCursor();
+            // Contextual menu
+            _ctxMenu = _uiDocument.rootVisualElement.Q<VisualElement>("ctx-menu");
 
             _mainRoot.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
 
@@ -223,46 +253,118 @@ namespace MVC.View.Inventory
         {
             _panels = new Dictionary<PanelType, InventoryPanelView>();
              
-            InventoryPanelView panelA = new InventoryPanelView(_sidePanelAContainer, _panelTemplate);
-            InventoryPanelView panelB = new InventoryPanelView(_sidePanelBContainer, _panelTemplate);
-            InventoryPanelView playerPanel = new InventoryPanelView(_playerGridContainer, _panelTemplate);
+            InventoryPanelView panelA = new InventoryPanelView(_sidePanelAContainer, _panelTemplate, PanelType.A);
+            InventoryPanelView panelB = new InventoryPanelView(_sidePanelBContainer, _panelTemplate, PanelType.B);
+            InventoryPanelView playerPanel = new InventoryPanelView(_playerGridContainer, _panelTemplate, PanelType.Player);
 
+            _panels[PanelType.A]  = panelA;
+            _panels[PanelType.B] = panelB;
+            _panels[PanelType.Player] = playerPanel;
+
+            foreach (InventoryPanelView panel in _panels.Values)
+            {
+                panel.OnPointerMovedOverGrid += MoveHandToCursor; 
+            }
+            /* 
             panelA.OnPointerMovedOverGrid += MoveHandToCursor;
             panelB.OnPointerMovedOverGrid += MoveHandToCursor; 
             playerPanel.OnPointerMovedOverGrid += MoveHandToCursor;
-
+ */
             // El panel pide cerrarse; quien lo cierra es el que reparte los huecos.
             panelA.OnCloseRequested += () => ShowSideContent(PanelType.A, SidePanelContent.None);
             panelB.OnCloseRequested += () => ShowSideContent(PanelType.B, SidePanelContent.None);
 
             
-            _panels[PanelType.A]  = panelA;
-            _panels[PanelType.B] = panelB;
-            _panels[PanelType.Player] = playerPanel;
+            
             playerPanel.HideTopBar();
             
         }
 
+        private void ManageEquipmentEvents(List<VisualElement> slots, bool subSlots = false)
+        { 
+            int layer = 0;
+            foreach (VisualElement slot in slots)
+            {  
+                if (subSlots)
+                    ++layer;
+                int captured = layer;   
+
+                slot.RegisterCallback<PointerDownEvent>(evt =>
+                {
+                    ActiveEquipmentSlot = slot;
+                    evt.StopPropagation();
+                    if (evt.button == 0)
+                    {
+                        _pressLeftOriginEquipment = evt.position;
+                        OnSubSlotLeftPressed?.Invoke(captured, subSlots);
+                    }
+                    else if (evt.button == 1)
+                    {
+                        OnEquipmentSlotRightClicked(captured, subSlots);
+                    }
+                });
+
+                // Tambien al soltar: un arrastre que empieza en la rejilla y termina aqui
+                // nunca paso por el PointerDown de este slot, y el destino es este.
+                slot.RegisterCallback<PointerUpEvent>(evt =>
+                {
+                    ActiveEquipmentSlot = slot;
+                    evt.StopPropagation();
+                    if (evt.button == 0)
+                    {    
+                        bool dragged = (evt.position - _pressLeftOriginEquipment).sqrMagnitude > DRAG_THRESHOLD_SQR;
+                        OnSubSlotLeftReleased?.Invoke(captured, subSlots, dragged);
+                    }
+                });
+
+                // El tamaño sale del slot ya resuelto, no de una constante: los slots del
+                // equipo y los del popup no miden lo mismo.
+                // SIN StopPropagation: el move tiene que seguir subiendo hasta la raiz, que es
+                // quien mueve la mano con el cursor. Cortarlo aqui la dejaba congelada sobre
+                // los slots, moviendose solo al cambiar de uno a otro.
+                slot.RegisterCallback<PointerMoveEvent>(evt =>
+                {
+                    // Pasar por encima ya define sobre que slot se esta preguntando. Sin esto
+                    // el veredicto se calcularia contra el ultimo slot pulsado, que puede no
+                    // ser el que tienes debajo del cursor.
+                    ActiveEquipmentSlot = slot;
+                    SetMagnetSlot(slot);
+                    OnPointerMovedOverSlot?.Invoke(captured, subSlots, SlotSize(slot));
+                });
+
+                // Salir no genera PointerMove, asi que sin esto el fantasma se queda pintado
+                // de valido flotando fuera. Mismo motivo que el PointerLeave de la rejilla.
+                slot.RegisterCallback<PointerLeaveEvent>(_ =>
+                {
+                    SetMagnetSlot(null);
+                    OnPointerLeftSlot?.Invoke();
+                });
+            }
+        }
+
+        private static CellSize SlotSize(VisualElement slot)
+            => new CellSize(slot.resolvedStyle.width, slot.resolvedStyle.height);
+
         private void AddSubslotsButtons(List<VisualElement> slots)
         {
-            foreach(VisualElement slot in slots)
+            foreach (VisualElement slot in slots)
             {
                 VisualElement subslotsButton = new VisualElement();
                 subslotsButton.AddToClassList("subslots-button");
 
-                subslotsButton.RegisterCallback<ClickEvent>(evt =>
+                subslotsButton.RegisterCallback<PointerDownEvent>(evt =>
                 {
-                    if (_openedPopupSlot == slot)          // mismo slot y abierto -> cerrar
+                    evt.StopPropagation();
+                    if (_popupOwnerSlot == slot)          // mismo slot y abierto -> cerrar
                     {
                         CloseSubslotsPopup();
                     }
                     else                                  // cerrado, o abierto en otro slot -> abrir aquí
                     {
-                        _openedPopupSlot = slot;
+                        _popupOwnerSlot = slot;
                         PositionAndShowPopup(slot);
                         OnSlotLayersRequested?.Invoke(GetEquipmentSlotType(slot));
                     }
-                    evt.StopPropagation();
                 }); 
                 
                 slot.Add(subslotsButton);
@@ -318,8 +420,15 @@ namespace MVC.View.Inventory
 
         public bool IsReady() => _isReady;
         public void Show() => _mainRoot.style.display = DisplayStyle.Flex;
+        public void DismissOverlays()
+        {
+            CloseContextualMenu();
+            CloseSubslotsPopup();
+        }
+
         public void Hide()
         {
+            DismissOverlays();
             _mainRoot.style.display = DisplayStyle.None;
             ShowSideContent(PanelType.A, SidePanelContent.None);
             ShowSideContent(PanelType.B, SidePanelContent.None);
@@ -337,7 +446,7 @@ namespace MVC.View.Inventory
         {
             if (slot == PanelType.Player) return;   // el panel del jugador no se negocia
 
-            VisualElement window = slot == PanelType.A ? _sidePanelA : _sidePanelBWindow;
+            VisualElement window = slot == PanelType.A ? _sidePanelAWindow : _sidePanelBWindow;
             VisualElement grid   = slot == PanelType.A ? _sidePanelAContainer : _sidePanelBContainer;
 
             window.style.display = content == SidePanelContent.None
@@ -369,7 +478,7 @@ namespace MVC.View.Inventory
         /// </summary>
         private void RefreshSidePanelsContainer()
         {
-            bool anyOpen = _sidePanelA.style.display == DisplayStyle.Flex
+            bool anyOpen = _sidePanelAWindow.style.display == DisplayStyle.Flex
                         || _sidePanelBWindow.style.display == DisplayStyle.Flex;
 
             _sidePanelsContainer.style.display = anyOpen ? DisplayStyle.Flex : DisplayStyle.None;
@@ -384,7 +493,7 @@ namespace MVC.View.Inventory
         {
             if (slot == PanelType.Player || content == SidePanelContent.None) return false;
 
-            VisualElement window = slot == PanelType.A ? _sidePanelA : _sidePanelBWindow;
+            VisualElement window = slot == PanelType.A ? _sidePanelAWindow : _sidePanelBWindow;
             if (window.resolvedStyle.display != DisplayStyle.Flex) return false;
 
             VisualElement shown = content == SidePanelContent.Catalog
@@ -400,19 +509,27 @@ namespace MVC.View.Inventory
 
         #region Hand Buffer Rendering 
         
-        public void RenderHandBuffer(ItemDisplayData itemData, CellSize cellSize)
+        /// <param name="itemSize">Tamaño final en pixeles del fantasma, ya calculado por quien
+        /// llama. Una rejilla multiplica su celda por las dimensiones del item; un slot de
+        /// equipo pasa su propio tamaño, porque ahi la prenda ocupa el slot entero.</param>
+        /// <param name="anchorBasis">Unidad de destino: la celda en una rejilla, el slot en
+        /// el equipo. El fantasma se ancla por su mitad, no por la mitad del item, para que
+        /// su esquina superior izquierda caiga sobre la unidad a la que estas apuntando —
+        /// que es la que usa la colocacion. Anclar por el item haria que una espada de 1x3
+        /// se viera centrada en el cursor y cayera en otro sitio.</param>
+        public void RenderHandBuffer(ItemDisplayData itemData, CellSize itemSize, CellSize anchorBasis)
         {
             _handBuffer.Clear();
             UIElementUtils.SetBackgroundTexture(_handBuffer, itemData.IconPath);
-             
-            _handBuffer.style.width  = cellSize.Width  * itemData.DimensionW;
-            _handBuffer.style.height = cellSize.Height * itemData.DimensionH;
+
+            _handBuffer.style.width  = itemSize.Width;
+            _handBuffer.style.height = itemSize.Height;
 
             Label amountLabel = new Label(itemData.Amount.ToString());
             amountLabel.AddToClassList("amount-label");
             _handBuffer.Add(amountLabel);
-            
-            _handAnchorOffset = new Vector2(cellSize.Width, cellSize.Height) / 2f;
+
+            _handAnchorOffset = new Vector2(anchorBasis.Width, anchorBasis.Height) / 2f;
             _handBuffer.style.display = DisplayStyle.Flex;
 
             // Ya visible: colocarla bajo el cursor antes de que el motor pinte el frame.
@@ -428,14 +545,22 @@ namespace MVC.View.Inventory
         }
 
         public void ClearHandBuffer()
-        { 
+        {
             _handBuffer.Clear();
             _handBuffer.style.display = DisplayStyle.None;
             _handBuffer.style.backgroundImage = null;
-            
+
+            // Sin fantasma no hay nada que imantar, y dejarlo puesto haria que el siguiente
+            // agarre naciera pegado a un slot que quiza ya no esta bajo el cursor.
+            _magnetSlot = null;
         }
 
-        public void UpdateHandDisplay(PlacementVerdict verdict, CellSize cellSize, int wDim, int hDim)
+        /// <param name="itemSize">Tamaño final del fantasma sobre ESTE destino, ya calculado
+        /// por quien llama: una rejilla multiplica su celda por las dimensiones del item, un
+        /// slot de equipo pasa su propio tamaño. Lo decide el destino, no el origen.</param>
+        /// <param name="anchorBasis">Unidad de destino (celda o slot). El fantasma se ancla
+        /// por su mitad para que su esquina superior izquierda caiga sobre la unidad apuntada.</param>
+        public void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
         {
             _handBuffer.RemoveFromClassList("hand-buffer-fits");
             _handBuffer.RemoveFromClassList("hand-buffer-collision");
@@ -454,12 +579,193 @@ namespace MVC.View.Inventory
                     return;
             }
 
-            if (cellSize.IsZero) return;
+            if (itemSize.IsZero) return;
 
-            _handAnchorOffset = new Vector2(cellSize.Width, cellSize.Height) / 2f; 
-            _handBuffer.style.width  = cellSize.Width  * wDim;
-            _handBuffer.style.height = cellSize.Height * hDim;
+            _handAnchorOffset = new Vector2(anchorBasis.Width, anchorBasis.Height) / 2f;
+            _handBuffer.style.width  = itemSize.Width;
+            _handBuffer.style.height = itemSize.Height;
         }
+
+        #endregion
+
+        #region Contextual menu
+
+        public void RenderContextualMenu(List<MenuOption> options)
+        { 
+
+            _ctxMenu.Clear();
+            foreach (MenuOption option in options)
+                _ctxMenu.Add(BuildOptionRow(option));
+
+            _ctxMenu.style.left = _lastPointerPosition.x;
+            _ctxMenu.style.top  = _lastPointerPosition.y;
+            _ctxMenu.style.display = DisplayStyle.Flex;
+        }
+
+        /// <summary>
+        /// Fila de menu: etiqueta, sus campos editables y el gesto de pulsarla. Una hoja ejecuta
+        /// su handler con lo escrito en los campos; una rama despliega su submenu.
+        /// </summary>
+        private VisualElement BuildOptionRow(MenuOption option)
+        {
+            VisualElement row = new VisualElement();
+            row.AddToClassList("ctx-menu-option");
+
+            Label label = new Label(option.OptionName);
+            label.AddToClassList("ctx-menu-option-label");
+            row.Add(label);
+
+            // Un diccionario por fila: dos filas pueden declarar el mismo id de campo.
+            Dictionary<string, VisualElement> widgets = new Dictionary<string, VisualElement>();
+
+            foreach (MenuField field in option.Fields)
+            {
+                VisualElement widget = BuildFieldWidget(field);
+                widget.AddToClassList("ctx-menu-widget");
+                widgets[field.Id] = widget;
+                row.Add(widget);
+            }
+
+            row.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                evt.StopPropagation();
+                row.AddToClassList("ctx-menu-option-selected");
+                if (option.IsLeaf) option.Handler.Invoke(CollectInputs(option, widgets));
+                else               OpenSubMenu(row, option);
+            });
+
+            return row;
+        }
+
+        /// <summary>
+        /// Despliega el submenu de una rama, cerrando antes cualquier otro abierto en su panel.
+        /// </summary>
+        private void OpenSubMenu(VisualElement row, MenuOption option)
+        {
+            if (option.IsLeaf)
+                throw new InvalidOperationException(
+                    $"La opcion '{option.OptionName}' es una hoja: no tiene submenu que desplegar.");
+
+            CloseSubMenusIn(row.parent);
+
+            VisualElement subMenu = new VisualElement { name = SUBMENU_NAME };
+            subMenu.AddToClassList("ctx-menu");
+            subMenu.AddToClassList("ctx-submenu");
+
+            foreach (MenuOption subOption in option.SubOptions)
+                subMenu.Add(BuildOptionRow(subOption));
+
+            row.Add(subMenu);
+            subMenu.RegisterCallback<GeometryChangedEvent>(OnSubMenuGeometryChanged);
+        }
+
+        private VisualElement BuildFieldWidget(MenuField field)
+        {
+            switch (field.Type)
+            {
+                case MenuFieldType.Int:
+                {
+                    IntegerField widget = new IntegerField(field.Label) { value = (int)field.DefaultNumber };
+                    BlockRowClick(widget);
+                    return widget;
+                }
+                case MenuFieldType.Float:
+                {
+                    FloatField widget = new FloatField(field.Label) { value = field.DefaultNumber };
+                    BlockRowClick(widget);
+                    return widget;
+                }
+                case MenuFieldType.Text:
+                {
+                    TextField widget = new TextField(field.Label) { value = field.DefaultText };
+                    BlockRowClick(widget);
+                    return widget;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(field), $"Tipo de campo no soportado: {field.Type}.");
+            }
+        }
+
+        /// <summary>Escribir en el campo no debe ejecutar la opcion ni cerrar el menu.</summary>
+        private static void BlockRowClick(VisualElement widget)
+        {
+            widget.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+            widget.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+        }
+
+        private MenuInputs CollectInputs(MenuOption option, Dictionary<string, VisualElement> widgets)
+        {
+            if (option.Fields == null || option.Fields.Count == 0) return MenuInputs.Empty;
+
+            Dictionary<string, object> values = new Dictionary<string, object>();
+
+            foreach (MenuField field in option.Fields)
+            {
+                if (!widgets.TryGetValue(field.Id, out VisualElement widget))
+                    throw new InvalidOperationException(
+                        $"La opcion '{option.OptionName}' declara el campo '{field.Id}' pero la vista " +
+                        $"no construyo su widget. Revisa que quien pinta la fila recorra los Fields de " +
+                        $"ESA opcion y guarde un diccionario propio por fila.");
+
+                switch (field.Type)
+                {
+                    case MenuFieldType.Int:
+                        values[field.Id] = Mathf.Clamp(((IntegerField)widget).value,
+                                                    (int)field.Min, (int)field.Max);
+                        break;
+                    case MenuFieldType.Float:
+                        values[field.Id] = Mathf.Clamp(((FloatField)widget).value, field.Min, field.Max);
+                        break;
+                    case MenuFieldType.Text:
+                        values[field.Id] = ((TextField)widget).value;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(
+                            nameof(field), $"Tipo de campo no soportado al recoger: {field.Type}.");
+                }
+            }
+
+            return new MenuInputs(values);
+        } 
+
+        /// <summary>
+        /// Vuelca el submenu al lado izquierdo cuando abrirlo a la derecha lo sacaria de pantalla.
+        ///
+        /// La decision se toma sobre donde CABRIA (borde derecho de la fila + ancho del submenu),
+        /// no sobre donde esta ahora. Medir la posicion actual haria que al voltear dejara de
+        /// desbordar, se volviera a la derecha, desbordara otra vez... un bucle infinito de
+        /// GeometryChanged. Es la misma leccion que el _fittedCell: no midas lo que estas a
+        /// punto de cambiar.
+        /// </summary>
+        private void OnSubMenuGeometryChanged(GeometryChangedEvent evt)
+        {
+            VisualElement submenu = (VisualElement)evt.target;
+            VisualElement row = submenu.parent;
+            if (row == null) return;
+
+            float screenWidth = _uiDocument.rootVisualElement.worldBound.width;
+            bool overflows = row.worldBound.xMax + submenu.worldBound.width > screenWidth;
+
+            submenu.EnableInClassList("ctx-submenu--flipped", overflows);
+        }
+                
+        /// <summary>
+        /// Cierra el submenu abierto en cualquier fila de este panel. Basta con mirar las filas
+        /// directas: quitar un submenu arrastra su subarbol completo, asi que los niveles mas
+        /// profundos se cierran con el suyo. Por eso no hace falta recordar cual estaba abierto
+        /// ni llevar un cache por nivel.
+        /// </summary>
+        private static void CloseSubMenusIn(VisualElement menuPanel)
+        {
+            foreach (VisualElement row in menuPanel.Children())
+                row.Children().FirstOrDefault(c => c.name == SUBMENU_NAME)?.RemoveFromHierarchy();
+        }
+
+        public void CloseContextualMenu()
+        {
+            _ctxMenu.style.display = DisplayStyle.None;
+        }
+ 
 
         #endregion
 
@@ -576,7 +882,11 @@ namespace MVC.View.Inventory
                     SetEmptySlotTexture(viewSlot);
                 else
                 {
-                    UIElementUtils.SetBackgroundTexture(viewSlot, realSlot.GetTopItem().GetComponent<BaseItemComponent>().IconPath);
+                    ItemEntity item = realSlot.GetTopItem();
+                    if (item != null)
+                        UIElementUtils.SetBackgroundTexture(viewSlot, item.GetComponent<BaseItemComponent>().IconPath);
+                    else 
+                        SetEmptySlotTexture(viewSlot);
                     //Guardar referencia al item contenido en el slot o al slot como objeto para permitir operaciones de movimiento de items
                     
                     if (realSlot.GetEquippedItemCount() > 1)
@@ -590,35 +900,36 @@ namespace MVC.View.Inventory
         public void RenderSubslots(List<ItemDisplayData> layers)
         {
             _subSlotsPopUp.Clear();
+            List<VisualElement> subSlots = new List<VisualElement>();
             foreach (ItemDisplayData item in layers)
             {
                 VisualElement subSlot = new VisualElement();
+
+                // El nombre codifica el slot al que pertenece la capa, y de el sale su
+                // EquipmentSlotType. Tiene que salir del dueño del popup, no de lo ultimo
+                // que se haya pulsado, o las capas se bautizan con el slot equivocado.
+                subSlot.name = "subslot-" + _popupOwnerSlot.name;
                 subSlot.AddToClassList("equip-slot");
                 UIElementUtils.SetBackgroundTexture(subSlot, item.IconPath);
 
+                subSlots.Add(subSlot);
                 _subSlotsPopUp.Add(subSlot);
             }
+
+            ManageEquipmentEvents(subSlots, true);
         } 
 
-        private void CloseSubslotsPopup()
+        public void CloseSubslotsPopup()
         {
             _subSlotsPopUp.style.display = DisplayStyle.None;
-            _openedPopupSlot = null;          
+
+            // Solo se olvida QUE popup estaba abierto. El slot sobre el que actua el gesto en
+            // curso no es asunto de este metodo: cerrarlo aqui dejaba al presenter sin saber
+            // sobre que estaba trabajando a mitad de un agarre.
+            _popupOwnerSlot = null;
         }
 
-        private void UpdateInternalEquipmentSlot(EquipmentSlot realSlot, VisualElement viewSlot)
-        {
-            List<VisualElement> subSlots = viewSlot.Query<VisualElement>(className: "sub-slot").ToList();
-            if (subSlots.Count == 0)
-            {
-                // Crear tantos como capas pueda tener el slot Real
-                // Reobtener la lista
-            }
-            
-            // Setear iconos en los subSlots en base a los items no topLayer del realSlot por orden
-            // Y alguna referencia más 
-            
-        }
+        
         
         #endregion
 
@@ -641,12 +952,20 @@ namespace MVC.View.Inventory
 
         #region Equipment Rendering - Helpers
 
-        private EquipmentSlotType GetEquipmentSlotType(VisualElement element)
-        {
-            string slotName = element.name.Replace("slot-", "");
+        public EquipmentSlotType GetEquipmentSlotType(VisualElement element)
+        { 
+            string slotName = element.name.Replace("slot-", ""); 
             if (Enum.TryParse<EquipmentSlotType>(slotName, true, out var type)) 
-                return type;
+                return type; 
             throw new InvalidOperationException($"Equipment slot '{element.name}' has no matching EquipmentSlotType");
+        }
+
+        public EquipmentSlotType GetEquipmentSubSlotType(VisualElement element)
+        {
+            string slotName = element.name.Replace("subslot-slot-", "");
+            if (Enum.TryParse<EquipmentSlotType>(slotName, true, out var type)) 
+                return type; 
+            throw new InvalidOperationException($"Equipment subslot '{element.name}' with resolved value '{slotName}' has no matching EquipmentSlotType");
         }
 
 
@@ -661,6 +980,70 @@ namespace MVC.View.Inventory
             string path = "images/slots/" + element.name + ".png";
             UIElementUtils.SetBackgroundTexture(element, path);
         } 
+
+        public CellSize GetEquipmentCellSize()
+        {
+            VisualElement slot = _equipmentSlots.First();
+            return new CellSize(slot.resolvedStyle.width, slot.resolvedStyle.height);
+        }
+
+        public EquipmentSlotType OpenSubslotsSlotType => GetEquipmentSlotType(_popupOwnerSlot);
+
+        #endregion
+
+        #region Overlays Helpers
+
+        private void DismissTransients(PointerDownEvent evt)
+        {
+            VisualElement target = evt.target as VisualElement;
+
+            bool inCtxMenu  = IsInside(target, _ctxMenu);
+            bool inSubslots = IsInside(target, _subSlotsPopUp) || IsSubslotsButton(target);
+
+            if (!inCtxMenu)  CloseContextualMenu();
+            if (!inSubslots) CloseSubslotsPopup();
+
+            if (!IsDropTarget(target) && !inCtxMenu && !inSubslots)
+                OnCancelRequested?.Invoke();
+        }
+
+        /// <summary>Sitios donde soltar la mano significa algo: rejillas y slots de equipo.</summary>
+        private bool IsDropTarget(VisualElement target)
+            => IsInsideAnyGrid(target) || IsEquipmentSlot(target);
+
+        private bool IsEquipmentSlot(VisualElement target)
+        {
+            foreach (VisualElement slot in _equipmentSlots)
+                if (IsInside(target, slot)) return true;
+
+            return false;
+        }
+
+        private static bool IsInside(VisualElement target, VisualElement container)
+        {
+            if (container == null || target == null) return false;
+            for (VisualElement e = target; e != null; e = e.parent)
+                if (e == container) return true;
+            return false;
+        }
+
+        private bool IsInsideAnyGrid(VisualElement element)
+        {
+            foreach (InventoryPanelView panelView in _panels.Values)
+            {
+                if (IsInside(element, panelView.RootPanel)) 
+                    return true;
+            }
+
+            return false;
+        } 
+
+        private static bool IsSubslotsButton(VisualElement element)
+        {
+            for (VisualElement e = element; e != null; e = e.parent)
+                if (e.ClassListContains("subslots-button")) return true;
+            return false;
+        }
 
         #endregion
 
@@ -687,14 +1070,40 @@ namespace MVC.View.Inventory
             _uiDocument.rootVisualElement.RegisterCallback<PointerMoveEvent>(evt => MoveHandToCursor(evt.position));
         }
 
+        /// <summary>
+        /// Coloca el fantasma. Sobre un slot de equipo se iman a el en vez de seguir al
+        /// cursor: el slot es el destino entero, asi que verlo encajado dice mas que verlo
+        /// flotando encima. Sobre una rejilla o fuera, sigue al cursor como siempre — ahi la
+        /// celda concreta importa y el iman mentiria sobre donde va a caer.
+        /// </summary>
         private void MoveHandToCursor(Vector3 panelPosition)
         {
             _lastPointerPosition = panelPosition;
             if (_handBuffer.style.display == DisplayStyle.None) return;
 
+            if (_magnetSlot != null)
+            {
+                Vector2 slotCorner = _handBuffer.parent.WorldToLocal(_magnetSlot.worldBound.position);
+                _handBuffer.style.left = slotCorner.x;
+                _handBuffer.style.top  = slotCorner.y;
+                return;
+            }
+
             Vector2 local = _handBuffer.parent.WorldToLocal(panelPosition);
             _handBuffer.style.left = local.x - _handAnchorOffset.x / 2;
             _handBuffer.style.top  = local.y - _handAnchorOffset.y / 2;
+        }
+
+        /// <summary>
+        /// Slot al que el fantasma esta imantado, o null para que siga al cursor. Lo escribe
+        /// quien sabe donde esta el puntero; MoveHandToCursor solo obedece.
+        /// </summary>
+        private void SetMagnetSlot(VisualElement slot)
+        {
+            if (ReferenceEquals(_magnetSlot, slot)) return;
+
+            _magnetSlot = slot;
+            MoveHandToCursor(_lastPointerPosition);
         }
 
         

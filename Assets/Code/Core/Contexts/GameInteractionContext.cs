@@ -1,5 +1,5 @@
 
-using Inventory;
+using Core.Inventory;
 
 namespace Core.Contexts
 {

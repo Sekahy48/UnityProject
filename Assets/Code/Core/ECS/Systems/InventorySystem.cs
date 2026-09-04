@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
 using Core;
-using ECS.Component;
-using ECS.Entity;
-using Events;
-using Inventory;
-using Observer;
-using AC = Utils.ArgumentChecker;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Events;
+using Core.Inventory;
+using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     public class InventorySystem : IReactiveSystem
     {
         private static readonly GameEventType[] _subscribedEvents =
         {
-            GameEventType.InventoryChanged 
+            /*Emtpy for the moment*/
         };
 
         public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
@@ -49,12 +49,13 @@ namespace ECS.Systems
         /// Stacks onto existing compatible node if possible, creates new nodes for overflow.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryStackOntoHere(IEntity entity, ItemEntity item, int amount)
+        public int TryStackOntoHere(IEntity entity, ItemEntity item, int amount, bool announce = true)
         {
             int toAdd = GetFitByWeight(entity, item, amount, out InventoryComponent invComp);
             if (toAdd <= 0) return amount;
             int remaining = invComp.Inventory.StackOntoHere(item, toAdd);
-            EvaluateAndFireEvents(entity, remaining > 0);   
+            if (announce)
+                EvaluateAndFireEvents(entity, remaining > 0);   
             return remaining + (amount - toAdd);
         }
 
@@ -62,12 +63,13 @@ namespace ECS.Systems
         /// Tries to stack items onto a specific node by nodeId, checking weight first.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryStackOntoNode(IEntity entity, ItemEntity item, int amount, int nodeId)
+        public int TryStackOntoNode(IEntity entity, ItemEntity item, int amount, int nodeId, bool announce = true)
         {
             int toAdd = GetFitByWeight(entity, item, amount, out InventoryComponent invComp);
             if (toAdd <= 0) return amount;
             int remaining = invComp.Inventory.StackOntoNode(nodeId, item, toAdd);
-            EvaluateAndFireEvents(entity, false);
+            if (announce)
+                EvaluateAndFireEvents(entity, false);
             return remaining + (amount - toAdd);
         }
 
@@ -75,7 +77,7 @@ namespace ECS.Systems
         /// Tries to add items at a specific grid position, checking weight first.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1)
+        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1, bool announce = true)
         {
             // A node moving onto cells it already owns can only happen inside one inventory,
             // and reordering an inventory cannot change its total weight: the units are
@@ -90,7 +92,8 @@ namespace ECS.Systems
 
             if (toAdd <= 0) return amount;
             int remaining = invComp.Inventory.AddItemAt(item, toAdd, pos, ignoreNodeId);
-            EvaluateAndFireEvents(entity, remaining > 0);
+            if (announce)
+                EvaluateAndFireEvents(entity, remaining > 0);
             return remaining + (amount - toAdd);
         }  
 
@@ -125,8 +128,10 @@ namespace ECS.Systems
             if (fullGrid)
             {
                 EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryFull , entity, inventoryComponent));
-                CoreLogger.Instance.LogWarning("Inventory overflow: cannot transfere more object due to insufficient grid space.");
+                CoreLogger.Instance.Log("Inventory overflow: cannot transfere more object due to insufficient grid space.");
             }
+
+            EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryChanged , entity, inventoryComponent));
         }
 
         /// <summary>
@@ -141,10 +146,10 @@ namespace ECS.Systems
                     CoreLogger.Instance.Log("Heavy load. Speed reduced.");
                     break;
                 case GameEventType.Overweight:
-                    CoreLogger.Instance.LogWarning("Overloaded. Speed heavily reduced, energy penalty.");
+                    CoreLogger.Instance.Log("Overloaded. Speed heavily reduced, energy penalty.");
                     break;
                 case GameEventType.Immobile:
-                    CoreLogger.Instance.LogWarning("Cannot move due to excess weight.");
+                    CoreLogger.Instance.Log("Cannot move due to excess weight.");
                     break;
                 default:
                     CoreLogger.Instance.Log("No movement restrictions.");
@@ -152,19 +157,11 @@ namespace ECS.Systems
             }
         }
 
-        private float GetMaxWeight(IEntity entity) => CarryCapacity.GetMaxLoad(entity);
-
-        public void ProcessEntity(IEntity entity)
-        {
-            EvaluateAndFireEvents(entity, false);
-        } 
+        private float GetMaxWeight(IEntity entity) => CarryCapacity.GetMaxLoad(entity); 
     
         public void UpdateOnEvent(GameEvent gameEvent)
         {
-            if (gameEvent.GetEventType() == GameEventType.InventoryChanged)
-            {
-                ProcessEntity(gameEvent.GetEntity());
-            }
+            /*Emtpy for the moment*/
         }
     }
 }

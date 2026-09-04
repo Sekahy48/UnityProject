@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using Inventory;
+using Core.Inventory;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     public class InventoryComponent : BasicComponent
     {

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Observer;
-using Utils;
+using Core.Observer;
+using Core.Utils;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Core component for any ItemEntity. Holds the typeId referencing the

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using AC = Utils.ArgumentChecker;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using AC = Core.Utils.ArgumentChecker;
 
-namespace Inventory
+namespace Core.Inventory
 {
     public interface IInventoryElement
     {

@@ -1,7 +1,7 @@
-using ECS.Entity;
-using Observer;
+using Core.ECS.Entity;
+using Core.Observer;
 
-namespace ECS.Component.Task
+namespace Core.ECS.Component.Task
 {
     public interface ITask : IObserver, ISubject
     {

@@ -1,4 +1,4 @@
-namespace ECS.Entity
+namespace Core.ECS.Entity
 {
     public enum ItemCapability
     {

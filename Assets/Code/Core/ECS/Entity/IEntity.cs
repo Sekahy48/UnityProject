@@ -1,8 +1,8 @@
 using System; 
-using ECS.Component;
-using Handler;
+using Core.ECS.Component;
+using Core.Handler;
 
-namespace ECS.Entity
+namespace Core.ECS.Entity
 {
     public interface IEntity
     {

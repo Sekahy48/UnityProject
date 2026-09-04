@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
 
-namespace Inventory
+namespace Core.Inventory
 {
     /// <summary>
     /// Tracks which cells are occupied in a grid-based inventory.

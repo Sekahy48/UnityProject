@@ -1,4 +1,4 @@
-namespace MVC.Presenter 
+namespace Core.MVC.Presenter 
 {
     public enum PresenterType
     {

@@ -1,19 +1,20 @@
 using UnityEngine;
 using Strategy;
 using MVC.Controller;
-using ECS.Entity;
-using ECS.Systems;
-using MVC.Presenter;
-using MVC.Presenter.Inventory;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
+using Core.MVC.Presenter;
+using Core.MVC.Presenter.Inventory;
+using Core.MVC.View;
 using MVC.View;
 using Core;
 using Core.Contexts;
-using Item;
-using Factories;
+using Core.Item;
+using Core.Factories;
 using System.Collections.Generic;
-using Services;
+using Core.Services;
 using MVC.View.Inventory;
-using ECS.Component;
+using Core.ECS.Component;
 
 
 /// <summary>
@@ -146,7 +147,8 @@ public class GameMain : MonoBehaviour
         systemManager.RegisterPeriodicGameSystem(new FatigueStaminaSystem());
         systemManager.RegisterEngineSystem(new Unity.TransformSyncSystem());
         systemManager.RegisterReactiveGameSystem(new MovementSystem())
-                     .RegisterReactiveGameSystem(new InventorySystem());
+                     .RegisterReactiveGameSystem(new InventorySystem())
+                     .RegisterReactiveGameSystem(new EquipmentSystem());
 
         PresenterManager presenterManager = new PresenterManager();
 

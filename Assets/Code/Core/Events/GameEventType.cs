@@ -1,4 +1,4 @@
-namespace Events
+namespace Core.Events
 {
     public enum GameEventType
     {
@@ -9,5 +9,6 @@ namespace Events
         InventoryFull,
         NormalWeight,
         EquipmentChanged,
+        ItemDropped,
     }
 }

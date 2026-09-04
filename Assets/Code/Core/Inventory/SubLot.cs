@@ -1,7 +1,7 @@
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
 
-namespace Inventory
+namespace Core.Inventory
 {
     /// <summary>
     /// Un lote parcial dentro de un <see cref="BatchItem"/>: una variante concreta del item y
@@ -17,7 +17,7 @@ namespace Inventory
     /// estado de unas unidades: clonar, restar del lote original y anadir el clon como lote
     /// nuevo.</para>
     /// </summary>
-    public readonly struct SubLot
+    public readonly struct SubLot 
     {
         public readonly ItemEntity Item;
         public readonly int Amount;
@@ -40,6 +40,11 @@ namespace Inventory
         {
             item = Item;
             amount = Amount;
+        }
+
+        public bool Equivalent(SubLot other)
+        {
+            return Item.Equivalent(other.Item);
         }
     }
 }

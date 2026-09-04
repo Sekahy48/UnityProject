@@ -1,8 +1,9 @@
-namespace ECS.Component.Equipment
+namespace Core.ECS.Component.Equipment
 {
     public enum EquipResult
     { 
-        Success, 
+        SuccessEquip, 
+        SuccessUnequip,
         SlotDisabled, 
         MaxLayersReached, 
         WrongSlot, 
@@ -17,7 +18,8 @@ namespace ECS.Component.Equipment
     {
         public static string GetMessage(this EquipResult result) => result switch
         {
-            EquipResult.Success => "Item equipped successfully",
+            EquipResult.SuccessEquip => "Item equipped successfully",
+            EquipResult.SuccessUnequip => "Item unequipped successfully",
             EquipResult.SlotDisabled => "This slot is disabled",
             EquipResult.MaxLayersReached => "No more layers available",
             EquipResult.WrongSlot => "Item doesn't fit this slot",

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using ECS.Component.Task;
+using Core.ECS.Component.Task;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     public class TaskComponent : BasicComponent
     {

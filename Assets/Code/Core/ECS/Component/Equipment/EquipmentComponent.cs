@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component.ItemComponents;
-using ECS.Entity;
-using AC = Utils.ArgumentChecker;
-namespace ECS.Component.Equipment
+using System.Linq;
+using Core.ECS.Component.ItemComponents;
+using Core.ECS.Entity; 
+using AC = Core.Utils.ArgumentChecker;
+namespace Core.ECS.Component.Equipment
 {
     public class EquipmentComponent : IComponent
     {
@@ -56,15 +57,96 @@ namespace ECS.Component.Equipment
             return equiped;
         }
 
-        public void UnequipItem(ItemEntity item)
+        /// <summary>
+        /// Si la prenda entraria, y si no, por que. No toca nada.
+        ///
+        /// Recorre las mismas decisiones que EquipItem y en el mismo orden, incluida la regla
+        /// de todo-o-nada de la ocupacion completa: un arco a dos manos no "entra a medias",
+        /// asi que basta con que un slot lo rechace para que el veredicto sea ese rechazo.
+        /// </summary>
+        public EquipResult CanEquip(IReadOnlyList<EquipmentSlotType> slotTypes, ItemEntity item, bool fullOcupancy = false)
+        {
+            if (slotTypes.Count == 0)
+                throw new InvalidOperationException("Cannot evaluate equipping an item while providing no possible slots.");
+
+            AC.CheckNotNull(item, nameof(item));
+
+            foreach (EquipmentSlotType slotType in slotTypes)
+            {
+                if (!_allowedSlots.Contains(slotType) || !_equipmentSlots.ContainsKey(slotType))
+                    return EquipResult.NoSlotFits;
+
+                EquipResult verdict = _equipmentSlots[slotType].CanEquip(item);
+
+                // Sin ocupacion completa solo importa el primer slot: es donde iria.
+                if (!fullOcupancy) return verdict;
+
+                if (verdict != EquipResult.SuccessEquip) return verdict;
+            }
+
+            return EquipResult.SuccessEquip;
+        }
+
+        public EquipResult EquipItem(IReadOnlyList<EquipmentSlotType> slotTypes, ItemEntity item, bool fullOcupancy = false)
+        {
+            EquipResult verdict = CanEquip(slotTypes, item, fullOcupancy);
+            if (verdict != EquipResult.SuccessEquip) return verdict;
+
+            if (!fullOcupancy)
+                return _equipmentSlots[slotTypes[0]].EquipItem(item);
+
+            List<EquipmentSlotType> slotsWhereSucceeded = new List<EquipmentSlotType>(); // Lista de lo añadido, para poder hacer rollback en caso de ser necesario
+            // Bucle para añdir si fullOcupancy == true
+            foreach (EquipmentSlotType slotType in slotTypes)
+            { 
+                EquipResult equiped = _equipmentSlots[slotType].EquipItem(item);
+                if (equiped == EquipResult.SuccessEquip)
+                    slotsWhereSucceeded.Add(slotType);
+                else 
+                {
+                    foreach (EquipmentSlotType succeededSlotType in slotsWhereSucceeded)
+                        _equipmentSlots[succeededSlotType].UnequipItem(item);
+                    return equiped;
+                }
+            }
+
+            return EquipResult.SuccessEquip;
+        }
+        
+        public void UnequipItem(ItemEntity item, EquipmentSlotType slotType)
         {
             AC.CheckNotNull(item, nameof(item)); 
             
             WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
             if (wearableComponent == null) throw new InvalidOperationException("Cannot unequip an item with no WearableComponent.");
-            EquipmentSlot slot = _equipmentSlots[wearableComponent.TargetSlot];
+
+
+            EquipmentSlot slot = _equipmentSlots[slotType];
             if (!slot.UnequipItem(item)) throw new InvalidOperationException("Cannot unequip an item that is not equiped.");
             
+        }
+
+        public bool HasEquiped(ItemEntity item)
+        {
+             AC.CheckNotNull(item, nameof(item)); 
+            
+            WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
+            if (wearableComponent == null) 
+                return false;
+
+            var equipmentSlotsList = _equipmentSlots.Values;
+            foreach (EquipmentSlot slot in equipmentSlotsList)
+            {
+                if (wearableComponent.TargetSlots.Contains<EquipmentSlotType>(slot.SlotType))
+                {
+                    foreach (ItemEntity equiped in slot.Items)
+                    if (equiped.Equals(item))
+                        return true;
+                }
+                
+            } 
+                    
+            return false;
         }
 
         public IComponent Clone()

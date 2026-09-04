@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Core;
-using ECS.Component;
-using ECS.Component.InventoryComponents;
-using ECS.Component.ItemComponents;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Component.InventoryComponents;
+using Core.ECS.Component.ItemComponents;
+using Core.ECS.Entity;
 using Newtonsoft.Json;
 
-namespace Item
+namespace Core.Item
 {
     public class JsonItemCatalogLoader
     {

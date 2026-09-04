@@ -1,7 +1,7 @@
-using ECS.Entity;
-using ECS.Component;
+using Core.ECS.Entity;
+using Core.ECS.Component;
 
-namespace Events
+namespace Core.Events
 {
     public class GameEvent
     {

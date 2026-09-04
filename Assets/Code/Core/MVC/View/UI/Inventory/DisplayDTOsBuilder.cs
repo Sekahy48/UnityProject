@@ -1,8 +1,8 @@
 using System;
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
 
-namespace MVC.View.UI.Inventory
+namespace Core.MVC.View.UI.Inventory
 {
     public static class DisplayDTOsBuilder
     {

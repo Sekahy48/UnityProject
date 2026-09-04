@@ -1,6 +1,6 @@
-using ECS.Component;
+using Core.ECS.Component;
 
-namespace Inventory
+namespace Core.Inventory
 {
     /// <summary>
     /// An item placed on the grid. Holds a reference to the composite node

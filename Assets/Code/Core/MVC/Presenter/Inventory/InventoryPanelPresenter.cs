@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using ECS.Systems;
-using Inventory;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
+using Core.Inventory;
 using MVC.View.Inventory;
-using MVC.View.UI.Inventory;
-using Services;
+using Core.MVC.View.UI.Inventory;
+using Core.Services;
 
-namespace MVC.Presenter.Inventory
+namespace Core.MVC.Presenter.Inventory
 {
     /// <summary>
     /// Drives one inventory grid. Deliberately NOT an IPresenter: it is not registered in
@@ -18,29 +18,29 @@ namespace MVC.Presenter.Inventory
     public class InventoryPanelPresenter
     {   
         public InventoryPanelView _panelView {get;}
-        private InventoryService _service; 
-        private bool _grabbedThisGesture;
-        private IEntity _entity;
+        private InventoryService _service;  
+        public IEntity Entity {get; private set;}
 
         public event Action<CellSize> OnHandChanged; 
-        public event Action<PlacementVerdict, CellSize, int, int> OnHandStyleUpdate;
-
+        /// <summary>Veredicto, tamaño final del fantasma sobre esta rejilla, y celda como ancla.</summary>
+        public event Action<PlacementVerdict, CellSize, CellSize> OnHandStyleUpdate;
+        private readonly GrabGesture _grabGesture;
         public InventoryPanelPresenter(InventoryPanelView view, InventoryService service)
         {
             _panelView = view;
             _service =  service;
 
-            _panelView.OnCellPressed += OnCellPressed;
+            _panelView.OnCellLeftPressed += OnCellLeftPressed;
             _panelView.OnCellReleased += OnCellReleased;
             _panelView.OnPointerMovedOverCell += EvaluateHandContent;
 
-            
+            _grabGesture = new GrabGesture(_service);
         }
         
         public void Bind(IEntity target)
         {
-            _entity = target;
-            TetrisGridState grid = _entity.GetComponent<InventoryComponent>().Inventory.GetGrid();
+            Entity = target;
+            TetrisGridState grid = Entity.GetComponent<InventoryComponent>().Inventory.GetGrid();
             _panelView.GenerateGrid(grid.GetGridH(), grid.GetGridW());
             Refresh();
         }
@@ -50,28 +50,10 @@ namespace MVC.Presenter.Inventory
 
 
 
-        private void OnCellPressed(GridPos pos)
-        {
-            _grabbedThisGesture = false;
-            if (_service.IsHandCarrying()) return;
+        private void OnCellLeftPressed(GridPos pos) => _grabGesture.OnPressed(() => GrabAt(pos));
 
-            GrabAt(pos);
-            _grabbedThisGesture = _service.IsHandCarrying();   // false si la celda estaba vacia
-        }
-
-        private void OnCellReleased(GridPos pos, bool dragged)
-        {
-            if (!_service.IsHandCarrying()) return;
-            if (_grabbedThisGesture && !dragged) return;   // agarre por clic: sigue en la mano
-
-            PlaceAt(pos);
-
-            // Soltar el boton cierra el gesto: si el destino no admitio nada, el arrastre se
-            // cancela en vez de dejar el item pegado al cursor. Cancelar es gratis porque las
-            // unidades nunca salieron de su nodo. Un clic fallido si mantiene la mano: ahi el
-            // gesto sigue abierto hasta el siguiente clic.
-            if (dragged && _service.IsHandCarrying()) CancelHand();
-        }
+        private void OnCellReleased(GridPos pos, bool dragged) =>
+            _grabGesture.OnReleased(dragged, () => PlaceAt(pos), CancelHand);
         
         /// <summary>
         /// El panel no juzga: pregunta al servicio, que responde por el mismo camino que usaria
@@ -79,22 +61,28 @@ namespace MVC.Presenter.Inventory
         /// </summary>
         private void EvaluateHandContent(GridPos pos, CellSize cellSize)
         {
-            if (_entity == null || !_service.IsHandCarrying()) return;
+            if (Entity == null || !_service.IsHandCarrying()) return;
 
-            PlacementVerdict verdict = _service.EvaluatePlacement(_entity, pos);
+            PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos);
 
+            // El tamaño lo decide el destino, y aqui el destino es una rejilla: celda por
+            // dimensiones. El ancla sigue siendo la celda, para que la esquina del fantasma
+            // caiga sobre la celda apuntada y no en medio del item.
             BaseItemComponent baseInfo = _service.GetGrabbedItem().GetComponent<BaseItemComponent>();
-            OnHandStyleUpdate?.Invoke(verdict, cellSize, baseInfo.DimensionW, baseInfo.DimensionH);
+            CellSize itemSize = new CellSize(cellSize.Width * baseInfo.DimensionW,
+                                             cellSize.Height * baseInfo.DimensionH);
+
+            OnHandStyleUpdate?.Invoke(verdict, itemSize, cellSize);
         }
 
         private void GrabAt(GridPos pos)
         {
-            InventoryObject inventory = _entity.GetComponent<InventoryComponent>().Inventory;
+            InventoryObject inventory = Entity.GetComponent<InventoryComponent>().Inventory;
             GridElement element = inventory.GetGrid().GetElementAt(pos);
             if (element == null) return;   // empty cell: nothing to grab
 
             ItemObject node = element.GetNode();
-            int grabbed = _service.GrabFrom(_entity, inventory, node, node.GetAmount());
+            _service.GrabFrom(new InventoryNodeOrigin(Entity, inventory, node), node.GetAmount());
 
             // Painted from what was actually grabbed, not from what the block showed: Grab
             // clamps to what the node holds.
@@ -103,7 +91,7 @@ namespace MVC.Presenter.Inventory
         
         private void PlaceAt(GridPos pos)
         {
-            int left = _service.PlaceAmountFromHand(_entity, pos);
+            _service.PlaceAmountFromHand(Entity, pos);
 
             OnHandChanged?.Invoke(_panelView.GetCellSize()); 
         }
@@ -114,20 +102,24 @@ namespace MVC.Presenter.Inventory
         /// </summary>
         public void RenderInventory()
         {   
-            if (_entity == null) return;
+            if (Entity == null) return;
 
-            TetrisGridState grid = _entity.GetComponent<InventoryComponent>().Inventory.GetGrid();
+            TetrisGridState grid = Entity.GetComponent<InventoryComponent>().Inventory.GetGrid();
 
             List<GridItemDisplayData> items = new List<GridItemDisplayData>();
             foreach (GridElement element in grid.GetElements())
             {
                 ItemObject node = element.GetNode();
+                ItemEntity item = node.GetItemEntity();
+
+                if (item == null)
+                    continue;
                 items.Add(new GridItemDisplayData
                 {
-                    Item      = DisplayDTOsBuilder.BuildDisplayData(node.GetItemEntity(), node.GetAmount()),
+                    Item      = DisplayDTOsBuilder.BuildDisplayData(item, node.GetAmount()),
                     Row       = element.GetRow(),
                     Col       = element.GetCol(),
-                    IsGrabbed = ReferenceEquals(node, _service.GetGrabbedNode())
+                    IsGrabbed = node.GetNodeId() == _service.GetGrabbedNodeId()
                 });
             }
 
@@ -138,12 +130,12 @@ namespace MVC.Presenter.Inventory
 
         private void UpdateWeightStats()
         {
-            InventoryComponent invComp = _entity.GetComponent<InventoryComponent>();
+            InventoryComponent invComp = Entity.GetComponent<InventoryComponent>();
             if (invComp == null) return;
 
             // No se exige BodyComponent: un arcon no tiene cuerpo pero si limite de peso.
             float currentWeight = invComp.Inventory.GetTotalWeight();
-            float maxWeight = CarryCapacity.GetMaxLoad(_entity);
+            float maxWeight = CarryCapacity.GetMaxLoad(Entity);
             _panelView.UpdateWeightStats(currentWeight, maxWeight, CarryCapacity.ClassifyLoad(maxWeight > 0 ? currentWeight / maxWeight : 1f));
         } 
 
@@ -153,5 +145,23 @@ namespace MVC.Presenter.Inventory
             OnHandChanged?.Invoke(_panelView.GetCellSize());
         }
 
+        /// <summary>
+        /// Nodo que ocupa una celda, o null si esta libre o cae fuera de la rejilla.
+        ///
+        /// Devuelve el ItemObject y no su ItemEntity a proposito: el representante solo dice
+        /// QUE hay ahi, y quien vaya a actuar sobre ello (equipar, consumir, tirar) necesita
+        /// ademas la pila concreta — su nodeId y cuantas unidades tiene. Este presenter es el
+        /// unico sitio donde la entidad, su inventario y la rejilla estan juntos, asi que la
+        /// traduccion celda -> nodo vive aqui.
+        /// </summary>
+        public ItemObject GetNodeAt(GridPos pos)
+        {
+            if (Entity == null) return null;
+
+            InventoryObject inventory = Entity.GetComponent<InventoryComponent>().Inventory;
+            GridElement element = inventory.GetGrid().GetElementAt(pos);
+
+            return element?.GetNode();
+        }
     }
 }

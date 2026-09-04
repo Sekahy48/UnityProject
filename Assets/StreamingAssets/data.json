@@ -16,6 +16,15 @@
           }
         },
         {
+          "type": "Wearable",
+          "values": {
+            "garmentCategory": "Hand",
+            "targetSlots": "RightHand,LeftHand",
+            "topLayer": true,
+            "fullOcupancy": false
+          }
+        },
+        {
           "type": "Damage",
           "values": {
             "impactDmg": "MLOW",
@@ -48,6 +57,15 @@
             "maxStackSize": 1,
             "dimensionW": 2,
             "weight": 1.8
+          }
+        },
+        {
+          "type": "Wearable",
+          "values": {
+            "garmentCategory": "Hand",
+            "targetSlots": "RightHand,LeftHand",
+            "topLayer": true,
+            "fullOcupancy": true
           }
         },
         {
@@ -100,7 +118,7 @@
     {
       "name": "Odre",
       "description": "Un pellejo curtido cosido con hilo encerado. Mantiene el agua fresca durante horas de marcha bajo el sol.",
-      "imagePath": "images/odre.png",
+      "imagePath": "images/item.png",
       "components": [
         {
           "type": "Fluid",
@@ -181,9 +199,9 @@
         {
           "type": "Storage",
           "values": {
-            "maxWeight": 100,
-            "gridH": 4,
-            "gridW": 6
+            "gridW": 14,
+            "gridH": 8,
+            "maxWeight": 200
           }
         }
       ]
@@ -206,8 +224,9 @@
           "type": "Wearable",
           "values": {
             "garmentCategory": "Plate",
+            "targetSlots": "Chest",
             "topLayer": true,
-            "targetSlot": "Chest"
+            "fullOcupancy": true
           }
         },
         {
@@ -241,8 +260,9 @@
           "type": "Wearable",
           "values": {
             "garmentCategory": "Shirt",
+            "targetSlots": "Chest",
             "topLayer": false,
-            "targetSlot": "Chest"
+            "fullOcupancy": true
           }
         },
         {
@@ -254,6 +274,42 @@
             "flexibility": 0.9,
             "materialType": "CLOTH",
             "transpirability": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gran Yelmo",
+      "description": "Un pesado casco de acero que cubre por completo la cabeza y el rostro, dejando apenas estrechas rendijas para la visión y la respiración. Su estructura robusta ofrece una protección excelente contra golpes y tajos, aunque a costa de una considerable pérdida de visibilidad y comodidad.\n\nDe fabricación sencilla pero resistente, es habitual entre caballeros y soldados de infantería pesada que prefieren soportar el peso del hierro antes que arriesgar el cráneo.",
+      "imagePath": "images/helmet-icon.png",
+      "components": [
+        {
+          "type": "BaseItem",
+          "values": {
+            "dimensionH": 2,
+            "maxStackSize": 1,
+            "dimensionW": 2,
+            "weight": 3
+          }
+        },
+        {
+          "type": "Wearable",
+          "values": {
+            "garmentCategory": "Helmet",
+            "targetSlots": "Head",
+            "topLayer": true,
+            "fullOcupancy": true
+          }
+        },
+        {
+          "type": "Material",
+          "values": {
+            "hardness": 0.8,
+            "materialName": "Wrought Iron",
+            "thermalInsulation": 0.2,
+            "flexibility": 0.3,
+            "materialType": "METAL",
+            "transpirability": 0.1
           }
         }
       ]

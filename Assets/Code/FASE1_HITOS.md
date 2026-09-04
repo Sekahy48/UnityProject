@@ -2,25 +2,40 @@
 
 ## Where we are right now
 
-**Current task: M5 task 10.** Milestone 5 is done except task 6 (half: viewing layers works, managing them needs the interaction) and task 10 itself.
+> Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Done and working:** the inventory window renders the tetris grid with item blocks, the equipment cross with its layer popup, and a weight bar that colour-codes by encumbrance band. A dev item catalog lives in a side panel and lists the prototypes with search. UI live-reload works, so USS edits apply without leaving play mode.
+**Milestone 5 cerrado salvo pulido.** Hechas 0-13. Quedan 14 (franja de inspeccion), 15
+(auto-sort) y 16 (inspeccion de sub-lotes). Se ha invadido ademas M6 T1: los paneles A y B
+abren contenedores externos y se transfiere entre ellos.
 
-**Built but not yet wired to any input:**
+**Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
+por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
+mismas decisiones que la colocacion real. Menu contextual con submenus (tirar con cantidad,
+equipar eligiendo slot, transferencia rapida a los inventarios visibles). Equipar y
+desequipar por los tres caminos —menu, clic y arrastre— incluyendo capas concretas desde el
+popup de subslots, con feedback de validez sobre cada slot.
 
-- `HandBuffer` (Core/Inventory) — the "held items" state. Complete with docs, never instantiated by anyone.
-- `InventorySystem.TryMoveItemTo` — the transactional move: remove from source, add to destination, roll back the leftover per variant, clean the node last. Never called.
-- Supporting primitives added for it: `ItemObject.Extract` / `GetAmount(ItemEntity)` / `ModifyAmount(ItemEntity, int)`, `InventoryObject.Extract` / `CleanNode` / `ModifyAmount(node, item, amount, clean)`, `TetrisGridState`'s `ignoreNodeId`, and `AddItemAt` stacking onto a compatible node instead of always creating one.
+**Lo siguiente, por orden:**
 
-**The immediate next step is the window coordinator**, and it is still undecided:
+1. **Extender el magnetismo a las rejillas.** Sobre un slot de equipo el fantasma se iman a
+   el (`InventoryView._magnetSlot` + la transicion de 60ms en `.hand-buffer`) y encaja
+   visualmente en el destino. Sobre la rejilla sigue al cursor libremente. Intentar lo mismo
+   celda a celda; ojo con que ahi la celda concreta SI importa, asi que el iman no puede
+   mentir sobre donde va a caer un item de varias celdas.
+2. **M5 T14, la franja de inspeccion.** La infraestructura existe (`inspection-strip`,
+   `InventoryView.UpdateInspection`) y no la llama nadie. Falta decidir que la dispara: clic
+   izquierdo sin mano, hover, o una opcion del menu contextual.
 
-1. What it is called and where it lives.
-2. Whether it receives the views' events directly, or the presenters stay as intermediaries and talk up to it.
-3. It must own the `HandBuffer` and hold the three windows' presenters — it is the only thing that can see the player inventory, both side slots and the hand at once, which is exactly what "grabbed here, dropping there" needs.
+**Pendiente de datos:** crear en Stack&Go otra pechera que NO sea `topLayer`, para poder
+probar el apilado de capas con dos prendas exteriores compitiendo. Hoy todas las prendas de
+pecho del catalogo son de capa exterior, asi que el camino de `Insert(Count - 1)` en
+`EquipmentSlot.EquipItem` y el bloqueo por `TopLayerBlocked` apenas se han ejercitado.
 
-**Also pending on task 10**, once the coordinator exists: the pointer state machine (click-to-grab primary, drag secondary, disambiguated by a movement threshold — see the Decided note under M5), the visual for the item following the cursor, dimming the source block, and turning the catalog rows into grab sources instead of the current direct-add.
-
-**Two known holes, noted where they matter:** moving a whole node with mixed sub-lots inside one inventory has not been exercised, and the source-entity weight re-evaluation in `TryMoveItemTo` skips when source and destination share an entity. Neither can bite until items actually move.
+**Deuda conocida que no bloquea:** el popup de subslots no es destino de soltado (se agarra
+desde el, no se suelta en una capa concreta); `EquipmentSystem` sigue sin reaccionar a
+eventos pese a implementar `IReactiveSystem`; y el equipo aun no pesa, asi que equipar desde
+un arcon mete peso gratis — decision ya tomada (opcion "el equipo pesa, con coeficiente"),
+pendiente de aplicar.
 
 ---
 
@@ -163,7 +178,7 @@ Left panel (personal — tabbed):
 - [x] 3. Tab system in left panel to switch between Health and Equipment views (inventory panel stays fixed)
 - [x] 4. Health tab: placeholder (future Zomboid-style health UI)
 - [x] 5. Equipment tab: render cross + side column layout with slot VisualElements (from M4). Slot textures resolved by convention from the UXML element name (`slot-head` → `EquipmentSlotType.Head` via `Enum.TryParse`). Three visual states per slot: disabled, empty (`images/slots/<name>.png`) and equipped (top layer's `iconPath`). Runtime textures loaded and cached by `TextureCache` (Unity layer, reads from StreamingAssets); fixed UI art assigned via USS `url()`.
-- [ ] 6. Equipment tab: click slot to see/manage layers (from M4). **Viewing done**: micro-button rendered in each slot corner (`position: absolute`), visible only when the slot holds more than one layer. Toggling it opens/closes a single shared popup (last child of `main-area`, so it draws above everything) anchored to the slot's top-right corner via `worldBound` + `WorldToLocal`. Popup content rebuilt on every open (no caching). Sub-slots ordered outermost→innermost, skipping the layer already shown in the main slot. Click outside closes it (`ClickEvent` bubbling to root + `StopPropagation` on button and popup). **Pending**: managing layers (equip/unequip from sub-slots) — depends on drag & drop, tasks 10-13.
+- [x] 6. Equipment tab: click slot to see/manage layers (from M4). **Viewing done**: micro-button rendered in each slot corner (`position: absolute`), visible only when the slot holds more than one layer. Toggling it opens/closes a single shared popup (last child of `main-area`, so it draws above everything) anchored to the slot's top-right corner via `worldBound` + `WorldToLocal`. Popup content rebuilt on every open (no caching). Sub-slots ordered outermost→innermost, skipping the layer already shown in the main slot. Click outside closes it (`ClickEvent` bubbling to root + `StopPropagation` on button and popup). **Pending**: managing layers (equip/unequip from sub-slots) — depends on drag & drop, tasks 10-13.
 
 Right panel (inventory):
 - [x] 7. UI: render grid with item blocks sized by dimensions (w×h from BaseItemComponent). Blocks live in an `items-layer` created by `GenerateGrid` as the last child of the generated `inventory-grid` (so it matches the grid's exact size, unlike the outer `item-grid` container which stretches). Each block is `position: absolute` and sized/placed in **percentages** (`col * 100 / gridW`, etc.) instead of pixels — no cell-size constant duplicated between USS and C#, and the layout survives any change to `.inventory-grid-cell`. Data flows as `GridItemDisplayData` (composes `ItemDisplayData` + row/col) built from `TetrisGridState.GetElements()`.
@@ -177,7 +192,7 @@ Right panel (inventory):
   Prerequisite discovered while doing this: **the whole event subsystem was disconnected.** `EventBus.Subscribe` was never called anywhere, and neither `InventorySystem` nor `MovementSystem` was ever instantiated, so no weight event had ever fired and the movement debuff never applied. Fixed by splitting `IGameSystem` into `IPeriodicSystem` (has `Process`, driven by tick or frame) and `IReactiveSystem` (declares `SubscribedEvents`, driven by the bus), and making `SystemManager.RegisterReactiveGameSystem` subscribe on registration — registering *is* subscribing, so a reactive system can no longer end up alive but deaf. Also added the missing `else` posting `NormalWeight` (`MovementSystem` already handled it), without which returning below 0.70 never notified anyone.
 
 Interaction:
-- [ ] 10. UI: move items within the grid to reorganize (mechanical impact — frees space for new items). Primary interaction is **click-to-grab / click-to-place** (see Decided note below); drag & drop is supported as a secondary gesture over the same "held item" state. Build alongside it a **dev creative panel**: search field + filtered list over `_itemCatalogue.GetAll()` (name + icon), amount field, click to `AddItem` + `Refresh`. Uncategorised for now. Needed to exercise the placement edge cases (full grid, no fit, stacking onto an existing lot, moving a 1x3 into a 1x2 gap) without editing `PrototypeFactory.AddTestItems` and restarting.
+- [x] 10. UI: move items within the grid to reorganize (mechanical impact — frees space for new items). Primary interaction is **click-to-grab / click-to-place** (see Decided note below); drag & drop is supported as a secondary gesture over the same "held item" state. Build alongside it a **dev creative panel**: search field + filtered list over `_itemCatalogue.GetAll()` (name + icon), amount field, click to `AddItem` + `Refresh`. Uncategorised for now. Needed to exercise the placement edge cases (full grid, no fit, stacking onto an existing lot, moving a 1x3 into a 1x2 gap) without editing `PrototypeFactory.AddTestItems` and restarting.
 
   **Decided — where `HandBuffer` lives.** Not in `InventoryPresenter` (interaction state, not game state, and presenters are rebuilt on live reload — the hand must survive that). Not in `PresenterManager` (that is a registry; giving it state would add a second reason to change). Not in an ECS component either (nothing systemic consumes it, it is never serialised, and it holds a reference to *whichever* `InventoryObject` is being manipulated — a chest, a corpse — so it is not player-simulation state). It goes in a new **`GameInteractionContext`** — see Future section.
 
@@ -192,17 +207,18 @@ Interaction:
   `WouldStack`, `Blocked`...), nunca como color: el presenter lo mapea a clase USS, igual que
   ya se hace con `CarryCapacity.ClassifyLoad` y las bandas de peso.
 
-  **Bug pendiente — bloque fantasma tras una colocacion invalida.** Al soltar en una celda
-  ocupada, fuera de la grid o donde el item no cabe, la mano se cancela (correcto) pero el
-  bloque de origen se queda con `item-block-grabbed` puesto. Es un fallo de repintado, no de
-  dominio: el `IsGrabbed` se calcula al construir los DTOs, asi que despues de cancelar hay
-  que volver a renderizar **todos** los paneles — el nodo atenuado puede estar en un panel
-  distinto de aquel donde se solto. Revisar que la cancelacion pase siempre por el punto que
-  refresca a todos, y no solo por el panel que la origino.
+  **~~Bug — bloque fantasma tras una colocacion invalida.~~ RESUELTO.** Al soltar en sitio
+  invalido la mano se cancelaba pero el bloque de origen se quedaba con `item-block-grabbed`
+  puesto: parecia agarrado sin estarlo. Era un fallo de repintado, no de dominio — `IsGrabbed`
+  se calcula al construir los DTOs, y el nodo atenuado puede estar en un panel distinto de
+  aquel donde se solto.
+  Resuelto porque toda cancelacion pasa por `InventoryPanelPresenter.OnHandChanged`, que
+  `InventoryPresenter` engancha a `HandChanged`, y ese repinta **los tres paneles**, no solo
+  el que origino el gesto. Verificado en juego.
 
-- [ ] 11. UI: move items from inventory → equipment slot, and from equipment sub-slots back to inventory (from M4). Unblocks the pending half of task 6.
-- [ ] 12. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
-- [ ] 13. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
+- [x] 11. UI: move items from inventory → equipment slot, and from equipment sub-slots back to inventory (from M4). Unblocks the pending half of task 6.
+- [x] 12. First-fit auto-place algorithm (for right-click pickup / quick-store): scan grid left-to-right, top-to-bottom, place in first valid position. Used as fallback, not primary flow.
+- [x] 13. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
 
 Polish:
 - [ ] 14. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
@@ -277,6 +293,11 @@ The `ItemType` enum currently acts as an explicit category. But with ECS composi
 
 ## Future (not Phase 1)
 
+Hand added notes (by me by hand):
+  - Review all the repo to rename some atributes that could be in the wrong format (for ex, atributes nor starting in _ + camelCase or public atributes nor formated in PascalCase withoput _)
+  - If in a future the system defined as reactive (expected in origin to be triggered by gameEvents) show they are direct-call driven, change the super type IReactiveSystem to something that fits the new semantic and dont force the system to implement unfitting features (like observer behavior)
+
+
 - [x] **`GameInteractionContext`** — fourth context alongside `GameDataContext` / `GameSessionContext` / `GameSystemContext`, holding per-player *interaction* state (as opposed to world data, session state or infrastructure). First and currently only inhabitant: `HandBuffer` (the held stack for click-to-grab / drag & drop). Expected to grow with the open external container, the currently selected node for the inspection strip, and similar UI-interaction state.
 
   Rationale for a context rather than a presenter field or an ECS component: it must survive the presenter rebuild on UI live reload, it is shared by every presenter that can grab or place (own inventory, chest, corpse, dev creative panel), and there is exactly one per *player*.
@@ -310,4 +331,10 @@ The `ItemType` enum currently acts as an explicit category. But with ECS composi
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)
 - [ ] Move `prototypes` dictionary out of `EntityManager` — entity creation should go through `PrototypeFactory`, not be managed internally by `EntityManager`
+- [ ] **Fabrica de eventos.** Hoy cada llamante construye el evento a mano (`new ItemLotEvent(GameEventType.ItemDropped, origin, lots)`), lo que permite emparejar un `GameEventType` con una clase de evento que no le corresponde — nada impide `new ItemLotEvent(GameEventType.Overweight, ...)`. La redundancia clase/enum se resolvio agrupando por **forma de la carga util** (`ItemLotEvent` transporta `List<SubLot>`, lo llamen tirar, recoger o destruir) y dejando el significado en el enum, pero eso traslada el riesgo al sitio de llamada.
+
+  Salida prevista: constructor privado + fabricas estaticas por caso (`ItemLotEvent.Dropped(entity, lots)`, `.PickedUp(...)`), que fijan el tipo y se leen mejor que un `new` con un enum suelto. **Aplazado a proposito**: con un solo caso emitido (`ItemDropped`) la fabrica es maquinaria que no paga lo que cuesta. Revisar cuando haya dos o tres.
+
+  Regla que acompaña la decision: si un caso nuevo necesita una carga util **distinta**, es otra clase de evento, no un campo opcional mas en esta. Ahi es cuando `ItemLotEvent` se convertiria en cajon de sastre con la mitad de los campos nulos.
+
 - [ ] Filtered consumption for crafting: `ConsumeFiltered(Predicate<ItemEntity> filter, int amount)` in `BatchItem` + wrapper in `InventorySystem`. Recipes need items matching not just typeId but specific state (e.g., hot iron ingot vs cold). `Equivalent()` may be too strict — evaluate whether a looser matching system is needed (partial match, predicate-based). Uses `BfsFindAll(typeId)` + filter per sub-lot. Additive, no structural refactor needed.

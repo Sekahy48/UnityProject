@@ -1,5 +1,6 @@
 using Core.Contexts;
-using ECS.Systems;
+using Core.ECS.Systems;
+using Core.MVC.View;
 using MVC.View;
 
 namespace MVC.Controller

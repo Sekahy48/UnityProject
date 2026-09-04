@@ -1,6 +1,6 @@
 using System;
 
-namespace Inventory
+namespace Core.Inventory
 {
     /// <summary>
     /// Celda de una rejilla: fila y columna. Existe para que el compilador distinga lo que dos

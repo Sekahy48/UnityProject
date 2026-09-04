@@ -1,8 +1,9 @@
 using Core.Contexts;
-using ECS.Entity;
-using ECS.Systems;
-using MVC.Model;
-using MVC.Presenter;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
+using Core.MVC.Model;
+using Core.MVC.Presenter;
+using Core.MVC.View;
 using MVC.View;
 using Strategy;
 

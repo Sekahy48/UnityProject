@@ -1,6 +1,6 @@
-using ECS.Component;
+using Core.ECS.Component; 
 
-namespace ECS.Entity
+namespace Core.ECS.Entity
 {
     public class ItemEntity : InGameEntity
     {

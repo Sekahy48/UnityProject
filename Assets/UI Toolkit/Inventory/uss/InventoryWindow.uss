@@ -499,6 +499,12 @@
     -unity-background-image-tint-color: rgba(255, 255, 255, 0.75);   /* icono atenuado: se lleva, no esta colocado */
     border-width: 2px;
     border-color: rgba(54, 56, 54, 0.75);                            /* neutro: sobre nada colocable */
+
+    /* Corta a proposito: sobre un slot de equipo el fantasma se iman a el, y sin esto
+       entrar y salir del slot serian dos saltos secos. Con 60ms el iman se lee como un
+       deslizamiento y el seguimiento libre sobre la rejilla no se nota retrasado. */
+    transition-property: left, top, width, height;
+    transition-duration: 60ms, 60ms, 60ms, 60ms;
 }
 
 /* Sobre celda ocupada: no cabe. Mismo rojo que .load-immobile. */
@@ -527,4 +533,82 @@
 .panel-slot {
     flex-grow: 1;
     flex-direction: column;
+}
+
+.ctx-menu {
+    flex-direction: column; 
+    position: absolute;
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);  
+    background-color: rgb(22, 21, 21); 
+    color: rgb(255, 255, 255);
+}
+
+.ctx-menu-option{
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.ctx-menu-option:hover, .ctx-menu-option-selected{
+    border-color: rgba(141, 122, 75, 0.85);
+    background-color: rgba(255, 245, 220, 0.08);
+}
+
+
+.ctx-menu-option-label{
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
+    text-decoration: underline;
+}
+
+
+.ctx-submenu {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    translate: 0 -50%;
+}
+
+.ctx-submenu--flipped {
+    left: auto;
+    right: 100%;
+}
+
+.ctx-menu-widget {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 45px;
+    height: 28px;
+    margin: 0;
+}
+ 
+
+.ctx-menu-widget .unity-base-text-field__input {
+    background-color: rgb(22, 21, 21);
+    border-color: rgba(54, 56, 54, 0.75);
+    border-width: 1px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    
+    margin: 0;
+}
+
+.ctx-menu-widget #unity-text-input {
+    flex-grow: 1;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0 2px;
+    background-color: rgb(22, 21, 21);
+    border-width: 1px;
+    border-color: rgba(54, 56, 54, 0.75);
+    color: rgb(255, 255, 255);
+    
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset');
+}
+
+.ctx-menu-widget .unity-text-element--inner-input-field {
+    margin: 0;
+    padding: 0;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center; 
 }

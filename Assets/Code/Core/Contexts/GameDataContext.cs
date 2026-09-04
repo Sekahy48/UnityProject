@@ -1,5 +1,5 @@
-using ECS.Systems;
-using Item;
+using Core.ECS.Systems;
+using Core.Item;
 
 namespace Core.Contexts
 {

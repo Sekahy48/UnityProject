@@ -1,4 +1,4 @@
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     public enum ResourceType {
 

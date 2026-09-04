@@ -1,4 +1,4 @@
-namespace Services
+namespace Core.Services
 {
     /// <summary>
     /// Resultado de preguntar "si suelto aqui, que pasa". Lo produce InventoryService por el

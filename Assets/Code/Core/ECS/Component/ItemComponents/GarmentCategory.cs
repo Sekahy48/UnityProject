@@ -1,4 +1,4 @@
-namespace ECS.Component.ItemComponents
+namespace Core.ECS.Component.ItemComponents
 {
     public enum GarmentCategory
     {
@@ -11,6 +11,9 @@ namespace ECS.Component.ItemComponents
         Helmet,
         Hood,
         Satchel,
+
+
+        Hand,
         
     }
 }

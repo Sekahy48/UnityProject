@@ -1,6 +1,6 @@
-using ECS.Component;
-using ECS.Entity;
-using ECS.Systems;
+using Core.ECS.Component; 
+using Core.ECS.Systems; 
+using Unity.ECS.Component;
 using UnityEngine;
 
 namespace Unity

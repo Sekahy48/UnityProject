@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ECS.Component.InventoryComponents
+namespace Core.ECS.Component.InventoryComponents
 {
 
     /// <summary>

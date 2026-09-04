@@ -1,6 +1,6 @@
-using Events;
+using Core.Events;
 
-namespace Observer
+namespace Core.Observer
 {
     public interface IEventObserver
     { 

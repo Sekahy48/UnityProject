@@ -1,4 +1,4 @@
-using ECS.Entity;
+using Core.ECS.Entity;
 using UnityEngine;
 using UnityEngine.InputSystem;
 

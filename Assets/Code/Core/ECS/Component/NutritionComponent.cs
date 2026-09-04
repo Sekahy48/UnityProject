@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Hunger, thirst, macronutrients and reserves. Relevant in Phase 3.
