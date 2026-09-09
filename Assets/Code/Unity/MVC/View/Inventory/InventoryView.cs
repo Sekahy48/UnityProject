@@ -82,9 +82,11 @@ namespace MVC.View.Inventory
         
 
         /* Overlays */
-        private VisualElement _tooltip;
-        private VisualElement _handBuffer;
-        private VisualElement _ctxMenu;
+        private VisualElement _tooltip,
+                              _handBuffer,
+                              _ctxMenu,
+                              _sublotsPopup;
+
         
         /* State Parameters*/
         private bool _isReady = false; 
@@ -233,6 +235,8 @@ namespace MVC.View.Inventory
             RegisterHandFollowsCursor();
             // Contextual menu
             _ctxMenu = _uiDocument.rootVisualElement.Q<VisualElement>("ctx-menu");
+            // Sublots popup
+            _sublotsPopup = _uiDocument.rootVisualElement.Q<VisualElement>("sublots-popup");
 
             _mainRoot.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
 
@@ -775,7 +779,10 @@ namespace MVC.View.Inventory
         private static void CloseSubMenusIn(VisualElement menuPanel)
         {
             foreach (VisualElement row in menuPanel.Children())
+            {
                 row.Children().FirstOrDefault(c => c.name == SUBMENU_NAME)?.RemoveFromHierarchy();
+                row.RemoveFromClassList("ctx-menu-option-selected");
+            }
         }
 
         public void CloseContextualMenu()
@@ -785,6 +792,32 @@ namespace MVC.View.Inventory
                 panelView.LastRightClickedCell = null; 
         }
  
+
+        #endregion
+
+        #region Sublots popup
+
+        private void RenderSublotsPopup(IReadOnlyList<ItemDisplayData> sublots)
+        {
+            if (sublots == null || sublots.Count == 0)
+                throw new InvalidOperationException("The provided list of sub-lots cannot be null or empty");
+
+            if (sublots.Count == 1)
+                throw new InvalidOperationException("No attempt is expected to render a node with a single ItemEntity type of the same type: the batch size is 1.");
+
+            foreach (ItemDisplayData sublot in sublots)
+            {
+                VisualElement sublotRow = new VisualElement();
+                sublotRow.AddToClassList("sublots-popup-row");
+
+                Label sublotName = new Label(sublot.Name);
+                sublotName.AddToClassList("sublots-popup-row-label");
+
+                // NOTA: cambiar clase
+                Label sublotCondition = new Label(sublot.Name);
+                sublotCondition.AddToClassList("sublots-popup-row-label");
+            }
+        }
 
         #endregion
 

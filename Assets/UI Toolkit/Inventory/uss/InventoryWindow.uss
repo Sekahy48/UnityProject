@@ -557,7 +557,7 @@
     justify-content: space-between;
 }
 
-.ctx-menu-option:hover, .ctx-menu-option-selected{
+.ctx-menu-option.ctx-menu-option-selected, .ctx-menu-option:hover{
     border-color: rgba(141, 122, 75, 0.85);
     background-color: rgba(255, 245, 220, 0.08);
 }
@@ -619,4 +619,24 @@
     padding: 0;
     color: rgb(255, 255, 255);
     -unity-text-align: middle-center; 
+}
+
+/* Sublots Popup */
+
+.sublots-popup {
+    flex-direction: column;
+    position: absolute;
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);  
+    background-color: rgb(22, 21, 21); 
+    color: rgb(255, 255, 255);
+}
+
+.sublots-popup-row {
+    flex-direction: row;
+    height: 30px;
+}
+
+.sublots-popup-row-label {
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
 }
