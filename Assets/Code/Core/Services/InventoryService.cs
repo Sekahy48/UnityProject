@@ -378,7 +378,7 @@ namespace Core.Services
             EventBus.GetInstance().Post(new ItemLotEvent(GameEventType.ItemDropped, origin, items)); 
         } 
 
-        public List<ItemAction> GetAvailableActions(ItemEntity target, IEntity owner, IEntity source)
+        public List<ItemAction> GetAvailableActions(ItemEntity target, IEntity owner, IEntity source, bool subslots)
         {
 
             List<ItemAction> options = new List<ItemAction>();
@@ -398,6 +398,9 @@ namespace Core.Services
             {
                 options.AddRange(new List<ItemAction>{ItemAction.DropFromInventory, ItemAction.QuickTransfer});
             }
+
+            if (subslots)
+                options.Add(ItemAction.Inspect);
                 
             
             
@@ -423,6 +426,7 @@ namespace Core.Services
         Equip,
         Unequip,
         Consume, 
+        Inspect,
         
     }
 }
