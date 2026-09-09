@@ -21,9 +21,11 @@ namespace Core.MVC.Presenter.Inventory
         private InventoryService _service;  
         public IEntity Entity {get; private set;}
 
-        public event Action<CellSize> OnHandChanged; 
+        /// <summary>Tamaño final del fantasma sobre esta rejilla, y celda como ancla.</summary>
+        public event Action<CellSize, CellSize> OnHandChanged;
         /// <summary>Veredicto, tamaño final del fantasma sobre esta rejilla, y celda como ancla.</summary>
         public event Action<PlacementVerdict, CellSize, CellSize> OnHandStyleUpdate;
+        public event Action<ItemDisplayData> OnInspectionStripUpdateRequired;
         private readonly GrabGesture _grabGesture;
         public InventoryPanelPresenter(InventoryPanelView view, InventoryService service)
         {
@@ -46,33 +48,59 @@ namespace Core.MVC.Presenter.Inventory
         }
 
 
-        public void Refresh() => RenderInventory();
-
-
+        public void Refresh() => RenderInventory(); 
 
         private void OnCellLeftPressed(GridPos pos) => _grabGesture.OnPressed(() => GrabAt(pos));
 
-        private void OnCellReleased(GridPos pos, bool dragged) =>
+        private void OnCellReleased(GridPos pos, bool dragged)
+        {
             _grabGesture.OnReleased(dragged, () => PlaceAt(pos), CancelHand);
-        
+            PublishInspection(pos);
+        }
+
         /// <summary>
-        /// El panel no juzga: pregunta al servicio, que responde por el mismo camino que usaria
-        /// para colocar de verdad, y sube la respuesta.
+        /// Datos de inspeccion de un nodo, o null cuando no hay nada que inspeccionar.
+        ///
+        /// El null no es un caso de error: es "la celda esta vacia", y sube tal cual hasta la
+        /// franja para que decida ella que hacer con la ausencia.
         /// </summary>
+        private ItemDisplayData DisplayDataOf(ItemObject node)
+        {
+            ItemEntity item = node?.GetItemEntity();
+
+            return item == null ? null : DisplayDTOsBuilder.BuildDisplayData(item, node.GetAmount());
+        }
+
+        /// <summary>Anuncia lo que hay en esa celda para la franja de inspeccion.</summary>
+        private void PublishInspection(GridPos pos)
+            => OnInspectionStripUpdateRequired?.Invoke(DisplayDataOf(GetNodeAt(pos)));
+         
         private void EvaluateHandContent(GridPos pos, CellSize cellSize)
         {
-            if (Entity == null || !_service.IsHandCarrying()) return;
+            if (Entity == null) return;
 
-            PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos);
+            ItemDisplayData focusedItem = null;
 
-            // El tamaño lo decide el destino, y aqui el destino es una rejilla: celda por
-            // dimensiones. El ancla sigue siendo la celda, para que la esquina del fantasma
-            // caiga sobre la celda apuntada y no en medio del item.
-            BaseItemComponent baseInfo = _service.GetGrabbedItem().GetComponent<BaseItemComponent>();
-            CellSize itemSize = new CellSize(cellSize.Width * baseInfo.DimensionW,
-                                             cellSize.Height * baseInfo.DimensionH);
+            if (_service.IsHandCarrying())
+            {
+                PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos);
 
-            OnHandStyleUpdate?.Invoke(verdict, itemSize, cellSize);
+                ItemEntity item = _service.GetGrabbedItem();
+
+                OnHandStyleUpdate?.Invoke(verdict, GhostSizeOverGrid(item, cellSize), cellSize);
+                focusedItem = DisplayDTOsBuilder.BuildDisplayData(item, _service.GetGrabbedAmount());
+            } else
+            {
+                // Respaldo propio de este camino: con el menu contextual abierto el cursor ya
+                // no esta sobre la celda, y aun asi la franja debe seguir mostrando ese item.
+                ItemObject node = GetNodeAt(pos);
+                if (node == null && _panelView.LastRightClickedCell != null)
+                    node = GetNodeAt(_panelView.LastRightClickedCell.Value);
+
+                focusedItem = DisplayDataOf(node);
+            }
+
+            OnInspectionStripUpdateRequired?.Invoke(focusedItem);
         }
 
         private void GrabAt(GridPos pos)
@@ -86,14 +114,38 @@ namespace Core.MVC.Presenter.Inventory
 
             // Painted from what was actually grabbed, not from what the block showed: Grab
             // clamps to what the node holds.
-            OnHandChanged?.Invoke(_panelView.GetCellSize()); 
+            PublishHandChanged();
         }
-        
+
         private void PlaceAt(GridPos pos)
         {
             _service.PlaceAmountFromHand(Entity, pos);
 
-            OnHandChanged?.Invoke(_panelView.GetCellSize()); 
+            PublishHandChanged();
+        }
+
+        /// <summary>
+        /// Tamaño del fantasma sobre ESTA rejilla: celda por dimensiones del item. Lo decide
+        /// el destino y no el origen — de donde saliera lo que llevas no dice nada de como
+        /// se ve encima de una rejilla.
+        /// </summary>
+        private CellSize GhostSizeOverGrid(ItemEntity item, CellSize cell)
+        {
+            BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
+
+            return new CellSize(cell.Width * baseInfo.DimensionW, cell.Height * baseInfo.DimensionH);
+        }
+
+        /// <summary>
+        /// Anuncia que la mano cambio, ya con el tamaño resuelto contra esta rejilla. Con la
+        /// mano vacia va en cero: no hay nada que dimensionar y la vista solo limpia.
+        /// </summary>
+        private void PublishHandChanged()
+        {
+            CellSize cell = _panelView.GetCellSize();
+            ItemEntity grabbed = _service.GetGrabbedItem();
+
+            OnHandChanged?.Invoke(grabbed == null ? default : GhostSizeOverGrid(grabbed, cell), cell);
         }
 
         /// <summary>
@@ -142,7 +194,7 @@ namespace Core.MVC.Presenter.Inventory
         private void CancelHand()
         {
             _service.EmptyHand();
-            OnHandChanged?.Invoke(_panelView.GetCellSize());
+            PublishHandChanged();
         }
 
         /// <summary>

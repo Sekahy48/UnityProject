@@ -75,6 +75,7 @@ namespace Core.MVC.Presenter.Inventory
             {
                 pres.OnHandChanged += HandChanged;
                 pres.OnHandStyleUpdate += UpdateHandDisplay;
+                pres.OnInspectionStripUpdateRequired += UpdateInspectionStrip;
                 pres._panelView.OnCellRightPressed += OnCellRightPressed;
             }
         }
@@ -168,14 +169,20 @@ namespace Core.MVC.Presenter.Inventory
             int grabbed = _service.SpawnIntoHand(item, amount);
 
             ItemDisplayData data = DisplayDTOsBuilder.BuildDisplayData(item, grabbed);
-            CellSize cellSize = _panelPresenters[PanelType.Player]._panelView.GetCellSize();
 
-            _view.RenderHandBuffer(data, HandGhostSize(data, cellSize), cellSize);
+            // Nace sobre la rejilla del jugador, asi que se dimensiona contra ella.
+            CellSize cell = _panelPresenters[PanelType.Player]._panelView.GetCellSize();
+            CellSize itemSize = new CellSize(cell.Width * data.DimensionW, cell.Height * data.DimensionH);
+
+            _view.RenderHandBuffer(data, itemSize, cell);
         }
 
-        private void HandChanged(CellSize cellSize)
+        /// <param name="itemSize">Tamaño ya resuelto contra el destino por quien avisa. Cero
+        /// cuando la mano queda vacia: no hay nada que dimensionar.</param>
+        /// <param name="anchorBasis">Unidad de destino: celda en una rejilla, slot en el equipo.</param>
+        private void HandChanged(CellSize itemSize, CellSize anchorBasis)
         {
-            RefreshHand(cellSize);
+            RefreshHand(itemSize, anchorBasis);
             foreach (InventoryPanelPresenter pres in _panelPresenters.Values)
                 pres.RenderInventory();
         }
@@ -192,14 +199,31 @@ namespace Core.MVC.Presenter.Inventory
         /// </summary>
         private void EvaluateHandOverSlot(int layer, bool subslots, CellSize slotSize)
         {
-            if (_entity == null || !_service.IsHandCarrying()) return;
+            if (_entity == null) return;
 
             EquipmentSlotType slotType = CurrentSubSlotType(subslots);
-            ItemEntity item = _service.GetGrabbedItem();
 
-            EquipResult result = _service.EvaluateEquip(_entity, slotType, OccupiedSlots(item, slotType));
+            if (_service.IsHandCarrying())
+            {
+                ItemEntity item = _service.GetGrabbedItem();
 
-            _view.UpdateHandDisplay(ToVerdict(result), slotSize, slotSize);
+                // Sin excepciones aqui: que una prenda pueda volver al slot del que salio lo
+                // resuelve EvaluateEquip descontandola, igual que la rejilla descuenta el nodo
+                // que se esta moviendo. Decidirlo en el presenter dejaria a la ejecucion
+                // respondiendo otra cosa.
+                EquipResult result = _service.EvaluateEquip(_entity, slotType, OccupiedSlots(item, slotType));
+
+                _view.UpdateHandDisplay(ToVerdict(result), slotSize, slotSize);
+            }
+            
+
+            EquipmentSlot slot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(slotType);
+            ItemEntity focusedItem = slot.GetTopItem();  
+            ItemDisplayData data = null;      
+            if (focusedItem != null) 
+                data = DisplayDTOsBuilder.BuildDisplayData(focusedItem, 1);
+
+            _view.UpdateInspectionStrip(data);
         }
 
         /// <summary>
@@ -215,32 +239,22 @@ namespace Core.MVC.Presenter.Inventory
             => _view.UpdateHandDisplay(PlacementVerdict.Outside, default, default);
 
         
-        private void RefreshHand(CellSize cellSize)
+        /// <summary>
+        /// Repinta el fantasma con un tamaño que ya viene resuelto. Este metodo no interpreta
+        /// medidas: quien avisa sabe sobre que destino esta y lo calcula alli.
+        /// </summary>
+        private void RefreshHand(CellSize itemSize, CellSize anchorBasis)
         {
             if (!_service.IsHandCarrying()) { _view.ClearHandBuffer(); return; }
 
             ItemEntity item = _service.GetGrabbedItem();
             ItemDisplayData data = DisplayDTOsBuilder.BuildDisplayData(item, _service.GetGrabbedAmount());
 
-            _view.RenderHandBuffer(data, HandGhostSize(data, cellSize), cellSize);
+            _view.RenderHandBuffer(data, itemSize, anchorBasis);
         }
 
-        /// <summary>
-        /// Tamaño del fantasma en el instante de agarrar, cuando todavia no hay destino y lo
-        /// unico que se sabe es de donde salio. Una rejilla mide en celdas (celda x
-        /// dimensiones); un slot mide la prenda entera, asi que su tamaño ya ES el resultado.
-        ///
-        /// A partir de ahi manda el DESTINO, no el origen: cada PointerMove recalcula el
-        /// tamaño contra la rejilla o el slot que haya debajo y llama a UpdateHandDisplay.
-        /// Por eso este metodo solo lo usan los dos sitios que pintan el agarre inicial.
-        /// </summary>
-        private CellSize HandGhostSize(ItemDisplayData data, CellSize cellSize)
-        {
-            return _service.GetGrabbedOrigin() is EquipmentSlotOrigin
-                ? cellSize
-                : new CellSize(cellSize.Width * data.DimensionW, cellSize.Height * data.DimensionH);
-        }
-         
+
+        private void UpdateInspectionStrip(ItemDisplayData itemData) => _view.UpdateInspectionStrip(itemData);
 
         private void OnSubSlotLeftPressed(int layer, bool subslots)
         {
@@ -257,7 +271,9 @@ namespace Core.MVC.Presenter.Inventory
                 ItemEntity item = slot.GetItem(realPos);
                 _service.GrabFrom(_service.EquipmentOrigin(_entity, OccupiedSlots(item, slotType), item), 1);
 
-                HandChanged(_view.GetEquipmentCellSize());
+                // Sobre un slot la prenda ocupa el slot entero: tamaño y ancla coinciden.
+                CellSize slotSize = _view.GetEquipmentCellSize();
+                HandChanged(slotSize, slotSize);
             });
         }
 
@@ -269,8 +285,15 @@ namespace Core.MVC.Presenter.Inventory
                     EquipmentSlotType slotType = CurrentSubSlotType(subslots);
                     ItemEntity item = _service.GetGrabbedItem();
 
-                    _service.EquipFromHand(_entity, slotType, OccupiedSlots(item, slotType));
-                    HandChanged(_view.GetEquipmentCellSize());
+                    
+                    if (!_entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(slotType).Items.Contains(item))
+                        _service.EquipFromHand(_entity, slotType, OccupiedSlots(item, slotType));
+                    else 
+                        _service.EmptyHand();
+
+                    CellSize slot = _view.GetEquipmentCellSize();
+                    HandChanged(slot, slot);
+
                 },
             () =>
                 {
@@ -310,7 +333,7 @@ namespace Core.MVC.Presenter.Inventory
             if (!_service.IsHandCarrying()) return;
 
             _service.EmptyHand();
-            HandChanged(default);   // cellSize irrelevante: sin nada en la mano, se limpia
+            HandChanged(default, default);   // sin mano no hay nada que dimensionar
         }
 
         /// <summary>
@@ -347,6 +370,7 @@ namespace Core.MVC.Presenter.Inventory
                 
             List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), _entity, origin); 
 
+            _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildDisplayData(target.GetItemEntity(), target.GetAmount()));
             RenderContextualMenu(origin, actions, target: target); 
         }
 
@@ -377,8 +401,13 @@ namespace Core.MVC.Presenter.Inventory
 
         private int SubslotLayerToRealPos(int layer, int totalLayers) => totalLayers - 1 - layer; 
         private void RenderContextualMenu(IEntity origin, List<ItemAction> actions, ItemObject target = null, ItemEntity item = null, EquipmentSlotType? slotType = null)
-        { 
+        {   
             _view.CloseContextualMenu();
+            if (item == null && (target == null || target.GetItemEntity() == null))
+                throw new InvalidOperationException("Illegal state at rendering the contextual menu - no item/entity provided (item variant and target node both null)");
+            
+            ItemEntity focusedItem = item ?? target.GetItemEntity();
+            int focusedItemAmount = item == null ? target.GetAmount() : 1;
 
             if (actions.Count == 0)
                 return;
@@ -387,7 +416,8 @@ namespace Core.MVC.Presenter.Inventory
             foreach (ItemAction action in actions)
                 options.AddRange(BuildOptions(action, origin, target, item, slotType));
 
-            _view.RenderContextualMenu(options);
+            _view.RenderContextualMenu(options, () => _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildDisplayData(focusedItem, focusedItemAmount)));
+        
         }
 
         /// <summary>

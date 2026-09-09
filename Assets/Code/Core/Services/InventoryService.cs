@@ -324,7 +324,21 @@ namespace Core.Services
             WearableComponent wearable = item.GetComponent<WearableComponent>();
             if (wearable == null) return EquipResult.NotWearable;
 
-            return equipment.CanEquip(slots, item, wearable.FullOcupancy);
+            return equipment.CanEquip(slots, item, wearable.FullOcupancy, GetIgnoredEquipItem());
+        }
+
+        /// <summary>
+        /// Prenda que sigue puesta pero se considera de paso porque se lleva en la mano.
+        /// Hermano de GetIgnoreNodeId: la mano es una referencia y no saca nada de su sitio
+        /// hasta colocar, asi que devolver al slot lo que acabas de sacar de el chocaria
+        /// contra si mismo. Se resuelve aqui y no en el llamante para que la consulta y la
+        /// ejecucion no puedan usar criterios distintos.
+        /// </summary>
+        private ItemEntity GetIgnoredEquipItem()
+        {
+            return _interactionContext._handBuffer.GetOrigin() is EquipmentSlotOrigin origin
+                ? origin.Representative
+                : null;
         }
 
         public bool IsHandCarrying() => !_interactionContext._handBuffer.IsEmpty();

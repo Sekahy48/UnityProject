@@ -91,9 +91,9 @@
                         <ui:Label name="inspect-description" class="inspect-description"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="inspect-stats" class="inspect-stats">
-                        <ui:Label name="inspect-weight" class="inspect-stat"/>
-                        <ui:Label name="inspect-durability" class="inspect-stat"/>
-                        <ui:Label name="inspect-size" class="inspect-stat"/>
+                        <ui:Label name="inspect-weight"/>
+                        <ui:Label name="inspect-durability"/>
+                        <ui:Label name="inspect-size"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>

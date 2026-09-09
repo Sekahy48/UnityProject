@@ -260,15 +260,18 @@
     border-top-width: 1px;
     border-color: rgba(60, 60, 60, 0.8);
     padding: 8px;
+    
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
 }
 
-.inspect-icon {
+.inspect-icon { 
     width: 70px;
     height: 100%;
     border-width: 1px;
     border-color: rgba(80, 80, 80, 0.6);
     border-radius: 4px;
     background-color: rgba(40, 40, 40, 0.8);
+    flex-shrink: 0;
 }
 
 .inspect-info {
@@ -279,28 +282,31 @@
 }
 
 .inspect-name {
-    font-size: 13px;
+    font-size: 18px;
     color: rgba(220, 220, 220, 1);
-    -unity-font-style: bold;
+    -unity-font-style: bold; 
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
 }
 
 .inspect-description {
-    font-size: 10px;
+    font-size: 16px;
     color: rgba(160, 160, 160, 1);
     margin-top: 4px;
+    white-space: normal;
 }
 
 .inspect-stats {
-    width: 120px;
+    width: 25%;
     flex-direction: column;
     justify-content: center;
     padding-right: 8px;
 }
 
-.inspect-stat {
-    font-size: 10px;
+.inspect-stat { 
+    font-size: 14px;
     color: rgba(180, 180, 180, 1);
-    margin-bottom: 2px;
+    margin-bottom: 2px;  
+    background-color: rgba(70, 70, 70, 0.6);
 }
 
 /* ===== Inventory Grid ===== */
@@ -426,7 +432,7 @@
     padding: 8px;
 }
 .equip-row {
-    flex-direction: row;
+    flex-direction: row;   
 }
 
 .equip-slot {
@@ -500,12 +506,14 @@
     border-width: 2px;
     border-color: rgba(54, 56, 54, 0.75);                            /* neutro: sobre nada colocable */
 
-    /* Corta a proposito: sobre un slot de equipo el fantasma se iman a el, y sin esto
-       entrar y salir del slot serian dos saltos secos. Con 60ms el iman se lee como un
-       deslizamiento y el seguimiento libre sobre la rejilla no se nota retrasado. */
     transition-property: left, top, width, height;
     transition-duration: 60ms, 60ms, 60ms, 60ms;
 }
+
+.hand-buffer-instant {
+    transition-duration: 0s;
+}
+
 
 /* Sobre celda ocupada: no cabe. Mismo rojo que .load-immobile. */
 .hand-buffer-collision {

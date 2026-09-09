@@ -21,7 +21,7 @@ namespace Core.Inventory
             _batch = new BatchItem(item, amount);
         }
 
-        //#region Getters
+        #region Getters
 
         public int GetTypeId() => _batch.GetTypeId();
         public int GetNodeId() => _nodeId;
@@ -30,9 +30,11 @@ namespace Core.Inventory
         public bool IsLeaf() => true;
         public int GetAmount() => _batch.GetTotalAmount();
 
-        //#endregion
+        public IReadOnlyList<SubLot> GetSubLots => _batch.GetSubLots();
 
-        //#region Leaf operations
+        #endregion
+
+        #region Leaf operations
 
         public int StackOntoHere(ItemEntity item, int amount)
         {
@@ -181,9 +183,9 @@ namespace Core.Inventory
             GetTypeId().Equals(id) ? new List<IInventoryElement> { this } : new List<IInventoryElement>();
         public List<IInventoryElement> FindNodesHere(int id) => FindNodes(id);
 
-        //#endregion
+        #endregion
 
-        //#region Utilities
+        #region Utilities
 
         public void ClearInventory() { }
         public void CleanTree() { }
@@ -212,9 +214,9 @@ namespace Core.Inventory
             return clone;
         }
 
-        //#endregion
+        #endregion
 
-        //#region nodes
+        #region nodes
 
         public List<SubLot> ConsumeRandom(int amount)
         {
@@ -231,9 +233,9 @@ namespace Core.Inventory
             return nodeId == _nodeId ? this : null;
         }
 
-        //#endregion
+        #endregion
 
-        //#region Transparent Composite — Not applicable to leaves
+        #region Transparent Composite — Not applicable to leaves
 
         public int AddItem(ItemEntity item, int amount)
         {
@@ -254,7 +256,7 @@ namespace Core.Inventory
 
 
 
-        //#endregion
+        #endregion
 
     }
 }

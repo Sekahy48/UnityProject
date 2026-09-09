@@ -4,27 +4,36 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestone 5 cerrado salvo pulido.** Hechas 0-13. Quedan 14 (franja de inspeccion), 15
-(auto-sort) y 16 (inspeccion de sub-lotes). Se ha invadido ademas M6 T1: los paneles A y B
-abren contenedores externos y se transfiere entre ellos.
+**Milestone 5 cerrado salvo T15.** Hechas 0-14. Solo falta la 15, inspeccion de sub-lotes
+(el antiguo auto-sort queda descartado y la lista renumerada). Se ha invadido ademas M6 T1:
+los paneles A y B abren contenedores externos y se transfiere entre ellos.
 
 **Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
 por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
-mismas decisiones que la colocacion real. Menu contextual con submenus (tirar con cantidad,
-equipar eligiendo slot, transferencia rapida a los inventarios visibles). Equipar y
-desequipar por los tres caminos —menu, clic y arrastre— incluyendo capas concretas desde el
-popup de subslots, con feedback de validez sobre cada slot.
+mismas decisiones que la colocacion real, imantado tanto a los slots de equipo como celda a
+celda. Menu contextual con submenus (tirar con cantidad, equipar eligiendo slot,
+transferencia rapida a los inventarios visibles). Equipar y desequipar por los tres caminos
+—menu, clic y arrastre— incluyendo capas concretas desde el popup de subslots, con feedback
+de validez sobre cada slot. Franja de inspeccion viva, alimentada desde todos esos caminos.
 
-**Lo siguiente, por orden:**
+**Lo siguiente: M5 T15, desglose de sub-lotes.** El modelo ya habla sub-lotes de punta a
+punta —`SubLot` con nombre propio, `ItemObject.GetAmount(variante)`,
+`IGrabOrigin.Extract(variante, cantidad)`, `HandBuffer.Grab(origen, cantidad, variante)` y
+el bucle por variante de `RunTransfer`—, pero ningun llamante pasa variante: los dos
+`GrabFrom` que existen la dejan en null. Lo que falta es de la UI hacia arriba:
 
-1. **Extender el magnetismo a las rejillas.** Sobre un slot de equipo el fantasma se iman a
-   el (`InventoryView._magnetSlot` + la transicion de 60ms en `.hand-buffer`) y encaja
-   visualmente en el destino. Sobre la rejilla sigue al cursor libremente. Intentar lo mismo
-   celda a celda; ojo con que ahi la celda concreta SI importa, asi que el iman no puede
-   mentir sobre donde va a caer un item de varias celdas.
-2. **M5 T14, la franja de inspeccion.** La infraestructura existe (`inspection-strip`,
-   `InventoryView.UpdateInspection`) y no la llama nadie. Falta decidir que la dispara: clic
-   izquierdo sin mano, hover, o una opcion del menu contextual.
+- `ItemDisplayData` es plano (un solo `Amount`) y `ItemObject.GetItemEntity()` devuelve
+  `subLots[0].Item`, asi que hoy la franja enseña la durabilidad del representante como si
+  fuera la de toda la pila. T15 es la cura de esa mentira.
+- Decidir donde vive el desglose. El hermano conceptual exacto es el popup de subslots
+  —capas de una prenda ↔ variantes de una pila— y reusar su forma diria algo cierto.
+- Decidir alcance: leer o tambien actuar. Agarrar una variante concreta ya esta soportado
+  abajo, pero abrirlo arrastra al menu contextual (tirar/equipar/transferir por variante) y
+  convierte la tarea en otra. Separar: T15 = leer.
+- `DisplayDTOsBuilder` recibe `(ItemEntity, int)`; para variantes hace falta el `ItemObject`,
+  o sea un constructor distinto, no una sobrecarga disfrazada.
+- Requisito previo: hoy no se puede fabricar un nodo mixto jugando. Hacen falta dos items del
+  mismo `typeId` que NO sean `Equivalent` (durabilidad distinta) y que apilen.
 
 **Pendiente de datos:** crear en Stack&Go otra pechera que NO sea `topLayer`, para poder
 probar el apilado de capas con dos prendas exteriores compitiendo. Hoy todas las prendas de
@@ -221,9 +230,8 @@ Interaction:
 - [x] 13. Right-click context menu on inventory items: [Equip] [Consume] [Drop] [Inspect] (from M4)
 
 Polish:
-- [ ] 14. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container).
-- [ ] 15. Optional "auto-sort" button: best-fit algorithm to compact items and maximize free space
-- [ ] 16. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
+- [x] 14. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container). **Se alimenta desde `OnInspectionStripUpdateRequired`** en `InventoryPanelPresenter`, que publica al pasar el cursor por una celda, al soltar, desde el menu contextual y desde los slots de equipo. Stats mostradas hoy: peso, durabilidad y tamaño en celdas. Apuntar a nada publica `null`, y la vista lo traduce a campos vacios mas un icono de "sin seleccion" — la ausencia es un estado con forma propia, no un caso de error que haya que evitar.
+- [ ] 15. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 

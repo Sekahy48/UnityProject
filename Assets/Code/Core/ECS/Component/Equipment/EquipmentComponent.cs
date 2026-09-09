@@ -64,7 +64,10 @@ namespace Core.ECS.Component.Equipment
         /// de todo-o-nada de la ocupacion completa: un arco a dos manos no "entra a medias",
         /// asi que basta con que un slot lo rechace para que el veredicto sea ese rechazo.
         /// </summary>
-        public EquipResult CanEquip(IReadOnlyList<EquipmentSlotType> slotTypes, ItemEntity item, bool fullOcupancy = false)
+        /// <param name="ignored">Prenda que ya ocupa esos slots pero esta de paso, porque se
+        /// lleva en la mano y va a colocarse ahora. Ver EquipmentSlot.CanEquip.</param>
+        public EquipResult CanEquip(IReadOnlyList<EquipmentSlotType> slotTypes, ItemEntity item,
+                                    bool fullOcupancy = false, ItemEntity ignored = null)
         {
             if (slotTypes.Count == 0)
                 throw new InvalidOperationException("Cannot evaluate equipping an item while providing no possible slots.");
@@ -76,7 +79,7 @@ namespace Core.ECS.Component.Equipment
                 if (!_allowedSlots.Contains(slotType) || !_equipmentSlots.ContainsKey(slotType))
                     return EquipResult.NoSlotFits;
 
-                EquipResult verdict = _equipmentSlots[slotType].CanEquip(item);
+                EquipResult verdict = _equipmentSlots[slotType].CanEquip(item, ignored);
 
                 // Sin ocupacion completa solo importa el primer slot: es donde iria.
                 if (!fullOcupancy) return verdict;

@@ -48,8 +48,9 @@ namespace MVC.View.Inventory
         /* Ultima celda sobre la que se emitio veredicto. El veredicto solo puede cambiar al
            cambiar de celda, asi que sin esto se reevalua y se reescriben estilos en cada pixel
            de movimiento. MinValue = ninguna, para que la primera siempre emita. */
-        private GridPos? _lastCell;
+        public GridPos? LastCell {get; private set;}
 
+        public GridPos? LastRightClickedCell {get; set;}
         private Vector3 _pressLeftOrigin; /*Position where last pointer down event ocurred (left button)*/ 
         private const float DRAG_THRESHOLD_SQR = 100f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
 
@@ -123,7 +124,7 @@ namespace MVC.View.Inventory
             _gridH = rows;
             _gridW = cols;
             _fittedCell = 0f;   // dimensiones nuevas: el ajuste anterior ya no vale
-            _lastCell = null;   // rejilla nueva: la celda recordada ya no existe
+            LastCell = null;   // rejilla nueva: la celda recordada ya no existe
 
             VisualElement grid = new VisualElement();
             _grid = grid;
@@ -151,8 +152,8 @@ namespace MVC.View.Inventory
 
                 GridPos pos = PointToCoords(evt.position);
 
-                if (_lastCell.HasValue && _lastCell.Value == pos) return;
-                _lastCell = pos;
+                if (LastCell.HasValue && LastCell.Value == pos) return;
+                LastCell = pos;
 
                 OnPointerMovedOverCell?.Invoke(pos, GetCellSize());
             });
@@ -162,7 +163,7 @@ namespace MVC.View.Inventory
             // Outside por el mismo camino, sin un segundo evento que mantener en sincronia.
             _itemsLayer.RegisterCallback<PointerLeaveEvent>(_ =>
             {
-                _lastCell = null;
+                LastCell = null;
                 OnPointerMovedOverCell?.Invoke(GridPos.None, GetCellSize());
             });
 
@@ -193,6 +194,7 @@ namespace MVC.View.Inventory
                 else if (evt.button == 1)
                 {    
                     OnCellRightPressed.Invoke(gridPos, _panelType);  
+                    LastRightClickedCell = gridPos;
                 }  
             });
 
@@ -384,7 +386,7 @@ namespace MVC.View.Inventory
         public void SetLabelText(String content)
         {
             _titelLabel.text = content;
-        }
+        } 
 
         #endregion
 

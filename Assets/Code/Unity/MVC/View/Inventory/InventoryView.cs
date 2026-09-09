@@ -7,11 +7,10 @@ using Core.ECS.Component.Equipment;
 using Core.ECS.Component; 
 using AC = Core.Utils.ArgumentChecker; 
 using Core.Services; 
-using Core.MVC.View;
-using Core.Inventory;
-using System.Linq;
-using Core;
+using Core.MVC.View; 
+using System.Linq; 
 using Core.ECS.Entity;
+using Core.Inventory;
 
 namespace MVC.View.Inventory
 {
@@ -35,7 +34,8 @@ namespace MVC.View.Inventory
         
         /* Inspection Strip */
         private VisualElement _inspectionStrip, /*Container of all the composing elements of the inspection strip*/
-                              _inspectIcon; /*Icon of the inspection strip*/
+                              _inspectIcon, /*Icon of the inspection strip*/
+                              _inspectStats; /*Side stats*/
                               
         private Label _inspectName,
                       _inspectDescription,
@@ -218,6 +218,7 @@ namespace MVC.View.Inventory
             _inspectionStrip    = _mainRoot.Q<VisualElement>("inspection-strip");
             _inspectIcon        = _mainRoot.Q<VisualElement>("inspect-icon");
             MakeSquare(_inspectIcon);
+            _inspectStats       = _mainRoot.Q<VisualElement>("inspect-stats");
             _inspectName        = _mainRoot.Q<Label>("inspect-name");
             _inspectDescription = _mainRoot.Q<Label>("inspect-description");
             _inspectWeight      = _mainRoot.Q<Label>("inspect-weight");
@@ -329,7 +330,7 @@ namespace MVC.View.Inventory
                     // ser el que tienes debajo del cursor.
                     ActiveEquipmentSlot = slot;
                     SetMagnetSlot(slot);
-                    OnPointerMovedOverSlot?.Invoke(captured, subSlots, SlotSize(slot));
+                    OnPointerMovedOverSlot?.Invoke(captured, subSlots, SlotSize(slot)); 
                 });
 
                 // Salir no genera PointerMove, asi que sin esto el fantasma se queda pintado
@@ -530,10 +531,11 @@ namespace MVC.View.Inventory
             _handBuffer.Add(amountLabel);
 
             _handAnchorOffset = new Vector2(anchorBasis.Width, anchorBasis.Height) / 2f;
+            
+            _handBuffer.AddToClassList("hand-buffer-instant");
+            PlaceHand(_lastPointerPosition);
             _handBuffer.style.display = DisplayStyle.Flex;
-
-            // Ya visible: colocarla bajo el cursor antes de que el motor pinte el frame.
-            MoveHandToCursor(_lastPointerPosition);
+            _handBuffer.schedule.Execute(() => _handBuffer.RemoveFromClassList("hand-buffer-instant")).ExecuteLater(120);
         }
 
         public void RefreshHandBuffer(int amount)
@@ -549,10 +551,8 @@ namespace MVC.View.Inventory
             _handBuffer.Clear();
             _handBuffer.style.display = DisplayStyle.None;
             _handBuffer.style.backgroundImage = null;
-
-            // Sin fantasma no hay nada que imantar, y dejarlo puesto haria que el siguiente
-            // agarre naciera pegado a un slot que quiza ya no esta bajo el cursor.
-            _magnetSlot = null;
+ 
+            _magnetSlot = null; 
         }
 
         /// <param name="itemSize">Tamaño final del fantasma sobre ESTE destino, ya calculado
@@ -590,12 +590,29 @@ namespace MVC.View.Inventory
 
         #region Contextual menu
 
-        public void RenderContextualMenu(List<MenuOption> options)
+        public void RenderContextualMenu(List<MenuOption> options, Action onHover)
         { 
+            
+            _ctxMenu.Clear(); 
+            _ctxMenu.UnregisterCallback<PointerMoveEvent>(
+                    evt => {
+                        evt.StopPropagation();
+                        onHover.Invoke();
+                    }
+            );
 
-            _ctxMenu.Clear();
+            _ctxMenu.RegisterCallback<PointerMoveEvent>(
+                    evt => {
+                        evt.StopPropagation();
+                        onHover.Invoke();
+                    }
+            );
+
             foreach (MenuOption option in options)
-                _ctxMenu.Add(BuildOptionRow(option));
+            {
+                VisualElement optionElement = BuildOptionRow(option); 
+                _ctxMenu.Add(optionElement); 
+            }
 
             _ctxMenu.style.left = _lastPointerPosition.x;
             _ctxMenu.style.top  = _lastPointerPosition.y;
@@ -764,6 +781,8 @@ namespace MVC.View.Inventory
         public void CloseContextualMenu()
         {
             _ctxMenu.style.display = DisplayStyle.None;
+            foreach (InventoryPanelView panelView in _panels.Values)
+                panelView.LastRightClickedCell = null; 
         }
  
 
@@ -846,13 +865,35 @@ namespace MVC.View.Inventory
 
         #region Inspection Strip
 
-        public void UpdateInspection(ItemDisplayData item)
+        public void UpdateInspectionStrip(ItemDisplayData item)
         {
-            _inspectName.text = item.Name;
-            _inspectDescription.text = item.Description;
-            _inspectWeight.text = $"Peso: {item.Weight:F1} kg";
-            _inspectDurability.text = $"Durabilidad: {item.Durability}";
-            _inspectSize.text = $"Tamaño: {item.DimensionW}x{item.DimensionH}";
+            if (item != null)
+            {
+                _inspectName.text = item.Name;
+                _inspectDescription.text = item.Description;
+                _inspectWeight.text = $"Peso: {item.Weight:F1} kg";
+                _inspectDurability.text = $"Durabilidad: {item.Durability}";
+                _inspectSize.text = $"Tamaño: {item.DimensionW}x{item.DimensionH}";
+                UIElementUtils.SetBackgroundTexture(_inspectIcon, item.IconPath); 
+                foreach (VisualElement element in _inspectStats.Children())
+                {
+                    element.AddToClassList("inspect-stat");
+                }
+
+            } else
+            {
+                _inspectName.text = "";
+                _inspectDescription.text = "";
+                _inspectWeight.text = "";
+                _inspectDurability.text = "";
+                _inspectSize.text = "";
+                UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImages.EmptyIcon);
+                foreach (VisualElement element in _inspectStats.Children())
+                {
+                    element.RemoveFromClassList("inspect-stat");
+                }
+            }
+            
         }
 
         public void ClearInspection()
@@ -1077,21 +1118,49 @@ namespace MVC.View.Inventory
         /// celda concreta importa y el iman mentiria sobre donde va a caer.
         /// </summary>
         private void MoveHandToCursor(Vector3 panelPosition)
-        {
+        {  
             _lastPointerPosition = panelPosition;
             if (_handBuffer.style.display == DisplayStyle.None) return;
+            PlaceHand(panelPosition);
+        }
 
+        private void PlaceHand(Vector3 panelPosition)
+        {
+            _lastPointerPosition = panelPosition;
             if (_magnetSlot != null)
             {
                 Vector2 slotCorner = _handBuffer.parent.WorldToLocal(_magnetSlot.worldBound.position);
                 _handBuffer.style.left = slotCorner.x;
                 _handBuffer.style.top  = slotCorner.y;
                 return;
-            }
+            } else
+            {
+                InventoryPanelView focusedPanel = null;
+                foreach (InventoryPanelView panelView in _panels.Values)
+                {
+                    if (panelView.LastCell != null)
+                    {
+                        if (focusedPanel != null)
+                            throw new InvalidOperationException("There are two panels with the magnetCell field simustaneously not null - Illegal state: only one panel can have this field not null simultaneously.");
+                        else
+                            focusedPanel = panelView;
+                    }
+                }
 
-            Vector2 local = _handBuffer.parent.WorldToLocal(panelPosition);
-            _handBuffer.style.left = local.x - _handAnchorOffset.x / 2;
-            _handBuffer.style.top  = local.y - _handAnchorOffset.y / 2;
+                if (focusedPanel != null)
+                {
+                    CellSize cellSize = focusedPanel.GetCellSize();
+                    Vector2 cellCorner = _handBuffer.parent.WorldToLocal(focusedPanel.CoordsToPoint(focusedPanel.LastCell.Value));
+                    _handBuffer.style.left = cellCorner.x - cellSize.Width/2;
+                    _handBuffer.style.top  = cellCorner.y - cellSize.Height/2;
+                } 
+                else
+                {
+                    Vector2 local = _handBuffer.parent.WorldToLocal(panelPosition);
+                    _handBuffer.style.left = local.x - _handAnchorOffset.x / 2;
+                    _handBuffer.style.top  = local.y - _handAnchorOffset.y / 2;
+                }
+            }
         }
 
         /// <summary>
@@ -1145,8 +1214,12 @@ namespace MVC.View.Inventory
         private void MakeSquare(VisualElement element)
         {
             element.RegisterCallback<GeometryChangedEvent>(evt =>
-                element.style.width = evt.newRect.height);
-        } 
+            {
+                // Escribir el ancho vuelve a disparar este evento: sin comparar, el ciclo no para.
+                if (Mathf.Approximately(evt.newRect.width, evt.newRect.height)) return;
+                element.style.width = evt.newRect.height;
+            });
+        }
 
         #endregion
 

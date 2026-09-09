@@ -45,21 +45,48 @@ namespace Core.ECS.Component.Equipment
         /// operacion real no pueden discrepar. Duplicar las guardas en un metodo aparte seria
         /// el camino corto para que un dia el fantasma se pinte verde y el equipado falle.
         /// </summary>
-        public EquipResult CanEquip(ItemEntity item)
+        /// <param name="ignored">Prenda que ya esta aqui pero se considera de paso, porque
+        /// alguien la lleva en la mano y va a colocarla ahora. Sin esto, devolver al slot lo
+        /// que acabas de sacar de el chocaria contra si mismo: la mano es una referencia y la
+        /// prenda no sale de verdad hasta que se coloca. Es el mismo papel que juega
+        /// ignoreNodeId en la rejilla — que ocupa sitio de verdad y que esta solo de paso.</param>
+        public EquipResult CanEquip(ItemEntity item, ItemEntity ignored = null)
         {
             AC.CheckNotNull(item, nameof(item));
 
             WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
             if (wearableComponent == null) return EquipResult.NotWearable;
             if (!_enabled) return EquipResult.SlotDisabled;
-            if (_equippedItems.Count >= _maxLayers) return EquipResult.MaxLayersReached;
+            if (OccupiedLayers(ignored) >= _maxLayers) return EquipResult.MaxLayersReached;
             if (!wearableComponent.TargetSlots.Contains(SlotType)) return EquipResult.WrongSlot;
-            if (ContainsGarmentCategory(wearableComponent.GarmentCategory)) return EquipResult.DuplicateCategory;
+            if (ContainsGarmentCategory(wearableComponent.GarmentCategory, ignored)) return EquipResult.DuplicateCategory;
 
             // Con la capa exterior puesta solo caben prendas interiores, que se cuelan debajo.
-            if (_isTopLocked && wearableComponent.IsTopLayer) return EquipResult.TopLayerBlocked;
+            // Si la que bloquea es justo la que esta de paso, no bloquea nada.
+            if (wearableComponent.IsTopLayer && IsTopLockedBySomeoneElse(ignored))
+                return EquipResult.TopLayerBlocked;
 
             return EquipResult.SuccessEquip;
+        }
+
+        /// <summary>Capas que ocupan sitio de verdad: la que esta de paso no cuenta.</summary>
+        private int OccupiedLayers(ItemEntity ignored)
+        {
+            int count = _equippedItems.Count;
+
+            return ignored != null && _equippedItems.Contains(ignored) ? count - 1 : count;
+        }
+
+        /// <summary>
+        /// Si la capa exterior sigue bloqueando una vez descontada la prenda de paso. Solo
+        /// puede bloquear la ultima, que es la que ocupa el exterior.
+        /// </summary>
+        private bool IsTopLockedBySomeoneElse(ItemEntity ignored)
+        {
+            if (!_isTopLocked) return false;
+            if (ignored == null || _equippedItems.Count == 0) return true;
+
+            return !ReferenceEquals(_equippedItems[_equippedItems.Count - 1], ignored);
         }
 
         public EquipResult EquipItem(ItemEntity item)
@@ -114,14 +141,17 @@ namespace Core.ECS.Component.Equipment
             return _equippedItems[layer];
         }
         
-        public bool ContainsGarmentCategory(GarmentCategory category)
-        { 
+        /// <param name="ignored">Prenda de paso: no cuenta como ocupante de su categoria.</param>
+        public bool ContainsGarmentCategory(GarmentCategory category, ItemEntity ignored = null)
+        {
             foreach (ItemEntity item in _equippedItems)
             {
+                if (ReferenceEquals(item, ignored)) continue;
+
                 WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
                 if (wearableComponent != null && wearableComponent.GarmentCategory.Equals(category))
                 {
-                    return true;    
+                    return true;
                 }
             }
             return false;
