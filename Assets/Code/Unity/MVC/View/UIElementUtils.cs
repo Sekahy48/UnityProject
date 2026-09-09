@@ -10,6 +10,7 @@ namespace MVC.View
         {
             Label amountLabel = new Label(amount.ToString());
             amountLabel.AddToClassList("amount-label");
+            amountLabel.pickingMode = PickingMode.Ignore;
             element.Add(amountLabel);
         }
 

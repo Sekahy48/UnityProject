@@ -125,13 +125,17 @@ namespace Core.Factories
             AddTestItem(inv, "Espada de hierro", 1);
             AddTestItem(inv, "Arco corto", 1);
             AddTestItem(inv, "Manzana", 5);
+            AddTestItem(inv, "Manzana", 5, 87);
+            AddTestItem(inv, "Manzana", 5, 31);
             AddTestItem(inv, "Venda", 3);
             AddTestItem(inv, "Odre", 1);
         }
 
-        private void AddTestItem(InventoryObject inv, string itemName, int amount)
+        private void AddTestItem(InventoryObject inv, string itemName, int amount, int durability = 100)
         {
-            int remaining = inv.AddItem(_itemCatalogue.CreateItem(itemName), amount);
+            ItemEntity item =_itemCatalogue.CreateItem(itemName);
+            item.GetComponent<BaseItemComponent>().SetDurability(durability);
+            int remaining = inv.AddItem(item, amount);
             if (remaining > 0)
                 CoreLogger.Instance.LogWarning(
                     $"PrototypeFactory: no room for {remaining}x '{itemName}' in the test inventory.");

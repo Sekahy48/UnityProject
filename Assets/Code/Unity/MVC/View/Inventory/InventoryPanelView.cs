@@ -150,7 +150,7 @@ namespace MVC.View.Inventory
             {
                 OnPointerMovedOverGrid?.Invoke(evt.position);
 
-                GridPos pos = PointToCoords(evt.position);
+                GridPos pos = PointToCoords(evt.position); 
 
                 if (LastCell.HasValue && LastCell.Value == pos) return;
                 LastCell = pos;
@@ -286,6 +286,10 @@ namespace MVC.View.Inventory
                 VisualElement itemCard = new VisualElement();
                 VisualElement itemBackground = new VisualElement();
                 itemBackground.AddToClassList("item-icon");
+
+                itemCard.pickingMode       = PickingMode.Ignore;
+                itemBackground.pickingMode = PickingMode.Ignore;
+
 
                 UIElementUtils.SetBackgroundTexture(itemBackground, item.Item.IconPath);
 

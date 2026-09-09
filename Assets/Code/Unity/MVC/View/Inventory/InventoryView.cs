@@ -11,6 +11,7 @@ using Core.MVC.View;
 using System.Linq; 
 using Core.ECS.Entity;
 using Core.Inventory;
+using System.Xml.Serialization;
 
 namespace MVC.View.Inventory
 {
@@ -174,7 +175,13 @@ namespace MVC.View.Inventory
 
             // Solo llegan aqui los up que NO aterrizaron en una rejilla: los paneles cortan
             // la propagacion de los suyos.
-            _uiDocument.rootVisualElement.RegisterCallback<PointerUpEvent>(_ => OnReleasedOutsideGrid?.Invoke());
+            _uiDocument.rootVisualElement.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                OnReleasedOutsideGrid?.Invoke();
+                VisualElement t = evt.target as VisualElement;
+                Debug.Log($"UP fuera: target={t?.name} clases=[{string.Join(",", t?.GetClasses() ?? new string[0])}] panel={(t?.panel == null ? "NULL" : "ok")}");
+            });
+            
 
             // Left tabs
             VisualElement leftTabs = _mainRoot.Q<VisualElement>("left-tabs-bar");
@@ -530,9 +537,7 @@ namespace MVC.View.Inventory
             _handBuffer.style.width  = itemSize.Width;
             _handBuffer.style.height = itemSize.Height;
 
-            Label amountLabel = new Label(itemData.Amount.ToString());
-            amountLabel.AddToClassList("amount-label");
-            _handBuffer.Add(amountLabel);
+            UIElementUtils.AddAmountLabel(_handBuffer, itemData.Amount);
 
             _handAnchorOffset = new Vector2(anchorBasis.Width, anchorBasis.Height) / 2f;
             
@@ -545,9 +550,7 @@ namespace MVC.View.Inventory
         public void RefreshHandBuffer(int amount)
         {
             _handBuffer.Clear();
-            Label amountLabel = new Label(amount.ToString());
-            amountLabel.AddToClassList("amount-label");
-            _handBuffer.Add(amountLabel);
+            UIElementUtils.AddAmountLabel(_handBuffer, amount);
         }
 
         public void ClearHandBuffer()
@@ -799,6 +802,7 @@ namespace MVC.View.Inventory
 
         private void RenderSublotsPopup(IReadOnlyList<ItemDisplayData> sublots)
         {
+            _sublotsPopup.Clear();
             if (sublots == null || sublots.Count == 0)
                 throw new InvalidOperationException("The provided list of sub-lots cannot be null or empty");
 
@@ -816,8 +820,17 @@ namespace MVC.View.Inventory
                 // NOTA: cambiar clase
                 Label sublotCondition = new Label(sublot.Name);
                 sublotCondition.AddToClassList("sublots-popup-row-label");
+
+                sublotRow.Add(sublotName);
+                sublotRow.Add(sublotCondition);
+
+                _sublotsPopup.Add(sublotRow);
             }
+
+            _sublotsPopup.style.display = DisplayStyle.Flex;
         }
+
+        private void CloseSublotsPopup() => _sublotsPopup.style.display = DisplayStyle.None;
 
         #endregion
 
