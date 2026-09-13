@@ -4,47 +4,50 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestone 5 cerrado salvo T15.** Hechas 0-14. Solo falta la 15, inspeccion de sub-lotes
-(el antiguo auto-sort queda descartado y la lista renumerada). Se ha invadido ademas M6 T1:
-los paneles A y B abren contenedores externos y se transfiere entre ellos.
+**Milestone 5 CERRADO.** Hechas 0-17 (el antiguo auto-sort quedo descartado y la lista
+renumerada). Se ha invadido ademas buena parte de M6: T1 (los paneles A y B abren contenedores
+externos), T3 y T4 (transferir entre ellos respetando rejilla y peso de los dos) estan hechos
+por el mismo camino de veredictos.
 
 **Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
 por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
 mismas decisiones que la colocacion real, imantado tanto a los slots de equipo como celda a
 celda. Menu contextual con submenus (tirar con cantidad, equipar eligiendo slot,
 transferencia rapida a los inventarios visibles). Equipar y desequipar por los tres caminos
-—menu, clic y arrastre— incluyendo capas concretas desde el popup de subslots, con feedback
-de validez sobre cada slot. Franja de inspeccion viva, alimentada desde todos esos caminos.
+—menu, clic y arrastre— incluyendo capas concretas desde el popup de capas, con feedback
+de validez sobre cada slot. Franja de inspeccion viva, alimentada desde todos esos caminos, y
+honesta con las pilas mixtas. Desglose de variantes en su propio desplegable, cada fila
+agarrable y con su menu contextual. Cantidades parciales por gesto (shift) y por menu
+("Dividir"), repitiendo el gesto sobre el propio origen para coger mas, e intercambio de dos
+items cuando ninguno admite al otro. El fantasma distingue cuatro respuestas: verde entra
+entero, amarillo entra parte, azul se intercambia, rojo nada.
 
-**Lo siguiente: M5 T15, desglose de sub-lotes.** El modelo ya habla sub-lotes de punta a
-punta —`SubLot` con nombre propio, `ItemObject.GetAmount(variante)`,
-`IGrabOrigin.Extract(variante, cantidad)`, `HandBuffer.Grab(origen, cantidad, variante)` y
-el bucle por variante de `RunTransfer`—, pero ningun llamante pasa variante: los dos
-`GrabFrom` que existen la dejan en null. Lo que falta es de la UI hacia arriba:
+**Lo siguiente: M6, y cambia el tipo de trabajo.** Lo que queda de M6 ya no es
+inventario-como-interfaz:
 
-- `ItemDisplayData` es plano (un solo `Amount`) y `ItemObject.GetItemEntity()` devuelve
-  `subLots[0].Item`, asi que hoy la franja enseña la durabilidad del representante como si
-  fuera la de toda la pila. T15 es la cura de esa mentira.
-- Decidir donde vive el desglose. El hermano conceptual exacto es el popup de subslots
-  —capas de una prenda ↔ variantes de una pila— y reusar su forma diria algo cierto.
-- Decidir alcance: leer o tambien actuar. Agarrar una variante concreta ya esta soportado
-  abajo, pero abrirlo arrastra al menu contextual (tirar/equipar/transferir por variante) y
-  convierte la tarea en otra. Separar: T15 = leer.
-- `DisplayDTOsBuilder` recibe `(ItemEntity, int)`; para variantes hace falta el `ItemObject`,
-  o sea un constructor distinto, no una sobrecarga disfrazada.
-- Requisito previo: hoy no se puede fabricar un nodo mixto jugando. Hacen falta dos items del
-  mismo `typeId` que NO sean `Equivalent` (durabilidad distinta) y que apilen.
+1. **T2, recogida desde el mundo.** La pieza de peso: items como entidades con posicion,
+   spawn desde acciones (talar, minar) y recogida a las manos. Sale de la UI y entra en
+   entidades de mundo. Primera tarea en mucho tiempo que no toca `InventoryView`.
+2. **T7, mochila equipada como contenedor**, con pestañas en el panel para cambiar de
+   contenedor. Esta si es UI, y se apoya en que `InventoryObject` es un Composite: un
+   contenedor dentro del inventario ya es representable, solo falta navegarlo.
+3. **T5, cerrar el panel por distancia**, y **T6, carros y NPCs**, que son el mismo mecanismo
+   con otras entidades.
 
 **Pendiente de datos:** crear en Stack&Go otra pechera que NO sea `topLayer`, para poder
 probar el apilado de capas con dos prendas exteriores compitiendo. Hoy todas las prendas de
 pecho del catalogo son de capa exterior, asi que el camino de `Insert(Count - 1)` en
 `EquipmentSlot.EquipItem` y el bloqueo por `TopLayerBlocked` apenas se han ejercitado.
 
-**Deuda conocida que no bloquea:** el popup de subslots no es destino de soltado (se agarra
-desde el, no se suelta en una capa concreta); `EquipmentSystem` sigue sin reaccionar a
-eventos pese a implementar `IReactiveSystem`; y el equipo aun no pesa, asi que equipar desde
-un arcon mete peso gratis — decision ya tomada (opcion "el equipo pesa, con coeficiente"),
-pendiente de aplicar.
+**Deuda conocida que no bloquea:** ni el popup de capas ni el de variantes son destino de
+soltado (se agarra desde ellos, no se suelta en una capa o variante concreta), y en el de
+variantes la asimetria chirria mas, porque el sitio del que sacas una manzana parece
+obviamente un sitio donde devolverla; el menu de una fila del desplegable no ofrece "Dividir"
+aunque `SplitNode` acepte variante; `EquipmentSystem` sigue sin reaccionar a eventos pese a
+implementar `IReactiveSystem`; `GetAvailableActions` acumula flags sueltos (`hasVariants`,
+`splittable`), que es el mismo olor que `MenuContext` vino a arreglar un nivel mas arriba; y
+el equipo aun no pesa, asi que equipar desde un arcon mete peso gratis — decision ya tomada
+(opcion "el equipo pesa, con coeficiente"), pendiente de aplicar.
 
 ---
 
@@ -231,7 +234,29 @@ Interaction:
 
 Polish:
 - [x] 14. Item inspection strip (bottom, full width): left = large item icon, center-left = name + description, center-right = stats (condition, weight, durability, grid size, type). Appears/updates on item click. Must work in all panel configurations (single inventory, inventory + container, container-to-container). **Se alimenta desde `OnInspectionStripUpdateRequired`** en `InventoryPanelPresenter`, que publica al pasar el cursor por una celda, al soltar, desde el menu contextual y desde los slots de equipo. Stats mostradas hoy: peso, durabilidad y tamaño en celdas. Apuntar a nada publica `null`, y la vista lo traduce a campos vacios mas un icono de "sin seleccion" — la ausencia es un estado con forma propia, no un caso de error que haya que evitar.
-- [ ] 15. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`)
+- [x] 15. Update `InventoryPresenter` to handle stack inspection (sub-lot breakdown via `BatchItem.GetSubLots()`). **Desplegable por variante** (`sublots-popup`), anclado a la esquina superior derecha de la card mediante `PanelPoint` — un valor de Core hermano de `CellSize`, para que los presenters transporten una posicion de UI sin conocer `Vector3`. El ancla se mide al ABRIR el menu contextual y viaja en el cierre de la opcion: cuando se pulsa "Inspeccionar" el evento de puntero ya no existe y nadie sabe de que card salio. Cada fila es interactuable: clic izquierdo agarra esa variante, clic derecho abre su propio menu contextual. La identidad de la variante viaja como `ItemEntity` y no como indice, porque todo el modelo empareja variantes por `Equivalent` y un indice habria que traducirlo de vuelta justo en el momento en que puede estar obsoleto.
+
+  Salio de aqui `MenuContext` (`Core/MVC/Presenter/Inventory/`), que absorbio los seis parametros que se propagaban por `RenderContextualMenu` y `BuildOptions`. Tres fabricas —`FromGrid`, `FromSublot`, `FromEquipment`— hacen inconstruible el estado ilegal, igual que la hoja y la rama de `MenuOption`, y eliminan la excepcion de "ni nodo ni variante". `Target` es el nodo que contiene lo enfocado y `Item` la `ItemEntity` concreta: celda = nodo sin variante, fila = nodo con variante, equipo = variante sin nodo.
+
+  Y `DisplayDTOsBuilder.BuildNodeData(ItemObject)`, porque hay hechos que son del NODO y no del item — si la pila tiene varias variantes no se puede saber desde una `ItemEntity` suelta. Con mezcla, la franja dice `Durabilidad: Variable` en vez de la del representante, que es lo que hacia antes sin avisar. El peso se partio en total y unitario por el mismo motivo.
+
+- [x] 16. Cantidades parciales. **Por gesto**: shift + clic izquierdo coge una unidad, shift + clic derecho coge la mitad (redondeando hacia arriba: al partir impar, quien hace el gesto se queda la parte grande); con la mano llena los mismos gestos dejan una unidad o la mitad de lo que se lleva. La vista traduce la tecla a un `GrabPortion` y Core nunca sabe de teclados. El gesto se resuelve en el *press*, asi que `GrabGesture` marca el gesto como consumido (`_placedThisGesture`) para que el *release* no coloque el resto detras. Shift + derecho NO abre el menu contextual: es lo que hay que ceder para que el gesto exista.
+
+  **Por menu**: "Dividir" con campo numerico (`max: Amount - 1`, porque separar todo no separa nada) crea una pila nueva en el primer hueco de la misma rejilla. Va por `RunTransfer` como cualquier transferencia, con su vuelta atras. La accion solo se ofrece cuando hay hueco: una accion que no puede cumplirse no debe aparecer, porque no tiene forma de explicar por que no pasa nada.
+
+  Dos cosas salieron de montar esto. `PlacementVerdict.Partial` (amarillo, el de `.load-extra`): que entre parte de lo que llevas ya ocurria —por peso— y se truncaba en silencio. Y un bug de paridad: `EvaluatePlacement` decidia a trozos con un `return` por guarda, y la rama de apilar sobre una pila compatible salia por su cuenta **sin comprobar el peso**, asi que el fantasma pintaba verde y no se movia nada. Reescrito para calcular cuantas unidades aterrizarian de verdad (`UnitsThatWouldLand`) y derivar el veredicto de ese numero: asi ninguna rama puede olvidarse de una regla.
+
+  Mientras se sobrevuela con shift se evalua UNA unidad aunque el gesto pueda acabar siendo la mitad: al pasar el cursor todavia no hay boton, y "cabe al menos una" es la respuesta valida para los dos. Evaluar la mitad pintaria rojo donde un shift + izquierdo coloca sin problema. Y como pulsar shift quieto no genera `PointerMove`, el modificador se **sondea** (`WatchModifier`, 50 ms) en vez de escucharse con `KeyDown`/`KeyUp`: los eventos de tecla exigen foco y el foco lo tienen los campos numericos del menu.
+
+  **Rellenar la mano** (`HandBuffer.GrabMore`): repetir el gesto sobre el origen de lo que ya llevas suma mas en vez de descargar. No es agarrar otra vez —eso revienta contra la guarda de `Grab`— sino subir la reserva, porque agarrar no mueve nada y lo reservado sigue contando en su nodo; de ahi que el tope sea `Ungrabbed()` y que la mitad se mida sobre el resto sin reservar, asi que con 40 da 20, 10, 5 y converge. "Es el mismo origen" se resuelve contra la rejilla en cada pulsacion (`IsGrabbedFrom`) y no contra nada recordado: asi abandonar el item y volver sigue contando, y los items de varias celdas salen gratis porque `GetNodeAt` resuelve cualquier celda al mismo nodo. El canje es que ya no se puede devolver una porcion al nodo del que salio usando shift — pero eso era un no-op de todas formas, porque `ignoreNodeId` lo neutralizaba.
+
+- [x] 17. Intercambio de items (`PlacementVerdict.Swap`, azul). Llevando A y pulsando sobre un B incompatible, cada uno pasa a las celdas del otro. **Decidido: el intercambio NO pasa por la mano.** Las alternativas eran dejar B agarrado —lo que obliga a sacarlo del inventario a un staging y rompe la propiedad de la que cuelga todo el diseño, que cancelar es gratis: si cancelas despues de intercambiar, las celdas de B las ocupa A y no hay vuelta— o resolverlo en un solo gesto. Lo segundo es ademas lo unico **evaluable antes de hacerlo**, que es lo que permite pintar el azul sin mentir; con la otra opcion el azul significaria "empieza y ya veremos".
+
+  Limitado al mismo inventario a proposito: entre paneles el intercambio mueve peso y necesita las dos mitades en una transaccion, mientras que dentro de uno no se mueve ni una unidad de `BatchItem` y el peso total no cambia — es una reposicion de dos nodos en la rejilla, sin `Extract`, sin `Restore` y sin pesos que recomprobar. Exige tambien la mano con el nodo ENTERO (`Ungrabbed() == 0`): con media pila el origen sigue ocupando sus celdas y no hay hueco que ofrecer a cambio.
+
+  El que va en la mano se coloca en la **celda pulsada**, no en la esquina del desplazado: lo que llevas se coloca donde apuntas, igual que en cualquier otra colocacion, y el otro se conforma con la esquina que queda libre porque nadie decide por el. Consecuencia a tener presente: el mismo par de items puede dar azul en una celda y rojo en la de al lado, y es correcto.
+
+  Dos bugs de paridad salieron de aqui, los dos con la misma forma — **preguntar una parte de la decision en vez de la decision entera**. `PlaceAt` consultaba `CanSwapWith` primero, y apilar sobre una pila compatible cumple todas las condiciones de un intercambio, asi que intercambiaba lo que debia apilarse; se cura preguntando a `EvaluatePlacement`, que es quien conoce el ORDEN (`Fits` → `Partial` → `Swap` → `Blocked`). Y la consulta validaba cada colocacion por separado ignorando al otro nodo, asi que dos huellas de destino que se pisan pasaban las dos comprobaciones y colisionaban al colocar la segunda: de ahi el no-solape explicito, con el que el orden de colocacion deja de importar.
 
 **Decided**: No auto-placement as primary flow. Items enter the player's inventory by manual drag from world containers. The player decides where each item goes. Auto-sort and first-fit exist as convenience tools, not as the default path. This reinforces the realistic logistics theme.
 
@@ -344,5 +369,12 @@ Hand added notes (by me by hand):
   Salida prevista: constructor privado + fabricas estaticas por caso (`ItemLotEvent.Dropped(entity, lots)`, `.PickedUp(...)`), que fijan el tipo y se leen mejor que un `new` con un enum suelto. **Aplazado a proposito**: con un solo caso emitido (`ItemDropped`) la fabrica es maquinaria que no paga lo que cuesta. Revisar cuando haya dos o tres.
 
   Regla que acompaña la decision: si un caso nuevo necesita una carga util **distinta**, es otra clase de evento, no un campo opcional mas en esta. Ahi es cuando `ItemLotEvent` se convertiria en cajon de sastre con la mitad de los campos nulos.
+
+- [ ] **Porciones desde el desplegable de sub-lotes.** Los gestos con modificador (shift + clic
+  izquierdo para una unidad, shift + clic derecho para la mitad) se han montado solo sobre las
+  celdas de la rejilla. Las filas del desplegable de variantes podrian aceptar los mismos, pero
+  de momento no: si quieres mover una cantidad concreta de una variante concreta, abres el
+  desplegable y usas su menu contextual, que ya distingue la variante. Revisar si la doble via
+  compensa, o si tener el gesto solo en la rejilla resulta incoherente al jugarlo.
 
 - [ ] Filtered consumption for crafting: `ConsumeFiltered(Predicate<ItemEntity> filter, int amount)` in `BatchItem` + wrapper in `InventorySystem`. Recipes need items matching not just typeId but specific state (e.g., hot iron ingot vs cold). `Equivalent()` may be too strict — evaluate whether a looser matching system is needed (partial match, predicate-based). Uses `BfsFindAll(typeId)` + filter per sub-lot. Additive, no structural refactor needed.

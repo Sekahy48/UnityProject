@@ -34,6 +34,7 @@ namespace Core.MVC.Presenter.Inventory
 
             _panelView.OnCellLeftPressed += OnCellLeftPressed;
             _panelView.OnCellReleased += OnCellReleased;
+            _panelView.OnCellPortionPressed += OnCellPortionPressed;
             _panelView.OnPointerMovedOverCell += EvaluateHandContent;
 
             _grabGesture = new GrabGesture(_service);
@@ -59,23 +60,46 @@ namespace Core.MVC.Presenter.Inventory
         }
 
         /// <summary>
+        /// Gesto con modificador: con la mano vacia toma una porcion de la pila, y con la mano
+        /// llena descarga una porcion de lo que lleva. Una sola entrada para los dos sentidos
+        /// porque lo que decide cual toca es el estado de la mano, no la tecla.
+        /// </summary>
+        private void OnCellPortionPressed(GridPos pos, GrabPortion portion)
+        {
+            bool sameOrigin = _service.IsGrabbedFrom(GetNodeAt(pos));
+
+            _grabGesture.OnPortionPressed(sameOrigin,
+                                          () => GrabPortionAt(pos, portion),
+                                          () => GrabMoreFromOwnOrigin(portion),
+                                          () => PlacePortionAt(pos, portion));
+
+            PublishInspection(pos);
+        }
+
+        /// <summary>Suma a la mano otra porcion de lo que queda sin reservar en su propio origen.</summary>
+        private void GrabMoreFromOwnOrigin(GrabPortion portion)
+        {
+            int units = portion.UnitsOf(_service.GetUngrabbedAmount());
+            if (units <= 0) return;
+
+            _service.GrabMore(units);
+
+            PublishHandChanged();
+        }
+
+        /// <summary>
         /// Datos de inspeccion de un nodo, o null cuando no hay nada que inspeccionar.
         ///
         /// El null no es un caso de error: es "la celda esta vacia", y sube tal cual hasta la
         /// franja para que decida ella que hacer con la ausencia.
         /// </summary>
-        private ItemDisplayData DisplayDataOf(ItemObject node)
-        {
-            ItemEntity item = node?.GetItemEntity();
-
-            return item == null ? null : DisplayDTOsBuilder.BuildDisplayData(item, node.GetAmount());
-        }
+        private ItemDisplayData DisplayDataOf(ItemObject node) => DisplayDTOsBuilder.BuildNodeData(node);
 
         /// <summary>Anuncia lo que hay en esa celda para la franja de inspeccion.</summary>
         private void PublishInspection(GridPos pos)
             => OnInspectionStripUpdateRequired?.Invoke(DisplayDataOf(GetNodeAt(pos)));
          
-        private void EvaluateHandContent(GridPos pos, CellSize cellSize)
+        private void EvaluateHandContent(GridPos pos, CellSize cellSize, GrabPortion portion)
         {
             if (Entity == null) return;
 
@@ -83,7 +107,8 @@ namespace Core.MVC.Presenter.Inventory
 
             if (_service.IsHandCarrying())
             {
-                PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos);
+                PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos,
+                                                                      portion.UnitsOf(_service.GetGrabbedAmount()));
 
                 ItemEntity item = _service.GetGrabbedItem();
 
@@ -117,9 +142,62 @@ namespace Core.MVC.Presenter.Inventory
             PublishHandChanged();
         }
 
+        /// <summary>
+        /// Agarra parte de la pila que ocupa esa celda. Sin variante: de una pila mixta sale
+        /// lo que salga, y quien quiera elegir abre el desglose de sub-lotes.
+        /// </summary>
+        private void GrabPortionAt(GridPos pos, GrabPortion portion)
+        {
+            InventoryObject inventory = Entity.GetComponent<InventoryComponent>().Inventory;
+            GridElement element = inventory.GetGrid().GetElementAt(pos);
+            if (element == null) return;
+
+            ItemObject node = element.GetNode();
+            int units = portion.UnitsOf(node.GetAmount());
+            if (units <= 0) return;
+
+            _service.GrabFrom(new InventoryNodeOrigin(Entity, inventory, node), units);
+
+            PublishHandChanged();
+        }
+
+        /// <summary>Descarga parte de la mano en esa celda; el resto se queda agarrado.</summary>
+        private void PlacePortionAt(GridPos pos, GrabPortion portion)
+        {
+            _service.PlaceAmountFromHand(Entity, pos, portion.UnitsOf(_service.GetGrabbedAmount()));
+
+            PublishHandChanged();
+        }
+
+        /// <summary>Agarra una variante concreta del nodo que ocupa esa celda.</summary>
+        public void GrabVariantAt(GridPos pos, ItemEntity variant, int amount)
+        {
+            InventoryObject inventory = Entity.GetComponent<InventoryComponent>().Inventory;
+            GridElement element = inventory.GetGrid().GetElementAt(pos);
+            if (element == null) return;
+
+            ItemObject node = element.GetNode();
+            _service.GrabFrom(new InventoryNodeOrigin(Entity, inventory, node), amount, variant);
+
+            PublishHandChanged();
+        }
+
+
+        /// <summary>
+        /// Descarga la mano en esa celda, o intercambia si el destino no admite nada pero puede
+        /// cambiarse de sitio.
+        ///
+        /// Se pregunta a EvaluatePlacement y no a CanSwapWith directamente, porque el
+        /// intercambio es el ULTIMO recurso y solo el veredicto conoce ese orden: apilar sobre
+        /// una pila compatible cumple todas las condiciones de un intercambio, asi que
+        /// preguntar primero por el switch intercambiaba lo que debia apilarse.
+        /// </summary>
         private void PlaceAt(GridPos pos)
         {
-            _service.PlaceAmountFromHand(Entity, pos);
+            if (_service.EvaluatePlacement(Entity, pos) == PlacementVerdict.Swap)
+                _service.SwapFromHand(Entity, pos);
+            else
+                _service.PlaceAmountFromHand(Entity, pos);
 
             PublishHandChanged();
         }
@@ -168,7 +246,7 @@ namespace Core.MVC.Presenter.Inventory
                     continue;
                 items.Add(new GridItemDisplayData
                 {
-                    Item      = DisplayDTOsBuilder.BuildDisplayData(item, node.GetAmount()),
+                    Item      = DisplayDTOsBuilder.BuildNodeData(node),
                     Row       = element.GetRow(),
                     Col       = element.GetCol(),
                     IsGrabbed = node.GetNodeId() == _service.GetGrabbedNodeId()
@@ -206,6 +284,32 @@ namespace Core.MVC.Presenter.Inventory
         /// unico sitio donde la entidad, su inventario y la rejilla estan juntos, asi que la
         /// traduccion celda -> nodo vive aqui.
         /// </summary>
+        /// <summary>
+        /// Esquina superior derecha de la card que ocupa esa celda, o el punto cero si la
+        /// celda esta libre.
+        ///
+        /// La celda pulsada puede ser cualquiera de las que ocupa el item, asi que la medida
+        /// sale de su celda ORIGEN y de sus dimensiones, no de donde cayo el cursor. Vive aqui
+        /// por lo mismo que GetNodeAt: este es el unico sitio donde la entidad, su rejilla y
+        /// la vista que la mide estan juntas.
+        /// </summary>
+        public PanelPoint ItemCornerAt(GridPos pos)
+        {
+            if (Entity == null) return default;
+
+            GridElement element = Entity.GetComponent<InventoryComponent>()
+                                        .Inventory.GetGrid().GetElementAt(pos);
+            if (element == null) return default;
+
+            ItemEntity item = element.GetNode().GetItemEntity();
+            if (item == null) return default;
+
+            BaseItemComponent info = item.GetComponent<BaseItemComponent>();
+
+            return _panelView.ItemTopRightCorner(new GridPos(element.GetRow(), element.GetCol()),
+                                                 info.DimensionW, info.DimensionH);
+        }
+
         public ItemObject GetNodeAt(GridPos pos)
         {
             if (Entity == null) return null;

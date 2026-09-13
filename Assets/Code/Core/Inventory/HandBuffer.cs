@@ -36,6 +36,30 @@ namespace Core.Inventory
         }
 
         /// <summary>
+        /// Anade unidades al agarre en curso, del MISMO origen y la MISMA variante.
+        ///
+        /// Existe porque agarrar no mueve nada: lo reservado sigue contando en su origen, asi
+        /// que "coger mas" no es agarrar otra vez —eso reventaria contra la guarda de Grab—
+        /// sino subir la reserva. El tope es lo que el origen tenga sin reservar.
+        /// </summary>
+        /// <param name="amount">Unidades a sumar. Se acota a lo que quede sin agarrar.</param>
+        /// <returns>Unidades realmente sumadas.</returns>
+        public int GrabMore(int amount)
+        {
+            if (IsEmpty())
+                throw new InvalidOperationException("Cannot add to a grab that does not exist.");
+            AC.CheckPositive(amount, nameof(amount));
+
+            int taken = Math.Min(amount, Math.Max(Ungrabbed(), 0));
+            _grabbed += taken;
+
+            return taken;
+        }
+
+        /// <summary>Unidades del origen que aun no estan reservadas por esta mano.</summary>
+        public int Ungrabbed() => IsEmpty() ? 0 : _origin.Available(_subLotItem) - _grabbed;
+
+        /// <summary>
         /// Descuenta unidades que el llamante YA ha sacado del origen. Llamar con lo que
         /// realmente se movio, nunca con lo que se pidio.
         /// La mano se vacia sola al llegar a cero, porque el origen puede haber dejado de

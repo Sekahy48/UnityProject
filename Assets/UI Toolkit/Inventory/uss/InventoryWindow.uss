@@ -450,7 +450,7 @@
     margin: 1px;
 }
 
-.subslots-popup {
+.layers-popup {
     position: absolute;
     display: none;
     flex-direction: row;
@@ -461,7 +461,7 @@
     border-radius: 4px;
 }
 
-.subslots-button {
+.layers-button {
     position: absolute;
     bottom: 2px;
     right: 2px;
@@ -525,6 +525,18 @@
 .hand-buffer-fits {
     background-color: rgba(62, 141, 75, 0.25);
     border-color: rgba(62, 141, 75, 0.98);
+}
+
+/* Entra parte de lo que se lleva; el resto se queda en la mano. Mismo amarillo que .load-extra. */
+.hand-buffer-partial {
+    background-color: rgba(204, 207, 14, 0.25);
+    border-color: rgba(204, 207, 14, 0.98);
+}
+
+/* No cabe, pero se pueden intercambiar las celdas: lo que llevas aqui y lo de aqui a tu hueco. */
+.hand-buffer-swap {
+    background-color: rgba(37, 116, 214, 0.25);
+    border-color: rgba(37, 116, 214, 0.98);
 }
 
 
@@ -635,8 +647,20 @@
 .sublots-popup-row {
     flex-direction: row;
     height: 30px;
+    justify-content: space-between;
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75); 
+}
+
+.sublots-popup-row:hover {
+    border-color: rgb(250, 255, 250); 
+    
 }
 
 .sublots-popup-row-label {
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
+}
+
+.sublot-icon {
+    height: 100%;
 }

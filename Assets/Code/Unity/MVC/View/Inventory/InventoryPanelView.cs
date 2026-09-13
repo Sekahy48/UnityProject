@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic; 
 using Core.Events;
 using Core.Inventory;
+using Core.MVC.Presenter.Inventory;
 using Core.MVC.View.UI.Inventory; 
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -51,6 +52,11 @@ namespace MVC.View.Inventory
         public GridPos? LastCell {get; private set;}
 
         public GridPos? LastRightClickedCell {get; set;}
+
+        /* Porcion con la que se emitio el ultimo veredicto. Acompaña a LastCell porque el
+           veredicto depende de las dos cosas: soltar sobre la misma celda no significa lo
+           mismo con shift pulsado que sin el. */
+        private GrabPortion _lastPortion = GrabPortion.All;
         private Vector3 _pressLeftOrigin; /*Position where last pointer down event ocurred (left button)*/ 
         private const float DRAG_THRESHOLD_SQR = 100f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
 
@@ -70,8 +76,12 @@ namespace MVC.View.Inventory
         public event Action<GridPos, PanelType> OnCellRightPressed;
         public event Action<GridPos, bool> OnCellReleased;
 
+        /* Pulsacion con modificador: resuelve el gesto en el press y no espera al release.
+           La vista traduce la tecla a una porcion, asi que Core no sabe de teclados. */
+        public event Action<GridPos, GrabPortion> OnCellPortionPressed;
+
         public event Action<Vector3> OnPointerMovedOverGrid;
-        public event Action<GridPos, CellSize> OnPointerMovedOverCell;
+        public event Action<GridPos, CellSize, GrabPortion> OnPointerMovedOverCell;
 
         /* El panel no se oculta a si mismo: pide que lo cierren. Quien decide que ocupa
            cada hueco es InventoryView, y la visibilidad va con esa decision. */
@@ -152,10 +162,15 @@ namespace MVC.View.Inventory
 
                 GridPos pos = PointToCoords(evt.position); 
 
-                if (LastCell.HasValue && LastCell.Value == pos) return;
-                LastCell = pos;
+                GrabPortion portion = HoverPortion(evt.shiftKey);
 
-                OnPointerMovedOverCell?.Invoke(pos, GetCellSize());
+                // Tambien reemite si cambio la porcion sin cambiar de celda: el veredicto
+                // depende de cuantas unidades se vayan a colocar, no solo de donde.
+                if (LastCell.HasValue && LastCell.Value == pos && _lastPortion == portion) return;
+                LastCell = pos;
+                _lastPortion = portion;
+
+                OnPointerMovedOverCell?.Invoke(pos, GetCellSize(), portion);
             });
 
             // Salir de la rejilla no genera PointerMove, asi que sin esto la mano se queda
@@ -164,7 +179,7 @@ namespace MVC.View.Inventory
             _itemsLayer.RegisterCallback<PointerLeaveEvent>(_ =>
             {
                 LastCell = null;
-                OnPointerMovedOverCell?.Invoke(GridPos.None, GetCellSize());
+                OnPointerMovedOverCell?.Invoke(GridPos.None, GetCellSize(), GrabPortion.All);
             });
 
             // Being a drop target IS stopping propagation: whatever does not stop the event
@@ -185,12 +200,21 @@ namespace MVC.View.Inventory
                 // 1 = dcho
                 // 2 = central
                 GridPos gridPos = PointToCoords(position);
- 
+
+                // Con modificador el gesto es otro: una porcion, resuelta ya en el press. Se
+                // desvia antes de las ramas de boton porque shift + derecho NO abre el menu.
+                if (evt.shiftKey)
+                {
+                    _pressLeftOrigin = evt.position;
+                    OnCellPortionPressed?.Invoke(gridPos, evt.button == 1 ? GrabPortion.Half : GrabPortion.One);
+                    return;
+                }
+
                 if (evt.button == 0)
-                { 
-                    _pressLeftOrigin = evt.position; 
-                    OnCellLeftPressed.Invoke(gridPos); 
-                }     
+                {
+                    _pressLeftOrigin = evt.position;
+                    OnCellLeftPressed.Invoke(gridPos);
+                }
                 else if (evt.button == 1)
                 {    
                     OnCellRightPressed.Invoke(gridPos, _panelType);  
@@ -373,6 +397,27 @@ namespace MVC.View.Inventory
         /// Returns Vector3.zero for GridPos.None or before the layout resolves; callers that care
         /// about the difference should check IsNone themselves.
         /// </summary>
+        /// <summary>
+        /// Porcion que se evalua mientras se sobrevuela. Con modificador se evalua UNA unidad
+        /// aunque el gesto pueda acabar siendo la mitad: al sobrevolar no hay boton todavia, y
+        /// "cabe al menos una" es la respuesta valida para los dos. Evaluar la mitad pintaria
+        /// rojo donde un shift + izquierdo coloca sin problema.
+        /// </summary>
+        private static GrabPortion HoverPortion(bool modifierHeld)
+            => modifierHeld ? GrabPortion.One : GrabPortion.All;
+
+        /// <summary>
+        /// Reemite el veredicto sobre la celda actual, si hay alguna. Para cuando cambia algo
+        /// que lo afecta sin que el cursor se mueva — pulsar o soltar el modificador.
+        /// </summary>
+        public void RepublishHover(GrabPortion portion)
+        {
+            if (!LastCell.HasValue) return;
+
+            _lastPortion = portion;
+            OnPointerMovedOverCell?.Invoke(LastCell.Value, GetCellSize(), portion);
+        }
+
         public Vector3 CoordsToPoint(GridPos pos)
         {
             if (_itemsLayer == null || pos.IsNone) return Vector3.zero;
@@ -384,6 +429,28 @@ namespace MVC.View.Inventory
             // la otra tiene que cambiar con ella.
             
             return _itemsLayer.LocalToWorld(new Vector2(pos.Col * cell.x, pos.Row * cell.y) + cell * 0.5f);
+        }
+
+        /// <summary>
+        /// Esquina superior derecha, en espacio de panel, del rectangulo que ocupa un item de
+        /// w x h celdas con origen en <paramref name="origin"/>. Solo la columna cuenta el
+        /// ancho: la fila se queda en el borde de arriba.
+        ///
+        /// Toma la celda ORIGEN y las dimensiones en vez de una celda suelta porque un item de
+        /// varias celdas tiene una sola card: anclar a la celda pulsada dejaria el ancla en
+        /// mitad del item segun donde hubiera caido el cursor.
+        /// </summary>
+        public PanelPoint ItemTopRightCorner(GridPos origin, int w, int h)
+        {
+            if (_itemsLayer == null || origin.IsNone) return default;
+
+            Vector2 cell = CellSizePx();
+            if (cell.x <= 0 || cell.y <= 0) return default;   // layout aun sin resolver
+
+            Vector2 world = _itemsLayer.LocalToWorld(
+                new Vector2((origin.Col + w) * cell.x, origin.Row * cell.y));
+
+            return new PanelPoint(world.x, world.y);
         }
 
 

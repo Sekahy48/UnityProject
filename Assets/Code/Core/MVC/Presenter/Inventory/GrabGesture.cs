@@ -14,6 +14,7 @@ namespace Core.MVC.Presenter.Inventory
     {
         private readonly InventoryService _inventoryService;
         private bool _grabbedThisGesture;
+        private bool _placedThisGesture;
 
         public GrabGesture(InventoryService inventoryService)
         {
@@ -24,6 +25,7 @@ namespace Core.MVC.Presenter.Inventory
         public void OnPressed(Action grab)
         {
             _grabbedThisGesture = false;
+            _placedThisGesture = false;
             if (_inventoryService.IsHandCarrying()) { CoreLogger.Instance.Log("PRESS: mano llena, no agarro"); return; }
 
             grab();
@@ -31,9 +33,45 @@ namespace Core.MVC.Presenter.Inventory
             CoreLogger.Instance.Log($"PRESS: agarrado={_grabbedThisGesture}");
         }
 
+        /// <summary>
+        /// Pulsacion que resuelve el gesto en el propio press: con la mano vacia agarra una
+        /// porcion; con la mano llena agarra mas si se pulsa sobre su propio origen, y descarga
+        /// una porcion en cualquier otro sitio.
+        ///
+        /// Al descargar se marca el gesto como resuelto, porque el release que viene detras
+        /// colocaria el resto de la mano: para el gesto normal "mano llena + soltar" significa
+        /// descargar, y aqui ya se descargo lo que se pedia. Rellenar cuenta como agarre, no
+        /// como descarga, asi que deja el release en las mismas condiciones que un agarre.
+        /// </summary>
+        /// <param name="sameOrigin">La pulsacion cae sobre el origen de lo que ya se lleva. Lo
+        /// decide quien llama: esta clase no conoce rejillas.</param>
+        public void OnPortionPressed(bool sameOrigin, Action grabPortion, Action grabMore, Action placePortion)
+        {
+            _grabbedThisGesture = false;
+            _placedThisGesture = false;
+
+            if (!_inventoryService.IsHandCarrying())
+            {
+                grabPortion();
+                _grabbedThisGesture = _inventoryService.IsHandCarrying();
+                return;
+            }
+
+            if (sameOrigin)
+            {
+                grabMore();
+                _grabbedThisGesture = true;
+                return;
+            }
+
+            placePortion();
+            _placedThisGesture = true;
+        }
+
         public void OnReleased(bool dragged, Action place, Action cancel)
         {
             CoreLogger.Instance.Log($"UP: carrying={_inventoryService.IsHandCarrying()}, esteGesto={_grabbedThisGesture}, dragged={dragged}");
+            if (_placedThisGesture) return;
             if (!_inventoryService.IsHandCarrying()) return;
             if (_grabbedThisGesture && !dragged) return;
 

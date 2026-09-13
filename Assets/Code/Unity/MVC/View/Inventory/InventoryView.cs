@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using Core.MVC.View.UI.Inventory;
 using Core.ECS.Component.Equipment;
@@ -11,6 +12,7 @@ using Core.MVC.View;
 using System.Linq; 
 using Core.ECS.Entity;
 using Core.Inventory;
+using Core.MVC.Presenter.Inventory;
 using System.Xml.Serialization;
 
 namespace MVC.View.Inventory
@@ -40,23 +42,29 @@ namespace MVC.View.Inventory
                               
         private Label _inspectName,
                       _inspectDescription,
-                      _inspectWeight,
+                      _inspectWeightTotal,
+                      _inspectWeightUnit,
                       _inspectDurability,
                       _inspectSize;
         
         /* Equipment */
         private List<VisualElement> _equipmentSlots; /*List of equipment slots*/
-        private VisualElement _subSlotsPopUp;  /*Pop up where subslots information is shown*/ 
-        /* Slot o subslot sobre el que actua el gesto en curso. Se escribe al pulsar y se
+        private VisualElement _layersPopup;  /*Pop up where the layers of a garment are shown*/
+
+        /* Estado del modificador la ultima vez que se sondeo. Ver WatchModifier. */
+        private bool _shiftHeld;
+        private const long MODIFIER_POLL_MS = 50;
+
+        /* Slot o capa sobre el que actua el gesto en curso. Se escribe al pulsar y se
            consume al soltar, dentro del mismo gesto. NO se limpia al cerrar el popup: son
            dos vidas distintas y mezclarlas fue la causa de que el equipo se corrompiera. */
-        public bool IsSubslotsPopupOpen => _popupOwnerSlot != null;
+        public bool IsLayersPopupOpen => _layersOwnerSlot != null;
 
         public VisualElement ActiveEquipmentSlot {get; private set;}
 
-        /* Slot cuyo popup de subslots esta abierto ahora mismo. Solo lo escribe quien abre
+        /* Slot cuyo popup de capas esta abierto ahora mismo. Solo lo escribe quien abre
            el popup y solo lo lee quien decide si el boton abre o cierra. */
-        private VisualElement _popupOwnerSlot;
+        private VisualElement _layersOwnerSlot;
         private Vector3 _pressLeftOriginEquipment;
         
         /* Subpanels */ 
@@ -134,10 +142,10 @@ namespace MVC.View.Inventory
         public event Action OnReleasedOutsideGrid;
 
         public event Action<int, bool> OnEquipmentSlotRightClicked;
-        public event Action<int, bool> OnSubSlotLeftPressed;
-        public event Action<int, bool, bool> OnSubSlotLeftReleased;
+        public event Action<int, bool> OnLayerLeftPressed;
+        public event Action<int, bool, bool> OnLayerLeftReleased;
 
-        /// <summary>El puntero esta sobre un slot de equipo: (capa, es subslot, tamaño del slot).</summary>
+        /// <summary>El puntero esta sobre un slot de equipo: (capa, es capa del popup, tamaño del slot).</summary>
         public event Action<int, bool, CellSize> OnPointerMovedOverSlot;
 
         /// <summary>El puntero ha salido de un slot de equipo.</summary>
@@ -167,16 +175,20 @@ namespace MVC.View.Inventory
         private void OnRootReady(GeometryChangedEvent e)
         {
             _mainRoot.UnregisterCallback<GeometryChangedEvent>(OnRootReady);
-           
+
+            _mainRoot.schedule.Execute(WatchModifier).Every(MODIFIER_POLL_MS);
+
             // Only reports the gesture: clearing the hand is a model operation and belongs to
             // the presenter. Clearing it here would leave the HandBuffer holding units nothing
             // on screen shows any more.
             _uiDocument.rootVisualElement.RegisterCallback<PointerDownEvent>(DismissTransients, TrickleDown.TrickleDown);
 
             // Solo llegan aqui los up que NO aterrizaron en una rejilla: los paneles cortan
-            // la propagacion de los suyos.
+            // la propagacion de los suyos o lo corta la guardia de IsInsideAnyTransient. 
+
             _uiDocument.rootVisualElement.RegisterCallback<PointerUpEvent>(evt =>
             {
+                if (IsInsideAnyTransient(evt.target as VisualElement)) return;
                 OnReleasedOutsideGrid?.Invoke();
                 VisualElement t = evt.target as VisualElement;
                 Debug.Log($"UP fuera: target={t?.name} clases=[{string.Join(",", t?.GetClasses() ?? new string[0])}] panel={(t?.panel == null ? "NULL" : "ok")}");
@@ -194,10 +206,10 @@ namespace MVC.View.Inventory
             // Equipment slots
             VisualElement equipmentPanel = _mainRoot.Q<VisualElement>("equipment-panel");
             _equipmentSlots = equipmentPanel.Query(className: "equip-slot").ToList();
-            AddSubslotsButtons(_equipmentSlots);
+            AddLayersButtons(_equipmentSlots);
             ManageEquipmentEvents(_equipmentSlots);
             
-            _subSlotsPopUp = _mainRoot.Q<VisualElement>("subslots-popup"); 
+            _layersPopup = _mainRoot.Q<VisualElement>("layers-popup"); 
             // Core elements 
             _titleBar           = _mainRoot.Q<VisualElement>("title-bar");
             
@@ -230,7 +242,8 @@ namespace MVC.View.Inventory
             _inspectStats       = _mainRoot.Q<VisualElement>("inspect-stats");
             _inspectName        = _mainRoot.Q<Label>("inspect-name");
             _inspectDescription = _mainRoot.Q<Label>("inspect-description");
-            _inspectWeight      = _mainRoot.Q<Label>("inspect-weight");
+            _inspectWeightTotal      = _mainRoot.Q<Label>("inspect-weight-total");
+            _inspectWeightUnit      = _mainRoot.Q<Label>("inspect-weight-unit");
             _inspectDurability  = _mainRoot.Q<Label>("inspect-durability");
             _inspectSize        = _mainRoot.Q<Label>("inspect-size");
 
@@ -292,12 +305,12 @@ namespace MVC.View.Inventory
             
         }
 
-        private void ManageEquipmentEvents(List<VisualElement> slots, bool subSlots = false)
+        private void ManageEquipmentEvents(List<VisualElement> slots, bool fromLayersPopup = false)
         { 
             int layer = 0;
             foreach (VisualElement slot in slots)
             {  
-                if (subSlots)
+                if (fromLayersPopup)
                     ++layer;
                 int captured = layer;   
 
@@ -308,11 +321,11 @@ namespace MVC.View.Inventory
                     if (evt.button == 0)
                     {
                         _pressLeftOriginEquipment = evt.position;
-                        OnSubSlotLeftPressed?.Invoke(captured, subSlots);
+                        OnLayerLeftPressed?.Invoke(captured, fromLayersPopup);
                     }
                     else if (evt.button == 1)
                     {
-                        OnEquipmentSlotRightClicked(captured, subSlots);
+                        OnEquipmentSlotRightClicked(captured, fromLayersPopup);
                     }
                 });
 
@@ -325,7 +338,7 @@ namespace MVC.View.Inventory
                     if (evt.button == 0)
                     {    
                         bool dragged = (evt.position - _pressLeftOriginEquipment).sqrMagnitude > DRAG_THRESHOLD_SQR;
-                        OnSubSlotLeftReleased?.Invoke(captured, subSlots, dragged);
+                        OnLayerLeftReleased?.Invoke(captured, fromLayersPopup, dragged);
                     }
                 });
 
@@ -341,7 +354,7 @@ namespace MVC.View.Inventory
                     // ser el que tienes debajo del cursor.
                     ActiveEquipmentSlot = slot;
                     SetMagnetSlot(slot);
-                    OnPointerMovedOverSlot?.Invoke(captured, subSlots, SlotSize(slot)); 
+                    OnPointerMovedOverSlot?.Invoke(captured, fromLayersPopup, SlotSize(slot)); 
                 });
 
                 // Salir no genera PointerMove, asi que sin esto el fantasma se queda pintado
@@ -357,29 +370,29 @@ namespace MVC.View.Inventory
         private static CellSize SlotSize(VisualElement slot)
             => new CellSize(slot.resolvedStyle.width, slot.resolvedStyle.height);
 
-        private void AddSubslotsButtons(List<VisualElement> slots)
+        private void AddLayersButtons(List<VisualElement> slots)
         {
             foreach (VisualElement slot in slots)
             {
-                VisualElement subslotsButton = new VisualElement();
-                subslotsButton.AddToClassList("subslots-button");
+                VisualElement layersButton = new VisualElement();
+                layersButton.AddToClassList("layers-button");
 
-                subslotsButton.RegisterCallback<PointerDownEvent>(evt =>
+                layersButton.RegisterCallback<PointerDownEvent>(evt =>
                 {
                     evt.StopPropagation();
-                    if (_popupOwnerSlot == slot)          // mismo slot y abierto -> cerrar
+                    if (_layersOwnerSlot == slot)          // mismo slot y abierto -> cerrar
                     {
-                        CloseSubslotsPopup();
+                        CloseLayersPopup();
                     }
                     else                                  // cerrado, o abierto en otro slot -> abrir aquí
                     {
-                        _popupOwnerSlot = slot;
+                        _layersOwnerSlot = slot;
                         PositionAndShowPopup(slot);
                         OnSlotLayersRequested?.Invoke(GetEquipmentSlotType(slot));
                     }
                 }); 
                 
-                slot.Add(subslotsButton);
+                slot.Add(layersButton);
             }
         }
 
@@ -392,11 +405,11 @@ namespace MVC.View.Inventory
             Vector2 worldAnchor = new Vector2(slotRect.xMax, slotRect.yMin);
 
             // Traducida al sistema de coordenadas del padre del popup (main-area)
-            Vector2 localAnchor = _subSlotsPopUp.parent.WorldToLocal(worldAnchor);
+            Vector2 localAnchor = _layersPopup.parent.WorldToLocal(worldAnchor);
 
-            _subSlotsPopUp.style.left = localAnchor.x + 4;   // hueco de 4px
-            _subSlotsPopUp.style.top  = localAnchor.y;
-            _subSlotsPopUp.style.display = DisplayStyle.Flex;
+            _layersPopup.style.left = localAnchor.x + 4;   // hueco de 4px
+            _layersPopup.style.top  = localAnchor.y;
+            _layersPopup.style.display = DisplayStyle.Flex;
         }
 
         
@@ -435,7 +448,8 @@ namespace MVC.View.Inventory
         public void DismissOverlays()
         {
             CloseContextualMenu();
-            CloseSubslotsPopup();
+            CloseLayersPopup();
+            CloseSublotsPopup();
         }
 
         public void Hide()
@@ -570,12 +584,20 @@ namespace MVC.View.Inventory
         public void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
         {
             _handBuffer.RemoveFromClassList("hand-buffer-fits");
+            _handBuffer.RemoveFromClassList("hand-buffer-partial");
+            _handBuffer.RemoveFromClassList("hand-buffer-swap");
             _handBuffer.RemoveFromClassList("hand-buffer-collision");
 
             switch (verdict)
             {
                 case PlacementVerdict.Fits:
                     _handBuffer.AddToClassList("hand-buffer-fits");
+                    break;
+                case PlacementVerdict.Partial:
+                    _handBuffer.AddToClassList("hand-buffer-partial");
+                    break;
+                case PlacementVerdict.Swap:
+                    _handBuffer.AddToClassList("hand-buffer-swap");
                     break;
                 case PlacementVerdict.Blocked:
                     _handBuffer.AddToClassList("hand-buffer-collision");
@@ -623,6 +645,7 @@ namespace MVC.View.Inventory
 
             _ctxMenu.style.left = _lastPointerPosition.x;
             _ctxMenu.style.top  = _lastPointerPosition.y;
+            _ctxMenu.BringToFront();
             _ctxMenu.style.display = DisplayStyle.Flex;
         }
 
@@ -654,8 +677,14 @@ namespace MVC.View.Inventory
             {
                 evt.StopPropagation();
                 row.AddToClassList("ctx-menu-option-selected");
-                if (option.IsLeaf) option.Handler.Invoke(CollectInputs(option, widgets));
+                if (option.IsLeaf) 
+                {   
+                    CloseSublotsPopup();
+                    option.Handler.Invoke(CollectInputs(option, widgets)); 
+                }
                 else               OpenSubMenu(row, option);
+
+
             });
 
             return row;
@@ -800,7 +829,10 @@ namespace MVC.View.Inventory
 
         #region Sublots popup
 
-        private void RenderSublotsPopup(IReadOnlyList<ItemDisplayData> sublots)
+        /// <param name="anchor">Esquina de la que cuelga el desplegable, ya en espacio de panel.
+        /// Llega medida desde fuera y no se calcula aqui: manda quien lo abre, que es el unico
+        /// que sabe a que se esta anclando —hoy la card de la rejilla, mañana otra cosa—.</param>
+        public void RenderSublotsPopup(IReadOnlyList<ItemDisplayData> sublots, PanelPoint anchor, Action<int> onLeftClicked, Action<int> onRightClicked)
         {
             _sublotsPopup.Clear();
             if (sublots == null || sublots.Count == 0)
@@ -814,19 +846,51 @@ namespace MVC.View.Inventory
                 VisualElement sublotRow = new VisualElement();
                 sublotRow.AddToClassList("sublots-popup-row");
 
-                Label sublotName = new Label(sublot.Name);
+                Label sublotName = new Label(sublot.Name + " X" + sublot.Amount);
                 sublotName.AddToClassList("sublots-popup-row-label");
 
                 // NOTA: cambiar clase
-                Label sublotCondition = new Label(sublot.Name);
+                Label sublotCondition = new Label("Durability: " + sublot.Durability.ToString());
                 sublotCondition.AddToClassList("sublots-popup-row-label");
+
+                VisualElement icon = new VisualElement();
+                UIElementUtils.SetBackgroundTexture(icon, sublot.IconPath);
+                MakeSquare(icon);
 
                 sublotRow.Add(sublotName);
                 sublotRow.Add(sublotCondition);
+                sublotRow.Add(icon);
+                
+                int index = _sublotsPopup.childCount;  
+                sublotRow.RegisterCallback<PointerUpEvent>(evt =>
+                {
+                    evt.StopPropagation();
 
+                    if (evt.button == 0)
+                    {
+                        CloseSublotsPopup();
+                        onLeftClicked?.Invoke(index); 
+                    }
+                    else if (evt.button == 1) 
+                    {
+                        Debug.Log("Click dcho - sublot");
+                        onRightClicked?.Invoke(index);
+                    }
+
+                });
+                sublotRow.RegisterCallback<PointerMoveEvent>(evt =>
+                {
+                    UpdateInspectionStrip(sublot);
+                });
                 _sublotsPopup.Add(sublotRow);
             }
 
+            // Hermano de ctx-menu bajo la raiz del documento, asi que su espacio local ES el
+            // del panel y el ancla entra sin convertir — igual que _lastPointerPosition en
+            // RenderContextualMenu.
+            _sublotsPopup.style.left = anchor.X;
+            _sublotsPopup.style.top  = anchor.Y;
+            CloseContextualMenu();
             _sublotsPopup.style.display = DisplayStyle.Flex;
         }
 
@@ -917,8 +981,16 @@ namespace MVC.View.Inventory
             {
                 _inspectName.text = item.Name;
                 _inspectDescription.text = item.Description;
-                _inspectWeight.text = $"Peso: {item.Weight:F1} kg";
-                _inspectDurability.text = $"Durabilidad: {item.Durability}";
+                _inspectWeightTotal.text = $"Peso total: {item.Weight*item.Amount:F1} kg";
+                _inspectWeightUnit.text = $"Peso unitario: {item.Weight:F1} kg";
+                if (!item.Sublots)
+                {
+                    _inspectDurability.text = $"Durabilidad: {item.Durability}";   
+                }
+                else
+                {
+                    _inspectDurability.text = $"Durabilidad: Variable";
+                }
                 _inspectSize.text = $"Tamaño: {item.DimensionW}x{item.DimensionH}";
                 UIElementUtils.SetBackgroundTexture(_inspectIcon, item.IconPath); 
                 foreach (VisualElement element in _inspectStats.Children())
@@ -926,11 +998,13 @@ namespace MVC.View.Inventory
                     element.AddToClassList("inspect-stat");
                 }
 
-            } else
+            } 
+            else
             {
                 _inspectName.text = "";
                 _inspectDescription.text = "";
-                _inspectWeight.text = "";
+                _inspectWeightTotal.text = "";
+                _inspectWeightUnit.text = "";
                 _inspectDurability.text = "";
                 _inspectSize.text = "";
                 UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImages.EmptyIcon);
@@ -946,7 +1020,7 @@ namespace MVC.View.Inventory
         {
             _inspectName.text = "";
             _inspectDescription.text = "";
-            _inspectWeight.text = "";
+            _inspectWeightTotal.text = "";
             _inspectDurability.text = "";
             _inspectSize.text = "";
         }
@@ -960,7 +1034,7 @@ namespace MVC.View.Inventory
             foreach (VisualElement viewSlot in _equipmentSlots)
             { 
                 EquipmentSlot realSlot = equipment.GetEquipmentSlot(GetEquipmentSlotType(viewSlot));
-                VisualElement popUpButton = viewSlot.Q<VisualElement>(className: "subslots-button");
+                VisualElement popUpButton = viewSlot.Q<VisualElement>(className: "layers-button");
                 popUpButton.style.display = DisplayStyle.None;
 
                 if (!realSlot.IsEnabled) 
@@ -984,36 +1058,36 @@ namespace MVC.View.Inventory
             }
         }
  
-        public void RenderSubslots(List<ItemDisplayData> layers)
+        public void RenderLayers(List<ItemDisplayData> layers)
         {
-            _subSlotsPopUp.Clear();
-            List<VisualElement> subSlots = new List<VisualElement>();
+            _layersPopup.Clear();
+            List<VisualElement> layerSlots = new List<VisualElement>();
             foreach (ItemDisplayData item in layers)
             {
-                VisualElement subSlot = new VisualElement();
+                VisualElement layerSlot = new VisualElement();
 
                 // El nombre codifica el slot al que pertenece la capa, y de el sale su
                 // EquipmentSlotType. Tiene que salir del dueño del popup, no de lo ultimo
                 // que se haya pulsado, o las capas se bautizan con el slot equivocado.
-                subSlot.name = "subslot-" + _popupOwnerSlot.name;
-                subSlot.AddToClassList("equip-slot");
-                UIElementUtils.SetBackgroundTexture(subSlot, item.IconPath);
+                layerSlot.name = "layer-" + _layersOwnerSlot.name;
+                layerSlot.AddToClassList("equip-slot");
+                UIElementUtils.SetBackgroundTexture(layerSlot, item.IconPath);
 
-                subSlots.Add(subSlot);
-                _subSlotsPopUp.Add(subSlot);
+                layerSlots.Add(layerSlot);
+                _layersPopup.Add(layerSlot);
             }
 
-            ManageEquipmentEvents(subSlots, true);
+            ManageEquipmentEvents(layerSlots, true);
         } 
 
-        public void CloseSubslotsPopup()
+        public void CloseLayersPopup()
         {
-            _subSlotsPopUp.style.display = DisplayStyle.None;
+            _layersPopup.style.display = DisplayStyle.None;
 
             // Solo se olvida QUE popup estaba abierto. El slot sobre el que actua el gesto en
             // curso no es asunto de este metodo: cerrarlo aqui dejaba al presenter sin saber
             // sobre que estaba trabajando a mitad de un agarre.
-            _popupOwnerSlot = null;
+            _layersOwnerSlot = null;
         }
 
         
@@ -1047,12 +1121,12 @@ namespace MVC.View.Inventory
             throw new InvalidOperationException($"Equipment slot '{element.name}' has no matching EquipmentSlotType");
         }
 
-        public EquipmentSlotType GetEquipmentSubSlotType(VisualElement element)
+        public EquipmentSlotType GetEquipmentLayerSlotType(VisualElement element)
         {
-            string slotName = element.name.Replace("subslot-slot-", "");
+            string slotName = element.name.Replace("layer-slot-", "");
             if (Enum.TryParse<EquipmentSlotType>(slotName, true, out var type)) 
                 return type; 
-            throw new InvalidOperationException($"Equipment subslot '{element.name}' with resolved value '{slotName}' has no matching EquipmentSlotType");
+            throw new InvalidOperationException($"Equipment layer '{element.name}' with resolved value '{slotName}' has no matching EquipmentSlotType");
         }
 
 
@@ -1074,23 +1148,53 @@ namespace MVC.View.Inventory
             return new CellSize(slot.resolvedStyle.width, slot.resolvedStyle.height);
         }
 
-        public EquipmentSlotType OpenSubslotsSlotType => GetEquipmentSlotType(_popupOwnerSlot);
+        public EquipmentSlotType OpenLayersSlotType => GetEquipmentSlotType(_layersOwnerSlot);
 
         #endregion
 
         #region Overlays Helpers
 
+        /// <summary>
+        /// Repinta el veredicto cuando el modificador cambia sin que el cursor se mueva.
+        ///
+        /// Se sondea en vez de escucharse con KeyDown/KeyUp porque los eventos de tecla exigen
+        /// foco, y el foco lo tienen los campos numericos del menu contextual. El sondeo no
+        /// depende de quien lo tenga.
+        /// </summary>
+        private void WatchModifier()
+        {
+            bool held = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
+            if (held == _shiftHeld) return;
+
+            _shiftHeld = held;
+
+            GrabPortion portion = held ? GrabPortion.One : GrabPortion.All;
+
+            // Sin comprobar cual es el panel bueno: solo uno puede tener celda sobrevolada,
+            // porque el PointerLeave de la rejilla la olvida al salir.
+            foreach (InventoryPanelView panel in _panels.Values)
+                panel.RepublishHover(portion);
+        }
+
+        private bool IsInsideAnyTransient(VisualElement target)
+        => IsInside(target, _ctxMenu)
+        || IsInside(target, _layersPopup) || IsLayersButton(target)
+        || IsInside(target, _sublotsPopup);
+        
         private void DismissTransients(PointerDownEvent evt)
         {
             VisualElement target = evt.target as VisualElement;
 
             bool inCtxMenu  = IsInside(target, _ctxMenu);
-            bool inSubslots = IsInside(target, _subSlotsPopUp) || IsSubslotsButton(target);
+            bool inLayers = IsInside(target, _layersPopup) || IsLayersButton(target);
+            bool inSublots = IsInside(target, _sublotsPopup);
 
             if (!inCtxMenu)  CloseContextualMenu();
-            if (!inSubslots) CloseSubslotsPopup();
-
-            if (!IsDropTarget(target) && !inCtxMenu && !inSubslots)
+            if (!inLayers) CloseLayersPopup();
+            if (!inSublots && !inCtxMenu) CloseSublotsPopup();
+            
+            // SI cambiamos aqui es doble calculo de los bools
+            if (!IsDropTarget(target) && !inCtxMenu && !inLayers && !inSublots)
                 OnCancelRequested?.Invoke();
         }
 
@@ -1125,10 +1229,10 @@ namespace MVC.View.Inventory
             return false;
         } 
 
-        private static bool IsSubslotsButton(VisualElement element)
+        private static bool IsLayersButton(VisualElement element)
         {
             for (VisualElement e = element; e != null; e = e.parent)
-                if (e.ClassListContains("subslots-button")) return true;
+                if (e.ClassListContains("layers-button")) return true;
             return false;
         }
 

@@ -32,5 +32,6 @@ namespace Core.MVC.View.UI.Inventory
         public int DimensionH;
         public bool IsContainer;
         public int TabIndex; // if IsContainer, which tab to navigate to on click
+        public bool Sublots;
     }
 }

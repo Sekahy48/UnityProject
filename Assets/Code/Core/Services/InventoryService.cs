@@ -30,6 +30,20 @@ namespace Core.Services
             return _interactionContext._handBuffer.Grab(grabOrigin, amount, subLot);
         }
 
+        /// <summary>Suma unidades al agarre en curso. Ver HandBuffer.GrabMore.</summary>
+        public int GrabMore(int amount) => _interactionContext._handBuffer.GrabMore(amount);
+
+        /// <summary>Unidades del origen que la mano aun no tiene reservadas.</summary>
+        public int GetUngrabbedAmount() => _interactionContext._handBuffer.Ungrabbed();
+
+        /// <summary>
+        /// Si lo que se lleva en la mano salio de ese nodo. Se resuelve contra la rejilla en el
+        /// momento de preguntarlo y no contra nada recordado, asi que abandonar el item y
+        /// volver sigue contando como el mismo origen.
+        /// </summary>
+        public bool IsGrabbedFrom(ItemObject node)
+            => node != null && IsHandCarrying() && GetGrabbedNodeId() == node.GetNodeId();
+
         /// <summary>
         /// Puts an amount of a certain item into the hand buffer
         /// </summary>
@@ -49,17 +63,145 @@ namespace Core.Services
         /// </summary>
         /// <param name="destiny"></param>
         /// <param name="pos">Destination cell.</param>
+        /// <param name="amount">Unidades a colocar, o null para toda la mano.</param>
         /// <returns> What is left in the hand</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public int PlaceAmountFromHand(IEntity destiny, GridPos pos)
+        public int PlaceAmountFromHand(IEntity destiny, GridPos pos, int? amount = null)
         {
             int ignoreNodeId = GetIgnoreNodeId(destiny);
 
             int leftover = PlaceFromHand(destiny, (variant, count) =>
                 _systemContext.SystemManager.GetReactiveSystem<InventorySystem>()
-                    .TryAddItemAt(destiny, variant, count, pos, ignoreNodeId, announce: false));
+                    .TryAddItemAt(destiny, variant, count, pos, ignoreNodeId, announce: false), amount);
 
             return leftover;
+        }
+
+        /// <summary>
+        /// Si lo que se lleva en la mano puede intercambiarse con ese nodo: cada uno a las
+        /// celdas del otro.
+        ///
+        /// Condiciones, y el motivo de cada una:
+        /// - El origen es un nodo de rejilla. Desde el equipo o el catalogo no hay hueco de
+        ///   salida al que mandar el nodo desplazado.
+        /// - Mismo inventario. Entre paneles el intercambio mueve peso, y eso necesita las dos
+        ///   mitades en una transaccion; esto no lo es.
+        /// - La mano lleva el nodo ENTERO. Con media pila agarrada el origen sigue ocupando sus
+        ///   celdas, asi que no hay hueco que ofrecer a cambio.
+        /// - Y los dos caben en su destino sin pisarse entre ellos.
+        /// </summary>
+        /// <param name="pos">Celda pulsada. Ahi va la esquina del nodo de la mano: lo que se
+        /// lleva se coloca donde apuntas, como en cualquier otra colocacion, y no en la esquina
+        /// del nodo desplazado. Ese se conforma con la esquina que queda libre.</param>
+        public bool CanSwapWith(IEntity destiny, GridPos pos)
+        {
+            if (!IsHandCarrying()) return false;
+            if (!(_interactionContext._handBuffer.GetOrigin() is InventoryNodeOrigin origin)) return false;
+
+            InventoryObject dstInventory = destiny.GetComponent<InventoryComponent>().Inventory;
+            if (!ReferenceEquals(origin.Inventory, dstInventory)) return false;
+
+            TetrisGridState grid = dstInventory.GetGrid();
+            ItemObject target = grid.GetElementAt(pos)?.GetNode();
+            if (target == null) return false;
+
+            ItemObject held = origin.Node;
+            if (ReferenceEquals(held, target)) return false;
+            if (_interactionContext._handBuffer.Ungrabbed() != 0) return false;
+
+            GridElement elemHeld = grid.GetElementOf(held.GetNodeId());
+            if (elemHeld == null) return false;
+
+            GridPos dstHeld = pos;
+            GridPos dstTarget = elemHeld.GetPos();
+
+            if (!Fits(grid, held, dstHeld, held.GetNodeId(), target.GetNodeId())) return false;
+            if (!Fits(grid, target, dstTarget, held.GetNodeId(), target.GetNodeId())) return false;
+
+            // Las dos huellas de DESTINO tampoco pueden pisarse entre ellas. Comprobar cada
+            // colocacion por separado ignora al otro nodo, asi que una espada que empieza
+            // pegada a la manzana con la que se cambia pasa las dos comprobaciones y luego
+            // colisiona contra ella al colocar la segunda. Con esto el orden deja de importar.
+            return !Overlap(dstHeld, Footprint(held), dstTarget, Footprint(target));
+        }
+
+        private static BaseItemComponent Footprint(ItemObject node)
+            => node.GetItemEntity().GetComponent<BaseItemComponent>();
+
+        private static bool Fits(TetrisGridState grid, ItemObject node, GridPos pos,
+                                 int ignoreNodeId, int alsoIgnoreNodeId)
+        {
+            BaseItemComponent baseInfo = Footprint(node);
+
+            return grid.CanPlace(pos, baseInfo.DimensionH, baseInfo.DimensionW,
+                                 ignoreNodeId, alsoIgnoreNodeId);
+        }
+
+        /// <summary>Si dos rectangulos de celdas comparten alguna.</summary>
+        private static bool Overlap(GridPos posA, BaseItemComponent a, GridPos posB, BaseItemComponent b)
+            => posA.Row < posB.Row + b.DimensionH && posB.Row < posA.Row + a.DimensionH
+            && posA.Col < posB.Col + b.DimensionW && posB.Col < posA.Col + a.DimensionW;
+
+        /// <summary>
+        /// Intercambia el nodo que se lleva en la mano con el que ocupa el destino. Arranca
+        /// llamando a CanSwapWith, que es lo mismo que consulta la UI para pintar el azul.
+        ///
+        /// La mano se vacia con Clear y no con NotifyPlaced: no se ha colocado nada en el
+        /// sentido de la mano, el nodo entero se ha movido por debajo. Y es seguro porque lo
+        /// reservado nunca habia salido de ese nodo.
+        /// </summary>
+        public bool SwapFromHand(IEntity destiny, GridPos pos)
+        {
+            if (!CanSwapWith(destiny, pos)) return false;
+
+            InventoryNodeOrigin origin = (InventoryNodeOrigin)_interactionContext._handBuffer.GetOrigin();
+            TetrisGridState grid = destiny.GetComponent<InventoryComponent>().Inventory.GetGrid();
+            ItemObject target = grid.GetElementAt(pos).GetNode();
+
+            if (!grid.SwapNodes(origin.Node, pos, target)) return false;
+
+            _interactionContext._handBuffer.Clear();
+            _systemContext.SystemManager.GetReactiveSystem<InventorySystem>()
+                .EvaluateAndFireEvents(destiny, false);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Separa unidades de un nodo en una pila nueva dentro del mismo inventario, en el
+        /// primer hueco que la admita.
+        ///
+        /// Va por RunTransfer y no por un apaño propio porque partir una pila es una
+        /// transferencia como cualquier otra: origen, destino y vuelta atras si el destino no
+        /// acepta todo. Que origen y destino sean la misma entidad no cambia nada.
+        /// </summary>
+        /// <param name="variant">Sub-lote a separar, o null para tomar del nodo al azar.</param>
+        /// <returns>Unidades que no pudieron separarse.</returns>
+        public int SplitNode(IEntity owner, ItemObject node, ItemEntity variant, int amount)
+        {
+            AC.CheckNotNull(owner, nameof(owner));
+            AC.CheckNotNull(node, nameof(node));
+            AC.CheckPositive(amount, nameof(amount));
+
+            InventoryObject inventory = owner.GetComponent<InventoryComponent>().Inventory;
+            GridPos free = FindSplitCell(inventory, variant ?? node.GetItemEntity());
+            if (free.IsNone) return amount;
+
+            return RunTransfer(new InventoryNodeOrigin(owner, inventory, node), variant, amount, owner,
+                (v, count) => _systemContext.SystemManager.GetReactiveSystem<InventorySystem>()
+                                  .TryAddItemAt(owner, v, count, free, -1, announce: false));
+        }
+
+        /// <summary>
+        /// Hueco donde caeria una pila separada de este item, o None si la rejilla no tiene
+        /// sitio. Expuesto porque la decision de ofrecer o no la accion de dividir depende de
+        /// la misma respuesta: sin hueco la opcion no debe aparecer.
+        /// </summary>
+        public GridPos FindSplitCell(InventoryObject inventory, ItemEntity item)
+        {
+            BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
+
+            return inventory.GetGrid().FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW);
         }
 
         /// <summary>
@@ -88,14 +230,18 @@ namespace Core.Services
         /// Descarga la mano sobre un destino cualquiera. Lo unico que cambia entre destinos es
         /// como se colocan las unidades, asi que eso llega como parametro.
         /// </summary>
+        /// <param name="amount">Unidades a colocar, o null para toda la mano.</param>
         /// <returns>Lo que queda en la mano.</returns>
-        private int PlaceFromHand(IEntity destiny, Func<ItemEntity, int, int> place)
+        private int PlaceFromHand(IEntity destiny, Func<ItemEntity, int, int> place, int? amount = null)
         {
             HandBuffer hand = _interactionContext._handBuffer;
             IGrabOrigin origin = hand.GetOrigin();
             if (origin == null) return 0;
 
-            int moved = RunTransfer(origin, hand.GetHeldSubLot(), hand.GetHeldAmount(), destiny, place);
+            int toPlace = Math.Min(amount ?? hand.GetHeldAmount(), hand.GetHeldAmount());
+            if (toPlace <= 0) return hand.GetHeldAmount();
+
+            int moved = RunTransfer(origin, hand.GetHeldSubLot(), toPlace, destiny, place);
 
             int handMoved = hand.NotifyPlaced(moved);
             if (moved != handMoved)
@@ -260,7 +406,8 @@ namespace Core.Services
         /// peso. Si esto y la colocacion real dejan de coincidir es que una de las dos cambio
         /// sola, y el color estaria mintiendo.
         /// </summary>
-        public PlacementVerdict EvaluatePlacement(IEntity destiny, GridPos pos)
+        /// <param name="amount">Unidades a evaluar, o null para toda la mano.</param>
+        public PlacementVerdict EvaluatePlacement(IEntity destiny, GridPos pos, int? amount = null)
         {
             if (destiny == null || !IsHandCarrying()) return PlacementVerdict.Outside;
 
@@ -271,30 +418,55 @@ namespace Core.Services
             ItemEntity item = GetGrabbedItem();
             if (item == null) return PlacementVerdict.Outside;
 
+            int held = _interactionContext._handBuffer.GetHeldAmount();
+            int requested = Math.Min(amount ?? held, held);
+
+            int landing = UnitsThatWouldLand(destiny, dstInventory, grid, pos, item, requested,
+                                             GetIgnoreNodeId(destiny));
+
+            if (landing > 0)
+                return landing < requested ? PlacementVerdict.Partial : PlacementVerdict.Fits;
+
+            // Ultimo recurso antes de dar por bloqueado: donde no cabe nada todavia puede caber
+            // un intercambio, y eso es otra respuesta, no un no.
+            return CanSwapWith(destiny, pos) ? PlacementVerdict.Swap : PlacementVerdict.Blocked;
+        }
+
+        /// <summary>
+        /// Unidades que aterrizarian de verdad al soltar.
+        ///
+        /// El veredicto sale de este numero en vez de decidirse a trozos con un return por
+        /// guarda: asi ninguna rama puede olvidarse de una regla. Pasaba exactamente eso —
+        /// apilar sobre una pila compatible salia por su propia rama y nunca llegaba a
+        /// comprobar el peso, asi que el fantasma pintaba verde y no se movia nada.
+        /// </summary>
+        private int UnitsThatWouldLand(IEntity destiny, InventoryObject inventory, TetrisGridState grid,
+                                       GridPos pos, ItemEntity item, int requested, int ignoreNodeId)
+        {
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
-            int ignoreNodeId = GetIgnoreNodeId(destiny);
-            int amount = _interactionContext._handBuffer.GetHeldAmount();
+
+            // Reordenar dentro de un inventario no cambia su peso: las unidades ya se cargan.
+            // Igual que TryAddItemAt, que se salta la comprobacion cuando hay nodo ignorado.
+            int byWeight = ignoreNodeId != -1
+                ? requested
+                : CarryCapacity.FitByWeight(destiny, inventory, item, requested);
 
             // Mismo orden que AddItemAt: el ocupante manda sobre el hueco.
             GridElement occupant = grid.GetElementAt(pos);
             if (occupant != null && occupant.GetNode().GetNodeId() != ignoreNodeId)
             {
                 ItemObject node = occupant.GetNode();
-                bool sameType = node.GetTypeId() == baseInfo.TypeId;
-                bool hasRoom  = node.GetAmount() < baseInfo.MaxStackSize;
-                return sameType && hasRoom ? PlacementVerdict.Fits : PlacementVerdict.Blocked;
+                if (node.GetTypeId() != baseInfo.TypeId) return 0;
+
+                int room = baseInfo.MaxStackSize - node.GetAmount();
+
+                return Math.Min(byWeight, Math.Max(room, 0));
             }
 
             if (!grid.CanPlace(pos, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
-                return PlacementVerdict.Blocked;
+                return 0;
 
-            // Reordenar dentro de un inventario no cambia su peso: ya se carga. Igual que
-            // TryAddItemAt, que se salta la comprobacion cuando hay nodo ignorado.
-            if (ignoreNodeId == -1 &&
-                CarryCapacity.FitByWeight(destiny, dstInventory, item, amount) <= 0)
-                return PlacementVerdict.Blocked;
-
-            return PlacementVerdict.Fits;
+            return Math.Min(byWeight, baseInfo.MaxStackSize);
         }
 
         /// <summary>
@@ -378,7 +550,13 @@ namespace Core.Services
             EventBus.GetInstance().Post(new ItemLotEvent(GameEventType.ItemDropped, origin, items)); 
         } 
 
-        public List<ItemAction> GetAvailableActions(ItemEntity target, IEntity owner, IEntity source, bool subslots)
+        /// <param name="hasVariants">La pila tiene mas de una variante dentro: habilita
+        /// inspeccionar su desglose.</param>
+        /// <param name="splittable">La pila tiene mas de una unidad Y hay hueco donde dejar la
+        /// mitad separada. Las dos condiciones juntas porque una accion que no puede cumplirse
+        /// no debe ofrecerse: dividir sin hueco no tiene forma de explicar por que no pasa nada.</param>
+        public List<ItemAction> GetAvailableActions(ItemEntity target, IEntity owner, IEntity source,
+                                                   bool hasVariants, bool splittable = false)
         {
 
             List<ItemAction> options = new List<ItemAction>();
@@ -399,8 +577,11 @@ namespace Core.Services
                 options.AddRange(new List<ItemAction>{ItemAction.DropFromInventory, ItemAction.QuickTransfer});
             }
 
-            if (subslots)
+            if (hasVariants)
                 options.Add(ItemAction.Inspect);
+
+            if (splittable)
+                options.Add(ItemAction.Split);
                 
             
             
@@ -425,8 +606,9 @@ namespace Core.Services
         QuickTransfer,
         Equip,
         Unequip,
-        Consume, 
+        Consume,
         Inspect,
-        
+        Split,
+
     }
 }

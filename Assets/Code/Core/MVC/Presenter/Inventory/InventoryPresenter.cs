@@ -42,8 +42,8 @@ namespace Core.MVC.Presenter.Inventory
             _view.OnEquipmentSlotRightClicked += OnEquipmentSlotRightClicked;
             _view.OnPointerMovedOverSlot += EvaluateHandOverSlot;
             _view.OnPointerLeftSlot += OnPointerLeftSlot;
-            _view.OnSubSlotLeftPressed += OnSubSlotLeftPressed;
-            _view.OnSubSlotLeftReleased += OnSubSlotLeftReleased;
+            _view.OnLayerLeftPressed += OnLayerLeftPressed;
+            _view.OnLayerLeftReleased += OnLayerLeftReleased;
             _itemCatalog = itemCatalogue;
             _service  = service; 
             _grabGesture = new GrabGesture(service);
@@ -160,7 +160,7 @@ namespace Core.MVC.Presenter.Inventory
             {
                 layers.Add(DisplayDTOsBuilder.BuildDisplayData(content[i], 1));
             }
-            _view.RenderSubslots(layers);
+            _view.RenderLayers(layers);
         }
 
         private void OnCatalogItemGrabbed(int typeId, int amount)
@@ -197,11 +197,11 @@ namespace Core.MVC.Presenter.Inventory
         /// Sobre un slot el fantasma se pinta del tamaño del slot, no celda x dimensiones: el
         /// destino manda sobre el tamaño, igual que en la rejilla manda la celda.
         /// </summary>
-        private void EvaluateHandOverSlot(int layer, bool subslots, CellSize slotSize)
+        private void EvaluateHandOverSlot(int layer, bool fromLayersPopup, CellSize slotSize)
         {
             if (_entity == null) return;
 
-            EquipmentSlotType slotType = CurrentSubSlotType(subslots);
+            EquipmentSlotType slotType = CurrentLayerSlotType(fromLayersPopup);
 
             if (_service.IsHandCarrying())
             {
@@ -256,14 +256,14 @@ namespace Core.MVC.Presenter.Inventory
 
         private void UpdateInspectionStrip(ItemDisplayData itemData) => _view.UpdateInspectionStrip(itemData);
 
-        private void OnSubSlotLeftPressed(int layer, bool subslots)
+        private void OnLayerLeftPressed(int layer, bool fromLayersPopup)
         {
             _grabGesture.OnPressed(() =>
             {
-                EquipmentSlotType slotType = CurrentSubSlotType(subslots);
+                EquipmentSlotType slotType = CurrentLayerSlotType(fromLayersPopup);
                 EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
                 EquipmentSlot slot = equipmentComponent.GetEquipmentSlot(slotType);
-                int realPos = SubslotLayerToRealPos(layer, slot.GetEquippedItemCount());
+                int realPos = LayerToRealPos(layer, slot.GetEquippedItemCount());
                 if (realPos < 0 || realPos >= slot.GetEquippedItemCount()) return;
 
                 // El origen guarda la prenda, no su capa: el indice se mueve en cuanto
@@ -277,12 +277,12 @@ namespace Core.MVC.Presenter.Inventory
             });
         }
 
-        private void OnSubSlotLeftReleased(int layer, bool subslots,  bool dragged)
+        private void OnLayerLeftReleased(int layer, bool fromLayersPopup,  bool dragged)
         { 
             _grabGesture.OnReleased(dragged,
             () => 
                 {
-                    EquipmentSlotType slotType = CurrentSubSlotType(subslots);
+                    EquipmentSlotType slotType = CurrentLayerSlotType(fromLayersPopup);
                     ItemEntity item = _service.GetGrabbedItem();
 
                     
@@ -368,56 +368,65 @@ namespace Core.MVC.Presenter.Inventory
             if (target == null || target.GetItemEntity() == null) 
                 return;
                 
-            List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), _entity, origin); 
+            bool splittable = target.GetAmount() > 1
+                           && !_service.FindSplitCell(origin.GetComponent<InventoryComponent>().Inventory,
+                                                      target.GetItemEntity()).IsNone;
 
-            _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildDisplayData(target.GetItemEntity(), target.GetAmount()));
-            RenderContextualMenu(origin, actions, target: target); 
+            List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), _entity, origin,
+                                                                    target.GetSubLots.Count > 1, splittable);
+
+            _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildNodeData(target));
+
+            // El ancla se mide AQUI y no cuando se pulse la opcion: para entonces el evento de
+            // puntero ya no existe y nadie sabe de que card salio el menu.
+            RenderContextualMenu(actions, MenuContext.FromGrid(origin, target, panel, pos,
+                                                               _panelPresenters[panel].ItemCornerAt(pos)));
         }
 
-        private void OnEquipmentSlotRightClicked(int layer, bool subslots = false)
+        private void OnEquipmentSlotRightClicked(int layer, bool fromLayersPopup = false)
         { 
             AC.CheckNotNegative(layer, nameof(layer));
  
-            EquipmentSlotType type = CurrentSubSlotType(subslots);
+            EquipmentSlotType type = CurrentLayerSlotType(fromLayersPopup);
             EquipmentSlot equipmentSlot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(type);
 
-            int realPos = SubslotLayerToRealPos(layer, equipmentSlot.GetEquippedItemCount());
+            int realPos = LayerToRealPos(layer, equipmentSlot.GetEquippedItemCount());
             CoreLogger.Instance.Log(realPos.ToString());
             ItemEntity target = realPos >= 0 ? equipmentSlot.GetItem(realPos) : null;
             if (target == null)
                 return;
 
-            List<ItemAction> actions = _service.GetAvailableActions(target, _entity, _entity);
+            List<ItemAction> actions = _service.GetAvailableActions(target, _entity, _entity, false);
 
-            RenderContextualMenu(_entity, actions, item: target, slotType: type);
+            RenderContextualMenu(actions, MenuContext.FromEquipment(_entity, target, type));
         }
 
-        private EquipmentSlotType CurrentSubSlotType(bool subslots)
+        private EquipmentSlotType CurrentLayerSlotType(bool fromLayersPopup)
         {
-            return subslots
-                ? _view.GetEquipmentSubSlotType(_view.ActiveEquipmentSlot)
+            return fromLayersPopup
+                ? _view.GetEquipmentLayerSlotType(_view.ActiveEquipmentSlot)
                 : _view.GetEquipmentSlotType(_view.ActiveEquipmentSlot);
         }
 
-        private int SubslotLayerToRealPos(int layer, int totalLayers) => totalLayers - 1 - layer; 
-        private void RenderContextualMenu(IEntity origin, List<ItemAction> actions, ItemObject target = null, ItemEntity item = null, EquipmentSlotType? slotType = null)
-        {   
+        private int LayerToRealPos(int layer, int totalLayers) => totalLayers - 1 - layer; 
+        /// <param name="context">De donde salio el menu. Ya no hace falta comprobar que trae
+        /// algo sobre lo que actuar: sus fabricas lo garantizan al construirlo.</param>
+        private void RenderContextualMenu(List<ItemAction> actions, MenuContext context)
+        {
             _view.CloseContextualMenu();
-            if (item == null && (target == null || target.GetItemEntity() == null))
-                throw new InvalidOperationException("Illegal state at rendering the contextual menu - no item/entity provided (item variant and target node both null)");
-            
-            ItemEntity focusedItem = item ?? target.GetItemEntity();
-            int focusedItemAmount = item == null ? target.GetAmount() : 1;
 
             if (actions.Count == 0)
                 return;
 
+            // Se construye UNA vez y fuera del cierre: onHover salta en cada PointerMove sobre
+            // el menu, y GetSubLots devuelve una lista nueva en cada llamada.
+            ItemDisplayData focused = context.FocusedDisplayData;
+
             List<MenuOption> options = new List<MenuOption>();
             foreach (ItemAction action in actions)
-                options.AddRange(BuildOptions(action, origin, target, item, slotType));
+                options.AddRange(BuildOptions(action, context));
 
-            _view.RenderContextualMenu(options, () => _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildDisplayData(focusedItem, focusedItemAmount)));
-        
+            _view.RenderContextualMenu(options, () => _view.UpdateInspectionStrip(focused));
         }
 
         /// <summary>
@@ -427,38 +436,58 @@ namespace Core.MVC.Presenter.Inventory
         /// dar varias entradas: QuickTransfer se abre en una por cada inventario visible al
         /// que se pueda enviar. Las demas devuelven una sola.
         /// </summary>
-        private IEnumerable<MenuOption> BuildOptions(ItemAction action, IEntity origin, ItemObject target = null, ItemEntity item = null, EquipmentSlotType? unequipedSlotType = null) 
+        private IEnumerable<MenuOption> BuildOptions(ItemAction action, MenuContext context)
         {
+            ItemObject target = context.Target;
+            IEntity origin = context.Origin;
+
             switch (action)
             {
-                case ItemAction.DropFromInventory: 
-                    return new[] { new MenuOption("Tirar", inputs => OnDropItemRequested(target, origin, inputs.GetInt("amount")), new List<MenuField> { MenuField.Int("amount", max: target.GetAmount()) }) };
+                case ItemAction.DropFromInventory:
+                    { 
+                        bool sublots = context.Item != null;
+                        return new[] { new MenuOption("Tirar", inputs => OnDropItemRequested(target, origin, inputs.GetInt("amount"), context.Item), new List<MenuField> { MenuField.Int("amount", max: sublots ? target.GetAmount(context.Item) : target.GetAmount()) }) };
+                    }
                     
-                case ItemAction.Equip: 
-                    return BuildEquiOptions(target, origin); 
+                case ItemAction.Equip:
+                    return BuildEquiOptions(target, origin, context.Item);
 
-                case ItemAction.Unequip: 
-                    return new[] { new MenuOption("Desquipar", inputs => OnUnequipItemRequested(item, origin, unequipedSlotType.Value), new List<MenuField>{})};  
+                case ItemAction.Unequip:
+                    return new[] { new MenuOption("Desquipar", inputs => OnUnequipItemRequested(context.Item, origin, context.SlotType.Value), new List<MenuField>{})};
 
                 case ItemAction.Consume:
-                    return new[] { new MenuOption("Consumir", inputs => OnConsumeItemRequested(target, origin), new List<MenuField>{}) };
+                    return new[] { new MenuOption("Consumir", inputs => OnConsumeItemRequested(target, origin, context.Item), new List<MenuField>{}) };
 
                 case ItemAction.QuickTransfer:
-                    return BuildTransferOptions(target, origin);
+                    return BuildTransferOptions(target, origin, context.Item);
+
+                case ItemAction.Inspect:
+                    return new[] { new MenuOption("Inspeccionar", inputs => OnInspectItemRequested(context), new List<MenuField>{})};
+
+                // max: Amount - 1 porque separar todo no separa nada.
+                case ItemAction.Split:
+                    return new[] { new MenuOption("Dividir",
+                                                  inputs => OnSplitRequested(context, inputs.GetInt("amount")),
+                                                  new List<MenuField> { MenuField.Int("amount", max: context.FocusedAmount - 1) })};
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), $"Sin MenuOption para {action}.");
             }
         }
 
-        private IEnumerable<MenuOption> BuildEquiOptions(ItemObject target, IEntity origin)
+        /// <param name="variant">Sub-lote concreto a equipar, o null para el representante del
+        /// nodo. Dos prendas del mismo tipo con desgaste distinto conviven en la misma pila, y
+        /// equipar "una cualquiera" cuando el jugador señalo una seria elegir por el.</param>
+        private IEnumerable<MenuOption> BuildEquiOptions(ItemObject target, IEntity origin, ItemEntity variant = null)
         {
-            WearableComponent wearableComponent = target.GetItemEntity().GetComponent<WearableComponent>();
+            ItemEntity item = variant ?? target.GetItemEntity();
+
+            WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
             IReadOnlyList<EquipmentSlotType> dstSlotTypes = wearableComponent.TargetSlots;
             if (dstSlotTypes.Count == 0)
                 throw new InvalidOperationException("Cannot try to equip an item with no posible slot targets");
             else if (dstSlotTypes.Count ==  1)
-                return new[] { new MenuOption("Equipar (" + dstSlotTypes.First().GetDescription() + ")", inputs => OnEquipItemRequested(target, origin, dstSlotTypes.First()), new List<MenuField>{})};
+                return new[] { new MenuOption("Equipar (" + dstSlotTypes.First().GetDescription() + ")", inputs => OnEquipItemRequested(target, origin, dstSlotTypes.First(), variant), new List<MenuField>{})};
             else if (wearableComponent.FullOcupancy)
             {
                 string targetText = "";
@@ -473,14 +502,14 @@ namespace Core.MVC.Presenter.Inventory
                         targetText += ", ";
                 }
 
-                return new[] { new MenuOption("Equipar (" + targetText + ")", inputs => OnEquipItemRequested(target, origin, dstSlotTypes.First()), new List<MenuField>{})};
+                return new[] { new MenuOption("Equipar (" + targetText + ")", inputs => OnEquipItemRequested(target, origin, dstSlotTypes.First(), variant), new List<MenuField>{})};
             }
             else
             {
                 List<MenuOption> subOptions = new List<MenuOption>();
                 foreach (EquipmentSlotType slotType in dstSlotTypes)
                 {
-                    subOptions.Add(new MenuOption(slotType.GetDescription(), inputs => OnEquipItemRequested(target, origin, slotType), new List<MenuField>{}));
+                    subOptions.Add(new MenuOption(slotType.GetDescription(), inputs => OnEquipItemRequested(target, origin, slotType, variant), new List<MenuField>{}));
                 }
 
                 return new [] { new MenuOption("Equipar", subOptions)};
@@ -496,7 +525,7 @@ namespace Core.MVC.Presenter.Inventory
         /// La visibilidad se consulta a la View porque es un hecho de presentacion: un arcon
         /// enlazado pero con el panel cerrado no es un destino al que el jugador pueda apuntar.
         /// </summary>
-        private IEnumerable<MenuOption> BuildTransferOptions(ItemObject target, IEntity origin)
+        private IEnumerable<MenuOption> BuildTransferOptions(ItemObject target, IEntity origin, ItemEntity variant)
         {
             List<MenuOption> destinies = new List<MenuOption>();
 
@@ -509,8 +538,8 @@ namespace Core.MVC.Presenter.Inventory
                     !_view.IsSideContentVisible(panel, SidePanelContent.Inventory)) continue;
 
                 destinies.Add(new MenuOption(DestinyName(destiny),
-                                            inputs => OnQuickTransferRequested(target, origin, destiny, inputs.GetInt("amount")),
-                                            new List<MenuField>{ MenuField.Int("amount", target.GetAmount()) }));
+                                            inputs => OnQuickTransferRequested(target, origin, destiny, inputs.GetInt("amount"), variant),
+                                            new List<MenuField>{ MenuField.Int("amount", variant != null ? target.GetAmount(variant) : target.GetAmount()) }));
             }
 
             // Sin destinos no hay rama: la entrada no llega a existir, que es justo por lo que
@@ -531,19 +560,22 @@ namespace Core.MVC.Presenter.Inventory
             _service.DropItems(origin, target, amount, variant); 
         }
 
-        private void OnEquipItemRequested(ItemObject target, IEntity origin, EquipmentSlotType dstSlotType)
+        /// <param name="variant">Sub-lote concreto, o null para el representante del nodo.</param>
+        private void OnEquipItemRequested(ItemObject target, IEntity origin, EquipmentSlotType dstSlotType, ItemEntity variant = null)
         {
-            WearableComponent wearableComponent = target.GetItemEntity().GetComponent<WearableComponent>();
+            ItemEntity item = variant ?? target.GetItemEntity();
+
+            WearableComponent wearableComponent = item.GetComponent<WearableComponent>();
             IReadOnlyList<EquipmentSlotType> equipmentSlotTypes = wearableComponent.TargetSlots;
             if (!equipmentSlotTypes.Contains(dstSlotType))
-                throw new InvalidOperationException("You cannot attempt to unequip an item from a slot where it could never be placed."); 
+                throw new InvalidOperationException("You cannot attempt to unequip an item from a slot where it could never be placed.");
 
             InventoryObject srcInventory = origin.GetComponent<InventoryComponent>().Inventory;
 
             _service.TryEquipItem(new InventoryNodeOrigin(origin, srcInventory, target),
-                                  target.GetItemEntity(),
+                                  item,
                                   _entity,
-                                  OccupiedSlots(target.GetItemEntity(), dstSlotType));
+                                  OccupiedSlots(item, dstSlotType));
         }
 
         private void OnUnequipItemRequested(ItemEntity target, IEntity origin, EquipmentSlotType dstSlotType, GridPos? pos = null)
@@ -569,9 +601,50 @@ namespace Core.MVC.Presenter.Inventory
                 : new List<EquipmentSlotType> { slotType };
         }
 
-        private void OnConsumeItemRequested(ItemObject target, IEntity origin)
+        /// <summary>
+        /// Separa unidades de la pila en una pila nueva del mismo inventario. El destino no se
+        /// pregunta: la accion solo se ofrece cuando hay hueco, asi que aqui ya lo hay.
+        /// </summary>
+        private void OnSplitRequested(MenuContext context, int amount)
+        {
+            if (amount <= 0) return;
+
+            _service.SplitNode(context.Origin, context.Target, context.Item, amount);
+            _panelPresenters[context.Panel.Value].Refresh();
+        }
+
+        /// <param name="variant">Sub-lote concreto a consumir, o null para que lo elija el nodo.
+        /// Importa: consumir una venda sucia no es lo mismo que consumir una limpia.</param>
+        private void OnConsumeItemRequested(ItemObject target, IEntity origin, ItemEntity variant = null)
         {
             /*TODO fase2*/
+        }
+
+        /// <summary>
+        /// El ancla sale del contexto, medida por quien abrio el menu: cada forma de abrirlo
+        /// decide la suya, asi que aqui no se calcula.
+        ///
+        /// La lista de lotes se captura en el cierre y no se vuelve a leer: el indice que
+        /// devuelve la vista indexa LA MISMA lista que se pinto. Si la variante ya no existe,
+        /// GrabFrom la acota con Available y agarra cero — falla en vacio, no en otra variante.
+        /// </summary>
+        private void OnInspectItemRequested(MenuContext context)
+        {
+            IReadOnlyList<SubLot> lots = context.Target.GetSubLots;
+
+            List<ItemDisplayData> data = new List<ItemDisplayData>();
+            foreach (SubLot sublot in lots)
+                data.Add(DisplayDTOsBuilder.BuildDisplayData(sublot.Item, sublot.Amount));
+
+            PanelType panel = context.Panel.Value;
+            GridPos cell = context.Cell;
+
+            _view.RenderSublotsPopup(data, context.Anchor,
+                index => _panelPresenters[panel].GrabVariantAt(cell, lots[index].Item, lots[index].Amount),
+                index => {
+                    MenuContext sublotContext = MenuContext.FromSublot(context.Origin, context.Target, lots[index].Item, context.Panel.Value, context.Cell, context.Anchor);
+                    RenderContextualMenu(_service.GetAvailableActions(lots[index].Item, _entity, _panelPresenters[panel].Entity, false), sublotContext);
+                });
         }
 
         private void OnQuickTransferRequested(ItemObject target, IEntity origin, IEntity destiny, int amount, ItemEntity variant = null)
@@ -597,7 +670,7 @@ namespace Core.MVC.Presenter.Inventory
                 case GameEventType.EquipmentChanged:
                 { 
                     _view.UpdateEquipmentSlots(_entity.GetComponent<EquipmentComponent>());
-                    RefreshOpenSubslots();
+                    RefreshOpenLayers();
                     break;
                 } 
             }
@@ -608,16 +681,16 @@ namespace Core.MVC.Presenter.Inventory
         /// popup es una vista mas del equipo: lo que lo actualiza es que el equipo cambie,
         /// venga el cambio de donde venga.
         /// </summary>
-        private void RefreshOpenSubslots()
+        private void RefreshOpenLayers()
         {
-            if (!_view.IsSubslotsPopupOpen) return;
+            if (!_view.IsLayersPopupOpen) return;
 
-            EquipmentSlotType type = _view.OpenSubslotsSlotType;
+            EquipmentSlotType type = _view.OpenLayersSlotType;
             EquipmentSlot slot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(type);
 
             // Sin capas por debajo de la superior no hay nada que enseñar, y el boton que lo
             // abre tampoco estaria visible: cerrarlo es lo unico coherente.
-            if (slot.GetEquippedItemCount() <= 1) { _view.CloseSubslotsPopup(); return; }
+            if (slot.GetEquippedItemCount() <= 1) { _view.CloseLayersPopup(); return; }
 
             OnSlotLayersRequested(type);
         }

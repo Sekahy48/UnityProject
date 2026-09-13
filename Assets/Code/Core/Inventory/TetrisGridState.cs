@@ -54,6 +54,16 @@ namespace Core.Inventory
             int nodeId = GetCellAt(pos);
             if (nodeId == -1) return null;
 
+            return GetElementOf(nodeId);
+        }
+
+        /// <summary>
+        /// Returns the GridElement of a node by its id, or null if the node is not on this
+        /// grid. Useful when the node is already known and what is missing is where it sits —
+        /// the opposite direction of GetElementAt.
+        /// </summary>
+        public GridElement GetElementOf(int nodeId)
+        {
             foreach (GridElement elem in _elements)
                 if (elem.GetNode().GetNodeId() == nodeId) return elem;
 
@@ -75,15 +85,63 @@ namespace Core.Inventory
         /// -1 blocks nothing extra, since NodeIdGenerator starts at 1.
         /// </param>
         public bool CanPlace(GridPos pos, int itemH, int itemW, int ignoreNodeId = -1)
+            => CanPlace(pos, itemH, itemW, ignoreNodeId, -1);
+
+        /// <param name="alsoIgnoreNodeId">
+        /// Second node whose cells count as free. An exchange takes BOTH nodes off the grid
+        /// before putting them back, so neither may block the other — and a single ignored id
+        /// cannot express that.
+        /// </param>
+        public bool CanPlace(GridPos pos, int itemH, int itemW, int ignoreNodeId, int alsoIgnoreNodeId)
         {
             if (pos.Row < 0 || pos.Col < 0) return false;
             if (pos.Row + itemH > _gridH || pos.Col + itemW > _gridW) return false;
 
             for (int r = pos.Row; r < pos.Row + itemH; r++)
                 for (int c = pos.Col; c < pos.Col + itemW; c++)
-                    if (_cells[r, c] != -1 && _cells[r, c] != ignoreNodeId) return false;
+                {
+                    int owner = _cells[r, c];
+                    if (owner != -1 && owner != ignoreNodeId && owner != alsoIgnoreNodeId) return false;
+                }
 
             return true;
+        }
+
+        /// <summary>
+        /// Intercambia las celdas de dos nodos ya colocados en esta rejilla.
+        ///
+        /// No mueve unidades: los dos nodos siguen siendo los mismos y el peso del inventario
+        /// no cambia, asi que aqui no hay nada que recomprobar ni sobrantes que devolver. Se
+        /// sacan los dos ANTES de colocar para que ninguno estorbe al otro, y si el segundo
+        /// Place falla los dos vuelven a sus celdas de partida.
+        /// </summary>
+        /// <param name="posForA">
+        /// Celda donde ira la esquina superior izquierda de A. Se recibe en vez de deducirse de
+        /// donde esta B porque A es el que va en la mano y su colocacion la decide el jugador,
+        /// celda a celda, igual que en cualquier otra colocacion. B ocupa la esquina que deja A:
+        /// el nodo que no esta en la mano no elige por donde se pone.
+        /// </param>
+        /// <returns>False si alguno no esta en la rejilla, o si no caben intercambiados.</returns>
+        public bool SwapNodes(ItemObject a, GridPos posForA, ItemObject b)
+        {
+            GridElement elemA = GetElementOf(a.GetNodeId());
+            GridElement elemB = GetElementOf(b.GetNodeId());
+            if (elemA == null || elemB == null) return false;
+
+            GridPos posA = elemA.GetPos();
+            GridPos posB = elemB.GetPos();
+
+            Remove(a.GetNodeId());
+            Remove(b.GetNodeId());
+
+            if (Place(a, posForA) && Place(b, posA)) return true;
+
+            Remove(a.GetNodeId());
+            Remove(b.GetNodeId());
+            Place(a, posA);
+            Place(b, posB);
+
+            return false;
         }
 
         public bool CanPlace(ItemEntity item)
