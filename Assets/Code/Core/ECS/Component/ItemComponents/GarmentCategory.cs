@@ -11,6 +11,7 @@ namespace Core.ECS.Component.ItemComponents
         Helmet,
         Hood,
         Satchel,
+        Bag,
 
 
         Hand,

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Core.ECS.Component;
 using Core.ECS.Entity;
+using Core.ECS.Systems;
+using UnityEditor.Animations;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Inventory
@@ -17,23 +19,36 @@ namespace Core.Inventory
         private int _nodeId;
         private ItemEntity _item;
 
+        /* Inventario que contiene a este, o null si es una raiz. Solo se conoce al padre
+           inmediato: la pregunta del peso sube por la cadena y nadie necesita saber cuantos
+           niveles hay ni quien esta arriba del todo. */
+        public InventoryObject Parent {get; private set;}
+
+        /* Entidad a la que pertenece este inventario: el arcon, la mochila, el personaje. De
+           ella sale su techo de peso, y por eso una raiz sin entidad no tiene techo propio. */
+        private IEntity _holder;
+
         public InventoryObject(ItemEntity item)
         {
             AC.CheckNotNull(item, item.GetCompoundIdentification().ToString());
             _id = item.GetComponent<BaseItemComponent>().TypeId;
             _nodeId = NodeIdGenerator.GenerateId();
             _item = item;
+            _holder = item;
             _inventory = new List<IInventoryElement>();
 
             StorageComponent storage = item.GetComponent<StorageComponent>();
             _grid = new TetrisGridState(storage.GridH, storage.GridW);
         }
 
-        public InventoryObject()
+        /// <param name="holder">Entidad dueña de este inventario, de la que sale su techo de
+        /// peso. Null deja el inventario sin techo propio.</param>
+        public InventoryObject(IEntity holder = null)
         {
             _id = 0;
             _nodeId = NodeIdGenerator.GenerateId();
             _item = null;
+            _holder = holder;
             _inventory = new List<IInventoryElement>();
             _grid = new TetrisGridState(BASE_GRID_H, BASE_GRID_W);
         }
@@ -167,8 +182,56 @@ namespace Core.Inventory
 
         public void AddContainer(ItemEntity item)
         {
-            AC.CheckNotNull(item, "item");
-            _inventory.Add(new InventoryObject(item)); 
+            InventoryObject child = new InventoryObject(item);
+            child.Parent = this;
+            _inventory.Add(child);
+        }
+
+        public void AddContainer(InventoryObject container)
+        {
+            container.Parent = this;
+            _inventory.Add(container);
+        }
+
+        /// <summary>
+        /// Saca un contenedor de este inventario y lo deja suelto.
+        ///
+        /// Perder el padre no es un efecto secundario, es el punto: mientras estaba aqui su
+        /// peso subia por esta cadena, y al salir deja de hacerlo. Sin esto quedaria una
+        /// mochila en el suelo que sigue pesando sobre quien la llevaba.
+        /// </summary>
+        /// <returns>True si el contenedor estaba aqui.</returns>
+        public bool RemoveContainer(InventoryObject container)
+        {
+            AC.CheckNotNull(container, nameof(container));
+
+            if (!_inventory.Remove(container)) return false;
+
+            container.Parent = null;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Cuantas de esas unidades caben aqui, contando este inventario y todos los que lo
+        /// contienen.
+        ///
+        /// Cada nivel responde por su propio techo y delega el resto hacia arriba: meter algo
+        /// en un bolsillo tiene que caber en el bolsillo, en la mochila que lo lleva y en quien
+        /// lleva la mochila. Un solo "dueño del peso" no bastaria — se saltaria los niveles
+        /// intermedios, que es justo donde viven las mochilas.
+        /// </summary>
+        public int FitByWeight(ItemEntity item, int amount)
+        {
+            // Sin entidad dueña no hay techo que aplicar: es el caso del inventario de paso
+            // que fabrica SpawnIntoHand, que no es de nadie y no limita nada.
+            int here = _holder == null
+                ? amount
+                : CarryCapacity.FitByWeight(_holder, this, item, amount);
+
+            if (here <= 0) return 0;
+
+            return Parent == null ? here : Math.Min(here, Parent.FitByWeight(item, amount));
         }
 
         public int StackOnto(ItemEntity item, int amount)
@@ -514,13 +577,31 @@ namespace Core.Inventory
             return result;
         }
 
+        /// <summary>
+        /// Peso de lo que hay aqui dentro.
+        ///
+        /// Un contenedor NO se cuenta a si mismo: su barra mide lo que le has metido, no lo que
+        /// pesa el mueble. Pero un contenedor que va DENTRO de otro si pesa para el de fuera,
+        /// asi que ese sumando lo pone el padre — una mochila vacia no es gratis de llevar,
+        /// aunque para ella misma este vacia.
+        ///
+        /// <para>Este es el unico sitio que suma hijos. Si algun dia aparece otro recorrido que
+        /// acumule pesos, tiene que acordarse del peso del contenedor o dejara de cuadrar.</para>
+        /// </summary>
         public float GetTotalWeight()
         {
             float total = 0f;
+
             foreach (IInventoryElement elem in _inventory)
+            {
                 total += elem.GetTotalWeight();
+
+                if (elem is InventoryObject container && container.GetItemEntity() != null)
+                    total += container.GetItemEntity().GetComponent<BaseItemComponent>().Weight;
+            }
+
             return total;
-        } 
+        }
  
 
         public bool Equivalent(IInventoryElement other)
@@ -557,9 +638,11 @@ namespace Core.Inventory
         /// </summary>
         public IInventoryElement Clone()
         {
+            // Parent se queda en null a proposito: el clon es un arbol desprendido, y heredar
+            // el padre del original lo haria pesar sobre un inventario al que no pertenece.
             InventoryObject clone = this._item != null
                 ? new InventoryObject(this._item)
-                : new InventoryObject();
+                : new InventoryObject(this._holder);
 
             // Placed items: clone and restore their (row, col).
             foreach (GridElement placed in _grid.GetElements())
@@ -577,7 +660,13 @@ namespace Core.Inventory
             // the grid), so they live only in the element list. Cloned as-is for now.
             foreach (IInventoryElement elem in _inventory)
                 if (!elem.IsLeaf())
-                    clone._inventory.Add(elem.Clone());
+                {
+                    // Reapuntados al clon: sin esto los hijos seguirian preguntando el peso al
+                    // arbol original, y el clon pesaria sobre quien lleva el de verdad.
+                    InventoryObject childClone = (InventoryObject)elem.Clone();
+                    childClone.Parent = clone;
+                    clone._inventory.Add(childClone);
+                }
 
             return clone;
         }

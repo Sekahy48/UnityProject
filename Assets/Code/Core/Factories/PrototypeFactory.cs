@@ -49,7 +49,7 @@ namespace Core.Factories
             e.AddComponent(new MovementComponent(2.0f));
             e.AddComponent(new PositionComponent(0f, 0f, 0f));
 
-            var inventory = new InventoryComponent(new InventoryObject());
+            var inventory = new InventoryComponent(new InventoryObject(e));
             e.AddComponent(inventory);
             AddTestItems(inventory);
 

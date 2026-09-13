@@ -22,16 +22,17 @@ namespace Core.Contexts
             _player = player;
         }
 
+        /// <remarks>El inventario no se monta aqui: viene ya puesto desde
+        /// <see cref="Item.ItemCatalogue.CreateItem"/>, que se lo da a todo lo que declare
+        /// StorageComponent. Anadirlo tambien aqui lo sustituiria por uno vacio.</remarks>
         public void SetFirstInventorySrc(ItemEntity inventoySrc)
         {
             _firstInventorySrc = inventoySrc;
-            _firstInventorySrc.AddComponent(new InventoryComponent( new InventoryObject(_firstInventorySrc)));
         }
 
-            public void SetSecondInventorySrc(ItemEntity inventoySrc)
-            {
-                _secondInventorySrc = inventoySrc;
-                _secondInventorySrc.AddComponent(new InventoryComponent( new InventoryObject(_secondInventorySrc)));
-            }
+        public void SetSecondInventorySrc(ItemEntity inventoySrc)
+        {
+            _secondInventorySrc = inventoySrc;
+        }
     }
 }

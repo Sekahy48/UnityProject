@@ -79,7 +79,9 @@
                     <!-- Hueco de la rejilla del jugador. Contenedor VACIO a proposito: la
                          sub-vista de panel hace Clear() sobre el antes de clonar su plantilla,
                          asi que no puede compartir padre con el panel personal. -->
-                    <ui:VisualElement name="player-grid-slot" class="panel-slot"/>
+                    <ui:VisualElement name="player-grid-slot" class="panel-slot">
+                        <ui:VisualElement name="panel-slot-tabs" class="panel-slot-tabs"/>
+                    </ui:VisualElement>
 
                 </ui:VisualElement>
 

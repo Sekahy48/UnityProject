@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core;
 using Core.ECS.Component;
 using Core.ECS.Entity;
+using Core.Inventory;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Item
@@ -25,6 +26,14 @@ namespace Core.Item
             _prototypes[typeId] = item;
         }
 
+        /// <summary>
+        /// Crea una instancia a partir de su prototipo.
+        ///
+        /// Un item que declara capacidad de almacenaje (<see cref="StorageComponent"/>) recibe
+        /// aqui el inventario donde ejercerla: el componente es el carnet y no sirve de nada
+        /// solo. Se da a la INSTANCIA y no al prototipo porque dos mochilas iguales no comparten
+        /// contenido, y porque clonar un arbol vacio en cada creacion no aporta nada.
+        /// </summary>
         public ItemEntity CreateItem(int typeId)
         {
             if (!_prototypes.TryGetValue(typeId, out ItemEntity prototype))
@@ -32,7 +41,12 @@ namespace Core.Item
                 throw new KeyNotFoundException($"ItemCatalogue: Prototype with typeId {typeId} not found.");
             }
 
-            return prototype.Clone();
+            ItemEntity item = prototype.Clone();
+
+            if (item.HasComponent(typeof(StorageComponent)) && !item.HasComponent(typeof(InventoryComponent)))
+                item.AddComponent(new InventoryComponent(new InventoryObject(item)));
+
+            return item;
         }
 
         public ItemEntity CreateItem(string name) => CreateItem(GetTypeIdByName(name));

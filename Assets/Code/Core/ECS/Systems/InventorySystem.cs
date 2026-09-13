@@ -29,9 +29,9 @@ namespace Core.ECS.Systems
             invComp = entity.GetComponent<InventoryComponent>();
             if (invComp == null) return 0;
 
-            // La regla vive en CarryCapacity: aqui solo se resuelve el componente, que el
-            // llamante reutiliza. Asi el veredicto de la UI consulta lo mismo que este camino.
-            return CarryCapacity.FitByWeight(entity, invComp.Inventory, item, amount);
+            // La cadena de contenedores responde por si misma: cada nivel aplica su techo y
+            // pasa la pregunta al que lo contiene.
+            return invComp.Inventory.FitByWeight(item, amount);
         }
 
         /// <summary>

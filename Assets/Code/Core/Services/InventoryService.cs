@@ -308,7 +308,7 @@ namespace Core.Services
         }
 
         //NOTA considerar cambiar el tipo de retorno a EquipmentResult
-        public int TryEquipItem(IGrabOrigin origin, ItemEntity subLot,
+        public int TryEquipItem(IGrabOrigin origin, ItemEntity equipmentItem,
                                 IEntity dstEquipmentEntity, List<EquipmentSlotType> dstEquipmentSlots)
         {
             Func<ItemEntity, int, int> addFunction = (variant, count) =>
@@ -319,7 +319,13 @@ namespace Core.Services
                 return equipmentSystem.TryEquip(dstEquipmentEntity, variant, dstEquipmentSlots) == EquipResult.SuccessEquip ? 0 : count;
             };
 
-            return RunTransfer(origin, subLot, 1, dstEquipmentEntity, addFunction);
+            int equiped = RunTransfer(origin, equipmentItem, 1, dstEquipmentEntity, addFunction); 
+            
+            InventoryComponent inventoryComponent = equipmentItem.GetComponent<InventoryComponent>();
+            if (equiped == 1 && inventoryComponent != null)
+                dstEquipmentEntity.GetComponent<InventoryComponent>().Inventory.AddContainer(inventoryComponent.Inventory);
+
+            return equiped;
         }
 
         /// <summary>
@@ -329,9 +335,9 @@ namespace Core.Services
         /// <param name="pos">Celda concreta, o null para apilar donde quepa.</param>
         /// <returns>1 si la prenda acabo en el inventario, 0 si volvio al equipo.</returns>
         public int TryUnequipItem(IEntity srcUnequipEntity, ItemEntity equipmentItem,
-                                  List<EquipmentSlotType> srcEquipmenSlots, GridPos? pos = null)
+                                  List<EquipmentSlotType> srcEquipmentSlots, GridPos? pos = null)
         {
-            IGrabOrigin origin = EquipmentOrigin(srcUnequipEntity, srcEquipmenSlots, equipmentItem);
+            IGrabOrigin origin = EquipmentOrigin(srcUnequipEntity, srcEquipmentSlots, equipmentItem);
 
             Func<ItemEntity, int, int> addFunction = (variant, count) =>
             {
@@ -342,9 +348,13 @@ namespace Core.Services
                     : inventorySystem.TryAddItemAt(srcUnequipEntity, variant, count, pos.Value, -1, false);
             };
 
-            int moved = RunTransfer(origin, null, 1, srcUnequipEntity, addFunction);
+            int unEquiped = RunTransfer(origin, null, 1, srcUnequipEntity, addFunction);
 
-            return moved;
+            InventoryComponent inventoryComponent = equipmentItem.GetComponent<InventoryComponent>();
+            if (unEquiped == 1 && inventoryComponent != null)
+                srcUnequipEntity.GetComponent<InventoryComponent>().Inventory.RemoveContainer(inventoryComponent.Inventory);
+ 
+            return unEquiped;
         }
 
         private int RunTransfer(IGrabOrigin origin, 
@@ -449,7 +459,7 @@ namespace Core.Services
             // Igual que TryAddItemAt, que se salta la comprobacion cuando hay nodo ignorado.
             int byWeight = ignoreNodeId != -1
                 ? requested
-                : CarryCapacity.FitByWeight(destiny, inventory, item, requested);
+                : inventory.FitByWeight(item, requested);
 
             // Mismo orden que AddItemAt: el ocupante manda sobre el hueco.
             GridElement occupant = grid.GetElementAt(pos);
