@@ -248,6 +248,7 @@
    (align-items actua sobre el eje cruzado: flex-direction es column por defecto). */
 .grid-mount {
     flex-grow: 1;
+    width: 100%;    
     align-items: center;
     padding: 8px;
 }
@@ -548,6 +549,11 @@
     opacity: 0.35;
 }
 
+.rightside-container {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
 /* Hueco donde se clona la plantilla de un panel de rejilla. Vacio en el UXML:
    la sub-vista lo limpia antes de montar, asi que nada mas puede vivir aqui. */
 .panel-slot {
@@ -559,8 +565,14 @@
     flex-direction: row;
 }
 
-.panel-slot-tabs-tab {
+.panel-slot-tabs-label {
+    height: 20px;
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset'); 
     
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);  
+    background-color: rgb(63, 7, 7); 
+    color: rgb(255, 255, 255);
 }
 
 .ctx-menu {

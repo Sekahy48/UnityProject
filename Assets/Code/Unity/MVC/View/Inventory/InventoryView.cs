@@ -1031,8 +1031,7 @@ namespace MVC.View.Inventory
         #region Equipment Rendering
 
         public void UpdateEquipmentSlots(EquipmentComponent equipment)
-        {
-            UpdateInventoryTabs(equipment);
+        { 
 
             foreach (VisualElement viewSlot in _equipmentSlots)
             { 
@@ -1061,29 +1060,24 @@ namespace MVC.View.Inventory
             }
         }
 
-        private void UpdateInventoryTabs(EquipmentComponent equipmentComponent)
-        { 
-            _inventoryTabs.Clear();
-            
-            foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
-            {
-                foreach (ItemEntity item in slot.Items)
-                {
-                    if (item.GetComponent<InventoryComponent>() != null)
-                    {
-                        VisualElement tab = new VisualElement();
-                        Label tabLabel = new Label("item.GetDisplayName()");
-                        tab.Add(tabLabel);
-                        tab.AddToClassList("panel-slot-tabs-tab");
-
-                        _inventoryTabs.Add(tab);
-                    }
-                }    
-            }
-
+        public void RenderInventoryTabs()
+        {
+            Debug.Log(_inventoryTabs.Children().Count() + " <-  numero de hijos");
             if (_inventoryTabs.Children().Count() > 1)
                 _inventoryTabs.style.display = DisplayStyle.Flex;
-            
+            else    
+                _inventoryTabs.style.display = DisplayStyle.None;
+        }
+
+        public void ClearInveotryTabs() => _inventoryTabs.Clear();
+        public void AddTabToInventoryTabs(IEntity target, String name)
+        {
+            VisualElement tab = new VisualElement();
+                        Label tabLabel = new Label(name);
+                        tab.Add(tabLabel);
+                        tabLabel.AddToClassList("panel-slot-tabs-label");
+
+                        _inventoryTabs.Add(tab);
         }
  
         public void RenderLayers(List<ItemDisplayData> layers)

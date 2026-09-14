@@ -76,11 +76,12 @@
                         </ui:VisualElement>
                     </ui:VisualElement>
 
-                    <!-- Hueco de la rejilla del jugador. Contenedor VACIO a proposito: la
-                         sub-vista de panel hace Clear() sobre el antes de clonar su plantilla,
-                         asi que no puede compartir padre con el panel personal. -->
-                    <ui:VisualElement name="player-grid-slot" class="panel-slot">
+                    <ui:VisualElement name="rightside-container" class="rightside-container">
                         <ui:VisualElement name="panel-slot-tabs" class="panel-slot-tabs"/>
+                        <!-- Hueco de la rejilla del jugador. Contenedor VACIO a proposito: la
+                            sub-vista de panel hace Clear() sobre el antes de clonar su plantilla,
+                            asi que no puede compartir padre con el panel personal. -->
+                        <ui:VisualElement name="player-grid-slot" class="panel-slot"/>
                     </ui:VisualElement>
 
                 </ui:VisualElement>

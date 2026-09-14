@@ -107,8 +107,10 @@ namespace Core.MVC.Presenter.Inventory
 
             InitPanelPresenters(); 
 
-            _view.UpdateEquipmentSlots(_entity.GetComponent<EquipmentComponent>());
-            
+            EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
+            _view.UpdateEquipmentSlots(equipmentComponent);
+            UpdateInventoryTabs(equipmentComponent);
+
             List<ItemDisplayData> catalogDTO = new List<ItemDisplayData>();
             foreach (ItemEntity item in _itemCatalog.GetAll())
             {
@@ -669,7 +671,9 @@ namespace Core.MVC.Presenter.Inventory
 
                 case GameEventType.EquipmentChanged:
                 { 
-                    _view.UpdateEquipmentSlots(_entity.GetComponent<EquipmentComponent>());
+                    EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
+                    _view.UpdateEquipmentSlots(equipmentComponent);
+                    UpdateInventoryTabs(equipmentComponent);
                     RefreshOpenLayers();
                     break;
                 } 
@@ -694,5 +698,27 @@ namespace Core.MVC.Presenter.Inventory
 
             OnSlotLayersRequested(type);
         }
+
+        
+
+        private void UpdateInventoryTabs(EquipmentComponent equipmentComponent)
+        { 
+            _view.ClearInveotryTabs();
+
+            _view.AddTabToInventoryTabs(_entity, _entity.GetName());
+            
+            foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
+            {
+                foreach (ItemEntity item in slot.Items)
+                {
+                    if (item.GetComponent<InventoryComponent>() != null)
+                    {
+                        _view.AddTabToInventoryTabs(item, item.GetDisplayName());
+                    }
+                }    
+            }
+
+            _view.RenderInventoryTabs(); 
+        } 
     }
 }

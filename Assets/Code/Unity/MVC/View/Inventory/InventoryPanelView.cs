@@ -287,6 +287,8 @@ namespace MVC.View.Inventory
 
             _grid.style.width  = cell * _gridW;
             _grid.style.height = cell * _gridH;
+
+            Debug.Log($"FIT avail={availW:F1}x{availH:F1} cell={cell} fitted={_fittedCell}");
         }
 
         #endregion

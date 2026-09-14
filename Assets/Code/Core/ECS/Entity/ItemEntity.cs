@@ -13,9 +13,21 @@ namespace Core.ECS.Entity
             return new ItemEntity(id);
         }
 
+        /// <summary>
+        /// Clona el item y, si lleva inventario, lo reapunta a la copia.
+        ///
+        /// El inventario clonado guarda una referencia a la entidad de la que cuelga, y esa
+        /// referencia la copia el clon tal cual: sin reapuntarla, la mochila nueva tendria el
+        /// contenido correcto pero pediria su techo de peso a la mochila vieja.
+        /// </summary>
         public new ItemEntity Clone()
         {
-            return (ItemEntity)base.Clone();
+            ItemEntity clone = (ItemEntity)base.Clone();
+
+            InventoryComponent inventory = clone.GetComponent<InventoryComponent>();
+            inventory?.Inventory.Rebind(clone);
+
+            return clone;
         }
 
         public string GetDisplayName()

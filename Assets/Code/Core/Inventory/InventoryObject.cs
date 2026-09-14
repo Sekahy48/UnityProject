@@ -56,6 +56,21 @@ namespace Core.Inventory
         public int GetTypeId() => _id;
         public int GetNodeId() => _nodeId;
         public ItemEntity GetItemEntity() => _item;
+
+        /// <summary>
+        /// Reapunta este inventario a la entidad a la que pertenece.
+        ///
+        /// Existe por el clonado: Clone copia el arbol pero no la entidad, asi que el clon
+        /// nace apuntando al item ORIGINAL y sacaria de el su techo de peso. Quien clona la
+        /// entidad es el unico que conoce la nueva, y la enchufa aqui.
+        /// </summary>
+        public void Rebind(ItemEntity owner)
+        {
+            AC.CheckNotNull(owner, nameof(owner));
+
+            _item = owner;
+            _holder = owner;
+        }
         public bool IsLeaf() => false;
         public int GetAmount() => 1;
         public void SetAmount(int amount) { } // containers don't have an amount
@@ -604,6 +619,20 @@ namespace Core.Inventory
         }
  
 
+        /// <summary>
+        /// Dos contenedores equivalen si son del mismo tipo y guardan lo mismo.
+        ///
+        /// <para><b>No se compara _item como entidad</b>, y no es un olvido: un contenedor y su
+        /// entidad son la misma cosa vista por sus dos caras — la entidad lleva un
+        /// InventoryComponent que apunta a este mismo objeto, asi que compararla entra otra vez
+        /// aqui y no sale. Ademas seria redundante: _id SALE del item (su typeId) y el
+        /// contenido se compara elemento a elemento justo debajo.</para>
+        ///
+        /// <para>Lo que si se pierde: el estado de instancia del contenedor (un arcon dañado y
+        /// otro intacto salen equivalentes). Si algun dia importa, se compara aqui de forma
+        /// explicita — nunca delegando en la entidad entera, que es por donde se cierra el
+        /// ciclo.</para>
+        /// </summary>
         public bool Equivalent(IInventoryElement other)
         {
             AC.CheckNotNull(other, "other");
@@ -611,8 +640,7 @@ namespace Core.Inventory
 
             bool generalCheck = this._id.Equals(other.GetTypeId())
                              && this.IsLeaf() == other.IsLeaf()
-                             && (this._item == null ? otherInv._item == null
-                                                    : this._item.Equivalent(otherInv._item));
+                             && (this._item == null) == (otherInv._item == null);
             if (!generalCheck) return false;
             if (this._inventory.Count != otherInv._inventory.Count) return false;
 
