@@ -559,6 +559,10 @@
     flex-direction: row;
 }
 
+.panel-slot-tabs-tab {
+    
+}
+
 .ctx-menu {
     flex-direction: column; 
     position: absolute;

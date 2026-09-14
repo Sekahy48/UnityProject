@@ -76,6 +76,7 @@ namespace MVC.View.Inventory
                               _sidePanelAContainer,
                               _sidePanelBContainer;
         
+        private VisualElement _inventoryTabs;
         /* Ventana lateral A completa. Se muestra u oculta entera; su hueco interior es
            _sidePanelAContainer, que es otra cosa. */
         private VisualElement _sidePanelAWindow;
@@ -257,7 +258,7 @@ namespace MVC.View.Inventory
             _ctxMenu = _uiDocument.rootVisualElement.Q<VisualElement>("ctx-menu");
             // Sublots popup
             _sublotsPopup = _uiDocument.rootVisualElement.Q<VisualElement>("sublots-popup");
-
+            _inventoryTabs = _mainRoot.Q<VisualElement>("panel-slot-tabs");
             _mainRoot.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
 
             // Ventanas fijas: el inventario ocupa un hueco del layout, no flota.
@@ -1031,6 +1032,8 @@ namespace MVC.View.Inventory
 
         public void UpdateEquipmentSlots(EquipmentComponent equipment)
         {
+            UpdateInventoryTabs(equipment);
+
             foreach (VisualElement viewSlot in _equipmentSlots)
             { 
                 EquipmentSlot realSlot = equipment.GetEquipmentSlot(GetEquipmentSlotType(viewSlot));
@@ -1056,6 +1059,31 @@ namespace MVC.View.Inventory
                     }  
                 } 
             }
+        }
+
+        private void UpdateInventoryTabs(EquipmentComponent equipmentComponent)
+        { 
+            _inventoryTabs.Clear();
+            
+            foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
+            {
+                foreach (ItemEntity item in slot.Items)
+                {
+                    if (item.GetComponent<InventoryComponent>() != null)
+                    {
+                        VisualElement tab = new VisualElement();
+                        Label tabLabel = new Label("item.GetDisplayName()");
+                        tab.Add(tabLabel);
+                        tab.AddToClassList("panel-slot-tabs-tab");
+
+                        _inventoryTabs.Add(tab);
+                    }
+                }    
+            }
+
+            if (_inventoryTabs.Children().Count() > 1)
+                _inventoryTabs.style.display = DisplayStyle.Flex;
+            
         }
  
         public void RenderLayers(List<ItemDisplayData> layers)
