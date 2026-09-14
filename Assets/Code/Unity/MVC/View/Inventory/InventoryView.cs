@@ -1070,14 +1070,18 @@ namespace MVC.View.Inventory
         }
 
         public void ClearInveotryTabs() => _inventoryTabs.Clear();
-        public void AddTabToInventoryTabs(IEntity target, String name)
+        public void AddTabToInventoryTabs(IEntity target, String name, Action clickEvent)
         {
             VisualElement tab = new VisualElement();
-                        Label tabLabel = new Label(name);
-                        tab.Add(tabLabel);
-                        tabLabel.AddToClassList("panel-slot-tabs-label");
+            Label tabLabel = new Label(name);
+            tab.Add(tabLabel);
+            tab.RegisterCallback<ClickEvent>(evt =>
+            {
+                clickEvent?.Invoke();
+            });
+            tabLabel.AddToClassList("panel-slot-tabs-label");
 
-                        _inventoryTabs.Add(tab);
+            _inventoryTabs.Add(tab);
         }
  
         public void RenderLayers(List<ItemDisplayData> layers)

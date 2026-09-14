@@ -609,10 +609,11 @@ namespace Core.Inventory
 
             foreach (IInventoryElement elem in _inventory)
             {
+                CoreLogger.Instance.Log(elem.GetItemEntity().GetDisplayName() + " " + elem.GetTotalWeight());
                 total += elem.GetTotalWeight();
 
-                if (elem is InventoryObject container && container.GetItemEntity() != null)
-                    total += container.GetItemEntity().GetComponent<BaseItemComponent>().Weight;
+                if (elem is InventoryObject container && container.GetItemEntity() != null){CoreLogger.Instance.Log("container ^");
+                    total += container.GetItemEntity().GetComponent<BaseItemComponent>().Weight;}
             }
 
             return total;

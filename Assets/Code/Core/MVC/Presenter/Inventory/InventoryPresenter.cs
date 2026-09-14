@@ -107,9 +107,7 @@ namespace Core.MVC.Presenter.Inventory
 
             InitPanelPresenters(); 
 
-            EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
-            _view.UpdateEquipmentSlots(equipmentComponent);
-            UpdateInventoryTabs(equipmentComponent);
+            UpdateEquipmentRelated();
 
             List<ItemDisplayData> catalogDTO = new List<ItemDisplayData>();
             foreach (ItemEntity item in _itemCatalog.GetAll())
@@ -671,9 +669,7 @@ namespace Core.MVC.Presenter.Inventory
 
                 case GameEventType.EquipmentChanged:
                 { 
-                    EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
-                    _view.UpdateEquipmentSlots(equipmentComponent);
-                    UpdateInventoryTabs(equipmentComponent);
+                    UpdateEquipmentRelated();
                     RefreshOpenLayers();
                     break;
                 } 
@@ -705,7 +701,7 @@ namespace Core.MVC.Presenter.Inventory
         { 
             _view.ClearInveotryTabs();
 
-            _view.AddTabToInventoryTabs(_entity, _entity.GetName());
+            _view.AddTabToInventoryTabs(_entity, _entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity));
             
             foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
             {
@@ -713,12 +709,19 @@ namespace Core.MVC.Presenter.Inventory
                 {
                     if (item.GetComponent<InventoryComponent>() != null)
                     {
-                        _view.AddTabToInventoryTabs(item, item.GetDisplayName());
+                        _view.AddTabToInventoryTabs(item, item.GetDisplayName(), () => _panelPresenters[PanelType.Player].Bind(item));
                     }
                 }    
             }
 
             _view.RenderInventoryTabs(); 
         } 
+
+        private void UpdateEquipmentRelated()
+        {
+            EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
+            _view.UpdateEquipmentSlots(equipmentComponent);
+            UpdateInventoryTabs(equipmentComponent);
+        }
     }
 }

@@ -16,7 +16,7 @@ namespace Core.ECS.Systems
 
         public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
 
-        public EquipResult TryEquip(IEntity entity, ItemEntity item, List<EquipmentSlotType> slots)
+        public EquipResult TryEquip(IEntity entity, ItemEntity item, List<EquipmentSlotType> slots, bool announce = true)
         {
             EquipmentComponent equipmentComponent = entity.GetComponent<EquipmentComponent>();
             if (equipmentComponent == null) throw new InvalidOperationException("Cannot equip items into an entity with no EquipmentComponent");
@@ -27,7 +27,7 @@ namespace Core.ECS.Systems
             EquipResult result = equipmentComponent.EquipItem(slots, item, wearableComponent.FullOcupancy);
             CoreLogger.Instance.Log(result.GetMessage());
 
-            if (result == EquipResult.SuccessEquip) EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, entity, equipmentComponent));
+            if (result == EquipResult.SuccessEquip && announce) EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, entity, equipmentComponent));
 
             return result; 
         }

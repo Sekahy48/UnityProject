@@ -311,20 +311,30 @@ namespace Core.Services
         public int TryEquipItem(IGrabOrigin origin, ItemEntity equipmentItem,
                                 IEntity dstEquipmentEntity, List<EquipmentSlotType> dstEquipmentSlots)
         {
+            AC.CheckNotNull(origin, nameof(origin));
+            AC.CheckNotNull(equipmentItem, nameof(equipmentItem));
+            AC.CheckNotNull(dstEquipmentEntity, nameof(dstEquipmentEntity));
+            AC.CheckNotNull(dstEquipmentSlots, nameof(dstEquipmentSlots));
+
             Func<ItemEntity, int, int> addFunction = (variant, count) =>
             {
                 EquipmentSystem equipmentSystem = _systemContext.SystemManager.GetReactiveSystem<EquipmentSystem>();
-
+                
+            
+                InventoryComponent inventoryComponent = equipmentItem.GetComponent<InventoryComponent>(); 
+                    
                 // El equipo no admite parciales: o entra la prenda o no cabe nada.
-                return equipmentSystem.TryEquip(dstEquipmentEntity, variant, dstEquipmentSlots) == EquipResult.SuccessEquip ? 0 : count;
+                EquipResult result = equipmentSystem.TryEquip(dstEquipmentEntity, variant, dstEquipmentSlots, false);
+                int leftOver = result == EquipResult.SuccessEquip ? 0 : count;  
+
+                if (leftOver == 0)
+                    dstEquipmentEntity.GetComponent<InventoryComponent>().Inventory.AddContainer(inventoryComponent.Inventory);
+                return leftOver;
             };
 
             int equiped = RunTransfer(origin, equipmentItem, 1, dstEquipmentEntity, addFunction); 
-            
-            InventoryComponent inventoryComponent = equipmentItem.GetComponent<InventoryComponent>();
-            if (equiped == 1 && inventoryComponent != null)
-                dstEquipmentEntity.GetComponent<InventoryComponent>().Inventory.AddContainer(inventoryComponent.Inventory);
-
+            if (equiped > 0) 
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, dstEquipmentEntity, dstEquipmentEntity.GetComponent<EquipmentComponent>()));
             return equiped;
         }
 
