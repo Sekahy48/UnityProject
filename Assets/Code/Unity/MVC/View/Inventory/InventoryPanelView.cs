@@ -68,6 +68,18 @@ namespace MVC.View.Inventory
             { GameEventType.Immobile,     "load-immobile" },
         };
 
+        /* Clases del texto, en su propio mapa en vez de concatenar un sufijo al de la barra.
+           El mapa existe para que los nombres de clase no se repartan por el codigo, y una
+           cadena construida a mano se escapa justo de eso: al renombrar en el USS, el mapa
+           avisa y la concatenacion no. */
+        private static readonly Dictionary<GameEventType, string> LoadLabelClasses = new()
+        {
+            { GameEventType.NormalWeight, "load-normal-label"   },
+            { GameEventType.ExtraWeight,  "load-extra-label"    },
+            { GameEventType.Overweight,   "load-over-label"     },
+            { GameEventType.Immobile,     "load-immobile-label" },
+        }; 
+
         #endregion
 
         #region Events
@@ -288,7 +300,6 @@ namespace MVC.View.Inventory
             _grid.style.width  = cell * _gridW;
             _grid.style.height = cell * _gridH;
 
-            Debug.Log($"FIT avail={availW:F1}x{availH:F1} cell={cell} fitted={_fittedCell}");
         }
 
         #endregion
@@ -343,9 +354,16 @@ namespace MVC.View.Inventory
             float painted = Math.Min(ratio, 1f) * 100f;
             _weightBar.style.width = Length.Percent(painted);
 
+            // Las dos se limpian antes de poner la nueva: sin esto se acumulan banda tras
+            // banda, y a partir de la segunda transicion manda la que el USS resuelva mas
+            // tarde en vez de la actual.
             foreach (string cls in LoadClasses.Values)
                 _weightBar.RemoveFromClassList(cls);
             _weightBar.AddToClassList(LoadClasses[eventType]);
+
+            foreach (string cls in LoadLabelClasses.Values)
+                _weightLabel.RemoveFromClassList(cls);
+            _weightLabel.AddToClassList(LoadLabelClasses[eventType]);
         }
 
         

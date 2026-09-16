@@ -53,12 +53,15 @@ namespace Core.Inventory
         /// <summary>El equipo no apila: la prenda esta puesta o no lo esta.</summary>
         public int Available(ItemEntity variant = null) => IsEquipped() ? 1 : 0;
 
+        /// <remarks>Si la prenda es un contenedor, su inventario deja de colgar del portador:
+        /// quitarsela tiene que dejar de sumar su contenido al peso, y todos los desequipados
+        /// pasan por aqui.</remarks>
         public IReadOnlyList<SubLot> Extract(ItemEntity variant, int amount)
         {
             if (amount <= 0 || !IsEquipped()) return new List<SubLot>();
 
-            
             _system.TryUnequip(_owner, _item, _slotTypes);
+            WornContainers.Detach(_owner, _item);
 
             return new List<SubLot> { new SubLot(_item, 1) };
         }
@@ -67,13 +70,14 @@ namespace Core.Inventory
         {
             if (amount <= 0) return;
 
-            WearableComponent wearable = _item.GetComponent<WearableComponent>();
             EquipResult result = _system.TryEquip(Owner, _item, _slotTypes);
 
             if (result != EquipResult.SuccessEquip)
                 throw new InvalidOperationException(
                     $"No se pudo devolver '{_item.GetDisplayName()}' a su equipo: {result.GetMessage()}. " +
                     "La prenda ha salido del equipo sin llegar a ningun destino.");
+
+            WornContainers.Attach(_owner, _item);
         }
 
         /// <summary>El equipo no tiene celdas que liberar.</summary>

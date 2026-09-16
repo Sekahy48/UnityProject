@@ -251,6 +251,7 @@
     width: 100%;    
     align-items: center;
     padding: 8px;
+    justify-content: center; 
 }
 
 /* ===== Inspection strip ===== */
@@ -367,8 +368,23 @@
     background-color: rgba(163, 8, 8, 0.98);
 }
 
+.load-normal-label{
+    color: rgb(255, 255, 255);
+}
+
+.load-extra-label{
+    color: rgb(12, 11, 11);
+}
+
+.load-over-label{
+    color: rgb(7, 21, 85);
+}
+
+.load-immobile-label{
+    color: rgb(124, 231, 124);
+} 
+
 .weight-label {
-    color: rgba(180, 180, 180, 1);
     font-size: 15px;
     -unity-text-align: middle-center;
     -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 

@@ -15,7 +15,7 @@ namespace Core.MVC.View.UI.Inventory
         /// puede saber. Rellenarlo a mano en cada sitio que pinta un nodo condenaba al flag a
         /// olvidarse en el proximo que se anadiera.
         /// </summary>
-        public static ItemDisplayData BuildNodeData(ItemObject node)
+        public static ItemDisplayData BuildNodeData(IInventoryElement node)
         {
             if (node == null) return null;
 
@@ -23,7 +23,7 @@ namespace Core.MVC.View.UI.Inventory
             if (representative == null) return null;
 
             ItemDisplayData data = BuildDisplayData(representative, node.GetAmount());
-            data.Sublots = node.GetSubLots.Count > 1;
+            data.Sublots = node.HasVariants();
 
             return data;
         }

@@ -26,11 +26,10 @@ namespace Core.MVC.Presenter.Inventory
         {
             _grabbedThisGesture = false;
             _placedThisGesture = false;
-            if (_inventoryService.IsHandCarrying()) { CoreLogger.Instance.Log("PRESS: mano llena, no agarro"); return; }
+            if (_inventoryService.IsHandCarrying()) return;
 
             grab();
             _grabbedThisGesture = _inventoryService.IsHandCarrying();
-            CoreLogger.Instance.Log($"PRESS: agarrado={_grabbedThisGesture}");
         }
 
         /// <summary>
@@ -70,13 +69,11 @@ namespace Core.MVC.Presenter.Inventory
 
         public void OnReleased(bool dragged, Action place, Action cancel)
         {
-            CoreLogger.Instance.Log($"UP: carrying={_inventoryService.IsHandCarrying()}, esteGesto={_grabbedThisGesture}, dragged={dragged}");
             if (_placedThisGesture) return;
             if (!_inventoryService.IsHandCarrying()) return;
             if (_grabbedThisGesture && !dragged) return;
 
             place();
-            CoreLogger.Instance.Log($"UP: tras place, carrying={_inventoryService.IsHandCarrying()}");
 
             if (dragged && _inventoryService.IsHandCarrying()) cancel();
         }

@@ -191,8 +191,6 @@ namespace MVC.View.Inventory
             {
                 if (IsInsideAnyTransient(evt.target as VisualElement)) return;
                 OnReleasedOutsideGrid?.Invoke();
-                VisualElement t = evt.target as VisualElement;
-                Debug.Log($"UP fuera: target={t?.name} clases=[{string.Join(",", t?.GetClasses() ?? new string[0])}] panel={(t?.panel == null ? "NULL" : "ok")}");
             });
             
 
@@ -874,7 +872,6 @@ namespace MVC.View.Inventory
                     }
                     else if (evt.button == 1) 
                     {
-                        Debug.Log("Click dcho - sublot");
                         onRightClicked?.Invoke(index);
                     }
 
@@ -1060,18 +1057,22 @@ namespace MVC.View.Inventory
             }
         }
 
-        public void RenderInventoryTabs()
+        public void RenderInventoryTabs(Action onHide)
         {
-            Debug.Log(_inventoryTabs.Children().Count() + " <-  numero de hijos");
             if (_inventoryTabs.Children().Count() > 1)
                 _inventoryTabs.style.display = DisplayStyle.Flex;
-            else    
+            else
+            {
                 _inventoryTabs.style.display = DisplayStyle.None;
+                onHide?.Invoke();
+            }
+                
         }
 
         public void ClearInveotryTabs() => _inventoryTabs.Clear();
-        public void AddTabToInventoryTabs(IEntity target, String name, Action clickEvent)
+        public void AddTabToInventoryTabs(IEntity target, String name, Action clickEvent, List<MenuOption> options)
         {
+            // NOTA sino va juntar en PointerDown
             VisualElement tab = new VisualElement();
             Label tabLabel = new Label(name);
             tab.Add(tabLabel);
@@ -1081,6 +1082,12 @@ namespace MVC.View.Inventory
             });
             tabLabel.AddToClassList("panel-slot-tabs-label");
 
+            
+            tab.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button == 1)
+                    RenderContextualMenu(options, () => {});
+            });
             _inventoryTabs.Add(tab);
         }
  

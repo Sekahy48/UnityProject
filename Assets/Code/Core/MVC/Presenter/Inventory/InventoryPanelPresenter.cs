@@ -93,7 +93,7 @@ namespace Core.MVC.Presenter.Inventory
         /// El null no es un caso de error: es "la celda esta vacia", y sube tal cual hasta la
         /// franja para que decida ella que hacer con la ausencia.
         /// </summary>
-        private ItemDisplayData DisplayDataOf(ItemObject node) => DisplayDTOsBuilder.BuildNodeData(node);
+        private ItemDisplayData DisplayDataOf(IInventoryElement node) => DisplayDTOsBuilder.BuildNodeData(node);
 
         /// <summary>Anuncia lo que hay en esa celda para la franja de inspeccion.</summary>
         private void PublishInspection(GridPos pos)
@@ -118,7 +118,7 @@ namespace Core.MVC.Presenter.Inventory
             {
                 // Respaldo propio de este camino: con el menu contextual abierto el cursor ya
                 // no esta sobre la celda, y aun asi la franja debe seguir mostrando ese item.
-                ItemObject node = GetNodeAt(pos);
+                IInventoryElement node = GetNodeAt(pos);
                 if (node == null && _panelView.LastRightClickedCell != null)
                     node = GetNodeAt(_panelView.LastRightClickedCell.Value);
 
@@ -134,7 +134,7 @@ namespace Core.MVC.Presenter.Inventory
             GridElement element = inventory.GetGrid().GetElementAt(pos);
             if (element == null) return;   // empty cell: nothing to grab
 
-            ItemObject node = element.GetNode();
+            IInventoryElement node = element.GetNode();
             _service.GrabFrom(new InventoryNodeOrigin(Entity, inventory, node), node.GetAmount());
 
             // Painted from what was actually grabbed, not from what the block showed: Grab
@@ -152,7 +152,7 @@ namespace Core.MVC.Presenter.Inventory
             GridElement element = inventory.GetGrid().GetElementAt(pos);
             if (element == null) return;
 
-            ItemObject node = element.GetNode();
+            IInventoryElement node = element.GetNode();
             int units = portion.UnitsOf(node.GetAmount());
             if (units <= 0) return;
 
@@ -176,7 +176,7 @@ namespace Core.MVC.Presenter.Inventory
             GridElement element = inventory.GetGrid().GetElementAt(pos);
             if (element == null) return;
 
-            ItemObject node = element.GetNode();
+            IInventoryElement node = element.GetNode();
             _service.GrabFrom(new InventoryNodeOrigin(Entity, inventory, node), amount, variant);
 
             PublishHandChanged();
@@ -239,7 +239,7 @@ namespace Core.MVC.Presenter.Inventory
             List<GridItemDisplayData> items = new List<GridItemDisplayData>();
             foreach (GridElement element in grid.GetElements())
             {
-                ItemObject node = element.GetNode();
+                IInventoryElement node = element.GetNode();
                 ItemEntity item = node.GetItemEntity();
 
                 if (item == null)
@@ -310,7 +310,7 @@ namespace Core.MVC.Presenter.Inventory
                                                  info.DimensionW, info.DimensionH);
         }
 
-        public ItemObject GetNodeAt(GridPos pos)
+        public IInventoryElement GetNodeAt(GridPos pos)
         {
             if (Entity == null) return null;
 

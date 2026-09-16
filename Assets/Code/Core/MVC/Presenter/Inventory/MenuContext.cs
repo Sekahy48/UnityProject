@@ -26,7 +26,7 @@ namespace Core.MVC.Presenter.Inventory
         public readonly IEntity Origin;
 
         /// <summary>Pila concreta sobre la que se abrio. Null cuando viene del equipamiento.</summary>
-        public readonly ItemObject Target;
+        public readonly IInventoryElement Target;
 
         /// <summary>Prenda equipada sobre la que se abrio. Null cuando viene de una rejilla.</summary>
         public readonly ItemEntity Item;
@@ -43,7 +43,7 @@ namespace Core.MVC.Presenter.Inventory
         /// <summary>Celda pulsada. None cuando viene del equipamiento.</summary>
         public readonly GridPos Cell;
 
-        private MenuContext(IEntity origin, ItemObject target, ItemEntity item,
+        private MenuContext(IEntity origin, IInventoryElement target, ItemEntity item,
                             EquipmentSlotType? slotType, PanelPoint anchor,
                             PanelType? panel, GridPos cell)
         {
@@ -57,7 +57,7 @@ namespace Core.MVC.Presenter.Inventory
         }
 
         /// <summary>Abierto sobre una celda de rejilla.</summary>
-        public static MenuContext FromGrid(IEntity origin, ItemObject target, PanelType panel,
+        public static MenuContext FromGrid(IEntity origin, IInventoryElement target, PanelType panel,
                                            GridPos cell, PanelPoint anchor)
         {
             if (target == null || target.GetItemEntity() == null)
@@ -109,5 +109,11 @@ namespace Core.MVC.Presenter.Inventory
             Target == null ? DisplayDTOsBuilder.BuildDisplayData(Item, 1)
             : Item == null   ? DisplayDTOsBuilder.BuildNodeData(Target)
             :                  DisplayDTOsBuilder.BuildDisplayData(Item, Target.GetAmount(Item));
+    
+        /// <summary>
+        /// La pila enfocada, o null si lo enfocado no es una pila — un contenedor o una prenda no
+        /// tienen sub-lotes que desglosar.
+        /// </summary>
+        public ItemObject TargetStack => Target as ItemObject;
     }
 }

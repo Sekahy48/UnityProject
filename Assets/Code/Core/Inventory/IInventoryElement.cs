@@ -32,8 +32,9 @@ namespace Core.Inventory
         /// <summary>
         /// Modifies the amount of an item in the global inventory.
         /// </summary>
-        int ModifyAmount(int id, int amount);
+        int ModifyAmount(int id, int amount); 
 
+         
         /// <summary>
         /// Checks if the inventory contains an item with the given id.
         /// </summary>
@@ -43,6 +44,13 @@ namespace Core.Inventory
         /// Gets the total amount of an item across the whole inventory.
         /// </summary>
         int GetAmount(int id);
+
+        /// <summary>
+        /// Gets the total amount of items equivalents to the given variant.
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <returns></returns>
+        int GetAmount(ItemEntity variant);
 
         /// <summary>
         /// Removes all units of an item from the inventory.
@@ -97,6 +105,18 @@ namespace Core.Inventory
         /// </summary>
         List<SubLot> ConsumeRandom(int amount);
 
+        /// <summary>
+        /// Saca unidades de ESTE nodo. No toca al padre: retirar el nodo si se queda vacio es
+        /// asunto de quien lo contiene, no suyo.
+        ///
+        /// <para>Una rama no se divide: o sale entera o no sale nada. Y su contenido viaja
+        /// dentro de la entidad devuelta, en su InventoryComponent, asi que no necesita ningun
+        /// caso aparte para llevarselo.</para>
+        /// </summary>
+        /// <param name="variant">Sub-lote del que sacar, o null para el nodo entero.</param>
+        /// <returns>Pares (variante, unidades sacadas). Vacio si no salio nada.</returns>
+        List<SubLot> Extract(ItemEntity variant, int amount);
+
         //#enregion
 
         //#region Getters & Utilities
@@ -105,6 +125,12 @@ namespace Core.Inventory
         int GetNodeId();
         ItemEntity GetItemEntity();
         bool IsLeaf();
+
+        /// <summary>
+        /// Si lo que hay aqui son varias variantes del mismo item, con estados distintos.
+        /// Una rama nunca: un contenedor no es una pila.
+        /// </summary>
+        bool HasVariants();
         int GetAmount();
         void SetAmount(int amount);
         void ClearInventory();

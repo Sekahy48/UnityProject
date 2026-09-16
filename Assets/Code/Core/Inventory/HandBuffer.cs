@@ -78,6 +78,19 @@ namespace Core.Inventory
         /// <summary>
         /// Vacia la mano. Seguro como cancelacion: lo que quede nunca salio de su origen.
         /// Solo cancela lo pendiente; lo ya reportado por NotifyPlaced esta colocado y ahi se queda.
+        ///
+        /// <para><b>INVARIANTE del que depende este metodo:</b> nada sale del arbol fuera de una
+        /// transaccion de <c>InventoryService.RunTransfer</c>. Agarrar no extrae: solo apunta de
+        /// donde sale y cuantas unidades quedan reservadas. La extraccion y su vuelta atras
+        /// ocurren dentro de la misma llamada, asi que cuando esa llamada termina, o lo movido
+        /// esta en el destino o ha vuelto a su sitio. Por eso aqui basta con soltar la
+        /// referencia: no hay nada que devolver.</para>
+        ///
+        /// <para>Si algun dia un camino extrae al AGARRAR en vez de al colocar, este metodo se
+        /// convierte en una fuga — y con contenedores no seria un contador descuadrado sino una
+        /// mochila con su contenido que desaparece. Ese seria el momento en que "cancelar es
+        /// gratis" tendria que pasar a ser "cancelar deshace", que es otro contrato y afecta a
+        /// todo lo que descansa en el primero.</para>
         /// </summary>
         public void Clear()
         {

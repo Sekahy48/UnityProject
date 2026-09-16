@@ -122,7 +122,7 @@ namespace Core.Inventory
         /// el nodo que no esta en la mano no elige por donde se pone.
         /// </param>
         /// <returns>False si alguno no esta en la rejilla, o si no caben intercambiados.</returns>
-        public bool SwapNodes(ItemObject a, GridPos posForA, ItemObject b)
+        public bool SwapNodes(IInventoryElement a, GridPos posForA, IInventoryElement b)
         {
             GridElement elemA = GetElementOf(a.GetNodeId());
             GridElement elemB = GetElementOf(b.GetNodeId());
@@ -162,7 +162,7 @@ namespace Core.Inventory
         /// new id owns no cell yet, so without this the placement collides with the node it
         /// is replacing.
         /// </param>
-        public bool Place(ItemObject node, GridPos pos, int ignoreNodeId = -1)
+        public bool Place(IInventoryElement node, GridPos pos, int ignoreNodeId = -1)
         {
             BaseItemComponent baseItem = node.GetItemEntity().GetComponent<BaseItemComponent>();
             int itemH = baseItem.DimensionH;

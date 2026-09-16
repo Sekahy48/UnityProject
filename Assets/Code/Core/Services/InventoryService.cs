@@ -41,7 +41,7 @@ namespace Core.Services
         /// momento de preguntarlo y no contra nada recordado, asi que abandonar el item y
         /// volver sigue contando como el mismo origen.
         /// </summary>
-        public bool IsGrabbedFrom(ItemObject node)
+        public bool IsGrabbedFrom(IInventoryElement node)
             => node != null && IsHandCarrying() && GetGrabbedNodeId() == node.GetNodeId();
 
         /// <summary>
@@ -102,10 +102,10 @@ namespace Core.Services
             if (!ReferenceEquals(origin.Inventory, dstInventory)) return false;
 
             TetrisGridState grid = dstInventory.GetGrid();
-            ItemObject target = grid.GetElementAt(pos)?.GetNode();
+            IInventoryElement target = grid.GetElementAt(pos)?.GetNode();
             if (target == null) return false;
 
-            ItemObject held = origin.Node;
+            IInventoryElement held = origin.Node;
             if (ReferenceEquals(held, target)) return false;
             if (_interactionContext._handBuffer.Ungrabbed() != 0) return false;
 
@@ -125,10 +125,10 @@ namespace Core.Services
             return !Overlap(dstHeld, Footprint(held), dstTarget, Footprint(target));
         }
 
-        private static BaseItemComponent Footprint(ItemObject node)
+        private static BaseItemComponent Footprint(IInventoryElement node)
             => node.GetItemEntity().GetComponent<BaseItemComponent>();
 
-        private static bool Fits(TetrisGridState grid, ItemObject node, GridPos pos,
+        private static bool Fits(TetrisGridState grid, IInventoryElement node, GridPos pos,
                                  int ignoreNodeId, int alsoIgnoreNodeId)
         {
             BaseItemComponent baseInfo = Footprint(node);
@@ -156,7 +156,7 @@ namespace Core.Services
 
             InventoryNodeOrigin origin = (InventoryNodeOrigin)_interactionContext._handBuffer.GetOrigin();
             TetrisGridState grid = destiny.GetComponent<InventoryComponent>().Inventory.GetGrid();
-            ItemObject target = grid.GetElementAt(pos).GetNode();
+            IInventoryElement target = grid.GetElementAt(pos).GetNode();
 
             if (!grid.SwapNodes(origin.Node, pos, target)) return false;
 
@@ -177,7 +177,7 @@ namespace Core.Services
         /// </summary>
         /// <param name="variant">Sub-lote a separar, o null para tomar del nodo al azar.</param>
         /// <returns>Unidades que no pudieron separarse.</returns>
-        public int SplitNode(IEntity owner, ItemObject node, ItemEntity variant, int amount)
+        public int SplitNode(IEntity owner, IInventoryElement node, ItemEntity variant, int amount)
         {
             AC.CheckNotNull(owner, nameof(owner));
             AC.CheckNotNull(node, nameof(node));
@@ -222,8 +222,15 @@ namespace Core.Services
 
             // El equipo no admite parciales: o entra la prenda o no cabe nada.
             return PlaceFromHand(destiny, (variant, count) =>
-                _systemContext.SystemManager.GetReactiveSystem<EquipmentSystem>()
-                    .TryEquip(destiny, variant, slot) == EquipResult.SuccessEquip ? 0 : count);
+            {
+                EquipResult result = _systemContext.SystemManager.GetReactiveSystem<EquipmentSystem>()
+                                         .TryEquip(destiny, variant, slot);
+                if (result != EquipResult.SuccessEquip) return count;
+
+                WornContainers.Attach(destiny, variant);
+
+                return 0;
+            });
         }
 
         /// <summary>
@@ -319,17 +326,14 @@ namespace Core.Services
             Func<ItemEntity, int, int> addFunction = (variant, count) =>
             {
                 EquipmentSystem equipmentSystem = _systemContext.SystemManager.GetReactiveSystem<EquipmentSystem>();
-                
-            
-                InventoryComponent inventoryComponent = equipmentItem.GetComponent<InventoryComponent>(); 
-                    
+
                 // El equipo no admite parciales: o entra la prenda o no cabe nada.
                 EquipResult result = equipmentSystem.TryEquip(dstEquipmentEntity, variant, dstEquipmentSlots, false);
-                int leftOver = result == EquipResult.SuccessEquip ? 0 : count;  
+                if (result != EquipResult.SuccessEquip) return count;
 
-                if (leftOver == 0)
-                    dstEquipmentEntity.GetComponent<InventoryComponent>().Inventory.AddContainer(inventoryComponent.Inventory);
-                return leftOver;
+                WornContainers.Attach(dstEquipmentEntity, variant);
+
+                return 0;
             };
 
             int equiped = RunTransfer(origin, equipmentItem, 1, dstEquipmentEntity, addFunction); 
@@ -358,13 +362,9 @@ namespace Core.Services
                     : inventorySystem.TryAddItemAt(srcUnequipEntity, variant, count, pos.Value, -1, false);
             };
 
-            int unEquiped = RunTransfer(origin, null, 1, srcUnequipEntity, addFunction);
-
-            InventoryComponent inventoryComponent = equipmentItem.GetComponent<InventoryComponent>();
-            if (unEquiped == 1 && inventoryComponent != null)
-                srcUnequipEntity.GetComponent<InventoryComponent>().Inventory.RemoveContainer(inventoryComponent.Inventory);
- 
-            return unEquiped;
+            // El desenganche lo hace EquipmentSlotOrigin.Extract, que es por donde salen TODOS
+            // los desequipados — este y el de agarrar una capa con la mano.
+            return RunTransfer(origin, null, 1, srcUnequipEntity, addFunction);
         }
 
         private int RunTransfer(IGrabOrigin origin, 
@@ -475,7 +475,7 @@ namespace Core.Services
             GridElement occupant = grid.GetElementAt(pos);
             if (occupant != null && occupant.GetNode().GetNodeId() != ignoreNodeId)
             {
-                ItemObject node = occupant.GetNode();
+                IInventoryElement node = occupant.GetNode();
                 if (node.GetTypeId() != baseInfo.TypeId) return 0;
 
                 int room = baseInfo.MaxStackSize - node.GetAmount();
@@ -553,7 +553,7 @@ namespace Core.Services
 
         public int GetGrabbedAmount() => _interactionContext._handBuffer.GetHeldAmount();
 
-        public void DropItems(IEntity origin, ItemObject node, int amount, ItemEntity item = null)
+        public void DropItems(IEntity origin, IInventoryElement node, int amount, ItemEntity item = null)
         {
             AC.CheckNotNull(origin, nameof(origin));
             AC.CheckNotNull(node, nameof(node));
@@ -564,7 +564,7 @@ namespace Core.Services
                 throw new InvalidOperationException("Cannot drop items from a pair entity-node if the provided node is not contained in the inventory of the entity.");
 
             IReadOnlyList<SubLot> items;
-            items = inventory.Extract(node, item, amount);
+            items = inventory.ExtractFrom(node, item, amount);
 
             _systemContext.SystemManager.GetReactiveSystem<InventorySystem>().EvaluateAndFireEvents(origin, false);
             EventBus.GetInstance().Post(new ItemLotEvent(GameEventType.ItemDropped, origin, items)); 

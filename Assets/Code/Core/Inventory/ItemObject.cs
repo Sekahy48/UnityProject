@@ -28,6 +28,9 @@ namespace Core.Inventory
         public ItemEntity GetItemEntity() => _batch.IsEmpty() ? null : _batch.GetSubLots()[0].Item;
         public BatchItem GetBatch() => _batch;
         public bool IsLeaf() => true;
+
+        /// <summary>Mas de un sub-lote: la pila mezcla estados distintos del mismo item.</summary>
+        public bool HasVariants() => GetSubLots.Count > 1;
         public int GetAmount() => _batch.GetTotalAmount();
 
         public IReadOnlyList<SubLot> GetSubLots => _batch.GetSubLots();

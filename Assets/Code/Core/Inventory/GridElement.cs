@@ -8,16 +8,16 @@ namespace Core.Inventory
     /// </summary>
     public class GridElement
     {
-        private readonly ItemObject _node;
+        private readonly IInventoryElement _node;
         private GridPos _pos;
 
-        public GridElement(ItemObject node, GridPos pos)
+        public GridElement(IInventoryElement node, GridPos pos)
         {
             _node = node;
             _pos = pos;
         }
 
-        public ItemObject GetNode() => _node;
+        public IInventoryElement GetNode() => _node;
         public GridPos GetPos() => _pos;
 
         /* Atajos para quien solo necesita una de las dos coordenadas (los DTO de pintado,

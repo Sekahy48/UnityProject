@@ -2,16 +2,15 @@ using System;
 using System.Collections.Generic;
 using Core.ECS.Component;
 using Core.ECS.Entity;
-using Core.ECS.Systems;
-using UnityEditor.Animations;
+using Core.ECS.Systems; 
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Inventory
 {
     public class InventoryObject : IInventoryElement
     {
-        private const int BASE_GRID_W = 10;
-        private const int BASE_GRID_H = 8;
+        private const int BASE_GRID_W = 7;
+        private const int BASE_GRID_H = 5;
 
         private List<IInventoryElement> _inventory;
         private TetrisGridState _grid;
@@ -72,6 +71,9 @@ namespace Core.Inventory
             _holder = owner;
         }
         public bool IsLeaf() => false;
+
+        /// <summary>Un contenedor no es una pila: no tiene variantes que desglosar.</summary>
+        public bool HasVariants() => false;
         public int GetAmount() => 1;
         public void SetAmount(int amount) { } // containers don't have an amount
         public List<IInventoryElement> GetChildren() => new List<IInventoryElement>(_inventory);
@@ -300,7 +302,7 @@ namespace Core.Inventory
         /// across its sub-lots at random — which is what "place one at a time from a mixed
         /// stack" means, and there is no meaningful way to choose.
         /// </summary>
-        /// <param name="node">Node to modify. Must be a direct child of this inventory.</param>
+        /// <param name="node">Node to modify. Must be a direct child of this inventory. TODO revisar comentario</param>
         /// <param name="item">Sub-lot to target (matched by Equivalent), or null for the whole node.</param>
         /// <param name="amount">Positive adds, negative consumes.</param>
         /// <param name="clean">
@@ -335,16 +337,73 @@ namespace Core.Inventory
         /// </param>
         /// <returns>Pairs of (variant, units taken). Feed THESE to the destination: the
         /// breakdown is the point, a bare total would collapse mixed stacks into one variant.</returns>
-        public List<SubLot> Extract(ItemObject node, ItemEntity item, int amount, bool clean = true)
+        /// <summary>
+        /// Saca unidades de un HIJO de este inventario, y lo retira si se queda vacio.
+        ///
+        /// Es la operacion del padre: envuelve el Extract del hijo con la limpieza, que es lo
+        /// unico que el hijo no puede hacer por si mismo — quien posee las celdas y la lista
+        /// es el contenedor, no el nodo.
+        /// </summary>
+        /// <param name="clean">False cuando lo extraido puede volver: un nodo limpiado habria
+        /// que recrearlo en sus mismas coordenadas. No aplica a las ramas — ver abajo.</param>
+        public List<SubLot> ExtractFrom(IInventoryElement child, ItemEntity variant, int amount, bool clean = true)
         {
-            AC.CheckNotNull(node, nameof(node));
+            AC.CheckNotNull(child, nameof(child));
 
-            List<SubLot> extracted = node.Extract(item, amount);
+            List<SubLot> extracted = child.Extract(variant, amount);
 
-            if (clean && node.GetAmount() <= 0)
-                CleanNode(node);
+            // Una hoja se retira cuando se queda sin unidades. Una rama se retira en cuanto
+            // sale, porque no se divide: si Extract devolvio algo, el contenedor entero se fue.
+            // El 'clean' no le aplica — existe para que los SOBRANTES puedan volver, y de una
+            // rama no hay sobrantes. Lo que la devuelve es ReattachContainer.
+            if (!child.IsLeaf())
+            {
+                if (extracted.Count > 0) CleanNode(child);
+            }
+            else if (clean && child.GetAmount() <= 0)
+            {
+                CleanNode(child);
+            }
 
             return extracted;
+        }
+
+        /// <summary>
+        /// Vuelve a colgar aqui un contenedor que salio de este inventario, en las celdas que
+        /// ocupaba.
+        ///
+        /// Contraparte exacta de la retirada que hace ExtractFrom con una rama. Existe porque
+        /// una rama no tiene unidades que devolver: su salida no se deshace sumando, se deshace
+        /// volviendo a engancharla.
+        /// </summary>
+        /// <param name="pos">Celda que ocupaba, o None si no ocupaba ninguna.</param>
+        /// <returns>False si ya colgaba de aqui, o si sus celdas ya no estan libres.</returns>
+        public bool ReattachContainer(InventoryObject container, GridPos pos)
+        {
+            AC.CheckNotNull(container, nameof(container));
+
+            if (_inventory.Contains(container)) return false;
+
+            if (!pos.IsNone && !_grid.Place(container, pos)) return false;
+
+            AddContainer(container);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Saca este contenedor entero. Un contenedor no se divide: o sale o no sale.
+        ///
+        /// No toca la rejilla ni al padre, igual que el Extract de una hoja no se retira a si
+        /// misma: retirar es asunto de quien contiene. Y su contenido viaja dentro de la
+        /// entidad devuelta, en su InventoryComponent, asi que no hace falta moverlo aparte.
+        /// </summary>
+        public List<SubLot> Extract(ItemEntity variant, int amount)
+        {
+            if (amount <= 0 || GetAmount(variant) <= 0 || _item == null)
+                return new List<SubLot>();
+
+            return new List<SubLot> { new SubLot(_item, 1) };
         }
 
         /// <summary>
@@ -355,7 +414,7 @@ namespace Core.Inventory
         /// cleaned by that container, which is the one owning the grid it sits on.
         /// </summary>
         /// <returns>True if the node was found and removed.</returns>
-        public bool CleanNode(ItemObject node)
+        public bool CleanNode(IInventoryElement node)
         {
             AC.CheckNotNull(node, nameof(node));
 
@@ -379,6 +438,8 @@ namespace Core.Inventory
                 total += node.GetAmount();
             return total;
         }
+
+        public int GetAmount(ItemEntity variant) => variant == null || ReferenceEquals(_item, variant) ? 1 : 0;
 
         public void DeleteItem(int id)
         {
@@ -559,13 +620,13 @@ namespace Core.Inventory
 
             _inventory.RemoveAll(e =>
             {
-                if (e.GetAmount() <= 0)
-                {
-                    if (e.IsLeaf())
-                        _grid.Remove(e.GetNodeId());
-                    return true;
-                }
-                return false;
+                if (e.GetAmount() > 0) return false;
+
+                // Sin condicion de hoja: Remove sobre un nodo que no ocupa celdas no hace nada,
+                // y asi esta retirada y CleanNode no pueden divergir. Un contenedor no entra
+                // aqui igualmente — su GetAmount es 1, porque vacio sigue siendo un contenedor.
+                _grid.Remove(e.GetNodeId());
+                return true;
             });
         }
 
@@ -608,12 +669,11 @@ namespace Core.Inventory
             float total = 0f;
 
             foreach (IInventoryElement elem in _inventory)
-            {
-                CoreLogger.Instance.Log(elem.GetItemEntity().GetDisplayName() + " " + elem.GetTotalWeight());
+            { 
                 total += elem.GetTotalWeight();
 
-                if (elem is InventoryObject container && container.GetItemEntity() != null){CoreLogger.Instance.Log("container ^");
-                    total += container.GetItemEntity().GetComponent<BaseItemComponent>().Weight;}
+                if (elem is InventoryObject container && container.GetItemEntity() != null)
+                    total += container.GetItemEntity().GetComponent<BaseItemComponent>().Weight;
             }
 
             return total;
@@ -673,29 +733,28 @@ namespace Core.Inventory
                 ? new InventoryObject(this._item)
                 : new InventoryObject(this._holder);
 
-            // Placed items: clone and restore their (row, col).
-            foreach (GridElement placed in _grid.GetElements())
+            // Un solo recorrido por la LISTA, consultando la rejilla para saber si cada hijo
+            // ocupa celdas. Recorrer la rejilla y la lista por separado duplicaba lo que
+            // estuviera en las dos — que desde que un contenedor puede colocarse, es cualquier
+            // contenedor guardado.
+            foreach (IInventoryElement elem in _inventory)
             {
-                ItemObject nodeClone = (ItemObject)placed.GetNode().Clone();
-                if (!clone._grid.Place(nodeClone, placed.GetPos()))
+                IInventoryElement childClone = elem.Clone();
+
+                // Reapuntado al clon: sin esto seguiria preguntando el peso al arbol original,
+                // y el clon pesaria sobre quien lleva el de verdad.
+                if (childClone is InventoryObject container) container.Parent = clone;
+
+                GridElement placed = _grid.GetElementOf(elem.GetNodeId());
+
+                // Sin celdas: un contenedor equipado, que cuelga del arbol pero no ocupa sitio.
+                if (placed != null && !clone._grid.Place(childClone, placed.GetPos()))
                     throw new InvalidOperationException(
-                        $"InventoryObject.Clone: could not re-place node {placed.GetNode().GetNodeId()} " +
+                        $"InventoryObject.Clone: could not re-place node {elem.GetNodeId()} " +
                         $"at {placed.GetPos()} in the cloned grid.");
 
-                clone._inventory.Add(nodeClone);
+                clone._inventory.Add(childClone);
             }
-
-            // TODO: nested containers do not occupy grid cells yet (AddContainer bypasses
-            // the grid), so they live only in the element list. Cloned as-is for now.
-            foreach (IInventoryElement elem in _inventory)
-                if (!elem.IsLeaf())
-                {
-                    // Reapuntados al clon: sin esto los hijos seguirian preguntando el peso al
-                    // arbol original, y el clon pesaria sobre quien lleva el de verdad.
-                    InventoryObject childClone = (InventoryObject)elem.Clone();
-                    childClone.Parent = clone;
-                    clone._inventory.Add(childClone);
-                }
 
             return clone;
         }

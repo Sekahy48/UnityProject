@@ -362,7 +362,7 @@ namespace Core.MVC.Presenter.Inventory
     
         private void OnCellRightPressed(GridPos pos, PanelType panel)
         { 
-            ItemObject target = _panelPresenters[panel].GetNodeAt(pos);
+            IInventoryElement target = _panelPresenters[panel].GetNodeAt(pos);
             IEntity origin = _panelPresenters[panel].Entity;
 
             if (target == null || target.GetItemEntity() == null) 
@@ -372,8 +372,10 @@ namespace Core.MVC.Presenter.Inventory
                            && !_service.FindSplitCell(origin.GetComponent<InventoryComponent>().Inventory,
                                                       target.GetItemEntity()).IsNone;
 
+            bool hasSublots = target.HasVariants();
+            
             List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), _entity, origin,
-                                                                    target.GetSubLots.Count > 1, splittable);
+                                                                    hasSublots, splittable);
 
             _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildNodeData(target));
 
@@ -391,7 +393,6 @@ namespace Core.MVC.Presenter.Inventory
             EquipmentSlot equipmentSlot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(type);
 
             int realPos = LayerToRealPos(layer, equipmentSlot.GetEquippedItemCount());
-            CoreLogger.Instance.Log(realPos.ToString());
             ItemEntity target = realPos >= 0 ? equipmentSlot.GetItem(realPos) : null;
             if (target == null)
                 return;
@@ -438,7 +439,7 @@ namespace Core.MVC.Presenter.Inventory
         /// </summary>
         private IEnumerable<MenuOption> BuildOptions(ItemAction action, MenuContext context)
         {
-            ItemObject target = context.Target;
+            IInventoryElement target = context.Target;
             IEntity origin = context.Origin;
 
             switch (action)
@@ -456,7 +457,7 @@ namespace Core.MVC.Presenter.Inventory
                     return new[] { new MenuOption("Desquipar", inputs => OnUnequipItemRequested(context.Item, origin, context.SlotType.Value), new List<MenuField>{})};
 
                 case ItemAction.Consume:
-                    return new[] { new MenuOption("Consumir", inputs => OnConsumeItemRequested(target, origin, context.Item), new List<MenuField>{}) };
+                    return new[] { new MenuOption("Consumir", inputs => OnConsumeItemRequested(context.TargetStack, origin, context.Item), new List<MenuField>{}) };
 
                 case ItemAction.QuickTransfer:
                     return BuildTransferOptions(target, origin, context.Item);
@@ -475,10 +476,34 @@ namespace Core.MVC.Presenter.Inventory
             }
         }
 
+        private IEnumerable<MenuOption> BuildInventoryTabsOptions()
+        {
+            List<MenuOption> subOptions = new List<MenuOption>()
+            {
+                new MenuOption("↑", () =>
+                {
+                    
+                },
+                new List<MenuField>()),
+                new MenuOption("↓", () =>
+                {
+                    
+                },
+                new List<MenuField>())
+            };
+
+            List<MenuOption> options = new List<MenuOption>()
+            {
+                new MenuOption("Mostrar al lado", subOptions)
+            };
+
+            return options;
+        }
+
         /// <param name="variant">Sub-lote concreto a equipar, o null para el representante del
         /// nodo. Dos prendas del mismo tipo con desgaste distinto conviven en la misma pila, y
         /// equipar "una cualquiera" cuando el jugador señalo una seria elegir por el.</param>
-        private IEnumerable<MenuOption> BuildEquiOptions(ItemObject target, IEntity origin, ItemEntity variant = null)
+        private IEnumerable<MenuOption> BuildEquiOptions(IInventoryElement target, IEntity origin, ItemEntity variant = null)
         {
             ItemEntity item = variant ?? target.GetItemEntity();
 
@@ -525,7 +550,7 @@ namespace Core.MVC.Presenter.Inventory
         /// La visibilidad se consulta a la View porque es un hecho de presentacion: un arcon
         /// enlazado pero con el panel cerrado no es un destino al que el jugador pueda apuntar.
         /// </summary>
-        private IEnumerable<MenuOption> BuildTransferOptions(ItemObject target, IEntity origin, ItemEntity variant)
+        private IEnumerable<MenuOption> BuildTransferOptions(IInventoryElement target, IEntity origin, ItemEntity variant)
         {
             List<MenuOption> destinies = new List<MenuOption>();
 
@@ -555,13 +580,13 @@ namespace Core.MVC.Presenter.Inventory
             return name != null ? name.DisplayName : "inventario";
         }
 
-        private void OnDropItemRequested(ItemObject target, IEntity origin, int amount, ItemEntity variant = null)
+        private void OnDropItemRequested(IInventoryElement target, IEntity origin, int amount, ItemEntity variant = null)
         {
             _service.DropItems(origin, target, amount, variant); 
         }
 
         /// <param name="variant">Sub-lote concreto, o null para el representante del nodo.</param>
-        private void OnEquipItemRequested(ItemObject target, IEntity origin, EquipmentSlotType dstSlotType, ItemEntity variant = null)
+        private void OnEquipItemRequested(IInventoryElement target, IEntity origin, EquipmentSlotType dstSlotType, ItemEntity variant = null)
         {
             ItemEntity item = variant ?? target.GetItemEntity();
 
@@ -630,7 +655,10 @@ namespace Core.MVC.Presenter.Inventory
         /// </summary>
         private void OnInspectItemRequested(MenuContext context)
         {
-            IReadOnlyList<SubLot> lots = context.Target.GetSubLots;
+            ItemObject itemObject = context.TargetStack
+                ?? throw new InvalidOperationException(
+                    "Cannot inspect sub-lots of something that is not a stack (ItemObject - with multiple sublots): the action should not have been offered.");
+            IReadOnlyList<SubLot> lots = itemObject.GetSubLots;
 
             List<ItemDisplayData> data = new List<ItemDisplayData>();
             foreach (SubLot sublot in lots)
@@ -642,12 +670,12 @@ namespace Core.MVC.Presenter.Inventory
             _view.RenderSublotsPopup(data, context.Anchor,
                 index => _panelPresenters[panel].GrabVariantAt(cell, lots[index].Item, lots[index].Amount),
                 index => {
-                    MenuContext sublotContext = MenuContext.FromSublot(context.Origin, context.Target, lots[index].Item, context.Panel.Value, context.Cell, context.Anchor);
+                    MenuContext sublotContext = MenuContext.FromSublot(context.Origin, itemObject, lots[index].Item, context.Panel.Value, context.Cell, context.Anchor);
                     RenderContextualMenu(_service.GetAvailableActions(lots[index].Item, _entity, _panelPresenters[panel].Entity, false), sublotContext);
                 });
         }
 
-        private void OnQuickTransferRequested(ItemObject target, IEntity origin, IEntity destiny, int amount, ItemEntity variant = null)
+        private void OnQuickTransferRequested(IInventoryElement target, IEntity origin, IEntity destiny, int amount, ItemEntity variant = null)
         {
             InventoryObject srcInventory = origin.GetComponent<InventoryComponent>().Inventory;
 
@@ -714,7 +742,7 @@ namespace Core.MVC.Presenter.Inventory
                 }    
             }
 
-            _view.RenderInventoryTabs(); 
+            _view.RenderInventoryTabs(() => _panelPresenters[PanelType.Player].Bind(_entity)); 
         } 
 
         private void UpdateEquipmentRelated()
