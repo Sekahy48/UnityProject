@@ -480,12 +480,12 @@ namespace Core.MVC.Presenter.Inventory
         {
             List<MenuOption> subOptions = new List<MenuOption>()
             {
-                new MenuOption("↑", () =>
+                new MenuOption("↑", inputs =>
                 {
                     
                 },
                 new List<MenuField>()),
-                new MenuOption("↓", () =>
+                new MenuOption("↓", inputs =>
                 {
                     
                 },
@@ -729,7 +729,7 @@ namespace Core.MVC.Presenter.Inventory
         { 
             _view.ClearInveotryTabs();
 
-            _view.AddTabToInventoryTabs(_entity, _entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity));
+            _view.AddTabToInventoryTabs(_entity, _entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), BuildInventoryTabsOptions().ToList());
             
             foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
             {
@@ -737,7 +737,7 @@ namespace Core.MVC.Presenter.Inventory
                 {
                     if (item.GetComponent<InventoryComponent>() != null)
                     {
-                        _view.AddTabToInventoryTabs(item, item.GetDisplayName(), () => _panelPresenters[PanelType.Player].Bind(item));
+                        _view.AddTabToInventoryTabs(item, item.GetDisplayName(), () => _panelPresenters[PanelType.Player].Bind(item), BuildInventoryTabsOptions().ToList());
                     }
                 }    
             }
