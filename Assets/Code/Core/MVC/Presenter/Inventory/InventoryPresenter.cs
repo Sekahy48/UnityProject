@@ -42,6 +42,8 @@ namespace Core.MVC.Presenter.Inventory
             _view.OnEquipmentSlotRightClicked += OnEquipmentSlotRightClicked;
             _view.OnPointerMovedOverSlot += EvaluateHandOverSlot;
             _view.OnPointerLeftSlot += OnPointerLeftSlot;
+            _view.OnContextualMenuClosed += () => SetPinned(null);
+            _view.OnInspectionHovered += SetHovered;
             _view.OnLayerLeftPressed += OnLayerLeftPressed;
             _view.OnLayerLeftReleased += OnLayerLeftReleased;
             _itemCatalog = itemCatalogue;
@@ -184,7 +186,13 @@ namespace Core.MVC.Presenter.Inventory
         {
             RefreshHand(itemSize, anchorBasis);
             foreach (InventoryPanelPresenter pres in _panelPresenters.Values)
+            {
                 pres.RenderInventory();
+
+                // El peso ya esta reescrito; ahora la nota, que depende de la mano nueva.
+                // Solo un panel tiene celda sobrevolada, los demas salen sin hacer nada.
+                pres.RepublishHover();
+            }
         }
 
         private void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
@@ -217,13 +225,10 @@ namespace Core.MVC.Presenter.Inventory
             }
             
 
-            EquipmentSlot slot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(slotType);
-            ItemEntity focusedItem = slot.GetTopItem();  
-            ItemDisplayData data = null;      
-            if (focusedItem != null) 
-                data = DisplayDTOsBuilder.BuildDisplayData(focusedItem, 1);
+            ItemEntity focusedItem = _entity.GetComponent<EquipmentComponent>()
+                                            .GetEquipmentSlot(slotType).GetTopItem();
 
-            _view.UpdateInspectionStrip(data);
+            SetHovered(focusedItem == null ? null : DisplayDTOsBuilder.BuildDisplayData(focusedItem, 1));
         }
 
         /// <summary>
@@ -234,9 +239,16 @@ namespace Core.MVC.Presenter.Inventory
         private static PlacementVerdict ToVerdict(EquipResult result)
             => result == EquipResult.SuccessEquip ? PlacementVerdict.Fits : PlacementVerdict.Blocked;
 
-        /// <summary>Fuera de todo slot: sin color y sin redimensionar.</summary>
+        /// <summary>
+        /// Fuera de todo slot: sin color, sin redimensionar y sin nada bajo el cursor. Lo
+        /// tercero faltaba, y por eso la franja se quedaba con lo ultimo que alguien hubiera
+        /// escrito en vez de volver a preguntar.
+        /// </summary>
         private void OnPointerLeftSlot()
-            => _view.UpdateHandDisplay(PlacementVerdict.Outside, default, default);
+        {
+            _view.UpdateHandDisplay(PlacementVerdict.Outside, default, default);
+            SetHovered(null);
+        }
 
         
         /// <summary>
@@ -254,7 +266,49 @@ namespace Core.MVC.Presenter.Inventory
         }
 
 
-        private void UpdateInspectionStrip(ItemDisplayData itemData) => _view.UpdateInspectionStrip(itemData);
+        #region Inspection strip
+
+        /* Lo que hay bajo el cursor ahora mismo. Null es una respuesta, no un dato que falta:
+           significa "ahi no hay nada que inspeccionar". */
+        private ItemDisplayData _hovered;
+
+        /* Lo que fijo el menu contextual abierto, o null si no hay ninguno. Se guarda el
+           contexto y no el DTO: FocusedDisplayData se recalcula al leerlo, asi que la franja no
+           miente si la pila cambia de cantidad con el menu abierto. */
+        private MenuContext? _pinned;
+
+        /// <summary>
+        /// Unica regla de la franja: manda lo que hay bajo el cursor, y cuando no hay nada
+        /// responde el menu abierto.
+        ///
+        /// <para>Antes esta prioridad estaba escrita tres veces —el respaldo de la rejilla, el
+        /// callback del menu y la nada de los slots— y solo una de las tres era una decision:
+        /// las otras dos eran el efecto de que nadie escribiera. Por eso los slots se
+        /// comportaban distinto en cuanto algo si escribia (un slot vacio).</para>
+        ///
+        /// <para>Los paneles informan de lo que tienen debajo; quien decide que se muestra es
+        /// esta ventana, que es la dueña de la unica franja que hay.</para>
+        /// </summary>
+        private void PublishInspection()
+            => _view.UpdateInspectionStrip(_hovered ?? _pinned?.FocusedDisplayData);
+
+        /// <summary>Lo que hay bajo el cursor, o null si no hay nada.</summary>
+        private void SetHovered(ItemDisplayData data)
+        {
+            _hovered = data;
+            PublishInspection();
+        }
+
+        /// <summary>El menu contextual abierto, o null al cerrarse.</summary>
+        private void SetPinned(MenuContext? context)
+        {
+            _pinned = context;
+            PublishInspection();
+        }
+
+        #endregion
+
+        private void UpdateInspectionStrip(ItemDisplayData itemData) => SetHovered(itemData);
 
         private void OnLayerLeftPressed(int layer, bool fromLayersPopup)
         {
@@ -387,8 +441,6 @@ namespace Core.MVC.Presenter.Inventory
             List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), _entity, origin,
                                                                     hasSublots, splittable);
 
-            _view.UpdateInspectionStrip(DisplayDTOsBuilder.BuildNodeData(target));
-
             // El ancla se mide AQUI y no cuando se pulse la opcion: para entonces el evento de
             // puntero ya no existe y nadie sabe de que card salio el menu.
             RenderContextualMenu(actions, MenuContext.FromGrid(origin, target, panel, pos,
@@ -429,15 +481,15 @@ namespace Core.MVC.Presenter.Inventory
             if (actions.Count == 0)
                 return;
 
-            // Se construye UNA vez y fuera del cierre: onHover salta en cada PointerMove sobre
-            // el menu, y GetSubLots devuelve una lista nueva en cada llamada.
-            ItemDisplayData focused = context.FocusedDisplayData;
-
             List<MenuOption> options = new List<MenuOption>();
             foreach (ItemAction action in actions)
                 options.AddRange(BuildOptions(action, context));
 
-            _view.RenderContextualMenu(options, () => _view.UpdateInspectionStrip(focused));
+            _view.RenderContextualMenu(options);
+
+            // Despues de renderizar, no antes: CloseContextualMenu avisa de su cierre y eso
+            // despinta lo anterior. Fijar aqui deja el estado coherente con lo que se ve.
+            SetPinned(context);
         }
 
         /// <summary>

@@ -24,24 +24,20 @@ namespace Core.ECS.Systems
         /// Returns how many items can be added by weight, and outputs the InventoryComponent.
         /// Returns 0 if entity has no inventory.
         /// </summary>
-        private int GetFitByWeight(IEntity entity, ItemEntity item, int amount, out InventoryComponent invComp)
+        /// <param name="source">Inventario del que salen las unidades, o null si vienen de
+        /// fuera del arbol (equipo, catalogo, mundo). No es un detalle opcional: un techo no se
+        /// aplica a algo que ya esta debajo de el, y sin este dato mover del jugador a su propia
+        /// mochila se rechaza por un peso que no ha cambiado. La exencion la decide
+        /// InventoryObject.OwnFreeWeight; aqui solo se le hace llegar.</param>
+        private int GetFitByWeight(IEntity entity, ItemEntity item, int amount,
+                                   InventoryObject source, out InventoryComponent invComp)
         {
             invComp = entity.GetComponent<InventoryComponent>();
             if (invComp == null) return 0;
 
             // La cadena de contenedores responde por si misma: cada nivel aplica su techo y
             // pasa la pregunta al que lo contiene.
-            return invComp.Inventory.FitByWeight(item, amount);
-        }
-
-        /// <summary>
-        /// Skips the weight check, still resolving the inventory. Returns 0 if the entity has
-        /// no inventory, same as GetFitByWeight.
-        /// </summary>
-        private int WholeAmount(IEntity entity, int amount, out InventoryComponent invComp)
-        {
-            invComp = entity.GetComponent<InventoryComponent>();
-            return invComp == null ? 0 : amount;
+            return invComp.Inventory.FitByWeight(item, amount, source);
         }
 
         /// <summary>
@@ -49,9 +45,10 @@ namespace Core.ECS.Systems
         /// Stacks onto existing compatible node if possible, creates new nodes for overflow.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryStackOntoHere(IEntity entity, ItemEntity item, int amount, bool announce = true)
+        public int TryStackOntoHere(IEntity entity, ItemEntity item, int amount, bool announce = true,
+                                    InventoryObject source = null)
         {
-            int toAdd = GetFitByWeight(entity, item, amount, out InventoryComponent invComp);
+            int toAdd = GetFitByWeight(entity, item, amount, source, out InventoryComponent invComp);
             if (toAdd <= 0) return amount;
             int remaining = invComp.Inventory.StackOntoHere(item, toAdd);
             if (announce)
@@ -63,9 +60,10 @@ namespace Core.ECS.Systems
         /// Tries to stack items onto a specific node by nodeId, checking weight first.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryStackOntoNode(IEntity entity, ItemEntity item, int amount, int nodeId, bool announce = true)
+        public int TryStackOntoNode(IEntity entity, ItemEntity item, int amount, int nodeId, bool announce = true,
+                                    InventoryObject source = null)
         {
-            int toAdd = GetFitByWeight(entity, item, amount, out InventoryComponent invComp);
+            int toAdd = GetFitByWeight(entity, item, amount, source, out InventoryComponent invComp);
             if (toAdd <= 0) return amount;
             int remaining = invComp.Inventory.StackOntoNode(nodeId, item, toAdd);
             if (announce)
@@ -77,18 +75,15 @@ namespace Core.ECS.Systems
         /// Tries to add items at a specific grid position, checking weight first.
         /// Returns the amount that could not be added.
         /// </summary>
-        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1, bool announce = true)
+        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1,
+                                bool announce = true, InventoryObject source = null)
         {
-            // A node moving onto cells it already owns can only happen inside one inventory,
-            // and reordering an inventory cannot change its total weight: the units are
-            // already carried. Checking would also risk clamping the move for someone who is
-            // already overweight, leaving the source node alive over cells the new node took.
-            bool sameInventoryMove = ignoreNodeId != -1;
-
-            InventoryComponent invComp;
-            int toAdd = sameInventoryMove
-                ? WholeAmount(entity, amount, out invComp)
-                : GetFitByWeight(entity, item, amount, out invComp);
+            // La exencion por origen la resuelve el peso, no la rejilla. Antes se deducia de
+            // ignoreNodeId != -1, que es un criterio distinto y mas estrecho: solo veia un mismo
+            // inventario, nunca la cadena, y cuando decidia eximir se saltaba la comprobacion
+            // entera en vez de descontar lo que tocaba. ignoreNodeId vuelve a significar solo lo
+            // suyo — que celdas no estorban — y el peso se pregunta siempre igual.
+            int toAdd = GetFitByWeight(entity, item, amount, source, out InventoryComponent invComp);
 
             if (toAdd <= 0) return amount;
             int remaining = invComp.Inventory.AddItemAt(item, toAdd, pos, ignoreNodeId);

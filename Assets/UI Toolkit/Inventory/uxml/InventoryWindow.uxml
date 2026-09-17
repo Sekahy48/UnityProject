@@ -91,7 +91,9 @@
                     <ui:VisualElement name="inspect-icon" class="inspect-icon"/>
                     <ui:VisualElement name="inspect-info" class="inspect-info">
                         <ui:Label name="inspect-name" class="inspect-name"/>
-                        <ui:Label name="inspect-description" class="inspect-description"/>
+                        <ui:ScrollView name="inspect-description-scroll">
+                            <ui:Label name="inspect-description" class="inspect-description"/>
+                        </ui:ScrollView>
                     </ui:VisualElement>
                     <ui:VisualElement name="inspect-stats" class="inspect-stats">
                         <ui:Label name="inspect-weight-total"/>

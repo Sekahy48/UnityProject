@@ -55,8 +55,6 @@ namespace MVC.View.Inventory
            de movimiento. MinValue = ninguna, para que la primera siempre emita. */
         public GridPos? LastCell {get; private set;}
 
-        public GridPos? LastRightClickedCell {get; set;}
-
         /* Porcion con la que se emitio el ultimo veredicto. Acompaña a LastCell porque el
            veredicto depende de las dos cosas: soltar sobre la misma celda no significa lo
            mismo con shift pulsado que sin el. */
@@ -233,8 +231,7 @@ namespace MVC.View.Inventory
                 }
                 else if (evt.button == 1)
                 {    
-                    OnCellRightPressed.Invoke(gridPos, _panelType);  
-                    LastRightClickedCell = gridPos;
+                    OnCellRightPressed.Invoke(gridPos, _panelType);
                 }  
             });
 
@@ -467,6 +464,13 @@ namespace MVC.View.Inventory
             _lastPortion = portion;
             OnPointerMovedOverCell?.Invoke(LastCell.Value, GetCellSize(), portion);
         }
+
+        /// <summary>
+        /// Reemite con la porcion que ya estaba activa. Para cuando lo que caduca el veredicto
+        /// no es la porcion sino lo que hay en la mano: ahi el presenter no tiene por que saber
+        /// que modificador esta pulsado, que es dato de esta vista.
+        /// </summary>
+        public void RepublishHover() => RepublishHover(_lastPortion);
 
         public Vector3 CoordsToPoint(GridPos pos)
         {

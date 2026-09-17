@@ -72,7 +72,8 @@ namespace Core.Services
 
             int leftover = PlaceFromHand(destiny, (variant, count) =>
                 _systemContext.SystemManager.GetReactiveSystem<InventorySystem>()
-                    .TryAddItemAt(destiny, variant, count, pos, ignoreNodeId, announce: false), amount);
+                    .TryAddItemAt(destiny, variant, count, pos, ignoreNodeId, announce: false,
+                                  source: GrabbedSourceInventory()), amount);
 
             return leftover;
         }
@@ -189,7 +190,8 @@ namespace Core.Services
 
             return RunTransfer(new InventoryNodeOrigin(owner, inventory, node), variant, amount, owner,
                 (v, count) => _systemContext.SystemManager.GetReactiveSystem<InventorySystem>()
-                                  .TryAddItemAt(owner, v, count, free, -1, announce: false));
+                                  .TryAddItemAt(owner, v, count, free, -1, announce: false,
+                                                source: inventory));
         }
 
         /// <summary>
@@ -298,7 +300,8 @@ namespace Core.Services
 
             Func<ItemEntity, int, int> addFunction = (variant, count) => {
                 InventorySystem inventorySystem = _systemContext.SystemManager.GetReactiveSystem<InventorySystem>();
-                return inventorySystem.TryAddItemAt(dstEntity, variant, count, pos, ignoreNodeId, false);
+                return inventorySystem.TryAddItemAt(dstEntity, variant, count, pos, ignoreNodeId, false,
+                                                   SourceInventoryOf(origin));
             };
 
             return RunTransfer(origin, subLot, amount, dstEntity, addFunction);
@@ -308,7 +311,8 @@ namespace Core.Services
         {
             Func<ItemEntity, int, int> addFunction = (variant, count) => {
                 InventorySystem inventorySystem = _systemContext.SystemManager.GetReactiveSystem<InventorySystem>();
-                return inventorySystem.TryStackOntoHere(dstEntity, variant, count, false);
+                return inventorySystem.TryStackOntoHere(dstEntity, variant, count, false,
+                                                       SourceInventoryOf(origin));
             };
 
             return RunTransfer(origin, subLot, amount, dstEntity, addFunction);
@@ -357,9 +361,13 @@ namespace Core.Services
             {
                 InventorySystem inventorySystem = _systemContext.SystemManager.GetReactiveSystem<InventorySystem>();
 
+                // Origen de equipo: SourceInventoryOf devuelve null y el peso de la prenda
+                // cuenta al entrar, que es lo correcto — venia de fuera del arbol.
                 return pos == null
-                    ? inventorySystem.TryStackOntoHere(srcUnequipEntity, variant, count, false)
-                    : inventorySystem.TryAddItemAt(srcUnequipEntity, variant, count, pos.Value, -1, false);
+                    ? inventorySystem.TryStackOntoHere(srcUnequipEntity, variant, count, false,
+                                                      SourceInventoryOf(origin))
+                    : inventorySystem.TryAddItemAt(srcUnequipEntity, variant, count, pos.Value, -1, false,
+                                                  SourceInventoryOf(origin));
             };
 
             // El desenganche lo hace EquipmentSlotOrigin.Extract, que es por donde salen TODOS
@@ -426,7 +434,19 @@ namespace Core.Services
         /// contando donde estaba, y quien evalua necesita saberlo para no contarlo dos veces.
         /// </summary>
         private InventoryObject GrabbedSourceInventory()
-            => _interactionContext._handBuffer.GetOrigin() is InventoryNodeOrigin origin ? origin.Inventory : null;
+            => SourceInventoryOf(_interactionContext._handBuffer.GetOrigin());
+
+        /// <summary>
+        /// Inventario del que salen las unidades de una transferencia, o null si no salen de
+        /// ningun inventario: el equipo, el catalogo, el mundo. Null es la respuesta correcta
+        /// ahi, no una ausencia de dato — lo que viene de fuera del arbol si suma peso al entrar.
+        ///
+        /// Lo resuelve quien orquesta la transferencia y no el sistema que la ejecuta: las
+        /// entradas de InventorySystem se usan tambien sin gesto de mano (loot, crafteo), y
+        /// deducir el origen del HandBuffer mentiria justo ahi.
+        /// </summary>
+        private static InventoryObject SourceInventoryOf(IGrabOrigin origin)
+            => origin is InventoryNodeOrigin nodeOrigin ? nodeOrigin.Inventory : null;
 
         /// <summary>
         /// Si lo que impide meter esas unidades en ese destino es el techo de quien lo lleva, y

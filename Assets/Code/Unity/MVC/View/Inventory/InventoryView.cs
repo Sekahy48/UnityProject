@@ -152,6 +152,20 @@ namespace MVC.View.Inventory
         /// <summary>El puntero ha salido de un slot de equipo.</summary>
         public event Action OnPointerLeftSlot;
 
+        /// <summary>
+        /// El menu contextual se ha cerrado, se haya pedido desde donde se haya pedido: un clic
+        /// fuera, DismissOverlays, el popup de sub-lotes o el propio presenter. Lo anuncia la
+        /// vista porque es la unica que se entera de todos esos caminos.
+        /// </summary>
+        public event Action OnContextualMenuClosed;
+
+        /// <summary>
+        /// Algo de esta vista queda bajo el cursor para la franja de inspeccion, o null al
+        /// dejar de estarlo. La vista informa; que se muestre lo decide el presenter, que es
+        /// quien conoce tambien el menu abierto.
+        /// </summary>
+        public event Action<ItemDisplayData> OnInspectionHovered;
+
         /* Slot al que el fantasma esta imantado ahora mismo. Null = sigue al cursor. */
         private VisualElement _magnetSlot;
 
@@ -256,6 +270,11 @@ namespace MVC.View.Inventory
             _ctxMenu = _uiDocument.rootVisualElement.Q<VisualElement>("ctx-menu");
             // Sublots popup
             _sublotsPopup = _uiDocument.rootVisualElement.Q<VisualElement>("sublots-popup");
+
+            // Registrado una vez y para siempre: el popup se vacia con Clear() en cada
+            // apertura, pero el elemento sobrevive y sus callbacks tambien. Salir de el sin
+            // cerrarlo tambien es "nada bajo el cursor".
+            _sublotsPopup.RegisterCallback<PointerLeaveEvent>(_ => OnInspectionHovered?.Invoke(null));
             _inventoryTabs = _mainRoot.Q<VisualElement>("panel-slot-tabs");
             _mainRoot.Q<Button>("close-button").clicked += () => OnCloseClicked?.Invoke();
 
@@ -618,23 +637,15 @@ namespace MVC.View.Inventory
 
         #region Contextual menu
 
-        public void RenderContextualMenu(List<MenuOption> options, Action onHover)
+        /// <summary>
+        /// Sin callback de sobrevuelo: con el cursor sobre el menu no hay nada bajo el, y el
+        /// presenter responde con lo que el propio menu fijo al abrirse. El que habia ademas no
+        /// se quitaba nunca — UnregisterCallback compara identidad del delegado y recibia una
+        /// lambda nueva— asi que se acumulaba uno por cada apertura.
+        /// </summary>
+        public void RenderContextualMenu(List<MenuOption> options)
         { 
-            
             _ctxMenu.Clear(); 
-            _ctxMenu.UnregisterCallback<PointerMoveEvent>(
-                    evt => {
-                        evt.StopPropagation();
-                        onHover.Invoke();
-                    }
-            );
-
-            _ctxMenu.RegisterCallback<PointerMoveEvent>(
-                    evt => {
-                        evt.StopPropagation();
-                        onHover.Invoke();
-                    }
-            );
 
             foreach (MenuOption option in options)
             {
@@ -819,8 +830,7 @@ namespace MVC.View.Inventory
         public void CloseContextualMenu()
         {
             _ctxMenu.style.display = DisplayStyle.None;
-            foreach (InventoryPanelView panelView in _panels.Values)
-                panelView.LastRightClickedCell = null; 
+            OnContextualMenuClosed?.Invoke();
         }
  
 
@@ -878,7 +888,7 @@ namespace MVC.View.Inventory
                 });
                 sublotRow.RegisterCallback<PointerMoveEvent>(evt =>
                 {
-                    UpdateInspectionStrip(sublot);
+                    OnInspectionHovered?.Invoke(sublot);
                 });
                 _sublotsPopup.Add(sublotRow);
             }
@@ -892,6 +902,12 @@ namespace MVC.View.Inventory
             _sublotsPopup.style.display = DisplayStyle.Flex;
         }
 
+        /// <summary>
+        /// Cerrar no es lo mismo que dejar de sobrevolar: DismissTransients llama aqui en CADA
+        /// PointerDown, tambien con el popup ya cerrado. Avisar de "nada bajo el cursor" desde
+        /// aqui vaciaba la franja mientras se mantenia pulsado el boton. Quien sabe que el
+        /// cursor ha salido es el PointerLeave del popup, y es el unico que lo anuncia.
+        /// </summary>
         private void CloseSublotsPopup() => _sublotsPopup.style.display = DisplayStyle.None;
 
         #endregion
@@ -1086,7 +1102,7 @@ namespace MVC.View.Inventory
             tab.RegisterCallback<PointerDownEvent>(evt =>
             {
                 if (evt.button == 1)
-                    RenderContextualMenu(options, () => {});
+                    RenderContextualMenu(options);
             });
             _inventoryTabs.Add(tab);
         }

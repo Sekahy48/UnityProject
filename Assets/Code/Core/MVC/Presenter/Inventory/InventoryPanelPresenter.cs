@@ -113,17 +113,14 @@ namespace Core.MVC.Presenter.Inventory
                 ItemEntity item = _service.GetGrabbedItem();
 
                 OnHandStyleUpdate?.Invoke(verdict, GhostSizeOverGrid(item, cellSize), cellSize);
-                PublishWeightNote(item, units);
+                PublishWeightNote(item, units, verdict);
                 focusedItem = DisplayDTOsBuilder.BuildDisplayData(item, _service.GetGrabbedAmount());
             } else
             {
-                // Respaldo propio de este camino: con el menu contextual abierto el cursor ya
-                // no esta sobre la celda, y aun asi la franja debe seguir mostrando ese item.
-                IInventoryElement node = GetNodeAt(pos);
-                if (node == null && _panelView.LastRightClickedCell != null)
-                    node = GetNodeAt(_panelView.LastRightClickedCell.Value);
-
-                focusedItem = DisplayDataOf(node);
+                // Solo lo que hay bajo el cursor, null incluido. Que mostrar cuando no hay
+                // nada lo decide InventoryPresenter, que es quien conoce tambien el menu
+                // contextual abierto — y quien tiene la unica franja.
+                focusedItem = DisplayDataOf(GetNodeAt(pos));
                 _panelView.SetWeightNote(false);
             }
 
@@ -139,8 +136,8 @@ namespace Core.MVC.Presenter.Inventory
         /// aviso solo cambia al cambiar la cantidad en la mano o de panel: no parpadea al
         /// recorrer la rejilla.
         /// </summary>
-        private void PublishWeightNote(ItemEntity item, int units)
-            => _panelView.SetWeightNote(_service.CarrierBlocks(Entity, item, units));
+        private void PublishWeightNote(ItemEntity item, int units, PlacementVerdict verdict)
+            => _panelView.SetWeightNote(verdict != PlacementVerdict.Outside && _service.CarrierBlocks(Entity, item, units));
 
         private void GrabAt(GridPos pos)
         {
@@ -239,6 +236,14 @@ namespace Core.MVC.Presenter.Inventory
 
             OnHandChanged?.Invoke(grabbed == null ? default : GhostSizeOverGrid(grabbed, cell), cell);
         }
+
+        /// <summary>
+        /// Vuelve a evaluar la celda sobrevolada, si la hay. El veredicto y la nota de peso
+        /// dependen de lo que lleve la mano, y la mano puede cambiar sin que el cursor se mueva
+        /// — al soltar, al cancelar, al agarrar del catalogo. Sin esto el ultimo veredicto se
+        /// queda pintado hasta que el puntero cambie de celda.
+        /// </summary>
+        public void RepublishHover() => _panelView.RepublishHover();
 
         /// <summary>
         /// Repaints the tetris grid contents: one block per placed GridElement,
