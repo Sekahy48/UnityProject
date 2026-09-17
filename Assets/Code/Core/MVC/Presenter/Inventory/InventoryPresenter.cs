@@ -337,15 +337,25 @@ namespace Core.MVC.Presenter.Inventory
         }
 
         /// <summary>
-        /// Opens a container in a side slot, or closes it if that container is already there.
-        /// Binds before showing so the panel never flashes the previous container's grid.
+        /// Opens a container in a side slot, or closes it if THAT SAME container is already
+        /// there. Binds before showing so the panel never flashes the previous container's grid.
+        ///
+        /// <para>Cerrar solo cuando coincide el contenedor: si el hueco muestra otro, pedirlo
+        /// aqui significa sustituir, no cerrar. Sin esa distincion, mandar una mochila a un
+        /// panel ocupado por un arcon cerraba el arcon y no mostraba nada.</para>
+        ///
+        /// <para>La comparacion es por identidad y no por Equivalent: dos mochilas iguales y
+        /// vacias son equivalentes y no son la misma mochila.</para>
         /// </summary>
         public void ToggleExtraInventory(IEntity entity, PanelType panel)
         {
             AC.CheckNotNull(entity, nameof(entity));
             _view.CloseContextualMenu();
 
-            if (_view.IsSideContentVisible(panel, SidePanelContent.Inventory))
+            bool sameContainerShown = _view.IsSideContentVisible(panel, SidePanelContent.Inventory)
+                                   && ReferenceEquals(_panelPresenters[panel].Entity, entity);
+
+            if (sameContainerShown)
             {
                 CloseInventoryPanel(panel);
                 return;
@@ -476,18 +486,19 @@ namespace Core.MVC.Presenter.Inventory
             }
         }
 
-        private IEnumerable<MenuOption> BuildInventoryTabsOptions()
+        private IEnumerable<MenuOption> BuildInventoryTabsOptions(ItemEntity container)
         {
             List<MenuOption> subOptions = new List<MenuOption>()
             {
                 new MenuOption("↑", inputs =>
                 {
-                    
+
+                    FocusInventory(container, PanelType.A);
                 },
                 new List<MenuField>()),
                 new MenuOption("↓", inputs =>
                 {
-                    
+                    FocusInventory(container, PanelType.B);
                 },
                 new List<MenuField>())
             };
@@ -498,6 +509,29 @@ namespace Core.MVC.Presenter.Inventory
             };
 
             return options;
+        }
+
+        /// <summary>
+        /// Lleva un contenedor al hueco pedido y lo quita de cualquier otro: un mismo inventario
+        /// abierto dos veces serian dos vistas del mismo arbol, y mover algo en una dejaria la
+        /// otra mintiendo hasta el siguiente repintado.
+        ///
+        /// <para>El barrido incluye el hueco de destino a proposito: asi pedir este contenedor
+        /// SIEMPRE lo muestra aqui, en vez de alternar. La alternancia de ToggleExtraInventory
+        /// se pierde por este camino, y es lo que se quiere — "mostrar al lado" es una orden,
+        /// no un interruptor.</para>
+        /// </summary>
+        private void FocusInventory(ItemEntity container, PanelType targetPanel)
+        {
+            foreach (PanelType panelType in _panelPresenters.Keys)
+            {
+                // Identidad, no equivalencia: dos mochilas iguales y vacias son equivalentes y
+                // cerrar la otra seria cerrar la que no es.
+                if (ReferenceEquals(_panelPresenters[panelType].Entity, container))
+                    CloseInventoryPanel(panelType);
+            }
+
+            ToggleExtraInventory(container, targetPanel);
         }
 
         /// <param name="variant">Sub-lote concreto a equipar, o null para el representante del
@@ -729,7 +763,7 @@ namespace Core.MVC.Presenter.Inventory
         { 
             _view.ClearInveotryTabs();
 
-            _view.AddTabToInventoryTabs(_entity, _entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), BuildInventoryTabsOptions().ToList());
+            _view.AddTabToInventoryTabs(_entity, _entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), new List<MenuOption>());
             
             foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
             {
@@ -737,7 +771,7 @@ namespace Core.MVC.Presenter.Inventory
                 {
                     if (item.GetComponent<InventoryComponent>() != null)
                     {
-                        _view.AddTabToInventoryTabs(item, item.GetDisplayName(), () => _panelPresenters[PanelType.Player].Bind(item), BuildInventoryTabsOptions().ToList());
+                        _view.AddTabToInventoryTabs(item, item.GetDisplayName(), () => _panelPresenters[PanelType.Player].Bind(item), BuildInventoryTabsOptions(item).ToList());
                     }
                 }    
             }

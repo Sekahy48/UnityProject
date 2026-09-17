@@ -421,6 +421,32 @@ namespace Core.Services
         }
 
         /// <summary>
+        /// Inventario del que sale lo que se lleva en la mano, o null si no sale de ninguna rejilla.
+        /// Hermano de GetIgnoreNodeId y de GetIgnoredEquipItem: lo que la mano tiene reservado sigue
+        /// contando donde estaba, y quien evalua necesita saberlo para no contarlo dos veces.
+        /// </summary>
+        private InventoryObject GrabbedSourceInventory()
+            => _interactionContext._handBuffer.GetOrigin() is InventoryNodeOrigin origin ? origin.Inventory : null;
+
+        /// <summary>
+        /// Si lo que impide meter esas unidades en ese destino es el techo de quien lo lleva, y
+        /// no el suyo propio.
+        ///
+        /// Vive aqui y no en el presenter para que use el mismo origen que EvaluatePlacement:
+        /// el aviso y el color tienen que descontar lo mismo, o saldra el cartel justo cuando
+        /// el fantasma diga que si cabe.
+        /// </summary>
+        public bool CarrierBlocks(IEntity destiny, ItemEntity item, int units)
+        {
+            if (destiny == null || item == null) return false;
+
+            float attempted = item.GetComponent<BaseItemComponent>().Weight * units;
+
+            return destiny.GetComponent<InventoryComponent>().Inventory
+                          .CarrierBlocks(attempted, GrabbedSourceInventory());
+        }
+            
+        /// <summary>
         /// Que pasaria si la mano se soltase en esa celda. Recorre las MISMAS decisiones que
         /// AddItemAt/TryAddItemAt y en el mismo orden: ocupante primero, luego hueco, luego
         /// peso. Si esto y la colocacion real dejan de coincidir es que una de las dos cambio
@@ -465,11 +491,13 @@ namespace Core.Services
         {
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
 
-            // Reordenar dentro de un inventario no cambia su peso: las unidades ya se cargan.
-            // Igual que TryAddItemAt, que se salta la comprobacion cuando hay nodo ignorado.
-            int byWeight = ignoreNodeId != -1
-                ? requested
-                : inventory.FitByWeight(item, requested);
+            // Un contenedor no entra en si mismo ni en nada que lleve dentro: seria un ciclo en
+            // el arbol. Se pregunta aqui ademas de en AddItemAt porque el fantasma tiene que
+            // poder decirlo antes de soltar.
+            InventoryObject carried = item.GetComponent<InventoryComponent>()?.Inventory;
+            if (carried != null && carried.WrapsOrIs(inventory)) return 0;
+ 
+            int byWeight = inventory.FitByWeight(item, requested, GrabbedSourceInventory());
 
             // Mismo orden que AddItemAt: el ocupante manda sobre el hueco.
             GridElement occupant = grid.GetElementAt(pos);

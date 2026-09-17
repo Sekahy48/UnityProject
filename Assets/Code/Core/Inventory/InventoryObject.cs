@@ -12,6 +12,9 @@ namespace Core.Inventory
         private const int BASE_GRID_W = 7;
         private const int BASE_GRID_H = 5;
 
+        /* Margen contra la coma flotante al traducir kilos libres a piezas. Ver FitByWeight. */
+        private const float WEIGHT_EPSILON = 1e-4f;
+
         private List<IInventoryElement> _inventory;
         private TetrisGridState _grid;
         private int _id;
@@ -165,6 +168,9 @@ namespace Core.Inventory
             AC.CheckNotNull(item, nameof(item));
             AC.CheckPositive(amount, nameof(amount));
 
+            if (ContainerOf(item) != null)
+                return PlaceContainer(item, node => _grid.TryFirstPlace(node) ? 0 : 1, amount);
+
             while (amount > 0)
             {
                 ItemObject newNode = new ItemObject(item, amount);
@@ -175,6 +181,39 @@ namespace Core.Inventory
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// El inventario que un item trae consigo, o null si no es un contenedor.
+        ///
+        /// Un item con inventario se guarda en una rejilla como la RAMA que ya es, no envuelto
+        /// en una hoja nueva: envolverlo dejaba su contenido fuera del arbol, y lo que no cuelga
+        /// del arbol no pesa — una mochila pesaba distinto puesta que guardada.
+        /// </summary>
+        private static InventoryObject ContainerOf(ItemEntity item)
+            => item.GetComponent<InventoryComponent>()?.Inventory;
+
+        /// <summary>
+        /// Cuelga aqui el inventario propio de un contenedor, colocandolo con la estrategia que
+        /// reciba.
+        /// </summary>
+        /// <param name="place">Coloca el nodo en la rejilla y devuelve lo que no pudo colocar.</param>
+        /// <returns>Unidades no admitidas: un contenedor es siempre UNO, asi que lo que pase de
+        /// ahi vuelve intacto — dos nodos apuntando al mismo inventario serian el mismo
+        /// inventario en dos celdas.</returns>
+        private int PlaceContainer(ItemEntity item, Func<IInventoryElement, int> place, int amount)
+        {
+            InventoryObject container = ContainerOf(item);
+
+            // El contenedor no puede envolver a su destino: ahi es donde estaria el ciclo. Al
+            // reves no: que ESTE inventario contenga ya al contenedor es solo recolocarlo.
+            if (container.WrapsOrIs(this)) return amount;
+            if (place(container) != 0) return amount;
+
+            container.Parent = this;
+            _inventory.Add(container);
+
+            return amount - 1;
         }
 
         /// <summary>
@@ -233,23 +272,90 @@ namespace Core.Inventory
         /// Cuantas de esas unidades caben aqui, contando este inventario y todos los que lo
         /// contienen.
         ///
-        /// Cada nivel responde por su propio techo y delega el resto hacia arriba: meter algo
-        /// en un bolsillo tiene que caber en el bolsillo, en la mochila que lo lleva y en quien
-        /// lleva la mochila. Un solo "dueño del peso" no bastaria — se saltaria los niveles
-        /// intermedios, que es justo donde viven las mochilas.
+        /// Derivada de FreeWeight, no paralela a ella: el limite es de kilos y esto solo lo
+        /// traduce a piezas. Si fueran dos recorridos distintos, el dia que uno cambie el otro
+        /// se queda contando otra cosa — y uno pinta el fantasma y el otro escribe el aviso.
         /// </summary>
-        public int FitByWeight(ItemEntity item, int amount)
+        public int FitByWeight(ItemEntity item, int amount, InventoryObject source = null)
         {
-            // Sin entidad dueña no hay techo que aplicar: es el caso del inventario de paso
-            // que fabrica SpawnIntoHand, que no es de nadie y no limita nada.
-            int here = _holder == null
-                ? amount
-                : CarryCapacity.FitByWeight(_holder, this, item, amount);
+            float unit = item.GetComponent<BaseItemComponent>().Weight;
+            if (unit <= 0) return amount;   // sin peso no hay limite que aplicar
 
-            if (here <= 0) return 0;
+            float free = FreeWeight(source);
+            if (free <= 0) return 0;        // pasado el techo no cabe nada, no "menos que nada"
 
-            return Parent == null ? here : Math.Min(here, Parent.FitByWeight(item, amount));
+            // El epsilon es por la coma flotante: con 8 kilos libres y una pieza de 8, la
+            // division puede dar 0,9999 y dejar fuera algo que cabe justo.
+            float fit = (free + WEIGHT_EPSILON) / unit;
+
+            // Se compara ANTES de convertir a entero: un techo exento vale float.MaxValue, y
+            // ese cociente no cabe en un int — la conversion lo dejaba en int.MinValue y todo
+            // salia bloqueado justo en los casos que no tenian limite.
+            return fit >= amount ? amount : (int)fit;
         }
+
+        /// <summary>
+        /// Si este inventario es el dado, o uno de sus antepasados.
+        ///
+        /// Existe para lo unico que el arbol no puede permitirse: meter un contenedor dentro de
+        /// si mismo o de algo que ya lleva dentro. Con la mochila abierta en un panel lateral,
+        /// arrastrarla a su propia rejilla es un gesto de dos segundos, y dejaria un ciclo en el
+        /// que ningun recorrido —peso, capacidad, limpieza— termina.
+        /// </summary>
+        public bool WrapsOrIs(InventoryObject other)
+        {
+            for (InventoryObject current = other; current != null; current = current.Parent)
+                if (ReferenceEquals(current, this)) return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Kilos que este inventario admite POR SU CUENTA, sin mirar a quien lo lleva.
+        ///
+        /// <para>Aqui vive la UNICA regla que hay sobre el origen: un techo no aplica a algo que
+        /// ya esta debajo de el. Mover del bolsillo a la mochila, o de la mochila al jugador, no
+        /// cambia lo que el jugador carga. Antes eso lo apañaba el ignoreNodeId de la rejilla,
+        /// que solo sabia de un mismo inventario y no de la cadena.</para>
+        ///
+        /// <para>Sin entidad dueña no hay techo: el inventario de paso que fabrica
+        /// SpawnIntoHand no es de nadie y no limita nada.</para>
+        /// </summary>
+        /// <param name="source">Inventario del que sale lo que se va a mover, o null si viene de
+        /// fuera del arbol: el equipo, el catalogo, el mundo.</param>
+        public float OwnFreeWeight(InventoryObject source = null)
+            => _holder == null || (source != null && WrapsOrIs(source))
+                ? float.MaxValue
+                : CarryCapacity.GetMaxLoad(_holder) - GetTotalWeight();
+
+        /// <summary>
+        /// Kilos que admite de verdad: el minimo de toda la cadena.
+        ///
+        /// Unico recorrido hacia arriba de todo el sistema de peso. Lo que necesite otra forma
+        /// de la misma pregunta —unidades, si frena el portador, cuanto pintar de la barra— se
+        /// deriva de aqui en vez de recorrer por su cuenta.
+        /// </summary>
+        public float FreeWeight(InventoryObject source = null)
+            => Parent == null
+                ? OwnFreeWeight(source)
+                : Math.Min(OwnFreeWeight(source), Parent.FreeWeight(source));
+
+        /// <summary>
+        /// Si lo que impide meter ese peso es alguien que CONTIENE a este inventario, y no su
+        /// propio techo.
+        ///
+        /// Depende del peso intentado a proposito: con la mochila a 5/30 y el portador al
+        /// limite, una venda puede entrar y tres no, asi que la respuesta no es una propiedad
+        /// del inventario sino de lo que se esta intentando meter.
+        ///
+        /// <para>Las dos condiciones hacen falta: la primera dice que no cabe, la segunda que
+        /// el culpable esta arriba. Sin la segunda, una mochila llena por su cuenta tambien
+        /// diria que la limita el portador.</para>
+        /// </summary>
+        /// <param name="source">El mismo que en FreeWeight: sin el, el aviso saldria al mover
+        /// algo que ya cargaba el portador, justo cuando el fantasma dice que si cabe.</param>
+        public bool CarrierBlocks(float weight, InventoryObject source = null)
+            => weight > FreeWeight(source) && FreeWeight(source) < OwnFreeWeight(source);
 
         public int StackOnto(ItemEntity item, int amount)
         {
@@ -421,6 +527,13 @@ namespace Core.Inventory
             if (!_inventory.Remove(node)) return false;
 
             _grid.Remove(node.GetNodeId());
+
+            // Salir de la lista es tambien dejar de tener padre. Desde que un contenedor puede
+            // retirarse por aqui —y no solo por RemoveContainer—, dejarle el padre puesto lo
+            // vuelve un huerfano que dice pertenecer a un arbol en el que ya no esta: quien
+            // luego intente colgarlo vera que "ya cuelga de ahi" y no hara nada.
+            if (node is InventoryObject container) container.Parent = null;
+
             return true;
         }
 
@@ -469,6 +582,11 @@ namespace Core.Inventory
         {
             AC.CheckNotNull(item, "item");
             AC.CheckPositive(amount, "amount");
+
+            // Un contenedor no se apila sobre nada: se coloca como rama, y de eso ya se encarga
+            // AddItem. Buscar una hoja equivalente lo convertiria en unidades de una pila.
+            if (ContainerOf(item) != null) return AddItem(item, amount);
+
             foreach (IInventoryElement elem in _inventory)
             {
                 if (elem.IsLeaf() && elem.GetTypeId() == item.GetComponent<BaseItemComponent>().TypeId)
@@ -588,7 +706,15 @@ namespace Core.Inventory
             // unidades a su sitio original en vez de moverlas.
             GridElement occupant = _grid.GetElementAt(pos);
             if (occupant != null && occupant.GetNode().GetNodeId() != ignoreNodeId)
+            {
+                // Un contenedor no apila ni recibe apilados: es una cosa, no una pila de una.
+                if (!occupant.GetNode().IsLeaf() || ContainerOf(item) != null) return amount;
+
                 return occupant.GetNode().StackOntoHere(item, amount);
+            }
+
+            if (ContainerOf(item) != null)
+                return PlaceContainer(item, node => _grid.Place(node, pos, ignoreNodeId) ? 0 : 1, amount);
 
             BaseItemComponent baseInfo = item.GetComponent<BaseItemComponent>();
             if (_grid.CanPlace(pos, baseInfo.DimensionH, baseInfo.DimensionW, ignoreNodeId))
@@ -626,6 +752,9 @@ namespace Core.Inventory
                 // y asi esta retirada y CleanNode no pueden divergir. Un contenedor no entra
                 // aqui igualmente — su GetAmount es 1, porque vacio sigue siendo un contenedor.
                 _grid.Remove(e.GetNodeId());
+
+                if (e is InventoryObject container) container.Parent = null;
+
                 return true;
             });
         }

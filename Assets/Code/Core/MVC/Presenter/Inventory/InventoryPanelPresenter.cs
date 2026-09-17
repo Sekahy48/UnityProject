@@ -107,12 +107,13 @@ namespace Core.MVC.Presenter.Inventory
 
             if (_service.IsHandCarrying())
             {
-                PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos,
-                                                                      portion.UnitsOf(_service.GetGrabbedAmount()));
+                int units = portion.UnitsOf(_service.GetGrabbedAmount());
+                PlacementVerdict verdict = _service.EvaluatePlacement(Entity, pos, units);
 
                 ItemEntity item = _service.GetGrabbedItem();
 
                 OnHandStyleUpdate?.Invoke(verdict, GhostSizeOverGrid(item, cellSize), cellSize);
+                PublishWeightNote(item, units);
                 focusedItem = DisplayDTOsBuilder.BuildDisplayData(item, _service.GetGrabbedAmount());
             } else
             {
@@ -123,10 +124,23 @@ namespace Core.MVC.Presenter.Inventory
                     node = GetNodeAt(_panelView.LastRightClickedCell.Value);
 
                 focusedItem = DisplayDataOf(node);
+                _panelView.SetWeightNote(false);
             }
 
             OnInspectionStripUpdateRequired?.Invoke(focusedItem);
         }
+
+        /// <summary>
+        /// Avisa a la barra de peso cuando lo que impide colocar no es el tope de ESTE
+        /// inventario sino el de quien lo lleva.
+        ///
+        /// Nace en la misma pasada que el color del fantasma y de la misma cadena, asi que el
+        /// rojo y la explicacion no pueden discrepar. Y como el peso no depende de la celda, el
+        /// aviso solo cambia al cambiar la cantidad en la mano o de panel: no parpadea al
+        /// recorrer la rejilla.
+        /// </summary>
+        private void PublishWeightNote(ItemEntity item, int units)
+            => _panelView.SetWeightNote(_service.CarrierBlocks(Entity, item, units));
 
         private void GrabAt(GridPos pos)
         {

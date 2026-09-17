@@ -382,6 +382,12 @@
 
 .load-immobile-label{
     color: rgb(124, 231, 124);
+}
+
+/* La etiqueta esta explicando por que no cabe, no reportando carga. Ambar para que se
+   distinga de las bandas de peso, que ocupan la misma etiqueta. */
+.weight-label-note {
+    color: rgba(204, 207, 14, 0.95);
 } 
 
 .weight-label {

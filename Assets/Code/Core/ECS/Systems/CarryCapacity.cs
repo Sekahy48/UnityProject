@@ -55,26 +55,6 @@ namespace Core.ECS.Systems
             return storage != null ? storage.MaxWeight : float.MaxValue;
         }
 
-        /// <summary>
-        /// Cuantas de esas <paramref name="amount"/> unidades caben todavia por peso. Pura: no
-        /// toca nada, asi que sirve igual para ejecutar el movimiento y para pintar el veredicto
-        /// antes de soltar. Vive aqui, junto al techo que consulta, para que ambos usos no puedan
-        /// discrepar sobre cuanto queda libre.
-        /// </summary>
-        public static int FitByWeight(IEntity entity, InventoryObject inventory, ItemEntity item, int amount)
-        {
-            if (inventory == null) return 0;
-
-            float itemWeight = item.GetComponent<BaseItemComponent>().Weight;
-            if (itemWeight <= 0) return amount;   // sin peso no hay limite que aplicar
-
-            float free = GetMaxLoad(entity) - inventory.GetTotalWeight();
-            int fit = (int)(free / itemWeight);
-
-            // Sobrepasado el techo el hueco libre es negativo: no cabe nada, no "cabe menos que nada".
-            return Math.Min(amount, Math.Max(fit, 0));
-        }
-
         public static float GetMaxCarryWeight(IEntity entity)
         {
             BodyComponent body = entity.GetComponent<BodyComponent>();

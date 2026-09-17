@@ -182,8 +182,8 @@ namespace Core.Inventory
             return true;
         }
 
-        public bool TryFirstPlace(ItemObject node)
-        { 
+        public bool TryFirstPlace(IInventoryElement node)
+        {
             BaseItemComponent baseInfo = node.GetItemEntity().GetComponent<BaseItemComponent>();
             GridPos pos = FindFirstFit(baseInfo.DimensionH, baseInfo.DimensionW);
             return !pos.IsNone && Place(node, pos);

@@ -31,6 +31,10 @@ namespace MVC.View.Inventory
         private VisualElement _weightBar; /*Level bar that show weight capacity and status*/
         private Label _weightLabel; /*Label that shows numeric information about weight capcity and status*/
 
+        /* Las dos fuentes de la etiqueta de peso, por separado. Ver RenderWeightLabel. */
+        private string _weightText = "";
+        private bool _carrierBlocks;
+
 
         /* Suelo del lado de celda: por debajo el icono deja de leerse, y entonces el problema
            es el inventario, no el panel. Sin techo a proposito — la celda aprovecha todo el
@@ -348,7 +352,8 @@ namespace MVC.View.Inventory
 
         public void UpdateWeightStats(float currentWeight, float maxWeight, GameEventType eventType)
         {
-            _weightLabel.text = $"{currentWeight:F1}/{maxWeight:F1} kg";
+            _weightText = $"{currentWeight:F1}/{maxWeight:F1} kg";
+            RenderWeightLabel();
 
             float ratio = maxWeight > 0 ? currentWeight / maxWeight : 1f;
             float painted = Math.Min(ratio, 1f) * 100f;
@@ -365,6 +370,31 @@ namespace MVC.View.Inventory
                 _weightLabel.RemoveFromClassList(cls);
             _weightLabel.AddToClassList(LoadLabelClasses[eventType]);
         }
+
+        /// <summary>
+        /// Marca que lo que frena a este inventario es el tope de quien lo lleva, no el suyo.
+        /// Lo decide el presenter al evaluar la mano; aqui solo se pinta.
+        /// </summary>
+        public void SetWeightNote(bool carrierBlocks)
+        {
+            // Sin reescribir en cada celda: el peso no depende de donde apuntes.
+            if (carrierBlocks == _carrierBlocks) return;
+
+            _carrierBlocks = carrierBlocks;
+            _weightLabel.EnableInClassList("weight-label-note", carrierBlocks);
+            RenderWeightLabel();
+        }
+
+        /// <summary>
+        /// Arma la etiqueta con sus dos fuentes. Existe porque las actualiza gente distinta —el
+        /// peso cada vez que cambia el inventario, la nota cada vez que se sobrevuela con algo
+        /// en la mano— y quien llegase segundo borraria lo del primero si escribieran el texto
+        /// directamente.
+        /// </summary>
+        private void RenderWeightLabel()
+            => _weightLabel.text = _carrierBlocks
+                ? $"{_weightText} · limitado por el portador"
+                : _weightText;
 
         
         #endregion
