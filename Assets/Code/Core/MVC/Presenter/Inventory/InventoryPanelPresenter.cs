@@ -103,8 +103,6 @@ namespace Core.MVC.Presenter.Inventory
         {
             if (Entity == null) return;
 
-            ItemDisplayData focusedItem = null;
-
             if (_service.IsHandCarrying())
             {
                 int units = portion.UnitsOf(_service.GetGrabbedAmount());
@@ -114,17 +112,17 @@ namespace Core.MVC.Presenter.Inventory
 
                 OnHandStyleUpdate?.Invoke(verdict, GhostSizeOverGrid(item, cellSize), cellSize);
                 PublishWeightNote(item, units, verdict);
-                focusedItem = DisplayDTOsBuilder.BuildDisplayData(item, _service.GetGrabbedAmount());
-            } else
+            }
+            else
             {
-                // Solo lo que hay bajo el cursor, null incluido. Que mostrar cuando no hay
-                // nada lo decide InventoryPresenter, que es quien conoce tambien el menu
-                // contextual abierto — y quien tiene la unica franja.
-                focusedItem = DisplayDataOf(GetNodeAt(pos));
                 _panelView.SetWeightNote(false);
             }
 
-            OnInspectionStripUpdateRequired?.Invoke(focusedItem);
+            // Siempre lo que hay bajo el cursor, null incluido, y aunque se lleve algo en la
+            // mano. Este panel no sabe que la mano tiene prioridad sobre la celda: eso lo
+            // decide InventoryPresenter, que es quien conoce tambien la mano y el menu abierto
+            // — y quien tiene la unica franja.
+            OnInspectionStripUpdateRequired?.Invoke(DisplayDataOf(GetNodeAt(pos)));
         }
 
         /// <summary>
@@ -272,8 +270,7 @@ namespace Core.MVC.Presenter.Inventory
                 });
             }
 
-            _panelView.RenderGridItems(items);
-            //TODO gestionar (algun dia que apetezca) la inspection strip
+            _panelView.RenderGridItems(items); 
             UpdateWeightStats();
         }
 

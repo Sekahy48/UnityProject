@@ -21,6 +21,25 @@ namespace Core.ECS.Component.Equipment
         {
             return EquipmentSlots[type];
         }
+
+        /// <summary>
+        /// Las prendas puestas, cada una una sola vez.
+        /// </summary>
+        /// <remarks>
+        /// Recorrer <see cref="EquipmentSlots"/> y sus capas no equivale a esto: una prenda de
+        /// ocupacion completa —un arco a dos manos, una mochila que ocupa espalda y hombros—
+        /// esta registrada en todos sus slots a la vez, asi que ese recorrido la visita una vez
+        /// por slot. Para contar (peso, pestañas, inventarios equipados) hay que usar este
+        /// metodo; el recorrido por slots solo sirve cuando lo que importa es el slot en si.
+        /// </remarks>
+        public IEnumerable<ItemEntity> EquippedItems()
+        {
+            HashSet<ItemEntity> seen = new HashSet<ItemEntity>();
+
+            foreach (EquipmentSlot slot in EquipmentSlots.Values)
+                foreach (ItemEntity item in slot.Items)
+                    if (seen.Add(item)) yield return item;
+        }
         
         public bool AddSlot(EquipmentSlotType slotType, int maxLayers)
         {   

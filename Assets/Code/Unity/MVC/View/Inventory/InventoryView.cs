@@ -452,7 +452,6 @@ namespace MVC.View.Inventory
                             ? DisplayStyle.Flex
                             : DisplayStyle.None;
                     }
-                    Debug.Log("Panel izquerdo cambiado a " + relationClass);
                 });
             }
         }
@@ -1086,7 +1085,7 @@ namespace MVC.View.Inventory
         }
 
         public void ClearInveotryTabs() => _inventoryTabs.Clear();
-        public void AddTabToInventoryTabs(IEntity target, String name, Action clickEvent, List<MenuOption> options)
+        public void AddTabToInventoryTabs(String name, Action clickEvent, List<MenuOption> options)
         {
             // NOTA sino va juntar en PointerDown
             VisualElement tab = new VisualElement();
@@ -1113,15 +1112,21 @@ namespace MVC.View.Inventory
             List<VisualElement> layerSlots = new List<VisualElement>();
             foreach (ItemDisplayData item in layers)
             {
-                VisualElement layerSlot = new VisualElement();
-
-                // El nombre codifica el slot al que pertenece la capa, y de el sale su
-                // EquipmentSlotType. Tiene que salir del dueño del popup, no de lo ultimo
-                // que se haya pulsado, o las capas se bautizan con el slot equivocado.
-                layerSlot.name = "layer-" + _layersOwnerSlot.name;
+                VisualElement layerSlot = new VisualElement
+                {
+                    // El nombre codifica el slot al que pertenece la capa, y de el sale su
+                    // EquipmentSlotType. Tiene que salir del dueño del popup, no de lo ultimo
+                    // que se haya pulsado, o las capas se bautizan con el slot equivocado.
+                    name = "layer-" + _layersOwnerSlot.name
+                };
                 layerSlot.AddToClassList("equip-slot");
-                UIElementUtils.SetBackgroundTexture(layerSlot, item.IconPath);
+                UIElementUtils.SetBackgroundTexture(layerSlot, item.IconPath); 
 
+                // La franja la alimenta ManageEquipmentEvents, que ya registra su propio
+                // PointerMove aqui abajo: el presenter recibe (capa, es del popup) y resuelve
+                // que prenda es. Un segundo PointerMove en este mismo elemento no se cancela
+                // con StopPropagation —eso solo corta la subida a los ancestros, no los demas
+                // callbacks del elemento— y los dos escribian en la franja, ganando el ultimo.
                 layerSlots.Add(layerSlot);
                 _layersPopup.Add(layerSlot);
             }

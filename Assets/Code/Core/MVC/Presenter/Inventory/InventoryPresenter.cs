@@ -193,6 +193,10 @@ namespace Core.MVC.Presenter.Inventory
                 // Solo un panel tiene celda sobrevolada, los demas salen sin hacer nada.
                 pres.RepublishHover();
             }
+
+            // La mano es una de las fuentes de la franja, y acaba de cambiar: agarrar o soltar
+            // tiene que verse sin esperar a que el cursor se mueva.
+            PublishInspection();
         }
 
         private void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
@@ -225,10 +229,27 @@ namespace Core.MVC.Presenter.Inventory
             }
             
 
-            ItemEntity focusedItem = _entity.GetComponent<EquipmentComponent>()
-                                            .GetEquipmentSlot(slotType).GetTopItem();
+            ItemEntity focusedItem = GarmentAt(slotType, layer);
 
             SetHovered(focusedItem == null ? null : DisplayDTOsBuilder.BuildDisplayData(focusedItem, 1));
+        }
+
+        /// <summary>
+        /// La prenda que ocupa una capa de un slot, o null si esa capa no existe.
+        /// </summary>
+        /// <param name="layer">
+        /// Indice tal como lo emite la vista. Un slot de equipo manda siempre 0 y una fila del
+        /// popup manda la suya, asi que una sola traduccion sirve para los dos: LayerToRealPos
+        /// convierte el 0 en la capa exterior — la que pinta el slot — y el resto en las de
+        /// debajo, contando desde fuera hacia dentro.
+        /// </param>
+        private ItemEntity GarmentAt(EquipmentSlotType slotType, int layer)
+        {
+            EquipmentSlot slot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(slotType);
+
+            int realPos = LayerToRealPos(layer, slot.GetEquippedItemCount());
+
+            return realPos >= 0 && realPos < slot.GetEquippedItemCount() ? slot.GetItem(realPos) : null;
         }
 
         /// <summary>
@@ -278,8 +299,28 @@ namespace Core.MVC.Presenter.Inventory
         private MenuContext? _pinned;
 
         /// <summary>
-        /// Unica regla de la franja: manda lo que hay bajo el cursor, y cuando no hay nada
-        /// responde el menu abierto.
+        /// Lo que se lleva en la mano, o null con la mano vacia.
+        ///
+        /// No es una fuente que nadie publique: se PREGUNTA, porque no depende de donde este el
+        /// cursor. Antes viajaba disfrazada de "lo que hay debajo" y solo la contaba la rejilla,
+        /// asi que en cuanto el cursor salia de una celda la franja se quedaba muda.
+        /// </summary>
+        private ItemDisplayData HandData()
+        {
+            ItemEntity item = _service.GetGrabbedItem();
+
+            // Puede ser null con la mano todavia "llena": entre que el origen se vacia y que la
+            // mano se entera, RunTransfer ya ha anunciado y alguien puede preguntar. No es un
+            // error, es un instante sin nada que enseñar — y por eso se pregunta por el item y
+            // no por IsHandCarrying, que responde que si cuando ya no hay nada que pintar.
+            return item == null
+                ? null
+                : DisplayDTOsBuilder.BuildDisplayData(item, _service.GetGrabbedAmount());
+        }
+
+        /// <summary>
+        /// Unica regla de la franja: manda la mano, si no lo que hay bajo el cursor, y si no el
+        /// menu abierto.
         ///
         /// <para>Antes esta prioridad estaba escrita tres veces —el respaldo de la rejilla, el
         /// callback del menu y la nada de los slots— y solo una de las tres era una decision:
@@ -290,7 +331,7 @@ namespace Core.MVC.Presenter.Inventory
         /// esta ventana, que es la dueña de la unica franja que hay.</para>
         /// </summary>
         private void PublishInspection()
-            => _view.UpdateInspectionStrip(_hovered ?? _pinned?.FocusedDisplayData);
+            => _view.UpdateInspectionStrip(HandData() ?? _hovered ?? _pinned?.FocusedDisplayData);
 
         /// <summary>Lo que hay bajo el cursor, o null si no hay nada.</summary>
         private void SetHovered(ItemDisplayData data)
@@ -315,14 +356,12 @@ namespace Core.MVC.Presenter.Inventory
             _grabGesture.OnPressed(() =>
             {
                 EquipmentSlotType slotType = CurrentLayerSlotType(fromLayersPopup);
-                EquipmentComponent equipmentComponent = _entity.GetComponent<EquipmentComponent>();
-                EquipmentSlot slot = equipmentComponent.GetEquipmentSlot(slotType);
-                int realPos = LayerToRealPos(layer, slot.GetEquippedItemCount());
-                if (realPos < 0 || realPos >= slot.GetEquippedItemCount()) return;
 
                 // El origen guarda la prenda, no su capa: el indice se mueve en cuanto
                 // alguien equipa o quita algo por encima.
-                ItemEntity item = slot.GetItem(realPos);
+                ItemEntity item = GarmentAt(slotType, layer);
+                if (item == null) return;
+
                 _service.GrabFrom(_service.EquipmentOrigin(_entity, OccupiedSlots(item, slotType), item), 1);
 
                 // Sobre un slot la prenda ocupa el slot entero: tamaño y ancla coinciden.
@@ -363,7 +402,6 @@ namespace Core.MVC.Presenter.Inventory
         /// </summary>
         private void OnReleasedOutsideGrid()
         {
-            CoreLogger.Instance.LogWarning("CANCEL por OnReleasedOutsideGrid");
             CancelHand();
     
         }
@@ -374,7 +412,6 @@ namespace Core.MVC.Presenter.Inventory
         /// </summary>
         private void OnCancelRequested()
         {
-            CoreLogger.Instance.LogWarning("CANCEL por OnCancelRequested");
             CancelHand(); 
         }
 
@@ -424,8 +461,28 @@ namespace Core.MVC.Presenter.Inventory
             _view.ShowSideContent(panel, SidePanelContent.None);
         }
     
+        /// <summary>
+        /// Con algo en la mano, el clic derecho cancela en vez de abrir menu: el menu actua
+        /// sobre lo que hay debajo, y con la mano llena lo que el jugador quiere resolver es la
+        /// mano.
+        ///
+        /// <para>Vive aqui, y no en la raiz junto a DismissTransients, porque decidirlo alli
+        /// obligaria a la vista a preguntarle al modelo si la mano lleva algo para saber si
+        /// cortar la propagacion. La vista informa; no consulta.</para>
+        /// </summary>
+        /// <returns>True si el clic ya se consumio cancelando.</returns>
+        private bool RightClickCancelledGrab()
+        {
+            if (!_service.IsHandCarrying()) return false;
+
+            CancelHand();
+            return true;
+        }
+
         private void OnCellRightPressed(GridPos pos, PanelType panel)
-        { 
+        {
+            if (RightClickCancelledGrab()) return;
+
             IInventoryElement target = _panelPresenters[panel].GetNodeAt(pos);
             IEntity origin = _panelPresenters[panel].Entity;
 
@@ -448,14 +505,14 @@ namespace Core.MVC.Presenter.Inventory
         }
 
         private void OnEquipmentSlotRightClicked(int layer, bool fromLayersPopup = false)
-        { 
+        {
+            if (RightClickCancelledGrab()) return;
+
             AC.CheckNotNegative(layer, nameof(layer));
  
             EquipmentSlotType type = CurrentLayerSlotType(fromLayersPopup);
-            EquipmentSlot equipmentSlot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(type);
 
-            int realPos = LayerToRealPos(layer, equipmentSlot.GetEquippedItemCount());
-            ItemEntity target = realPos >= 0 ? equipmentSlot.GetItem(realPos) : null;
+            ItemEntity target = GarmentAt(type, layer);
             if (target == null)
                 return;
 
@@ -815,17 +872,17 @@ namespace Core.MVC.Presenter.Inventory
         { 
             _view.ClearInveotryTabs();
 
-            _view.AddTabToInventoryTabs(_entity, _entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), new List<MenuOption>());
+            _view.AddTabToInventoryTabs(_entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), new List<MenuOption>());
             
-            foreach (EquipmentSlot slot in equipmentComponent.EquipmentSlots.Values)
+            // EquippedItems y no un recorrido por slots: una prenda de ocupacion completa esta
+            // en varios a la vez, y saldria con una pestaña por slot.
+            foreach (ItemEntity item in equipmentComponent.EquippedItems())
             {
-                foreach (ItemEntity item in slot.Items)
-                {
-                    if (item.GetComponent<InventoryComponent>() != null)
-                    {
-                        _view.AddTabToInventoryTabs(item, item.GetDisplayName(), () => _panelPresenters[PanelType.Player].Bind(item), BuildInventoryTabsOptions(item).ToList());
-                    }
-                }    
+                if (item.GetComponent<InventoryComponent>() == null) continue;
+
+                _view.AddTabToInventoryTabs(item.GetDisplayName(),
+                                            () => _panelPresenters[PanelType.Player].Bind(item),
+                                            BuildInventoryTabsOptions(item).ToList());
             }
 
             _view.RenderInventoryTabs(() => _panelPresenters[PanelType.Player].Bind(_entity)); 

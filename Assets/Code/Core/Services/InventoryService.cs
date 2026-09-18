@@ -375,8 +375,20 @@ namespace Core.Services
             return RunTransfer(origin, null, 1, srcUnequipEntity, addFunction);
         }
 
-        private int RunTransfer(IGrabOrigin origin, 
-                                 ItemEntity subLot, int amount, IEntity dstEntity, Func<ItemEntity, int, int> addAcction) 
+        /// <remarks>
+        /// El anuncio (<c>EvaluateAndFireEvents</c>) cierra ESTA transaccion, no necesariamente
+        /// la operacion completa. <see cref="PlaceFromHand"/> llama despues a
+        /// <c>HandBuffer.NotifyPlaced</c>, asi que durante el <c>InventoryChanged</c> el
+        /// HandBuffer va un paso por detras: conserva su origen —<c>IsHandCarrying</c> responde
+        /// que si— mientras el nodo del que reservaba ya se vacio, de modo que
+        /// <c>GetHeldItem</c> puede devolver null.
+        ///
+        /// Quien lea la mano desde un observador de ese evento tiene que tolerarlo. Es lo que
+        /// hace <c>InventoryPresenter.HandData</c>, que pregunta por el item en vez de por
+        /// <c>IsHandCarrying</c> precisamente por esto.
+        /// </remarks>
+        private int RunTransfer(IGrabOrigin origin,
+                                 ItemEntity subLot, int amount, IEntity dstEntity, Func<ItemEntity, int, int> addAcction)
         {
             AC.CheckNotNull(origin, nameof(origin));
             AC.CheckPositive(amount, nameof(amount));

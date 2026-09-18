@@ -4,40 +4,48 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestone 5 CERRADO.** Hechas 0-17 (el antiguo auto-sort quedo descartado y la lista
-renumerada). Se ha invadido ademas buena parte de M6: T1 (los paneles A y B abren contenedores
-externos), T3 y T4 (transferir entre ellos respetando rejilla y peso de los dos) estan hechos
-por el mismo camino de veredictos.
+**Milestone 5 cerrado. M6 a medias: hechas T1, T3, T4 y T7.** Quedan T2 (recogida desde el
+mundo), T5 (cerrar por distancia) y T6 (carros y NPCs). Se cerro ademas M7 T3b por el camino:
+un contenedor guardado ocupa celdas y pesa igual que puesto.
 
 **Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
 por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
 mismas decisiones que la colocacion real, imantado tanto a los slots de equipo como celda a
-celda. Menu contextual con submenus (tirar con cantidad, equipar eligiendo slot,
-transferencia rapida a los inventarios visibles). Equipar y desequipar por los tres caminos
-—menu, clic y arrastre— incluyendo capas concretas desde el popup de capas, con feedback
-de validez sobre cada slot. Franja de inspeccion viva, alimentada desde todos esos caminos, y
-honesta con las pilas mixtas. Desglose de variantes en su propio desplegable, cada fila
-agarrable y con su menu contextual. Cantidades parciales por gesto (shift) y por menu
-("Dividir"), repitiendo el gesto sobre el propio origen para coger mas, e intercambio de dos
-items cuando ninguno admite al otro. El fantasma distingue cuatro respuestas: verde entra
-entero, amarillo entra parte, azul se intercambia, rojo nada.
+celda. Menu contextual con submenus. Equipar y desequipar por los tres caminos —menu, clic y
+arrastre— incluyendo capas concretas. Desglose de variantes en su propio desplegable, cada
+fila agarrable y con su menu. Cantidades parciales por gesto (shift) y por menu, e
+intercambio de dos items cuando ninguno admite al otro. El fantasma distingue cuatro
+respuestas: verde entra entero, amarillo entra parte, azul se intercambia, rojo nada.
 
-**Lo siguiente: M6, y cambia el tipo de trabajo.** Lo que queda de M6 ya no es
+**Y contenedores de verdad.** Una mochila equipada aparece como pestaña del panel del jugador
+y se opera como cualquier inventario; su menu la manda a los huecos laterales. Su peso y el de
+su contenido cuelgan del arbol del portador, y la capacidad se pregunta hacia arriba nivel a
+nivel —bolsillo, mochila, personaje—, con aviso en la barra cuando el que frena no es el que
+miras. Un contenedor no puede meterse dentro de si mismo ni de lo que lleva dentro.
+
+**Lo siguiente, y cambia el tipo de trabajo.** Lo que queda de M6 ya no es
 inventario-como-interfaz:
 
-1. **T2, recogida desde el mundo.** La pieza de peso: items como entidades con posicion,
-   spawn desde acciones (talar, minar) y recogida a las manos. Sale de la UI y entra en
-   entidades de mundo. Primera tarea en mucho tiempo que no toca `InventoryView`.
-2. **T7, mochila equipada como contenedor**, con pestañas en el panel para cambiar de
-   contenedor. Esta si es UI, y se apoya en que `InventoryObject` es un Composite: un
-   contenedor dentro del inventario ya es representable, solo falta navegarlo.
-3. **T5, cerrar el panel por distancia**, y **T6, carros y NPCs**, que son el mismo mecanismo
-   con otras entidades.
+1. **T2, recogida desde el mundo.** La pieza de peso: items como entidades con posicion, spawn
+   desde acciones (talar, minar) y recogida a las manos. Primera tarea en mucho tiempo que no
+   toca `InventoryView`. Desbloquea ademas el drop-to-ground del desequipado.
+2. **T6, carros y NPCs.** Casi solo datos, y su valor real es que pone a prueba T1, T3 y T4 con
+   contenido de verdad en vez de dos arcones de prueba.
+3. **T5, cerrar el panel por distancia.** Pequeña, pero necesita que exista algo de lo que
+   alejarse.
 
-**Pendiente de datos:** crear en Stack&Go otra pechera que NO sea `topLayer`, para poder
-probar el apilado de capas con dos prendas exteriores compitiendo. Hoy todas las prendas de
-pecho del catalogo son de capa exterior, asi que el camino de `Insert(Count - 1)` en
-`EquipmentSlot.EquipItem` y el bloqueo por `TopLayerBlocked` apenas se han ejercitado.
+**Pendiente tecnico de M6:** limpiar `IInventoryElement`. Conviven las operaciones reales del
+Composite —`Extract`, `GetAmount(variant)`, `HasVariants`— con los restos del diseño BFS
+anterior: `StackOntoHere`, `ModifyAmountHere`, `ContainsHere`, `GetAmountHere`,
+`DeleteItemHere`, `FindHere`, `FindNodesHere`, `SetAmount` y los metodos de hoja que lanzan.
+
+**Pendiente de datos:** falta en Stack&Go una segunda prenda de **capa exterior** para el
+pecho de **categoria distinta** a `Plate` —una capa o tunica de categoria `Robe` con
+`topLayer: true`—, que es lo unico que permite alcanzar `TopLayerBlocked`. Dos pecheras no
+sirven: chocan antes en `DuplicateCategory`, porque `EquipmentSlot.CanEquip` comprueba la
+categoria antes que la capa. El `Insert(Count - 1)` en cambio ya es probable con el catalogo
+actual: Pechera es `topLayer` y Camisa no, asi que equipar la camisa con la pechera puesta la
+mete debajo.
 
 **Deuda conocida que no bloquea:** ni el popup de capas ni el de variantes son destino de
 soltado (se agarra desde ellos, no se suelta en una capa o variante concreta), y en el de
@@ -45,9 +53,12 @@ variantes la asimetria chirria mas, porque el sitio del que sacas una manzana pa
 obviamente un sitio donde devolverla; el menu de una fila del desplegable no ofrece "Dividir"
 aunque `SplitNode` acepte variante; `EquipmentSystem` sigue sin reaccionar a eventos pese a
 implementar `IReactiveSystem`; `GetAvailableActions` acumula flags sueltos (`hasVariants`,
-`splittable`), que es el mismo olor que `MenuContext` vino a arreglar un nivel mas arriba; y
-el equipo aun no pesa, asi que equipar desde un arcon mete peso gratis — decision ya tomada
-(opcion "el equipo pesa, con coeficiente"), pendiente de aplicar.
+`splittable`), que es el mismo olor que `MenuContext` vino a arreglar un nivel mas arriba; la
+ropa puesta aun no pesa —solo lo que lleva dentro un contenedor equipado—, asi que equipar
+desde un arcon sigue metiendo peso gratis, decision ya tomada (opcion "el equipo pesa, con
+coeficiente") y pendiente de aplicar; `UpdateInventoryTabs` recorre las capas de todos los
+slots, asi que un contenedor de ocupacion completa saldria con una pestaña por slot; y
+`ClearInveotryTabs` lleva una errata en su nombre.
 
 ---
 
@@ -62,6 +73,52 @@ el equipo aun no pesa, asi que equipar desde un arcon mete peso gratis — decis
 - **Equip UX**: Drag & drop between zones + right-click context menu.
 - **Grid state**: Core (persisted with save). Organization reward is intrinsic — better packing = more items fit.
 - **Item catalog**: JSON from Stack&Go, loaded at startup.
+
+---
+
+## Invariantes del inventario
+
+Reglas que el codigo da por ciertas y que no se deducen leyendo una clase suelta. Romper
+cualquiera de ellas no da un error de compilacion: da un fallo silencioso en otro sitio.
+
+**La mano es una reserva, no una posesion.** Agarrar no mueve nada: `HandBuffer` apunta de
+que origen sale y cuantas unidades quedan reservadas, y las unidades siguen en su nodo. La
+extraccion y su vuelta atras ocurren dentro de la misma llamada a `InventoryService.RunTransfer`,
+asi que al terminar esa llamada o lo movido esta en el destino o ha vuelto a su sitio. De ahi
+que cancelar sea gratis y que `HandBuffer.Clear` pueda soltar la referencia sin devolver nada.
+El dia que algun camino extraiga al AGARRAR en vez de al colocar, esa garantia desaparece.
+
+**Durante un `InventoryChanged`, la mano puede ir un paso por detras.** `RunTransfer` anuncia
+al cerrar su transaccion, pero `PlaceFromHand` llama a `NotifyPlaced` despues. En esa ventana
+el HandBuffer conserva su origen —`IsHandCarrying()` responde que si— mientras el nodo del que
+reservaba ya se vacio, de modo que `GetHeldItem()` puede devolver null. Quien lea la mano desde
+un observador de ese evento tiene que tolerarlo: se pregunta por el item, no por si hay mano.
+
+**La consulta y la ejecucion recorren las mismas decisiones y en el mismo orden.** `EquipItem`
+arranca llamando a `CanEquip`, `EquipFromHand` a `EvaluateEquip`, `SwapFromHand` a
+`CanSwapWith`, y `PlaceAt` decide con el mismo `EvaluatePlacement` que pinta el fantasma. Las
+cuatro veces que este proyecto ha pintado verde sin mover nada han sido la misma causa:
+alguien pregunto una parte de la decision en vez de la decision entera, o la pregunto en otro
+orden.
+
+**El arbol refleja contencion; la rejilla refleja colocacion.** Un contenedor guardado es hijo
+en el arbol Y ocupa celdas; uno equipado es hijo sin celdas. De ahi sale que la UI no necesite
+ninguna bandera para saber si pintarlo: tiene celdas o no las tiene.
+
+**Salir de la lista de un inventario es dejar de tener padre.** `AddContainer` lo pone;
+`CleanNode`, `CleanTree` y `RemoveContainer` lo quitan. Un contenedor con padre obsoleto dice
+pertenecer a un arbol en el que ya no esta, y quien luego intente colgarlo vera que "ya cuelga
+de ahi" y no hara nada.
+
+**Un techo de peso no aplica a algo que ya esta debajo de el.** La regla vive en
+`InventoryObject.OwnFreeWeight`, y `FreeWeight` es el unico recorrido hacia arriba del sistema
+de peso: `FitByWeight` y `CarrierBlocks` se derivan de el. Mover del bolsillo a la mochila o de
+la mochila al jugador no cambia lo que el jugador carga.
+
+**Recorrer los slots de equipo no es lo mismo que recorrer las prendas puestas.** Una prenda de
+ocupacion completa esta registrada en todos sus slots a la vez. Para contar —peso, pestañas,
+inventarios equipados— se usa `EquipmentComponent.EquippedItems()`; el recorrido por slots solo
+sirve cuando lo que importa es el slot en si.
 
 ---
 
@@ -284,15 +341,19 @@ Closing inventory / ESC with items in cursor → items return to their original 
 
 **Tasks**:
 
-- [ ] 1. External container opens as additional panel (extra column). Support opening TWO external containers simultaneously (e.g. cart-to-cart transfer without going through personal inventory).
+- [x] 1. External container opens as additional panel (extra column). Support opening TWO external containers simultaneously (e.g. cart-to-cart transfer without going through personal inventory).
 - [ ] 2. World item pickup: actions (chopping, mining, etc.) spawn items as world entities with position. Pickup goes to **hands** (carry buffer) → player loads into cart/chest/storage (world containers). Bulky items (logs, planks, ore) do NOT go into personal inventory — personal inventory is pocket/backpack scale only. Crafting uses **proximity**: pulls materials from ALL accessible sources — personal inventory, backpack, AND nearby world containers (cart, chest, etc.). Hands buffer details TBD: capacity, interaction with equipped tool, slot reuse vs dedicated carry state.
-- [ ] 3. Drag & drop between your inventory and external container
-- [ ] 4. Transfer respects both containers' grid space and weight limits
+- [x] 3. Drag & drop between your inventory and external container
+- [x] 4. Transfer respects both containers' grid space and weight limits
 - [ ] 5. Container closes when player moves away (distance check or explicit close)
 - [ ] 6. NPC/cart/wheelbarrow inventories work the same way — carts are central to logistics
-- [ ] 7. Backpack/bag as equipped container: inventory panel gets tabs (pockets, backpack, shoulder bag, etc.). Clicking a tab switches the grid view to that container's grid. Each tab has its own `TetrisGridState` and `StorageComponent`.
+- [x] 7. Backpack/bag as equipped container: inventory panel gets tabs (pockets, backpack, shoulder bag, etc.). Clicking a tab switches the grid view to that container's grid. Each tab has its own `TetrisGridState` and `StorageComponent`.
 
-**Decided**: Backpacks/bags add grid space but share the character's weight limit. Total carry weight = personal inventory contents + backpack item weight + backpack contents weight. The backpack's own `StorageComponent` defines its grid dimensions (extra grid space), but weight rolls up to the character's `CarryCapacity`. The value of a backpack is extra grid cells — it lets you carry more items that you couldn't fit in pockets alone.
+**Decided, y CORREGIDO al implementarlo**: una bolsa aporta celdas **y** conserva su propio techo de peso. La condicion es **paralela**: lo que entra tiene que caber por peso en la bolsa Y en quien la lleva. La nota original decia que el peso "subia" al personaje y que el `StorageComponent` de la bolsa solo definia dimensiones; se descarto porque dejaba `MaxWeight` sin uso y hacia inexpresable una mochila grande pero endeble.
+
+La cadena la resuelve `InventoryObject`: `OwnFreeWeight(source)` conoce el techo propio y la UNICA regla sobre el origen —un techo no aplica a algo que ya esta debajo de el, asi que mover del bolsillo a la mochila o de la mochila al jugador no cambia lo que el jugador carga—, `FreeWeight(source)` es el unico recorrido hacia arriba, y `FitByWeight` y `CarrierBlocks` se **derivan** de ella en vez de recorrer por su cuenta. `CarryCapacity.FitByWeight` desaparecio: `CarryCapacity` se queda con las reglas puras (`GetMaxLoad`, `ClassifyLoad`) y no recorre inventarios.
+
+Peso total del personaje = su inventario + la mochila + lo que lleve dentro, por recursion del arbol. Un contenedor **no se cuenta a si mismo**: su barra mide lo que le has metido, y su propio peso lo suma quien lo lleva.
 
 **Refactor [x] HECHO — `InventoryService`**: existe y es el coreografo. El arbol se quedo con lo estructural (añadir/quitar hijos, recorrer, limpiar) y el servicio compone los flujos: `RunTransfer` como transaccion unica con rollback, `PlaceFromHand`, `EvaluatePlacement`/`EvaluateEquip`, `TryEquipItem`/`TryUnequipItem`, `SplitNode`, `SwapFromHand`, `GetAvailableActions`.
 
@@ -302,7 +363,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 
 **Refactor [x] CUMPLIDO con otra estructura — `EquipmentService`**: no existe esa clase, y no va a existir. La composicion entre `EquipmentSystem` e `InventorySystem` la hace `InventoryService` (`TryEquipItem`, `TryUnequipItem`), y ninguno de los dos sistemas conoce al otro, que era el objetivo. Sacarlo a un servicio propio partiria en dos algo que comparte una sola maquinaria —`RunTransfer` y su rollback— para que equipar y desequipar sean transferencias como las demas en vez de un camino aparte. Si algun dia se separa, sera por tamaño de `InventoryService`, no por diseño.
 
-**Lo que si queda**: el **drop-to-ground al desequipar cuando no cabe**. Hoy `TryUnequipItem` devuelve la prenda al equipo si el inventario la rechaza (rollback), que es correcto pero no es la regla que se queria: la decision tomada era "cancelar o tirar al suelo". Espera a que el suelo exista (M6 T2).
+**Decidido al jugarlo**: desequipar sin sitio **deja la prenda puesta**. `TryUnequipItem` ya lo hace por su rollback, asi que no queda nada pendiente aqui. Se descarta el drop-to-ground que se habia planteado: quitarte algo y que acabe en el suelo sin haberlo pedido convierte un gesto de gestion en una perdida, y el jugador ya tiene "Tirar" para eso. De paso esto suelta la unica atadura que este refactor tenia con M6 T2.
 
 ---
 
@@ -315,7 +376,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 - [ ] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?)
 - [ ] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells
 - [ ] 3. Edge cases: item removed from middle of grid → gap handling
-- [ ] 3b. Nested containers don't occupy grid cells. `InventoryObject.AddContainer` adds the child to `_inventory` but never calls `_grid.Place`, so a chest inside a backpack takes up no space and isn't rendered by `RenderGridItems` (which iterates `TetrisGridState.GetElements()`). Decide whether containers should occupy cells like any other item — they have `DimensionW/H` in `BaseItemComponent` already — and if so route `AddContainer` through the grid. Until then `InventoryObject.Clone()` copies them by list only, outside the grid.
+- [x] 3b. Nested containers don't occupy grid cells. `InventoryObject.AddContainer` adds the child to `_inventory` but never calls `_grid.Place`, so a chest inside a backpack takes up no space and isn't rendered by `RenderGridItems` (which iterates `TetrisGridState.GetElements()`). Decide whether containers should occupy cells like any other item — they have `DimensionW/H` in `BaseItemComponent` already — and if so route `AddContainer` through the grid. Until then `InventoryObject.Clone()` copies them by list only, outside the grid.
 - [ ] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
 - [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
 - [ ] 6. Performance: stress test with large grids (cart/chest with many items)

@@ -119,20 +119,49 @@ namespace Core.ECS.Component.Equipment
             return removed;
         }
 
+        /// <summary>
+        /// Reemplaza el contenido del slot.
+        /// </summary>
+        /// <remarks>
+        /// Recalcula <c>_isTopLocked</c> a partir de lo que entra, porque ese flag es una
+        /// consecuencia de lo que hay puesto y no un estado independiente. Sin esto, un slot
+        /// rellenado por aqui —que es como lo hace <c>EquipmentComponent.Clone</c>, y el jugador
+        /// en partida es un clon del prototipo— se quedaba con el flag en false llevando una
+        /// prenda exterior: <c>EquipItem</c> tomaba entonces la rama de anadir al final, asi que
+        /// cualquier prenda equipada despues se colocaba POR ENCIMA de la coraza en vez de
+        /// debajo, y el slot la pintaba a ella.
+        /// </remarks>
         public void SetItems(List<ItemEntity> items)
         {
             AC.CheckNotNull(items, nameof(items));
-            if (items.Count <= _maxLayers)
+            if (items.Count > _maxLayers) return;
+
+            _equippedItems = items;
+            _isTopLocked = HasTopLayerGarment();
+        }
+
+        /// <summary>
+        /// Si alguna de las prendas puestas es de capa exterior.
+        ///
+        /// Se mira en todas y no solo en la ultima porque SetItems no garantiza orden: quien
+        /// rellena el slot puede darlas en cualquiera. En el uso normal la exterior es la
+        /// ultima, y entonces las dos formas de preguntarlo coinciden.
+        /// </summary>
+        private bool HasTopLayerGarment()
+        {
+            foreach (ItemEntity item in _equippedItems)
             {
-                _equippedItems = items;
+                WearableComponent wearable = item.GetComponent<WearableComponent>();
+                if (wearable != null && wearable.IsTopLayer) return true;
             }
+
+            return false;
         }
         
         public List<ItemEntity> Items => _equippedItems;
         
         public ItemEntity GetTopItem()
         {
-            CoreLogger.Instance.Log(_equippedItems.Count.ToString());
             return _equippedItems.Count == 0 ? null : _equippedItems[_equippedItems.Count - 1];
         }
 

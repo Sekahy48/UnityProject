@@ -25,7 +25,6 @@ namespace Core.ECS.Systems
                 return EquipResult.NotWearable;
 
             EquipResult result = equipmentComponent.EquipItem(slots, item, wearableComponent.FullOcupancy);
-            CoreLogger.Instance.Log(result.GetMessage());
 
             if (result == EquipResult.SuccessEquip && announce) EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, entity, equipmentComponent));
 
