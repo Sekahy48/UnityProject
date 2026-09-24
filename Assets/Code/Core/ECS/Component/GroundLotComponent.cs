@@ -16,6 +16,13 @@ namespace Core.ECS.Component
     /// Una tirada produce un monton, aunque suelte varias variantes a la vez: el jugador
     /// hizo un gesto y espera ver un objeto en el suelo, no cinco apilados en el mismo
     /// punto.
+    ///
+    /// <para><b>Invariante: un monton es de un solo tipo de item.</b> Sus lotes son variantes
+    /// de ese tipo (estados distintos de la misma manzana), o un unico lote con un
+    /// contenedor entero. Hoy lo garantiza el unico camino que crea montones: tirar desde el
+    /// inventario siempre sale de UN nodo. Si algun dia aparece un camino que suelte varios
+    /// tipos a la vez, tiene que crear un monton por tipo, no mezclarlos: el aspecto del
+    /// monton sale de <see cref="Representative"/> y con tipos mezclados mentiria.</para>
     /// </summary>
     public class GroundLotComponent : BasicComponent
     {
@@ -72,6 +79,37 @@ namespace Core.ECS.Component
         {
             if (lots == null) return;
             foreach (SubLot lot in lots) _lots.Add(lot);
+        }
+
+        /// <summary>
+        /// Quita unidades del lote de esa variante. Un lote que se queda a cero desaparece.
+        ///
+        /// Se identifica el lote por su variante y no por su posicion en la lista porque
+        /// quitar un lote desplaza a los de detras: quien recorre el monton mientras recoge
+        /// perderia la cuenta. Es la misma forma de nombrar una parte que usa el inventario
+        /// (<c>Extract(variant, amount)</c>).
+        /// </summary>
+        /// <returns>Unidades quitadas de verdad: nunca mas de las que habia.</returns>
+        public int RemoveUnits(ItemEntity variant, int units)
+        {
+            if (variant == null || units <= 0) return 0;
+
+            for (int i = 0; i < _lots.Count; i++)
+            {
+                SubLot lot = _lots[i];
+                if (!ReferenceEquals(lot.Item, variant)) continue;
+
+                int removed = units < lot.Amount ? units : lot.Amount;
+                int left = lot.Amount - removed;
+
+                // SubLot es inmutable: la entrada se sustituye, no se modifica.
+                if (left > 0) _lots[i] = new SubLot(lot.Item, left);
+                else _lots.RemoveAt(i);
+
+                return removed;
+            }
+
+            return 0;
         }
 
         /// <summary>

@@ -33,6 +33,24 @@ namespace Unity
         }
 
         /// <summary>
+        /// <c>Object.Destroy</c> y no <c>DestroyImmediate</c>: el objeto sigue vivo hasta el
+        /// final del fotograma, que es lo que Unity espera en ejecucion, y a Core le da igual
+        /// porque desde aqui la entidad ya no tiene el componente que apunta a el.
+        /// </summary>
+        public void Unlink(IEntity entity)
+        {
+            if (entity == null) return;
+
+            UnityEntityComponent bridge = entity.GetComponent<UnityEntityComponent>();
+            if (bridge == null) return;
+
+            entity.RemoveComponent(typeof(UnityEntityComponent));
+
+            GameObject go = bridge.GetGameObject();
+            if (go != null) UnityEngine.Object.Destroy(go);
+        }
+
+        /// <summary>
         /// Da con el GameObject que representa a la entidad.
         ///
         /// Hay dos casos y son distintos de verdad, no una falta de generalidad. El jugador

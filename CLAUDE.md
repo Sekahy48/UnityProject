@@ -113,6 +113,11 @@ usa; está apuntado como limpieza pendiente.
 nada que modifique el repositorio; si hace falta un mensaje de commit, escríbelo para que lo
 copie.
 
+**Sergio compila; tú no puedes.** No hay Unity en el entorno de trabajo, así que ningún
+cambio está compilado ni probado cuando lo entregas. No lo intentes ni lo simules: al
+terminar, di explícitamente qué no has podido verificar (tipos que asumes, firmas que no
+has abierto, avisos esperables) para que él sepa dónde mirar cuando compile.
+
 **Diseñar antes que escribir.** Cuando una tarea tenga decisiones dentro, plantéalas y espera
 respuesta en vez de elegir por tu cuenta. Empújalo a pensar en lugar de darle la solución
 hecha. Si una decisión te parece equivocada, dilo: sinceridad sin dorar y sin castigar.

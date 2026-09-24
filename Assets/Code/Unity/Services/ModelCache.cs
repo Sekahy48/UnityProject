@@ -88,6 +88,19 @@ namespace Unity.Services
                 return null;
             }
 
+            // La misma pregunta que antes de instanciar, repetida despues del segundo await.
+            // Un padre puede morir durante cualquiera de las dos esperas, y comprobar solo
+            // la primera dejaba el caso en que el .glb ya estaba en cache —la espera larga
+            // es la segunda—: el modelo acababa suelto en la raiz de la escena, sin entidad
+            // que lo destruya nunca. Lo que ya se ha instanciado se destruye aqui porque
+            // quien lo pidio no va a recibirlo.
+            if (expectsParent && parent == null)
+            {
+                Debug.Log($"ModelCache: se descarta {relativePath}, quien lo pidio murio mientras se instanciaba");
+                UnityEngine.Object.Destroy(instantiator.SceneTransform.gameObject);
+                return null;
+            }
+
             GameObject root = instantiator.SceneTransform.gameObject;
 
             // El nombre que trae el .glb suele ser el que quedo en Blender y no dice nada

@@ -30,6 +30,7 @@ public class GameMain : MonoBehaviour
 
     // If the number of services grows, make a service locator ( with dictionaries )
     private InventoryService _inventoryService;
+    private WorldInteractionService _worldInteractionService;
 
 
     void Awake()
@@ -178,6 +179,7 @@ public class GameMain : MonoBehaviour
     private void BuildServices()
     {
         _inventoryService = new InventoryService(_gameContext.Interaction, _gameContext.System);
+        _worldInteractionService = new WorldInteractionService(_gameContext.System);
     }
 
    private void BuildViewsAndPresenters()

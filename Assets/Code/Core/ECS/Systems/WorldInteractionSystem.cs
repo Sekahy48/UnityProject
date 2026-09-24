@@ -93,6 +93,50 @@ namespace Core.ECS.Systems
             _linker.Link(pile, EntityType.GroundLot);
         }
 
+        /// <summary>
+        /// Quita unidades de una variante de un monton y, si el monton se queda vacio, lo
+        /// saca del mundo.
+        ///
+        /// Es la unica puerta para vaciar montones, y por eso <see cref="Despawn"/> sigue
+        /// siendo privado: quien recoge solo dice cuanto se llevo, y decidir que un monton
+        /// vacio desaparece es de quien lo creo. Si el vaciado y la destruccion fueran dos
+        /// llamadas separadas, algun dia alguien haria la primera sin la segunda y quedaria
+        /// un monton invisible de cero unidades al que se puede apuntar.
+        /// </summary>
+        /// <returns>Unidades quitadas de verdad.</returns>
+        public int TakeFromLot(IEntity pile, ItemEntity variant, int units)
+        {
+            GroundLotComponent lot = pile?.GetComponent<GroundLotComponent>();
+            if (lot == null) return 0;
+
+            int removed = lot.RemoveUnits(variant, units);
+
+            if (lot.IsEmpty) Despawn(pile);
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Saca una entidad del mundo: de la escena y de Core.
+        ///
+        /// Es el reverso de <see cref="OnItemsDropped"/> y vive en el mismo sistema por la
+        /// misma razon: quien llama a <c>Link</c> es quien llama a <c>Unlink</c>. Se descarto
+        /// que <see cref="EntityManager.RemoveEntity"/> desenlazara por su cuenta porque la
+        /// creacion no es simetrica —entre crear y enlazar hay que colocar—, y hacer
+        /// automatico solo un lado dejaria dos reglas distintas para lo mismo. El precio es
+        /// que otro sistema que destruya entidades tiene que acordarse; si aparece un
+        /// segundo, esto se sube a <c>EntityManager</c>.
+        ///
+        /// <para>Hoy solo lo llama <see cref="TakeFromLot"/>, al vaciarse un monton.</para>
+        /// </summary>
+        private void Despawn(IEntity entity)
+        {
+            if (entity == null) return;
+
+            _linker.Unlink(entity);
+            _entityManager.RemoveEntity(entity.GetIdAsInt());
+        }
+
         #region Busqueda de objetivo
 
         /// <summary>Hasta donde llega el jugador, medido hasta la superficie del volumen.</summary>
@@ -144,6 +188,37 @@ namespace Core.ECS.Systems
         }
 
         /// <summary>
+        /// Si el actor alcanza AHORA MISMO a un objetivo que ya conoce.
+        ///
+        /// <para>Existe por paridad. <see cref="FindTarget"/> decide a que apuntas en un
+        /// fotograma, y la accion se ejecuta despues —al soltar la tecla, al elegir en el
+        /// menu—, cuando el jugador puede haberse movido. La ejecucion tiene que volver a
+        /// preguntar lo mismo, y <c>FindTarget</c> no sirve para eso porque busca en vez de
+        /// comprobar. Las dos comparten <see cref="IsWithinReach"/> y el mismo filtro, asi
+        /// que no pueden discrepar sobre que esta a mano.</para>
+        ///
+        /// <para>Una entidad que ya no esta en el mundo no se alcanza: el objetivo guardado
+        /// puede haberse recogido entre medias.</para>
+        ///
+        /// <para>Que el menu se cierre solo al alejarte es cosa de la interfaz y no sustituye
+        /// esto: el alejamiento y la pulsacion pueden caer en el mismo fotograma, en
+        /// cualquier orden.</para>
+        /// </summary>
+        public bool CanReach(IEntity actor, IEntity target)
+        {
+            if (actor == null || target == null || ReferenceEquals(actor, target)) return false;
+            if (!ReferenceEquals(_entityManager.GetEntity(target.GetIdAsInt()), target)) return false;
+
+            PositionComponent actorPos = actor.GetComponent<PositionComponent>();
+            if (actorPos == null) return false;
+
+            (float fx, float fy, float fz) = actorPos.Forward();
+            if (!IsWithinReach(target, actorPos, fx, fy, fz, out _)) return false;
+
+            return _reachFilter == null || _reachFilter.CanReach(actor, target);
+        }
+
+        /// <summary>
         /// Recoge lo que esta dentro del alcance y dentro del cono de mirada.
         /// </summary>
         private void CollectCandidates(IEntity actor, PositionComponent actorPos)
@@ -157,18 +232,32 @@ namespace Core.ECS.Systems
             foreach (IEntity other in reachable)
             {
                 if (ReferenceEquals(other, actor)) continue;
-
-                PositionComponent otherPos = other.GetComponent<PositionComponent>();
-                if (otherPos == null) continue;
-
-                float distance = other.GetComponent<InteractionVolumeComponent>()
-                                      .DistanceFrom(otherPos, actorPos.X, actorPos.Y, actorPos.Z);
-
-                if (distance > REACH) continue;
-                if (!IsInViewCone(actorPos, otherPos, fx, fy, fz)) continue;
+                if (!IsWithinReach(other, actorPos, fx, fy, fz, out float distance)) continue;
 
                 _candidates.Add(new Candidate { Entity = other, Distance = distance });
             }
+        }
+
+        /// <summary>
+        /// La parte geometrica del alcance: distancia a la superficie del volumen y cono de
+        /// mirada. Lo comparten <see cref="FindTarget"/> y <see cref="CanReach"/>; el filtro
+        /// externo queda fuera porque <c>FindTarget</c> lo aplica despues de ordenar.
+        /// </summary>
+        /// <param name="fx">Direccion de la mirada del actor, ya calculada: quien recorre
+        /// muchos candidatos no deberia sacarla del cuaternion una vez por candidato.</param>
+        private static bool IsWithinReach(IEntity target, PositionComponent actorPos,
+                                          float fx, float fy, float fz, out float distance)
+        {
+            distance = float.MaxValue;
+
+            PositionComponent targetPos = target.GetComponent<PositionComponent>();
+            InteractionVolumeComponent volume = target.GetComponent<InteractionVolumeComponent>();
+            if (targetPos == null || volume == null) return false;
+
+            distance = volume.DistanceFrom(targetPos, actorPos.X, actorPos.Y, actorPos.Z);
+
+            if (distance > REACH) return false;
+            return IsInViewCone(actorPos, targetPos, fx, fy, fz);
         }
 
         /// <summary>

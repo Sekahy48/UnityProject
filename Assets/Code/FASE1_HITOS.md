@@ -18,17 +18,16 @@ piezas, y la segunda arrastra un agujero de arquitectura:
    `IInventoryInputSource`, solo en FPS y TPS —el RTS se queda sin interaccion—. Algo por
    fotograma pregunta `FindTarget` y guarda el objetivo. Pulsacion corta = accion por
    defecto; mantener = menu radial.
-2. **Ejecutar `WorldAction.PickUp`**, moviendo los lotes al inventario con lo que ya sabe
+2. ~~**Ejecutar `WorldAction.PickUp`**~~ **HECHO** en `WorldInteractionService.PickUp`
+   (decisiones en la seccion de M6). Texto original: moviendo los lotes al inventario con lo que ya sabe
    hacer `InventorySystem`. Decidido: si no cabe todo se mueve lo que quepa y se avisa
    ("peso completo" / "demasiado volumen"); si no cabe nada, **la accion se ofrece igual** y
    mueve cero con su aviso, porque una E que no aparece no le explica al jugador por que.
    Decidido tambien que la composicion la haga **un servicio nuevo**, no el sistema tirando
    del `SystemManager`: mismo camino que con el equipo.
-3. **`Unlink`, que no existe.** Cuando un monton se vacia hay que destruirlo:
-   `EntityManager.RemoveEntity` lo quita de Core y su GameObject se queda en la escena para
-   siempre. Tenemos `Link` y no tenemos lo contrario, porque hasta ahora **nunca se habia
-   destruido una entidad enlazada**. Cualquier cosa que muera en el mundo lo va a necesitar,
-   asi que es lo primero.
+3. ~~**`Unlink`, que no existe.**~~ **HECHO**: `IEntityLinker.Unlink` y
+   `WorldInteractionSystem.Despawn`, sin llamadas aun; la primera sera un monton que se
+   vacia al recogerlo. Decisiones en la seccion de M6.
 
 **Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
 por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
@@ -460,6 +459,84 @@ interaccion. Falta decidir si dos tiradas seguidas se funden en el mismo monton 
 es inocuo hoy, pero si aparecen mas consultas por fotograma toca darle a `EntityManager` una
 variante que escriba en una lista prestada.
 
+**Hecho `Unlink` (M6 T2, pieza 1 de 3).** Hasta ahora ninguna entidad enlazada se habia
+destruido nunca, y `EntityManager.RemoveEntity` solo la sacaba del diccionario: su GameObject
+se quedaba en la escena para siempre. Decisiones:
+
+- **Quien enlaza, desenlaza.** `IEntityLinker.Unlink(entity)` lo llama el mismo sistema que
+  llamo a `Link`, a traves de `WorldInteractionSystem.Despawn` (unlink + remove). Se descarto
+  que `RemoveEntity` desenlazara solo: la creacion no puede ser automatica —entre crear y
+  enlazar hay que colocar—, y automatizar solo la destruccion dejaria dos reglas para lo
+  mismo. Precio asumido: otro sistema que destruya tiene que acordarse. **Si aparece un
+  segundo sistema que destruye entidades, se sube a `EntityManager`.**
+- **`Object.Destroy`, sin pool.** Un pool sin medicion es optimizar a ciegas.
+- **Destruye siempre**, sin distinguir lo que `Link` encontro en la escena (el jugador) de lo
+  que creo. La muerte del jugador se diseña cuando toque; `Unlink` no esta pensado para el.
+- **Quita el `UnityEntityComponent`.** Su presencia es el hecho "tiene cuerpo en el motor";
+  si sobreviviera al objeto, quien aun guarde la entidad (un objetivo cacheado, un panel
+  abierto) creeria poder tocar algo destruido.
+- **Sin evento `EntityRemoved`**: hoy no lo escucharia nadie. Candidato cuando un panel
+  abierto (T5, contenedores del suelo) necesite enterarse.
+- **Carrera del modelo cerrada en `ModelCache.Instantiate`.** Comprobaba si el padre habia
+  muerto tras el primer `await` (cargar el `.glb`) pero no tras el segundo (instanciar). Con
+  el `.glb` ya en cache la espera larga es la segunda, que es justo recoger algo recien
+  tirado: el modelo quedaba suelto en la raiz de la escena, sin entidad que lo destruyera, o
+  `MeasureInteractionVolume` tocaba un transform destruido. Se completo la misma comprobacion
+  alli, y no en `AttachModel`, para que la regla viva entera en un sitio y cubra a cualquier
+  llamador futuro. No verificado: si glTFast cruza fotogramas en esa espera depende de su
+  *defer agent*; si no los cruza, el caso no se da, y la guarda no cuesta nada.
+
+**Hecho `PickUp` (M6 T2, pieza 2 de 3): `WorldInteractionService`.** Sin llamadas todavia
+—las hara la fuente de input—, construido en `GameMain`. Decisiones:
+
+- **Servicio nuevo, no fundido con `InventoryService`.** Aquel gira alrededor de la mano y
+  de `RunTransfer`; aqui no hay ni mano ni rollback. Saca los dos sistemas del
+  `SystemManager`, como ya hacia `InventoryService.DropItems`.
+- **Paridad con el alcance: `WorldInteractionSystem.CanReach(actor, target)`.** `FindTarget`
+  decide en un fotograma y la accion se ejecuta despues (soltar la tecla, elegir en el
+  menu), con el jugador quiza movido. `FindTarget` busca y no sirve para comprobar un
+  objetivo conocido, asi que se extrajo la parte geometrica (`IsWithinReach`: distancia y
+  cono) y la comparten las dos, con el mismo filtro. `CanReach` ademas da por inalcanzable
+  una entidad que ya no esta en `EntityManager`. `PickUp` empieza con `CanReach` y con
+  `GetAvailableActions`. **Que el menu radial se cierre solo al alejarte es de la interfaz
+  (pieza 3) y no sustituye esto**: alejarse y pulsar pueden caer en el mismo fotograma.
+- **Destino: el inventario raiz del actor**, sin entrar en contenedores equipados, igual que
+  la transferencia rapida. Meter en la mochila es abrirla y colocar. Si algun dia existe
+  "colocar automaticamente en el mejor sitio", sera del inventario y lo usaran las dos.
+- **El motivo se deduce, no se pide.** `TryStackOntoHere` devuelve un solo sobrante. El
+  servicio pregunta antes la misma `FitByWeight` que usa por dentro: si se coloco menos de
+  lo que el peso permitia, freno la rejilla; si no, el peso. No se cambio su firma: tiene
+  mas llamadas, y el motivo del rechazo se dejo fuera del inventario a proposito
+  (`TransferResult`, arriba).
+- **Un motivo por gesto, y gana el peso.** El peso lleno bloquea todo lo que viene detras; la
+  rejilla solo tipo a tipo.
+- **Un unico punto publica el aviso** (`Announce`): `InventoryFull` para volumen y el nuevo
+  `WeightLimitReached` para peso, nunca los dos. Por eso `EvaluateAndFireEvents` se llama
+  con `fullGrid: false`: si no, saldria "sin espacio" cuando el motivo resuelto es el peso.
+  **Hoy nadie los escucha**; el aviso es un log hasta que haya HUD.
+- **Una ronda de eventos por gesto**: cada lote con `announce: false` y un solo
+  `EvaluateAndFireEvents` al final, como ya hacen `PlaceAmountFromHand` y `SplitNode`.
+- **Vaciar y destruir son una sola llamada**: `WorldInteractionSystem.TakeFromLot` resta y,
+  si el monton queda vacio, hace `Despawn`, que sigue privado. El servicio nunca destruye.
+  `GroundLotComponent.RemoveUnits` identifica el lote por su variante y no por indice,
+  porque quitar un lote desplaza a los de detras.
+- **Invariante escrita: un monton es de un solo tipo.** Sus lotes son variantes del tipo, o
+  un unico contenedor entero. Hoy la garantiza que tirar sale siempre de un nodo; un camino
+  futuro que suelte varios tipos debe crear un monton por tipo. Residuo aceptado: si las
+  variantes tienen distinta etapa de modelo, el monton se ve con la del primer lote.
+
+**Pendiente: el filtro de pared no existe.** `IReachFilter` esta definido y
+`WorldInteractionSystem` lo acepta, pero no hay ninguna implementacion y `GameMain` no le
+pasa ninguno: hoy se alcanza y se recoge a traves de paredes. La implementacion prevista es
+`LineOfSightFilter` en la capa de Unity (un rayo del actor al objetivo). Como `FindTarget` y
+`CanReach` ya lo consultan, enchufarlo no toca Core.
+
+**Recoger va al inventario, no a las manos, por ahora.** El enunciado de T2 dice que lo
+recogido va a la reserva de las manos y que lo voluminoso no entra en el inventario
+personal. Para cerrar T2 se recoge directamente al inventario del actor con lo que ya sabe
+`InventorySystem`; las manos como reserva de carga quedan para cuando se diseñen (capacidad,
+herramienta equipada, slot propio). Es aplazamiento consciente, no olvido.
+
 **Decidido al jugarlo**: desequipar sin sitio **deja la prenda puesta**. `TryUnequipItem` ya lo hace por su rollback, asi que no queda nada pendiente aqui. Se descarta el drop-to-ground que se habia planteado: quitarte algo y que acabe en el suelo sin haberlo pedido convierte un gesto de gestion en una perdida, y el jugador ya tiene "Tirar" para eso. De paso esto suelta la unica atadura que este refactor tenia con M6 T2.
 
 ---
@@ -477,6 +554,13 @@ variante que escriba en una lista prestada.
 - [ ] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
 - [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
 - [ ] 6. Performance: stress test with large grids (cart/chest with many items)
+- [ ] 7. **HUD de avisos del mundo.** Hoy no existe ningun canal para mensajes en pantalla
+  fuera del inventario. `WorldInteractionService.Announce` ya publica un unico evento por
+  gesto —`InventoryFull` (demasiado volumen) o `WeightLimitReached` (peso completo), con la
+  prioridad ya resuelta: gana el peso— y de momento solo lo escribe en el log. Falta un HUD
+  que escuche esos eventos, **filtrando por actor** (un NPC que recoja no debe avisarte), y
+  pinte un mensaje breve. Va aqui y no en M6 porque es pulido de un flujo que ya funciona:
+  el jugador puede recoger sin el; lo que pierde es saber por que algo se quedo en el suelo.
 
 **Note**: The old "organization bonus" concept is no longer needed — with grid-as-capacity, good organization is its own reward (more items fit). If a bonus mechanic is desired later, it can be added as a Phase 2+ feature.
 
