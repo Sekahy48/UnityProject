@@ -525,6 +525,21 @@ se quedaba en la escena para siempre. Decisiones:
   futuro que suelte varios tipos debe crear un monton por tipo. Residuo aceptado: si las
   variantes tienen distinta etapa de modelo, el monton se ve con la del primer lote.
 
+**Corregido de paso: un contenedor lleno entraba por su peso vacio.** `GetTotalWeight`
+contaba bien una mochila guardada (su peso + su contenido), pero `FitByWeight`,
+`InventoryService.CarrierBlocks` y `SubLot.TotalWeight` leian solo `BaseItemComponent.Weight`:
+una mochila con 10 kg dentro entraba en 3 kg libres y despues pesaba 11. Afectaba a
+arrastrar, al fantasma, al aviso de la barra y a recoger. Ahora las cuatro preguntan a
+`ItemWeight.Of(item)` (`Core/Inventory/`), que suma el contenido si el item es un contenedor
+—decidido con el mismo `ContainerOf`, que paso de privado a interno—. **No va en
+`CarryCapacity`**: aquella dice cuanto puede llevar un portador y esta cuanto pesa lo que se
+lleva; distinto dueño, y juntarlas cerraba un ciclo (`InventoryObject` ya consulta
+`CarryCapacity`). **No va en `Core/Item`** junto a `ItemMagnitudes` porque lo que añade es
+conocimiento del Composite. **La tira de inspeccion muestra los dos**: "peso unitario" es
+el `Weight` aislado (la mochila vacia) y "peso total" es `ItemWeight.Of(item, unidades)`
+(mochila + contenido). `ItemDisplayData.Weight` paso a `UnitWeight` + `TotalWeight`, y el
+total se calcula en Core: la vista hacia `Weight * Amount` por su cuenta.
+
 **Pendiente: el filtro de pared no existe.** `IReachFilter` esta definido y
 `WorldInteractionSystem` lo acepta, pero no hay ninguna implementacion y `GameMain` no le
 pasa ninguno: hoy se alcanza y se recoge a traves de paredes. La implementacion prevista es

@@ -26,7 +26,19 @@ namespace Core.MVC.View.UI.Inventory
         public int Amount;
         public string IconPath;
         public string Description;
-        public float Weight;
+        /// <summary>Peso de una unidad aislada: el <c>BaseItemComponent.Weight</c>. En un
+        /// contenedor, la mochila vacia.</summary>
+        public float UnitWeight;
+
+        /// <summary>
+        /// Lo que pesan todas las unidades juntas, contenido incluido si es un contenedor.
+        ///
+        /// Se calcula en Core con <c>ItemWeight</c> y no en la vista multiplicando: la vista
+        /// hacia <c>Weight * Amount</c> y una mochila llena salia con el peso de vacia. Es la
+        /// misma cifra con la que el inventario decide si algo cabe, asi que la tira no puede
+        /// decir una cosa y el fantasma otra.
+        /// </summary>
+        public float TotalWeight;
         public float Durability;
         public int DimensionW;
         public int DimensionH;

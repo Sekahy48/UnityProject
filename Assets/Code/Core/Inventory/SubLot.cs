@@ -29,8 +29,7 @@ namespace Core.Inventory
         }
 
         /// <summary>Peso de las unidades de este lote.</summary>
-        public float TotalWeight =>
-            Item == null ? 0f : Item.GetComponent<BaseItemComponent>().Weight * Amount;
+        public float TotalWeight => ItemWeight.Of(Item, Amount);
 
         /// <summary>
         /// Permite seguir escribiendo <c>foreach ((ItemEntity variante, int unidades) in lotes)</c>,

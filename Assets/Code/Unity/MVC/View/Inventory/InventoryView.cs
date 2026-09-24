@@ -951,7 +951,7 @@ namespace MVC.View.Inventory
             Label rowLabel = new Label(item.TypeName);
             rowLabel.AddToClassList("alegreyaSansSC");
             rowLabel.AddToClassList("catalog-row-label");
-            Label tooltipLabel = new Label(item.TypeName + "\n\n" + item.Description + "\n\n" + "Peso: " + item.Weight);
+            Label tooltipLabel = new Label(item.TypeName + "\n\n" + item.Description + "\n\n" + "Peso: " + item.UnitWeight);
             tooltipLabel.AddToClassList("alegreyaSansSC");
             tooltipLabel.AddToClassList("beigeColor");
             tooltipLabel.AddToClassList("tooltip-text");
@@ -994,8 +994,8 @@ namespace MVC.View.Inventory
             {
                 _inspectName.text = item.Name;
                 _inspectDescription.text = item.Description;
-                _inspectWeightTotal.text = $"Peso total: {item.Weight*item.Amount:F1} kg";
-                _inspectWeightUnit.text = $"Peso unitario: {item.Weight:F1} kg";
+                _inspectWeightTotal.text = $"Peso total: {item.TotalWeight:F1} kg";
+                _inspectWeightUnit.text = $"Peso unitario: {item.UnitWeight:F1} kg";
                 if (!item.Sublots)
                 {
                     _inspectDurability.text = $"Durabilidad: {item.Durability}";   

@@ -472,7 +472,7 @@ namespace Core.Services
         {
             if (destiny == null || item == null) return false;
 
-            float attempted = item.GetComponent<BaseItemComponent>().Weight * units;
+            float attempted = ItemWeight.Of(item, units);
 
             return destiny.GetComponent<InventoryComponent>().Inventory
                           .CarrierBlocks(attempted, GrabbedSourceInventory());

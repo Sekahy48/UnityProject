@@ -189,8 +189,11 @@ namespace Core.Inventory
         /// Un item con inventario se guarda en una rejilla como la RAMA que ya es, no envuelto
         /// en una hoja nueva: envolverlo dejaba su contenido fuera del arbol, y lo que no cuelga
         /// del arbol no pesa — una mochila pesaba distinto puesta que guardada.
+        ///
+        /// <para>Interno y no privado porque <see cref="ItemWeight"/> hace la misma pregunta:
+        /// que un item "es un contenedor" tiene que decidirse en un solo sitio.</para>
         /// </summary>
-        private static InventoryObject ContainerOf(ItemEntity item)
+        internal static InventoryObject ContainerOf(ItemEntity item)
             => item.GetComponent<InventoryComponent>()?.Inventory;
 
         /// <summary>
@@ -278,7 +281,8 @@ namespace Core.Inventory
         /// </summary>
         public int FitByWeight(ItemEntity item, int amount, InventoryObject source = null)
         {
-            float unit = item.GetComponent<BaseItemComponent>().Weight;
+            // Con su contenido: una mochila llena no entra por lo que pesa vacia.
+            float unit = ItemWeight.Of(item);
             if (unit <= 0) return amount;   // sin peso no hay limite que aplicar
 
             float free = FreeWeight(source);
@@ -799,10 +803,11 @@ namespace Core.Inventory
 
             foreach (IInventoryElement elem in _inventory)
             { 
-                total += elem.GetTotalWeight();
-
-                if (elem is InventoryObject container && container.GetItemEntity() != null)
-                    total += container.GetItemEntity().GetComponent<BaseItemComponent>().Weight;
+                // Un contenedor hijo pesa lo que ItemWeight dice de el —su peso y su
+                // contenido—, que es la misma cifra con la que se le dejo entrar.
+                total += elem is InventoryObject container && container.GetItemEntity() != null
+                    ? ItemWeight.Of(container.GetItemEntity())
+                    : elem.GetTotalWeight();
             }
 
             return total;
