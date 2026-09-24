@@ -25,6 +25,22 @@ namespace Core.ECS.Component.Interaction
         public abstract float DistanceFrom(float x, float y, float z);
 
         /// <summary>
+        /// Punto mas alto del volumen sobre su eje, en coordenadas locales de la entidad.
+        ///
+        /// <para>Es donde se ancla lo que se pinta encima de la entidad —la E de interactuar—.
+        /// Se pide al volumen y no se mide aparte del modelo porque el volumen ya ES la medida
+        /// del modelo (el linker lo ajusta a sus envolventes); una segunda altura podria
+        /// discrepar de la primera.</para>
+        /// </summary>
+        public abstract (float x, float y, float z) TopPoint();
+
+        /// <summary>
+        /// Centro del volumen, en coordenadas locales. Es a donde se apunta: el origen de la
+        /// entidad esta en su base, y apuntar al centro de un arcon es apuntar al arcon.
+        /// </summary>
+        public abstract (float x, float y, float z) CenterPoint();
+
+        /// <summary>
         /// Copia el volumen. Los componentes se clonan por entidad y un volumen es inmutable
         /// una vez creado, asi que las implementaciones pueden devolverse a si mismas.
         /// </summary>

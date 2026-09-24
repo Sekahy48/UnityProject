@@ -125,6 +125,26 @@ namespace Core.ECS.Component
             );
         }
 
+        /// <summary>
+        /// Inversa de <see cref="WorldToLocal"/>: un punto dado respecto a la entidad, llevado
+        /// al mundo. Se rota por el cuaternion tal cual (no por su conjugado) y despues se
+        /// traslada, justo al reves que la ida.
+        /// </summary>
+        public (float x, float y, float z) LocalToWorld(float x, float y, float z)
+        {
+            float qx = _rotX, qy = _rotY, qz = _rotZ, qw = _rotW;
+
+            float tx = 2f * (qy * z - qz * y);
+            float ty = 2f * (qz * x - qx * z);
+            float tz = 2f * (qx * y - qy * x);
+
+            return (
+                _posX + x + qw * tx + (qy * tz - qz * ty),
+                _posY + y + qw * ty + (qz * tx - qx * tz),
+                _posZ + z + qw * tz + (qx * ty - qy * tx)
+            );
+        }
+
         // ---- Dirty tracking for TransformSyncSystem ----
 
         public bool IsDirty => _dirty;

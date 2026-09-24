@@ -50,15 +50,62 @@ namespace Core.Services
             Weight
         }
 
+        #region Consultas para la interfaz
+
+        /// <summary>Que tiene delante el actor. Ver <see cref="WorldInteractionSystem.FindTarget"/>.</summary>
+        public IEntity FindTarget(IEntity actor) => World.FindTarget(actor);
+
+        /// <summary>Que puede hacer con ello, en orden de prioridad: la primera es la de la
+        /// pulsacion corta.</summary>
+        public List<WorldAction> GetAvailableActions(IEntity actor, IEntity target)
+            => World.GetAvailableActions(actor, target);
+
+        #endregion
+
+        #region Ejecutar
+
+        /// <summary>
+        /// Ejecuta una accion sobre un objetivo del mundo.
+        ///
+        /// <para><b>Paridad, una sola vez para todas las acciones.</b> Repite las dos
+        /// preguntas que pintaron la accion —<see cref="WorldInteractionSystem.CanReach"/> y
+        /// <see cref="WorldInteractionSystem.GetAvailableActions"/>—, porque entre verla y
+        /// ejecutarla el jugador ha podido moverse o el objetivo desaparecer. Vive aqui y no
+        /// en cada accion para que una accion nueva no pueda olvidarla.</para>
+        /// </summary>
+        /// <returns>True si la accion se ejecuto; mover cero unidades cuenta como ejecutada,
+        /// porque el jugador recibe su aviso.</returns>
+        public bool Execute(IEntity actor, IEntity target, WorldAction action)
+        {
+            WorldInteractionSystem world = World;
+            if (!world.CanReach(actor, target)) return false;
+            if (!world.GetAvailableActions(actor, target).Contains(action)) return false;
+
+            switch (action)
+            {
+                case WorldAction.PickUp:
+                    PickUp(actor, target);
+                    return true;
+
+                case WorldAction.Inspect:
+                    // Panel de solo lectura: pendiente (M6 T2, tras el menu radial).
+                    CoreLogger.Instance.Log("Inspeccionar: aun no implementado.");
+                    return false;
+
+                default:
+                    return false;
+            }
+        }
+
+        #endregion
+
         #region Recoger
 
         /// <summary>
         /// Lleva al inventario del actor todo lo que quepa del monton.
         ///
-        /// <para><b>Paridad:</b> empieza repitiendo las dos preguntas que pintaron la accion
-        /// —<see cref="WorldInteractionSystem.CanReach"/> y
-        /// <see cref="WorldInteractionSystem.GetAvailableActions"/>—, porque entre verla y
-        /// ejecutarla el jugador ha podido moverse o el monton desaparecer.</para>
+        /// <para>Solo se llega aqui a traves de <see cref="Execute"/>, que ya ha comprobado
+        /// alcance y acciones.</para>
         ///
         /// <para><b>Mover cero es un resultado valido.</b> Recoger se ofrece aunque no quepa
         /// nada, porque una tecla que no aparece no le explica al jugador por que. En ese caso
@@ -68,11 +115,9 @@ namespace Core.Services
         /// igual que la transferencia rapida. Meter en la mochila es abrirla y colocar.</para>
         /// </summary>
         /// <returns>Unidades que se quedan en el suelo.</returns>
-        public int PickUp(IEntity actor, IEntity pile)
+        private int PickUp(IEntity actor, IEntity pile)
         {
             WorldInteractionSystem world = World;
-            if (!world.CanReach(actor, pile)) return UnitsOn(pile);
-            if (!world.GetAvailableActions(actor, pile).Contains(WorldAction.PickUp)) return UnitsOn(pile);
 
             InventoryComponent inventory = actor.GetComponent<InventoryComponent>();
             if (inventory == null) return UnitsOn(pile);

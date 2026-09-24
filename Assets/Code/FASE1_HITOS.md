@@ -540,11 +540,83 @@ el `Weight` aislado (la mochila vacia) y "peso total" es `ItemWeight.Of(item, un
 (mochila + contenido). `ItemDisplayData.Weight` paso a `UnitWeight` + `TotalWeight`, y el
 total se calcula en Core: la vista hacia `Weight * Amount` por su cuenta.
 
-**Pendiente: el filtro de pared no existe.** `IReachFilter` esta definido y
-`WorldInteractionSystem` lo acepta, pero no hay ninguna implementacion y `GameMain` no le
-pasa ninguno: hoy se alcanza y se recoge a traves de paredes. La implementacion prevista es
-`LineOfSightFilter` en la capa de Unity (un rayo del actor al objetivo). Como `FindTarget` y
-`CanReach` ya lo consultan, enchufarlo no toca Core.
+**Pieza 3 de T2, primera parte: toque de E y marca anclada.** Decisiones (W = interaccion,
+A = anclaje):
+
+- **La estrategia de camara solo traduce la tecla** (W, replica aceptada). `BaseCameraStrategy`
+  implementa `IWorldInteractionInputSource` —hermana de `IInventoryInputSource`— y emite tres
+  intenciones: toque, empezar a mantener, soltar tras mantener. Distinguir toque de mantener
+  es interpretar la tecla y vive ahi (`INTERACT_HOLD_TIME = 0.25 s`). **El toque se ejecuta al
+  soltar**: al pulsar no se puede saber aun si sera un mantener.
+- **W1 se resolvio solo:** se habia propuesto una clase intermedia para que la RTS no tuviera
+  interaccion, pero `RTSCameraStrategy` no hereda de `BaseCameraStrategy`: la base ya es solo
+  de las camaras con avatar.
+- **Decide `WorldInteractionPresenter` (Core)**, que habla con la vista por
+  `IWorldInteractionView` (interfaz en Core). Cada fotograma `Tick()`: `FindTarget`,
+  acciones, marca (solo se repinta si cambia) y ancla. El toque ejecuta la primera accion.
+- **Paridad en `WorldInteractionService.Execute(actor, target, action)`**, una vez para
+  todas las acciones; `PickUp` quedo privado detras.
+- **W7/W8 son una sola regla en `InputManager.UpdateWorldInteraction`**: se atiende al mundo
+  si la camara activa es fuente y el inventario esta cerrado, evaluado cada fotograma. Con
+  el inventario abierto la E no hace nada en el mundo, este la camara bloqueada o no.
+- **A1: la marca se ancla al punto mas alto del volumen de interaccion**
+  (`InteractionVolume.TopPoint`, llevado al mundo con `PositionComponent.LocalToWorld`,
+  inversa de `WorldToLocal`). El volumen ya es la medida del modelo; otra altura podria
+  discrepar.
+- **A2: la vista recibe la camara activa por `IActiveCameraSource`** (la implementa
+  `CameraRegister`). Hace falta la camara y no basta el jugador porque proyectar a pantalla
+  depende del punto de vista: el mismo objeto cae en sitios distintos en FPS y TPS.
+- **A3: documento de UI propio** (`UI Toolkit/WorldInteraction/`), registrado en `UIRegistry`
+  como el del inventario, no dentro del HUD de barras.
+- **A4:** la marca dice la accion, el objetivo ("Manzana x5") y "Mantén: más acciones" si hay
+  mas de una, aunque el radial aun no exista. Detras de la camara se esconde.
+
+**Corregido al jugarlo: apuntar era casi imposible.** `FindTarget` media desde los PIES y con
+la direccion del CUERPO, que solo gira en horizontal. Un monton recien tirado cae a 0,6 m y a
+la altura de la mano (1,08 m): el vector pies→monton sube 61°, fuera del cono de 45°, y solo
+entraba estando entre 1,08 y 1,37 m de el. Mirar hacia la manzana no ayudaba. Decisiones:
+
+- **G1: `GazeComponent`** en el actor, con la direccion de la mirada (inclinacion incluida).
+  La escribe la camara cada fotograma (`BaseCameraStrategy.WriteGaze`) y la leen
+  `FindTarget` y `CanReach`, que asi ven la misma. Solo guarda la direccion: el origen, los
+  ojos, se deriva de la posicion y la estatura (`EYE_HEIGHT_RATIO`). Sin mirada escrita se
+  usa la direccion del cuerpo, que deja Core funcionando sin motor y sirve a futuros NPCs.
+- **G2: gana el mas centrado**, no el mas cercano; la distancia desempata. Se apunta al
+  **centro del volumen** (`InteractionVolume.CenterPoint`), no al origen de la entidad, que
+  esta en su base. Si el rayo de la mirada **atraviesa** el volumen cuenta como centrado del
+  todo, para que un objeto grande visto de cerca (la esquina de un arcon) no se pierda por
+  tener el centro fuera del cono.
+- **G3: cono de ~20° a cada lado (cos 0.94), alcance 2 m desde los ojos.** Constantes de ajuste.
+- **G4: en TPS, direccion de la camara y origen en los ojos del personaje**, no en la camara:
+  apuntas con el centro de la pantalla sin alcanzar lo que el personaje tiene detras.
+
+**Pendiente de T2:** menu radial (mantener abre, seguir el cursor resalta, soltar ejecuta lo
+resaltado o nada; clicar un sector ejecuta; la mirada se suspende mientras esta abierto) y
+`Inspect` con panel de solo lectura.
+
+**Pendiente, fuera de T2: bloquear/desbloquear la camara con una tecla (Alt)**, para usar el
+inventario comodamente y poder moverse con el abierto. Hoy el cursor no se bloquea en
+ningun sitio (`Cursor.lockState` no aparece). El mecanismo de "mirada suspendida" del radial
+es el mismo que usara esto.
+
+**Deuda vista de paso:** `InventoryPresenter` (Core) recibe `InventoryView`, la clase concreta
+de Unity, y no una interfaz; rompe la regla de Core. El presentador nuevo ya no lo hace.
+Ademas, `InputManager` toma la camara inicial con `GetActiveCamera()` sin pasar por
+`SetActiveStrategy`, asi que la camara de arranque no se suscribe a eventos; hoy no se nota
+porque se arranca en RTS.
+
+**Hecho: filtro de pared (`Unity/LineOfSightFilter`).** Decisiones:
+
+- **Core pasa los puntos** (`IReachFilter.IsClear(actor, target, desde, hasta)`): los ojos y
+  el punto del objetivo los decide `WorldInteractionSystem`; el filtro solo dice si la linea
+  esta libre. Asi no hay dos alturas de ojos. Las entidades viajan para que el filtro ignore
+  el cuerpo del actor y el propio objetivo.
+- **Primero al centro del volumen y, si esta tapado, al punto mas alto** (`IsInSight`): una
+  manzana tras una valla baja con el borde asomando se sigue viendo.
+- **Tapa cualquier collider no trigger** (provisional, opcion "a"). Se excluye al actor y al
+  objetivo por jerarquia, no por capa, para no depender del inspector. Si algun dia tapa lo
+  que no debe, lo siguiente es una capa `BlocksInteraction`. Los montones no llevan collider,
+  asi que no se tapan entre si.
 
 **Recoger va al inventario, no a las manos, por ahora.** El enunciado de T2 dice que lo
 recogido va a la reserva de las manos y que lo voluminoso no entra en el inventario

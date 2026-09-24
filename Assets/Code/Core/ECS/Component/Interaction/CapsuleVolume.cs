@@ -46,6 +46,14 @@ namespace Core.ECS.Component.Interaction
             return distance > 0f ? distance : 0f;
         }
 
+        /// <summary>El extremo mas alto del segmento, mas el radio.</summary>
+        public override (float x, float y, float z) TopPoint()
+            => _ay >= _by ? (_ax, _ay + _radius, _az) : (_bx, _by + _radius, _bz);
+
+        /// <summary>El punto medio del segmento.</summary>
+        public override (float x, float y, float z) CenterPoint()
+            => ((_ax + _bx) * 0.5f, (_ay + _by) * 0.5f, (_az + _bz) * 0.5f);
+
         public override InteractionVolume Clone() => this;
 
         public override bool Equivalent(InteractionVolume other)

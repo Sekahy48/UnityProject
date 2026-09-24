@@ -14,6 +14,8 @@ using Core.Factories;
 using System.Collections.Generic;
 using Core.Services;
 using MVC.View.Inventory;
+using MVC.View.World;
+using Core.MVC.Presenter.World;
 using Core.ECS.Component;
 
 
@@ -31,6 +33,11 @@ public class GameMain : MonoBehaviour
     // If the number of services grows, make a service locator ( with dictionaries )
     private InventoryService _inventoryService;
     private WorldInteractionService _worldInteractionService;
+
+    // La misma instancia que usa InputManager, no una copia: la vista de interaccion la
+    // necesita para proyectar a pantalla con la camara activa. No va al contexto por la
+    // misma razon que no iba antes.
+    private CameraRegister _cameraRegister;
 
 
     void Awake()
@@ -150,7 +157,8 @@ public class GameMain : MonoBehaviour
         systemManager.RegisterReactiveGameSystem(new MovementSystem())
                      .RegisterReactiveGameSystem(new InventorySystem())
                      .RegisterReactiveGameSystem(new EquipmentSystem())
-                     .RegisterReactiveGameSystem(new WorldInteractionSystem(entityManager, new Unity.UnityEntityLinker()));
+                     .RegisterReactiveGameSystem(new WorldInteractionSystem(entityManager, new Unity.UnityEntityLinker(),
+                                                                            new Unity.LineOfSightFilter()));
 
         PresenterManager presenterManager = new PresenterManager();
 
@@ -167,6 +175,7 @@ public class GameMain : MonoBehaviour
     {
         HUDManager hudManager = new HUDManager(player);
         CameraRegister cameraRegister = new CameraRegister();
+        _cameraRegister = cameraRegister;
         InputManager inputManager = new InputManager(cameraRegister, presenterManager, _gameContext.Session);
 
         cameraRegister.InitizalizeCameras(player);
@@ -193,7 +202,7 @@ public class GameMain : MonoBehaviour
         bool wasOpen = old != null && old.IsOpen();
 
         ViewManager viewManager = new ViewManager();
-        viewManager.InitializeViews(_uiRegistry);
+        viewManager.InitializeViews(_uiRegistry, _cameraRegister);
 
         InventoryPresenter presenter = new InventoryPresenter(viewManager.GetView<InventoryView>(PresenterType.INV),
                                                               _gameContext.Data._itemCatalogue,
@@ -201,6 +210,13 @@ public class GameMain : MonoBehaviour
         presenters.ReplacePresenter(PresenterType.INV, presenter);
 
         if (wasOpen) presenter.Open(_gameContext.Session._player);
+
+        // No se reabre aqui: InputManager lo abre o cierra cada fotograma segun la camara y
+        // el inventario, asi que tras una recarga se recupera solo en el siguiente.
+        WorldInteractionPresenter worldPresenter = new WorldInteractionPresenter(
+            viewManager.GetView<WorldInteractionView>(PresenterType.WORLD),
+            _worldInteractionService);
+        presenters.ReplacePresenter(PresenterType.WORLD, worldPresenter);
     }
 
     private void OnDestroy() => UIReloadNotifier.OnUIRecreated -= BuildViewsAndPresenters;

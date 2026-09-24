@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="WorldInteraction.uss" />
+    <ui:VisualElement name="world-interaction-root" class="wi-root" picking-mode="Ignore">
+        <ui:VisualElement name="reticle" class="wi-reticle" picking-mode="Ignore">
+            <ui:VisualElement class="wi-reticle-core" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="prompt" class="wi-prompt" picking-mode="Ignore">
+            <ui:VisualElement class="wi-row" picking-mode="Ignore">
+                <ui:Label name="prompt-key" text="E" class="wi-key" picking-mode="Ignore" />
+                <ui:Label name="prompt-action" text="Recoger" class="wi-action" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label name="prompt-target" text="" class="wi-target" picking-mode="Ignore" />
+            <ui:Label name="prompt-more" text="Mantén: más acciones" class="wi-more" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

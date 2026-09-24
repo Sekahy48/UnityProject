@@ -28,7 +28,7 @@ namespace Core
         ///
         /// <para>No distingue entre lo que <c>Link</c> encontro en la escena y lo que creo:
         /// destruye siempre. No esta pensado para el jugador; su muerte, si llega a
-        /// necesitar esto, se diseña cuando toque.</para>
+        /// necesitar esto, se disena cuando toque.</para>
         ///
         /// <para>No saca la entidad de <c>EntityManager</c>: eso es de Core y lo hace quien
         /// llama, igual que quien llama a <c>Link</c> es quien la creo.</para>

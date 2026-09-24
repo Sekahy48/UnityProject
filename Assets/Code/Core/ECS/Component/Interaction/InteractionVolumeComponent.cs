@@ -55,6 +55,25 @@ namespace Core.ECS.Component.Interaction
             return _volume.DistanceFrom(lx, ly, lz);
         }
 
+        /// <summary>
+        /// Punto mas alto del volumen, en el mundo. Donde se ancla lo que se pinta encima de
+        /// la entidad. Null si la entidad no tiene posicion.
+        /// </summary>
+        public (float x, float y, float z)? TopPointInWorld(PositionComponent owner)
+        {
+            if (owner == null) return null;
+
+            (float lx, float ly, float lz) = _volume.TopPoint();
+            return owner.LocalToWorld(lx, ly, lz);
+        }
+
+        /// <summary>Centro del volumen, en el mundo. Ver <see cref="InteractionVolume.CenterPoint"/>.</summary>
+        public (float x, float y, float z) CenterInWorld(PositionComponent owner)
+        {
+            (float lx, float ly, float lz) = _volume.CenterPoint();
+            return owner.LocalToWorld(lx, ly, lz);
+        }
+
         public override IComponent Clone()
         {
             return new InteractionVolumeComponent(_volume.Clone());

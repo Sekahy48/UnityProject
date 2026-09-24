@@ -6,8 +6,7 @@ using UnityEngine;
 
 namespace MVC.Controller
 {
-    public class CameraRegister
-
+    public class CameraRegister : Unity.IActiveCameraSource
     {
         public enum CameraType { RTS, FPS, TPS}
         private Dictionary<CameraType, ICameraStrategy> Cams = new();
@@ -61,6 +60,8 @@ namespace MVC.Controller
 
             return GetCamera(activeCam);
         }
+
+        public Camera Current => GetActiveCamera()?.GetCamera();
 
         public bool RemoveCamera(CameraType name)
         {

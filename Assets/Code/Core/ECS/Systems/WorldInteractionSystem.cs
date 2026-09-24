@@ -139,20 +139,53 @@ namespace Core.ECS.Systems
 
         #region Busqueda de objetivo
 
-        /// <summary>Hasta donde llega el jugador, medido hasta la superficie del volumen.</summary>
-        private const float REACH = 1.5f;
+        /// <summary>
+        /// Hasta donde llega el actor, medido DESDE LOS OJOS hasta la superficie del volumen.
+        /// 2 m y no menos porque desde 1,7 m de altura algo en el suelo a tus pies ya esta a
+        /// mas de 1,5. Constante de ajuste.
+        /// </summary>
+        private const float REACH = 2.0f;
 
         /// <summary>
-        /// Coseno del semiangulo del cono de mirada. 0.707 son 45 grados a cada lado, o sea
-        /// 90 de apertura: comodo para no tener que apuntar con precision, y estrecho para
-        /// no recoger lo que tienes detras. Valor de partida, para afinar jugando.
+        /// Coseno del semiangulo del cono de mirada: 0.94 son unos 20 grados a cada lado.
+        /// Estrecho porque ahora la mirada incluye la inclinacion de la camara y se apunta
+        /// con el centro de la pantalla; con 45 grados, apuntar a una manzana no la separaba
+        /// de la de al lado. Constante de ajuste.
         /// </summary>
-        private const float VIEW_CONE_COS = 0.707f;
+        private const float VIEW_CONE_COS = 0.94f;
+
+        /// <summary>
+        /// Altura de los ojos como fraccion de <c>BodyComponent.Height</c>. Se deriva de la
+        /// estatura, como la altura de la mano al tirar, en vez de fijarse: un personaje
+        /// bajito mira desde mas abajo sin tocar nada.
+        /// </summary>
+        private const float EYE_HEIGHT_RATIO = 0.94f;
+
+        /// <summary>Altura de los ojos de quien no tiene cuerpo.</summary>
+        private const float DEFAULT_EYE_HEIGHT = 1.6f;
 
         private struct Candidate
         {
             public IEntity Entity;
             public float Distance;
+            public float Aim;
+        }
+
+        /// <summary>
+        /// Desde donde y hacia donde mira un actor, ya resuelto para este fotograma.
+        /// Struct y no tupla de seis floats porque viaja por tres metodos y los nombres
+        /// importan: origen y direccion no se pueden confundir.
+        /// </summary>
+        private readonly struct Gaze
+        {
+            public readonly float Ox, Oy, Oz;
+            public readonly float Dx, Dy, Dz;
+
+            public Gaze(float ox, float oy, float oz, float dx, float dy, float dz)
+            {
+                Ox = ox; Oy = oy; Oz = oz;
+                Dx = dx; Dy = dy; Dz = dz;
+            }
         }
 
         /// <summary>
@@ -162,25 +195,33 @@ namespace Core.ECS.Systems
         /// preguntar por cada entidad si alcanza al jugador convertiria una busqueda en
         /// tantas como objetos haya.</para>
         ///
-        /// <para>El orden de las comprobaciones importa y no es casual: primero lo barato
-        /// que descarta mucho (distancia), luego lo barato que descarta el resto (cono), y
-        /// solo al final el filtro externo, que es el caro. Ademas se recorre por cercania,
-        /// asi que una pared delante del objeto mas proximo no te impide interactuar con el
-        /// siguiente.</para>
+        /// <para><b>Gana el mas centrado, no el mas cercano.</b> Con la mirada del jugador
+        /// disponible, lo que espera es "lo que tengo en el centro de la pantalla": si
+        /// ganara el mas cercano, apuntar a una manzana a 1,2 m te la robaria otra a 0,8 m
+        /// en el borde del cono. La distancia solo desempata. Lo que el rayo de la mirada
+        /// atraviesa cuenta como perfectamente centrado, asi que entre dos cosas en la misma
+        /// linea gana la de delante.</para>
+        ///
+        /// <para>El filtro externo, el caro, va al final y en ese mismo orden: una pared
+        /// delante del mas centrado no impide interactuar con el siguiente.</para>
         /// </summary>
         public IEntity FindTarget(IEntity actor)
         {
             if (actor == null) return null;
 
-            PositionComponent actorPos = actor.GetComponent<PositionComponent>();
-            if (actorPos == null) return null;
+            Gaze? gaze = GazeOf(actor);
+            if (!gaze.HasValue) return null;
 
-            CollectCandidates(actor, actorPos);
-            _candidates.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+            CollectCandidates(actor, gaze.Value);
+            _candidates.Sort((a, b) =>
+            {
+                int byAim = b.Aim.CompareTo(a.Aim);
+                return byAim != 0 ? byAim : a.Distance.CompareTo(b.Distance);
+            });
 
             foreach (Candidate candidate in _candidates)
             {
-                if (_reachFilter == null || _reachFilter.CanReach(actor, candidate.Entity))
+                if (IsInSight(actor, candidate.Entity, gaze.Value))
                     return candidate.Entity;
             }
 
@@ -209,80 +250,147 @@ namespace Core.ECS.Systems
             if (actor == null || target == null || ReferenceEquals(actor, target)) return false;
             if (!ReferenceEquals(_entityManager.GetEntity(target.GetIdAsInt()), target)) return false;
 
-            PositionComponent actorPos = actor.GetComponent<PositionComponent>();
-            if (actorPos == null) return false;
+            Gaze? gaze = GazeOf(actor);
+            if (!gaze.HasValue) return false;
 
-            (float fx, float fy, float fz) = actorPos.Forward();
-            if (!IsWithinReach(target, actorPos, fx, fy, fz, out _)) return false;
+            if (!IsWithinReach(target, gaze.Value, out _, out _)) return false;
 
-            return _reachFilter == null || _reachFilter.CanReach(actor, target);
+            return IsInSight(actor, target, gaze.Value);
         }
 
         /// <summary>
         /// Recoge lo que esta dentro del alcance y dentro del cono de mirada.
         /// </summary>
-        private void CollectCandidates(IEntity actor, PositionComponent actorPos)
+        private void CollectCandidates(IEntity actor, Gaze gaze)
         {
             _candidates.Clear();
-
-            (float fx, float fy, float fz) = actorPos.Forward();
 
             List<IEntity> reachable = _entityManager.GetEntitiesWithComponent(typeof(InteractionVolumeComponent));
 
             foreach (IEntity other in reachable)
             {
                 if (ReferenceEquals(other, actor)) continue;
-                if (!IsWithinReach(other, actorPos, fx, fy, fz, out float distance)) continue;
+                if (!IsWithinReach(other, gaze, out float distance, out float aim)) continue;
 
-                _candidates.Add(new Candidate { Entity = other, Distance = distance });
+                _candidates.Add(new Candidate { Entity = other, Distance = distance, Aim = aim });
             }
         }
 
         /// <summary>
-        /// La parte geometrica del alcance: distancia a la superficie del volumen y cono de
-        /// mirada. Lo comparten <see cref="FindTarget"/> y <see cref="CanReach"/>; el filtro
-        /// externo queda fuera porque <c>FindTarget</c> lo aplica despues de ordenar.
+        /// Desde donde y hacia donde mira el actor.
+        ///
+        /// <para>El origen son los ojos, no los pies. Medir desde los pies, con la mirada
+        /// horizontal del cuerpo, dejaba una franja de unos 30 cm de distancia en la que un
+        /// monton recien tirado —a la altura de la mano— entraba en el cono: mas cerca
+        /// quedaba demasiado alto, mas lejos fuera de alcance.</para>
+        ///
+        /// <para>La direccion sale de <see cref="GazeComponent"/>, que escribe la camara con
+        /// su inclinacion. Quien no lo tenga —o no lo tenga aun escrito— mira hacia donde
+        /// apunta su cuerpo, que es lo que hacia todo antes y deja la busqueda funcionando
+        /// sin motor detras.</para>
         /// </summary>
-        /// <param name="fx">Direccion de la mirada del actor, ya calculada: quien recorre
-        /// muchos candidatos no deberia sacarla del cuaternion una vez por candidato.</param>
-        private static bool IsWithinReach(IEntity target, PositionComponent actorPos,
-                                          float fx, float fy, float fz, out float distance)
+        private static Gaze? GazeOf(IEntity actor)
+        {
+            PositionComponent pos = actor.GetComponent<PositionComponent>();
+            if (pos == null) return null;
+
+            BodyComponent body = actor.GetComponent<BodyComponent>();
+            float eye = body == null ? DEFAULT_EYE_HEIGHT : body.Height * EYE_HEIGHT_RATIO;
+
+            GazeComponent gaze = actor.GetComponent<GazeComponent>();
+            (float dx, float dy, float dz) = gaze != null && gaze.HasDirection
+                ? gaze.Direction
+                : pos.Forward();
+
+            return new Gaze(pos.X, pos.Y + eye, pos.Z, dx, dy, dz);
+        }
+
+        /// <summary>
+        /// La parte geometrica del alcance: distancia desde los ojos a la superficie del
+        /// volumen, y punteria. Lo comparten <see cref="FindTarget"/> y
+        /// <see cref="CanReach"/>; el filtro externo queda fuera porque <c>FindTarget</c> lo
+        /// aplica despues de ordenar.
+        /// </summary>
+        /// <param name="aim">Lo centrado que esta: 1 si el rayo de la mirada lo atraviesa,
+        /// si no el coseno del angulo hasta su centro. Mayor es mejor.</param>
+        private static bool IsWithinReach(IEntity target, Gaze gaze, out float distance, out float aim)
         {
             distance = float.MaxValue;
+            aim = -1f;
 
             PositionComponent targetPos = target.GetComponent<PositionComponent>();
             InteractionVolumeComponent volume = target.GetComponent<InteractionVolumeComponent>();
             if (targetPos == null || volume == null) return false;
 
-            distance = volume.DistanceFrom(targetPos, actorPos.X, actorPos.Y, actorPos.Z);
-
+            distance = volume.DistanceFrom(targetPos, gaze.Ox, gaze.Oy, gaze.Oz);
             if (distance > REACH) return false;
-            return IsInViewCone(actorPos, targetPos, fx, fy, fz);
+
+            aim = AimAt(volume, targetPos, gaze);
+            return aim >= VIEW_CONE_COS;
         }
 
         /// <summary>
-        /// Si el objetivo cae dentro del cono de mirada del actor.
+        /// Si desde los ojos se ve el objetivo: la parte que decide el motor.
         ///
-        /// <para>Se mide contra el origen del objetivo y no contra el punto mas cercano de su
-        /// volumen. Es una simplificacion consciente: usar el punto mas cercano haria que un
-        /// objeto largo entrase en el cono por su punta, y el jugador lo viviria como
-        /// apuntar a un sitio y recoger otro.</para>
+        /// <para>Se traza primero al centro del volumen y, si esta tapado, al punto mas alto.
+        /// Solo al centro, una manzana detras de una valla baja con el borde asomando saldria
+        /// tapada; el segundo rayo solo se paga en esos casos dudosos.</para>
         ///
-        /// <para>Un objetivo practicamente encima del actor pasa siempre: ahi la direccion
-        /// no esta definida y exigir que mire hacia sus propios pies seria absurdo.</para>
+        /// <para>Sin filtro (sin motor detras) todo esta a la vista.</para>
         /// </summary>
-        private static bool IsInViewCone(PositionComponent actorPos, PositionComponent targetPos,
-                                         float fx, float fy, float fz)
+        private bool IsInSight(IEntity actor, IEntity target, Gaze gaze)
         {
-            float dx = targetPos.X - actorPos.X;
-            float dy = targetPos.Y - actorPos.Y;
-            float dz = targetPos.Z - actorPos.Z;
+            if (_reachFilter == null) return true;
 
-            float length = (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
-            if (length < 1e-4f) return true;
+            PositionComponent targetPos = target.GetComponent<PositionComponent>();
+            InteractionVolumeComponent volume = target.GetComponent<InteractionVolumeComponent>();
+            if (targetPos == null || volume == null) return false;
 
-            float dot = (dx * fx + dy * fy + dz * fz) / length;
-            return dot >= VIEW_CONE_COS;
+            (float cx, float cy, float cz) = volume.CenterInWorld(targetPos);
+            if (_reachFilter.IsClear(actor, target, gaze.Ox, gaze.Oy, gaze.Oz, cx, cy, cz)) return true;
+
+            (float x, float y, float z)? top = volume.TopPointInWorld(targetPos);
+            return top.HasValue
+                && _reachFilter.IsClear(actor, target, gaze.Ox, gaze.Oy, gaze.Oz,
+                                        top.Value.x, top.Value.y, top.Value.z);
+        }
+
+        /// <summary>
+        /// Lo centrado que esta un objetivo en la mirada.
+        ///
+        /// <para>Se mide contra el <b>centro del volumen</b>, no contra el origen de la
+        /// entidad (que esta en su base): apuntar al centro de un arcon es apuntar al arcon,
+        /// no a sus patas.</para>
+        ///
+        /// <para>Pero un objeto grande visto de cerca puede ocupar mas angulo que el cono:
+        /// mirando la esquina de un arcon, su centro queda fuera. Por eso, ademas, si el rayo
+        /// de la mirada <b>atraviesa</b> el volumen cuenta como perfectamente centrado. Se
+        /// comprueba con el punto del rayo mas cercano al centro: si ese punto esta dentro,
+        /// el rayo pasa por dentro. Es una aproximacion (una caja alargada vista de canto
+        /// puede escaparsele) y no pretende ser un raycast: basta para lo que se decide.</para>
+        ///
+        /// <para>Un objetivo practicamente en los ojos pasa siempre: ahi la direccion no
+        /// esta definida.</para>
+        /// </summary>
+        private static float AimAt(InteractionVolumeComponent volume, PositionComponent targetPos, Gaze gaze)
+        {
+            (float cx, float cy, float cz) = volume.CenterInWorld(targetPos);
+
+            float vx = cx - gaze.Ox, vy = cy - gaze.Oy, vz = cz - gaze.Oz;
+            float length = (float)Math.Sqrt(vx * vx + vy * vy + vz * vz);
+            if (length < 1e-4f) return 1f;
+
+            float along = vx * gaze.Dx + vy * gaze.Dy + vz * gaze.Dz;
+
+            if (along > 0f)
+            {
+                float px = gaze.Ox + gaze.Dx * along;
+                float py = gaze.Oy + gaze.Dy * along;
+                float pz = gaze.Oz + gaze.Dz * along;
+                if (volume.DistanceFrom(targetPos, px, py, pz) <= 0f) return 1f;
+            }
+
+            return along / length;
         }
 
         /// <summary>

@@ -26,6 +26,10 @@ namespace Core.ECS.Component.Interaction
             return distance > 0f ? distance : 0f;
         }
 
+        public override (float x, float y, float z) TopPoint() => (_cx, _cy + _radius, _cz);
+
+        public override (float x, float y, float z) CenterPoint() => (_cx, _cy, _cz);
+
         public override InteractionVolume Clone() => this;
 
         public override bool Equivalent(InteractionVolume other)

@@ -68,6 +68,7 @@ namespace Core.Factories
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
             e.AddComponent(new PositionComponent(0f, 0f, 0f));
+            e.AddComponent(new GazeComponent());
 
             var inventory = new InventoryComponent(new InventoryObject(e));
             e.AddComponent(inventory);

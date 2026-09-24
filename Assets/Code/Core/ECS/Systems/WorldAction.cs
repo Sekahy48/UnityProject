@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace Core.ECS.Systems
 {
     /// <summary>
@@ -12,9 +14,11 @@ namespace Core.ECS.Systems
     public enum WorldAction
     {
         /// <summary>Llevarselo al inventario.</summary>
+        [Description("Recoger")]
         PickUp,
 
         /// <summary>Ver que hay dentro sin cogerlo.</summary>
+        [Description("Inspeccionar")]
         Inspect
     }
 }

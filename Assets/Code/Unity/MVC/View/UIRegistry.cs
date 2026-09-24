@@ -8,12 +8,14 @@ namespace MVC.View
     {
         [SerializeField] private UIDocument _inventoryDocument; 
         [SerializeField] private VisualTreeAsset _inventoryPanelTemplate; 
+        [SerializeField] private UIDocument _worldInteractionDocument;
 
         public UIDocument GetDocument(UIDocumentType type)
         {
             return type switch
             {
                 UIDocumentType.Inventory => _inventoryDocument,
+                UIDocumentType.WorldInteraction => _worldInteractionDocument,
                 _ => throw new ArgumentException($"Unknown document type: {type}")
             };
         } 
@@ -28,7 +30,7 @@ namespace MVC.View
         }
     }
 
-    public enum UIDocumentType  { Inventory } 
+    public enum UIDocumentType  { Inventory, WorldInteraction } 
 
     public enum UITemplateType { InventoryPanel }
 

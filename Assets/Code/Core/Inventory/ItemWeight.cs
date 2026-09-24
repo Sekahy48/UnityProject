@@ -6,7 +6,7 @@ namespace Core.Inventory
     /// <summary>
     /// Cuanto pesa un item, contando lo que lleva dentro si es un contenedor.
     ///
-    /// <para>Existe porque la pregunta "¿cabe?" y la suma "¿cuanto llevas?" median cosas
+    /// <para>Existe porque la pregunta "cabe?" y la suma "cuanto llevas?" median cosas
     /// distintas. <see cref="InventoryObject.GetTotalWeight"/> ya contaba bien una mochila
     /// guardada —su peso mas su contenido—, pero quien decidia si podia entrar leia solo
     /// <c>BaseItemComponent.Weight</c>, el de la mochila vacia. Una mochila con diez kilos
@@ -15,14 +15,14 @@ namespace Core.Inventory
     ///
     /// <para><b>Por que no en <c>CarryCapacity</c>.</b> Aquella contesta cuanto puede llevar
     /// un portador (musculo, hambre, fatiga, techo de un arcon); esta contesta cuanto pesa lo
-    /// que se lleva. Son los dos lados de la misma comparacion, pero de dueños distintos:
+    /// que se lleva. Son los dos lados de la misma comparacion, pero de duenos distintos:
     /// <c>CarryCapacity</c> lee componentes del cuerpo y esta destinada a volverse un sistema
     /// con su propio componente; el peso de un item es un hecho del arbol de inventario.
     /// Juntarlas tambien cerraria un ciclo: <c>InventoryObject</c> ya consulta
     /// <c>CarryCapacity.GetMaxLoad</c>, y esto necesita <c>InventoryObject.GetTotalWeight</c>.</para>
     ///
     /// <para><b>Por que en <c>Core/Inventory</c> y no junto a <c>ItemMagnitudes</c>.</b> Lo que
-    /// añade sobre leer el campo es saber que un contenedor arrastra su contenido, y eso es
+    /// anade sobre leer el campo es saber que un contenedor arrastra su contenido, y eso es
     /// conocimiento del Composite. En <c>Core/Item</c> haria que ese espacio dependiera del
     /// inventario, que a su vez ya depende de el.</para>
     /// </summary>

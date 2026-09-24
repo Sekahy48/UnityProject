@@ -3,6 +3,7 @@ using Core.MVC.Presenter;
 using Core.MVC.View;
 using MVC.View;
 using MVC.View.Inventory;
+using MVC.View.World;
 
 namespace MVC.Controller
 {
@@ -15,11 +16,14 @@ namespace MVC.Controller
             views = new Dictionary<PresenterType, IView>();
         }
 
-        public void InitializeViews(UIRegistry uiRegistry)
+        public void InitializeViews(UIRegistry uiRegistry, Unity.IActiveCameraSource cameras)
         {
              // Inventory View
              views[PresenterType.INV] = new InventoryView(uiRegistry.GetDocument(UIDocumentType.Inventory),
                                                           uiRegistry.GetTemplate(UITemplateType.InventoryPanel));
+
+             views[PresenterType.WORLD] = new WorldInteractionView(uiRegistry.GetDocument(UIDocumentType.WorldInteraction),
+                                                                   cameras);
         }
 
         public T GetView<T>(PresenterType type) where T : IView

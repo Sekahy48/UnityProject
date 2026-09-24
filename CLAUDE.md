@@ -111,7 +111,10 @@ usa; está apuntado como limpieza pendiente.
 
 **Sergio conduce.** Los comandos de git los lanza él: no ejecutes `git commit`, `git push` ni
 nada que modifique el repositorio; si hace falta un mensaje de commit, escríbelo para que lo
-copie.
+copie. **No propongas mensaje de commit por tu cuenta: solo cuando te lo pida.** Cuando lo
+haga, los mensajes terminan con las dos líneas de atribución (`Co-Authored-By` y
+`Claude-Session`): Sergio las quiere. No añadas "not compiled" ni similares al mensaje; eso
+se dice en la conversación.
 
 **Sergio compila; tú no puedes.** No hay Unity en el entorno de trabajo, así que ningún
 cambio está compilado ni probado cuando lo entregas. No lo intentes ni lo simules: al
