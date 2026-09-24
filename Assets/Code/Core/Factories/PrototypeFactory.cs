@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using Core;
 using Core.ECS.Component;
-using Core.ECS.Component.Equipment; 
+using Core.ECS.Component.Equipment;
+using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
 using Core.Inventory;
 using Core.Item;
@@ -24,14 +25,33 @@ namespace Core.Factories
         public IEntity CreateResourceNodePrototype()
         {
             ResourceType type = ResourceType.Wood;
-            var e = new InGameEntity(IdGenerator.GenerateNewId(), "resourceNode");
+            var e = new InGameEntity(IdGenerator.GenerateNewId());
             e.AddComponent(new ResourceComponent(type, 0, false));
+            return e;
+        }
+
+        /// <summary>
+        /// Monton de items en el suelo. Nace vacio: lo que contiene lo pone quien lo suelta,
+        /// y su posicion la fija quien lo crea. El prototipo solo dice de que piezas esta
+        /// hecho.
+        /// </summary>
+        public IEntity CreateGroundLotPrototype()
+        {
+            var e = new InGameEntity(IdGenerator.GenerateNewId());
+            e.AddComponent(new PositionComponent(0f, 0f, 0f));
+            e.AddComponent(new GroundLotComponent());
+
+            // Esfera pequena de partida para que se le pueda apuntar desde el primer
+            // fotograma. Quien enlaza el modelo la sustituye por su caja medida en cuanto
+            // termine de cargar.
+            e.AddComponent(new InteractionVolumeComponent(new SphereVolume(0.2f)));
+
             return e;
         }
 
         public IEntity CreateAliveEntityPrototype()
         {
-            var e = new InGameEntity(IdGenerator.GenerateNewId(), "aliveEntity");
+            var e = new InGameEntity(IdGenerator.GenerateNewId());
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
             return e;
@@ -44,7 +64,7 @@ namespace Core.Factories
         /// </summary>
         public IEntity CreatePlayerEntityPrototype()
         {
-            var e = new InGameEntity(IdGenerator.GenerateNewId(), "playerEntity");
+            var e = new InGameEntity(IdGenerator.GenerateNewId());
             e.AddComponent(new HealthComponent(100));
             e.AddComponent(new MovementComponent(2.0f));
             e.AddComponent(new PositionComponent(0f, 0f, 0f));

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Core.ECS.Component
 {
-    public class FluidComponent : BasicComponent, IJsonLoadable
+    public class FluidComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         private Dictionary<ResourceType, float> fluids;
         private float maxCapacity;
@@ -79,9 +79,21 @@ namespace Core.ECS.Component
 
         public void SetMaxCapacity(float value) { maxCapacity = value; }
 
+        /// <summary>
+        /// El contenido actual no se declara porque es un diccionario por tipo de fluido y
+        /// no un numero suelto; si algun dia hace falta preguntarlo sera con un nombre
+        /// propio, como <c>fill</c>, y decidiendo que significa.
+        /// </summary>
+        private static readonly NumericFields<FluidComponent> Fields =
+            new NumericFields<FluidComponent>()
+                .Add("maxCapacity", c => c.maxCapacity, (c, v) => c.SetMaxCapacity(v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("maxCapacity")) SetMaxCapacity(Convert.ToSingle(values["maxCapacity"]));
+            Fields.Apply(this, values);
         }
 
         public override IComponent Clone()

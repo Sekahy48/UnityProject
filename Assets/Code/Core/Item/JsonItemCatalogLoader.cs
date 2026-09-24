@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Core;
 using Core.ECS.Component;
-using Core.ECS.Component.InventoryComponents;
 using Core.ECS.Component.ItemComponents;
 using Core.ECS.Entity;
 using Newtonsoft.Json;
@@ -13,20 +11,6 @@ namespace Core.Item
     public class JsonItemCatalogLoader
     {
         private readonly TypeIdMapper _typeIdMapper;
-
-        private readonly Dictionary<string, Func<IComponent>> _componentRegistry = new Dictionary<string, Func<IComponent>>
-        {
-            { "BaseItem", () => new BaseItemComponent() },
-            { "Material", () => new MaterialComponent() },
-            { "Damage", () => new DamageComponent() },
-            { "Storage", () => new StorageComponent() },
-            { "Nutrition", () => new NutritionComponent() },
-            { "Fluid", () => new FluidComponent() },
-            { "Heal", () => new HealComponent() },
-            { "Name", () => new NameComponent() },
-            { "Resource", () => new ResourceComponent() },
-            { "Wearable", () => new WearableComponent() }
-        };
 
         public JsonItemCatalogLoader()
         {
@@ -103,6 +87,11 @@ namespace Core.Item
                             if (string.IsNullOrEmpty(baseItem.IconPath))
                                 baseItem.SetIconPath(itemData.imagePath ?? "");
                         }
+
+                        if (component is ModelComponent model)
+                        {
+                            WarnAboutMissingModels(itemData.name, model);
+                        }
                     }
                 }
             }
@@ -116,9 +105,40 @@ namespace Core.Item
             return prototype;
         }
 
+        /// <summary>
+        /// Avisa de las rutas de modelo que el catalogo nombra y no estan en la carpeta de
+        /// datos.
+        ///
+        /// Se comprueba al cargar y no al dibujar porque es cuando se puede decir *que* item
+        /// y *que* fichero: cuando alguien pida el modelo para ponerlo en el mundo, el fallo
+        /// sera un hueco en una escena, sin nombre y sin momento. El caso tipico no es un
+        /// error del exportador sino un despiste al copiar los datos: llega el data.json y se
+        /// olvida la carpeta de modelos, que pesa cien veces mas.
+        ///
+        /// Avisa, pero no descarta el componente. Que falte un fichero hoy no invalida la
+        /// regla de que etapa toca, y borrar el componente convertiria un item que se ve mal
+        /// en un item sin modelo declarado, que es una mentira mas dificil de rastrear.
+        /// </summary>
+        private void WarnAboutMissingModels(string itemName, ModelComponent model)
+        {
+            foreach (ModelStage stage in model.Stages)
+            {
+                foreach (string path in stage.Paths)
+                {
+                    if (!File.Exists(CoreConfig.ResolveAsset(path)))
+                    {
+                        CoreLogger.Instance.LogWarning(
+                            "JsonItemCatalogLoader: Item '" + itemName + "' references a missing model file: " + path);
+                    }
+                }
+            }
+        }
+
         private IComponent CreateComponent(ComponentData data)
         {
-            if (!_componentRegistry.TryGetValue(data.type, out Func<IComponent> factory))
+            IComponent instance = ItemComponentRegistry.Create(data.type);
+
+            if (instance == null)
             {
                 CoreLogger.Instance.LogWarning("JsonItemCatalogLoader: Unknown component type '" + data.type + "'. Skipping.");
                 return null;
@@ -129,8 +149,6 @@ namespace Core.Item
                 CoreLogger.Instance.LogWarning("JsonItemCatalogLoader: Component '" + data.type + "' has no values. Skipping.");
                 return null;
             }
-
-            IComponent instance = factory();
 
             if (instance is IJsonLoadable loadable)
             {

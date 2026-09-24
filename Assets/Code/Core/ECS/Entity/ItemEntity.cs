@@ -4,11 +4,11 @@ namespace Core.ECS.Entity
 {
     public class ItemEntity : InGameEntity
     {
-        public ItemEntity(int id) : base(id, "ItemEntity")
+        public ItemEntity(int id) : base(id)
         {
         }
 
-        protected override InGameEntity CreateCloneInstance(int id, string type)
+        protected override InGameEntity CreateCloneInstance(int id)
         {
             return new ItemEntity(id);
         }

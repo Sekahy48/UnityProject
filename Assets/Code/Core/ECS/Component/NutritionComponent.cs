@@ -6,7 +6,7 @@ namespace Core.ECS.Component
     /// <summary>
     /// Hunger, thirst, macronutrients and reserves. Relevant in Phase 3.
     /// </summary>
-    public class NutritionComponent : BasicComponent, IJsonLoadable
+    public class NutritionComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         private static readonly Random random = new Random();
 
@@ -95,19 +95,31 @@ namespace Core.ECS.Component
         public void AddFiber(float fiber) => this.fiber += fiber;
         public void SetFiber(float fiber) => this.fiber = fiber;
 
+        /// <summary>
+        /// Los maximos van declarados antes que los valores que recortan, y el orden de esta
+        /// lista es el orden en que se aplican: <c>SetHunger</c> limita contra
+        /// <c>maxHunger</c>, asi que al reves el hambre se recortaria contra cero.
+        /// </summary>
+        private static readonly NumericFields<NutritionComponent> Fields =
+            new NumericFields<NutritionComponent>()
+                .Add("maxHunger", c => c.maxHunger, (c, v) => c.SetMaxHunger(v))
+                .Add("maxThirst", c => c.maxThirst, (c, v) => c.SetMaxThirst(v))
+                .Add("hunger", c => c.hunger, (c, v) => c.SetHunger(v))
+                .Add("thirst", c => c.thirst, (c, v) => c.SetThirst(v))
+                .Add("storedKcal", c => c.storedKcal, (c, v) => c.SetStoredKcal(v))
+                .Add("storedWater", c => c.storedWater, (c, v) => c.SetStoredWater(v))
+                .Add("protein", c => c.protein, (c, v) => c.SetProtein(v))
+                .Add("carbohydrates", c => c.carbohydrates, (c, v) => c.SetCarbohydrates(v))
+                .Add("fats", c => c.fats, (c, v) => c.SetFats(v))
+                .Add("micronutrients", c => c.micronutrients, (c, v) => c.SetMicronutrients(v))
+                .Add("fiber", c => c.fiber, (c, v) => c.SetFiber(v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("maxHunger")) SetMaxHunger(Convert.ToSingle(values["maxHunger"]));
-            if (values.ContainsKey("maxThirst")) SetMaxThirst(Convert.ToSingle(values["maxThirst"]));
-            if (values.ContainsKey("hunger")) SetHunger(Convert.ToSingle(values["hunger"]));
-            if (values.ContainsKey("thirst")) SetThirst(Convert.ToSingle(values["thirst"]));
-            if (values.ContainsKey("storedKcal")) SetStoredKcal(Convert.ToSingle(values["storedKcal"]));
-            if (values.ContainsKey("storedWater")) SetStoredWater(Convert.ToSingle(values["storedWater"]));
-            if (values.ContainsKey("protein")) SetProtein(Convert.ToSingle(values["protein"]));
-            if (values.ContainsKey("carbohydrates")) SetCarbohydrates(Convert.ToSingle(values["carbohydrates"]));
-            if (values.ContainsKey("fats")) SetFats(Convert.ToSingle(values["fats"]));
-            if (values.ContainsKey("micronutrients")) SetMicronutrients(Convert.ToSingle(values["micronutrients"]));
-            if (values.ContainsKey("fiber")) SetFiber(Convert.ToSingle(values["fiber"]));
+            Fields.Apply(this, values);
         }
 
         public override IComponent Clone()

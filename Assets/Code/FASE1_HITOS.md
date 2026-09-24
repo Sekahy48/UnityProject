@@ -4,9 +4,31 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestone 5 cerrado. M6 a medias: hechas T1, T3, T4 y T7.** Quedan T2 (recogida desde el
-mundo), T5 (cerrar por distancia) y T6 (carros y NPCs). Se cerro ademas M7 T3b por el camino:
-un contenedor guardado ocupa celdas y pesa igual que puesto.
+**Milestone 5 cerrado. M6 a medias: hechas T1, T3, T4 y T7; T2 a medio camino.** Quedan T5
+(cerrar por distancia) y T6 (carros y NPCs). Se cerro ademas M7 T3b por el camino: un
+contenedor guardado ocupa celdas y pesa igual que puesto.
+
+**Lo siguiente, concreto: falta el cableado y falta `Unlink`.** Tirar funciona de punta a
+punta —el item sale del inventario, aparece un monton en el mundo con su modelo 3D— y existe
+la consulta que decide a que puedes llegar (`WorldInteractionSystem.FindTarget`). **Pero no
+la llama nadie**, asi que nada de eso se ejecuta todavia. Para cerrar T2 hacen falta tres
+piezas, y la segunda arrastra un agujero de arquitectura:
+
+1. **Input.** Una fuente de interaccion por estrategia de camara, hermana de
+   `IInventoryInputSource`, solo en FPS y TPS —el RTS se queda sin interaccion—. Algo por
+   fotograma pregunta `FindTarget` y guarda el objetivo. Pulsacion corta = accion por
+   defecto; mantener = menu radial.
+2. **Ejecutar `WorldAction.PickUp`**, moviendo los lotes al inventario con lo que ya sabe
+   hacer `InventorySystem`. Decidido: si no cabe todo se mueve lo que quepa y se avisa
+   ("peso completo" / "demasiado volumen"); si no cabe nada, **la accion se ofrece igual** y
+   mueve cero con su aviso, porque una E que no aparece no le explica al jugador por que.
+   Decidido tambien que la composicion la haga **un servicio nuevo**, no el sistema tirando
+   del `SystemManager`: mismo camino que con el equipo.
+3. **`Unlink`, que no existe.** Cuando un monton se vacia hay que destruirlo:
+   `EntityManager.RemoveEntity` lo quita de Core y su GameObject se queda en la escena para
+   siempre. Tenemos `Link` y no tenemos lo contrario, porque hasta ahora **nunca se habia
+   destruido una entidad enlazada**. Cualquier cosa que muera en el mundo lo va a necesitar,
+   asi que es lo primero.
 
 **Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
 por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
@@ -23,16 +45,12 @@ su contenido cuelgan del arbol del portador, y la capacidad se pregunta hacia ar
 nivel —bolsillo, mochila, personaje—, con aviso en la barra cuando el que frena no es el que
 miras. Un contenedor no puede meterse dentro de si mismo ni de lo que lleva dentro.
 
-**Lo siguiente, y cambia el tipo de trabajo.** Lo que queda de M6 ya no es
-inventario-como-interfaz:
+**Y despues de T2**, lo que queda de M6 ya no es inventario-como-interfaz:
 
-1. **T2, recogida desde el mundo.** La pieza de peso: items como entidades con posicion, spawn
-   desde acciones (talar, minar) y recogida a las manos. Primera tarea en mucho tiempo que no
-   toca `InventoryView`. Desbloquea ademas el drop-to-ground del desequipado.
-2. **T6, carros y NPCs.** Casi solo datos, y su valor real es que pone a prueba T1, T3 y T4 con
-   contenido de verdad en vez de dos arcones de prueba.
-3. **T5, cerrar el panel por distancia.** Pequeña, pero necesita que exista algo de lo que
-   alejarse.
+- **T6, carros y NPCs.** Casi solo datos, y su valor real es que pone a prueba T1, T3 y T4 con
+  contenido de verdad en vez de dos arcones de prueba.
+- **T5, cerrar el panel por distancia.** Pequeña, y ahora barata: la comprobacion de distancia
+  ya existe en `WorldInteractionSystem`.
 
 **Pendiente tecnico de M6:** limpiar `IInventoryElement`. Conviven las operaciones reales del
 Composite —`Extract`, `GetAmount(variant)`, `HasVariants`— con los restos del diseño BFS
@@ -363,6 +381,85 @@ Peso total del personaje = su inventario + la mochila + lo que lleve dentro, por
 
 **Refactor [x] CUMPLIDO con otra estructura — `EquipmentService`**: no existe esa clase, y no va a existir. La composicion entre `EquipmentSystem` e `InventorySystem` la hace `InventoryService` (`TryEquipItem`, `TryUnequipItem`), y ninguno de los dos sistemas conoce al otro, que era el objetivo. Sacarlo a un servicio propio partiria en dos algo que comparte una sola maquinaria —`RunTransfer` y su rollback— para que equipar y desequipar sean transferencias como las demas en vez de un camino aparte. Si algun dia se separa, sera por tamaño de `InventoryService`, no por diseño.
 
+**Empezado T2 — la mitad de tirar.** `WorldInteractionSystem` (`Core/ECS/Systems/`) es el
+sistema reactivo que escucha `ItemDropped` y pone en el mundo lo que sale de un inventario.
+Hasta ahora ese evento **no tenia ningun oyente**: `DropItems` sacaba los items y lo tirado
+desaparecia.
+
+Existe como sistema propio, y no repartido entre `InventoryService` y la capa de Unity,
+porque va a acoger todo lo que cruza esa frontera: colocar en vez de tirar, y la
+interaccion de vuelta —acercarse, recoger, abrir un arcon del suelo—. Es la misma pregunta
+—que existe en el mundo y como pasa de ahi a un inventario— y sin un dueno se reparte en
+trozos que nadie reconoce como lo mismo. No conoce Unity: crea entidades de Core y pide el
+enlace por `IEntityLinker`.
+
+**Una tirada = un monton**, aunque lleve varias variantes: el jugador hizo un gesto y espera
+ver un objeto en el suelo, no cinco superpuestos. El monton es una entidad `groundLot` con
+`GroundLotComponent`, que **no** es un `InventoryComponent`: no hay rejilla, ni techo de
+peso, ni colocacion, y arrastrar esas reglas al suelo seria inventar un problema. Un monton
+mixto se ve como el item de su primer lote, elegido asi porque no cambia al recoger una
+parte (el "mas pesado" o el "mas numeroso" si cambiarian).
+
+**Donde cae.** Delante y a la altura de las manos, no en los pies. Eso necesita saber hacia
+donde mira el que tira, que **no es la rotacion**: un cuaternion es una instruccion de giro,
+y la direccion sale de aplicarla al vector "delante" (0,0,1). Para los ejes canonicos la
+formula general se reduce a una columna de la matriz de rotacion, asi que
+`PositionComponent.Forward()` son tres multiplicaciones por componente y ni una funcion
+trigonometrica. Ya existia junto a `Right()` en ese componente, que es donde toca: nadie mas
+tiene por que saber como se pasa de un cuaternion a una direccion.
+
+La componente vertical de ese vector **se descarta** a proposito: si el que tira mirase
+hacia abajo, desplazar en la direccion de la mirada enterraria el monton. Se quiere "un paso
+al frente y a la altura de las manos", asi que el frente se toma en horizontal y la altura
+se suma aparte, como fraccion de `BodyComponent.Height` para que un personaje bajito suelte
+mas bajo sin tocar nada.
+
+`Forward()` y `Right()` devuelven **tuplas** y no un tipo vector porque Core no tiene
+ninguno. **Estar atentos**: ya son dos usos, y un tercer sitio que pase vectores por Core es
+la senal para crear un `Vec3` como se hizo con `GridPos` — esos dos metodos y la propia
+`PositionComponent` son los primeros candidatos a usarlo.
+
+**Alcanzar cosas del mundo, sin fisica.** `FindTarget(actor)` decide que tiene delante y a
+mano el jugador, y lo hace **entero en Core**: distancia al volumen del objetivo, cono de
+mirada, y un filtro externo opcional. Se evaluo contra la alternativa —colliders trigger en
+una capa y `Physics.OverlapSphere`— y se eligio Core, pero **no por rendimiento**: con una
+consulta por fotograma las dos son indistinguibles (del orden de microsegundos, ~0.01% del
+fotograma). La razon es que la decision queda en un metodo que se prueba sin abrir el editor
+y que no depende de que nadie haya configurado bien una capa en el inspector.
+
+Para que eso funcione con objetos grandes hace falta pasar de punto a region, y de ahi sale
+`InteractionVolume`: esfera, caja orientada y capsula, cada una sabiendo contestar "¿a que
+distancia estas de mi?". Jerarquia y no enum con `switch` porque la pregunta es siempre la
+misma y quien busca objetivos no tiene por que saber que forma mira. **La caja cubre casi
+todo**; la capsula existe para el dia en que un tronco se comporte raro.
+
+**El volumen se mide, no se declara.** La entidad nace con la esfera por defecto de su
+arquetipo —asi se le puede apuntar desde el primer fotograma, sin esperar al modelo— y el
+linker la sustituye por la caja de las envolventes cuando el `.glb` termina de cargar. No
+hay campo en Stack&Go y no deberia haberlo: el volumen ya esta en la geometria, y guardarlo
+aparte seria el mismo hecho dos veces. De ahi sale un criterio reutilizable: **lo que decide
+un diseñador va a Stack&Go, lo que se deriva del asset se mide, lo que es constante de
+ajuste vive en el codigo.** Peso y modelo son lo primero; volumen es lo segundo; alcance y
+angulo del cono son lo tercero.
+
+`IReachFilter` es la escotilla para lo que Core no puede saber —si hay una pared en medio—.
+Interfaz con nombre y no un `Func` suelto: un delegado en una firma no dice que comprueba.
+**Se aplica el ultimo**, sobre los pocos candidatos que han sobrevivido, y los candidatos se
+recorren por cercania para que una pared delante del mas proximo no bloquee el siguiente.
+
+`GetAvailableActions(actor, target)` repite el patron del menu contextual del inventario:
+el dominio contesta y la interfaz pinta. **El orden es la prioridad de diseño y es parte del
+contrato**, porque `GetDefaultAction` —lo que hace la pulsacion corta— es la primera de la
+lista. Se deriva en vez de decidirse aparte para que no puedan contradecirse.
+
+Pendiente de T2: falta el input y el menu radial (tecla corta = accion por defecto, mantener
+= menu), que son estrategia de camara y UI — solo FPS y TPS, el RTS se queda sin
+interaccion. Falta decidir si dos tiradas seguidas se funden en el mismo monton (el sitio es
+`OnItemsDropped`, buscando uno cercano antes de crear). Y `FindTarget` llama a
+`GetEntitiesWithComponent`, que reserva una lista nueva en cada llamada: una por fotograma
+es inocuo hoy, pero si aparecen mas consultas por fotograma toca darle a `EntityManager` una
+variante que escriba en una lista prestada.
+
 **Decidido al jugarlo**: desequipar sin sitio **deja la prenda puesta**. `TryUnequipItem` ya lo hace por su rollback, asi que no queda nada pendiente aqui. Se descarta el drop-to-ground que se habia planteado: quitarte algo y que acabe en el suelo sin haberlo pedido convierte un gesto de gestion en una perdida, y el jugador ya tiene "Tirar" para eso. De paso esto suelta la unica atadura que este refactor tenia con M6 T2.
 
 ---
@@ -385,9 +482,233 @@ Peso total del personaje = su inventario + la mochila + lo que lleve dentro, por
 
 ---
 
+## Design note — `EntityType` y el campo que no existia para nadie
+
+El arquetipo de entidad era una cadena: `CreateEntity("groundLot")`. Con una errata eso
+compilaba y fallaba en ejecucion, y `ResolveGameObject` comparaba contra un literal repetido
+en otro fichero — renombrar un arquetipo y olvidar uno de los dos sitios dejaba todo
+compilando y la entidad sin representacion. Ahora es el enum `EntityType`, clave del
+registro de prototipos y unico argumento de `IEntityLinker.Link`.
+
+Lo interesante no es el enum sino lo que salio al mirar: `InGameEntity` guardaba ese tipo en
+un campo `NameId`, y ese campo **mezclaba dos preguntas**. Los cuatro arquetipos del mundo
+respondian a "¿que clase de cosa eres?" y eran claves de prototipo; el `"ItemEntity"` que
+pasaba `ItemEntity` respondia a "¿de que clase de C# eres?", no estaba en ningun registro y
+no lo consultaba nadie. Compartian campo porque los dos eran texto.
+
+Se opto por **quitar el campo entero** en vez de tiparlo. Quien necesita el arquetipo lo
+tiene en la mano al crear la entidad; quien necesita saber si algo es un item usa
+`is ItemEntity`, que no puede desincronizarse de la verdad. Con el campo se fueron
+`GetEntityType()` de `IEntity` y el parametro `type` de `CreateCloneInstance`, que
+`ItemEntity` ya ignoraba.
+
+**Efecto lateral que descubrio un defecto:** el unico lector del campo era
+`InGameEntity.Equivalent`, que empezaba comparando tipos. Al quitarlo hacia falta otra
+guarda, y la buena resulto ser la que faltaba desde el principio: **comparar cuantos
+componentes tiene cada una**. El recorrido era de un solo sentido —comprueba que los mios
+estan en el otro, no al reves—, asi que una entidad con componentes de mas pasaba por
+equivalente y la respuesta cambiaba segun cual de las dos preguntara. Comparar clases en
+lugar del campo no lo habria tapado: el jugador y un monton son los dos `InGameEntity`.
+
+---
+
 ## Design note — Composition-derived types
 
 The `ItemType` enum currently acts as an explicit category. But with ECS composition, item type emerges naturally from which components an entity has: equippable = has `WearableComponent`, consumable = has `NutritionComponent`, weapon = has `DamageComponent`, etc. When implementing game logic, prefer querying component presence (`HasComponent<T>()`) over switching on `ItemType`. The enum can stay as UI metadata (inventory tab filters, icon badges) but should not drive mechanical decisions. This keeps the system open to new item archetypes without modifying enums or adding switch cases.
+
+---
+
+## Modelos 3D — modulo de autoria en Stack&Go
+
+Implementado en Stack&Go. **La parte de Unity sigue sin tocar**, a proposito.
+
+**Forma del dato.** Un item tiene una lista de *etapas* y, si hay mas de una, una *magnitud*
+que decide cual aplica. Una etapa es un umbral mas una o varias *variantes*
+intercambiables: mismo estado, aspecto distinto, elige quien lo dibuje. El consumidor
+recorre las etapas de mayor a menor umbral y se queda con la primera cuyo umbral no supere
+el valor de la magnitud, asi que una etapa de umbral 0 es el caso por defecto. Un item con
+un solo modelo es, simplemente, una etapa de umbral 0 con un fichero — no hay un camino
+especial para el caso simple.
+
+**Por que la magnitud se elige y no se infiere.** La alternativa era cablear "desgaste" como
+el eje de variacion. Se descarto porque el eje real depende del item: una antorcha varia por
+combustible, un cultivo por madurez, una herramienta por durabilidad. El desplegable se
+puebla con los campos FLOAT/INT de todos los componentes definidos, cualificados como
+`Componente.campo`, y solo numericos porque un umbral es una comparacion de orden: un
+booleano o un enum no tienen "mayor o igual".
+
+**Los modelos no son un componente en Stack&Go, pero si al exportar.** Dentro de la
+aplicacion son tablas propias colgando del item (`item_model_stages`, `item_model_files`) y
+una columna `model_driven_by`, con un DAO interno dentro de `ItemDAO` — el mismo molde que
+`ItemComponentDAO`, que tampoco esta en `DAOType` ni en `DataContext`. La razon es que las
+etapas no tienen vida propia fuera del item: no se comparten, no se listan, se borran con
+el. Al exportar si viajan como un `ModelComponent` mas dentro de `components`, porque para
+el juego "que modelo muestro" es una propiedad del item igual que su peso, y darle forma
+propia en el JSON obligaria a leer el fichero de dos maneras.
+
+**Tres nombres para un fichero, y no es redundancia.** `storedName` es un UUID y es lo unico
+que guarda la base de datos: la carpeta es plana y compartida, asi que conservar el nombre
+de origen haria que dos ficheros llamados igual se pisaran. `originalName` es etiqueta de
+editor. El nombre legible (`<id>_<nombre saneado>_<NN>.glb`) se construye **solo al
+exportar**, que es cuando existe el id y cuando importa que se entienda; dentro de la
+aplicacion no serviria, porque un item puede cambiar de nombre y el fichero no se enteraria.
+
+**Donde se copia el fichero.** En `Item.setModelStages`, es decir en el modelo, igual que
+`Entry.setImagePath` con los iconos. Es el unico punto por el que pasan los tres caminos
+—alta, modificacion e importacion—, y repartirlo por los controladores seria la misma regla
+escrita tres veces. Se copia al **guardar**, no al elegir: una edicion abandonada no deja
+ficheros huerfanos. Hasta entonces el fichero esta "pendiente" y lleva su ruta de origen en
+un campo distinto, en vez de reutilizar `storedName` para significar dos cosas segun el
+momento.
+
+**Borrar filas no basta.** Es la unica diferencia real con los componentes: una fila de
+componente no deja nada detras, un `.glb` si. Cada guardado compara los nombres almacenados
+de antes con los de despues y barre la diferencia, comprobando primero que ninguna otra fila
+los referencie. Y como borrar una coleccion o una cuenta se lleva sus items **en cascada**,
+sin que ningun codigo Java vea pasar cada uno, esos dos borrados llaman ademas a una escoba
+que repasa la carpeta entera.
+
+**Validacion antes de exportar, no durante.** Se comprueba que los ficheros sigan en disco,
+que no haya umbrales repetidos ni etapas vacias, y que la magnitud siga existiendo y siendo
+numerica. Todo de golpe y antes de abrir el selector de fichero: una exportacion a medias es
+peor que ninguna, porque el autor se lleva un zip que parece bueno y el fallo aparece dentro
+del juego, lejos de donde se arregla.
+
+**Los dos exportadores siguen siendo dos.** El completo es copia entre dispositivos: los
+modelos viajan con su `storedName` y el importador los devuelve a su etapa (con nombre
+almacenado nuevo, porque dos equipos no tienen por que ponerse de acuerdo en un UUID). El de
+coleccion es material de juego: nombres legibles y `ModelComponent`. Unificarlos fue
+considerado y descartado — sirven a publicos distintos. Lo unico que se le anadio al de
+coleccion es el `id` del item, que antes no viajaba.
+
+**Hecho en Unity.** `ModelComponent` + `ModelStage` en `Core/ECS/Component/ItemComponents/`,
+registrados en `JsonItemCatalogLoader` bajo la clave `"Model"`. El componente guarda **rutas
+relativas, no mallas**: `Core` no sabe cargar glTF ni tiene por que, y traducir una ruta en
+algo dibujable es trabajo de Unity. Aqui solo vive la regla de cual toca.
+
+Tres decisiones dentro del componente:
+
+- **Reordena las etapas al leerlas**, aunque el exportador ya las mande ordenadas. El orden
+  es de lo que depende `StageFor`, y confiar en el otro lado significa que el dia que cambie
+  alli, aqui falla en silencio eligiendo siempre la etapa mas baja.
+- **`StageFor` nunca devuelve null**: si el valor no alcanza ningun umbral, cae a la etapa
+  mas baja. Un item mal configurado debe verse feo, no invisible — un hueco en el mundo es
+  mucho mas dificil de diagnosticar que un modelo que no cambia.
+- **El umbral se parsea con cultura invariante.** Con la del sistema, un Windows en espanol
+  leeria `0.7` como el numero siete: el item cargaria sin error y jamas alcanzaria esa etapa.
+
+`ModelStage` es inmutable, asi que `Clone` comparte las etapas con el clon en vez de
+copiarlas: el prototipo y sus mil manzanas apuntan a la misma lista de rutas.
+
+El nombre del tipo en el JSON es `"Model"`, sin sufijo, para no ser el unico de los diez que
+lo lleva. Cambiado tambien en el exportador de Stack&Go.
+
+**`ModelCache`** (`Unity/Services/`, glTFast 6.20). Mismo papel que `TextureCache` y por la
+misma razon: los modelos los nombra el catalogo exportado, no el proyecto, asi que no pueden
+ser prefabs ni referencias de inspector.
+
+Lo que se cachea es el `GltfImport` —el fichero ya interpretado, que sabe instanciarse N
+veces—, **no** el GameObject: cachear el objeto obligaria a clonar una jerarquia entera cada
+vez, que es mas caro y mas fragil que pedirle otra instancia a quien ya tiene los datos. Y
+se cachea la **tarea**, no el resultado: dos entidades que aparecen en el mismo fotograma
+piden el mismo modelo antes de que la primera carga acabe, y guardando el resultado la
+segunda encontraria la cache vacia y releeria los mismos megabytes.
+
+`Instantiate` promete **una sola raiz** y para eso instancia con
+`SceneObjectCreation.Always`. Por defecto glTFast usa `WhenMultipleRootNodes`: si la escena
+del fichero tiene un unico nodo raiz lo cuelga directamente del padre, y si tiene varios crea
+un contenedor. O sea que la forma de lo instanciado dependeria de como estuviera montado el
+`.glb` en Blender, y quien llama no podria saber si bajo su transform acaba de aparecer un
+objeto o cinco. Los bytes se leen a mano en vez de darle la ruta al paquete, igual que en
+`TextureCache`, para no depender de como entienda cada plataforma una URI `file://`.
+
+**Lo que el `ModelCache` no hace, a proposito** — las cuatro son baratas de anadir y ninguna
+paga hoy lo que cuesta, pero conviene saber que no estan:
+
+- **Sin pooling.** Cada instancia se crea y se destruye. Con muchos objetos repetidos en el
+  mundo habra que reciclar jerarquias.
+- **Sin liberacion automatica.** Todo modelo cargado sigue en memoria hasta que alguien llame
+  a `Clear()`, aunque no quede ninguna instancia en pantalla. Falta una politica de descarga
+  (contar instancias vivas, o descargar por escena).
+- **Sin cancelacion.** Si la entidad que pidio el modelo muere durante la carga, la carga
+  termina igual y el resultado se tira.
+- **Sin modelo por defecto.** Un fichero que falta devuelve null y deja un hueco.
+
+**Coste de memoria del camino en ejecucion.** Un modelo importado en el editor llega a la
+GPU con las texturas en formato comprimido (BC/DXT); uno cargado en ejecucion desde un `.glb`
+con PNG dentro se descodifica a RGBA sin comprimir, entre cuatro y ocho veces mas VRAM por
+textura segun el formato de destino. La salida cuando duela no es abandonar el catalogo, sino texturas mas pequenas
+o KTX2/Basis dentro del `.glb` (`com.unity.cloud.ktx`), que si llega comprimido a la GPU.
+
+**`ItemComponentRegistry` + `INumericFields` + `ItemMagnitudes`** (`Core/Item/` y
+`Core/ECS/Component/`). Resuelven la pregunta "de `"Material.hardness"` a un numero de esta
+entidad", que es la que faltaba para elegir etapa.
+
+El **registro** es el unico sitio que traduce el nombre con el que un componente viaja en el
+catalogo a algo del dominio. Antes ese conocimiento estaba dentro de
+`JsonItemCatalogLoader`, que lo necesitaba para fabricar; en cuanto aparecio un segundo
+interesado —encontrar un componente ya puesto, por nombre— habria hecho falta un segundo
+mapa con las mismas claves y nada que obligara a mantenerlos iguales. Registra con un
+generico (`Register<MaterialComponent>("Material")`) para que el tipo aparezca una sola vez
+por linea.
+
+`INumericFields` lo implementan los componentes con campos numericos. **Se descarto
+reflexion**: ataria el nombre que el autor escribe en Stack&Go al del miembro en C#, de modo
+que un renombrado en un refactor compilaria sin quejarse y rompería el dato en ejecucion,
+lejos y en silencio.
+
+El primer intento escribia el nombre dos veces por campo —una en `SetFromValues` y otra en
+`TryGetNumericValue`— y nada obligaba a que las dos listas coincidieran. Lo resuelve
+**`NumericFields<T>`**: cada componente declara sus campos una sola vez, con su nombre, su
+lector y su escritor, y las dos direcciones se derivan de esa declaracion. Dos detalles no
+obvios:
+
+- **Estatico por clase, no por instancia**, y por eso los accesores reciben el componente en
+  vez de capturarlo. Un mapa por instancia seria un diccionario de delegados por cada
+  manzana del mundo, y de componentes hay tantos como entidades.
+- **Lista, no diccionario**, porque el orden de declaracion es el orden de aplicacion y eso
+  importa: `SetHunger` recorta contra `maxHunger`, asi que aplicar el hambre antes que su
+  maximo la recortaria contra cero. La busqueda por nombre recorre la lista, que no pasa de
+  una docena de entradas y no se consulta por fotograma.
+
+El escritor pasa por el metodo que ya existia (`SetDurability`, `SetHunger`) en vez de tocar
+el campo, para que cargar desde el catalogo respete los mismos recortes y validaciones que
+cualquier otra escritura.
+
+`ItemMagnitudes.TryRead` vive en el dominio del item y no en la capa visual, porque la misma
+pregunta la hara el crafting por estado (hierro por encima de cierta temperatura). Devuelve
+false sin ruido en todos los casos de "no se sabe": quien pregunta ya necesita un plan para
+eso —el resolutor de modelos cae a la etapa por defecto— y una excepcion obligaria a
+envolver cada consulta.
+
+**`ItemModelResolver` + el linker.** `ResolvePath(entity)` vive en Core porque no tiene una
+linea de motor —componentes, un float y una cadena—, asi se prueba sin abrir el editor y el
+linker se queda con lo unico que solo el puede hacer. Sabe ademas que un `groundLot` se
+representa por el item de su primer lote, para que la capa que dibuja no distinga casos.
+
+`UnityEntityLinker.ResolveGameObject` ya no ramifica sobre `entityType` con un caso: ahora
+son dos casos que si son distintos de verdad. El jugador **se busca** (esta en la escena con
+su prefab y su camara, no sale del catalogo); lo demas **se crea** como GameObject vacio. El
+vacio es la entidad de cara al motor —posicion, y manana collider—, y el modelo es un hijo
+suyo que se puede sustituir al cambiar de etapa sin rehacer nada.
+
+El modelo se cuelga **sin esperar**: `Link` es sincrono y quien crea entidades no debe
+bloquearse por un fichero. El precio es una ventana en la que la entidad existe y no se ve;
+si llega a molestar, la salida es precargar al arrancar, no esperar aqui. Si la entidad
+muere durante esa ventana, `ModelCache` lo detecta —anota si habia padre al empezar y lo
+comprueba al terminar— y descarta el modelo en vez de tocar un transform destruido.
+
+Quien resolvio el GameObject dice tambien si lo ha **creado**, y de eso depende la direccion
+del sincronizado inicial: lo que ya estaba en la escena manda sobre Core, lo recien creado
+obedece a Core. Antes se adivinaba mirando si la posicion era el origen, que es cierto por
+casualidad y falso en cuanto algo nazca en (0,0,0).
+
+**Pendiente en Unity:** `public int id` en `ItemData` y `TypeIdMapper` indexado por el,
+eliminando `id_mapping.json`; modelo por defecto para el item que no traiga ninguno; volver
+a preguntar la ruta cuando cambie la magnitud (hoy el modelo se resuelve una vez, al
+enlazar, y no se entera de que el item se desgaste); y el collider del monton, que segun lo
+hablado sera una primitiva dimensionada midiendo las cajas envolventes del modelo ya
+cargado, nunca un `MeshCollider` ni las dimensiones de rejilla del `BaseItemComponent`.
 
 ---
 
@@ -408,7 +729,7 @@ Hand added notes (by me by hand):
 
   **Naming collision to resolve:** M6 T2 calls the bulky-item carry buffer "hands". That one *is* game state (persists with the inventory closed, counts toward weight) and will likely be an ECS component. Two different things called "hand" — consider renaming this one (`HeldStack`, `CursorHand`, `GrabState`) and leaving `Hands` to M6.
 
-- [ ] Dependency injection via context aggregator / service layer. `GameContext` (Unity/MVC/Controller/) was written for this — groups the three Core sub-contexts (Data, Session, System) plus the Unity pieces, with a builder API, so each class receives only the sub-context it needs instead of the whole thing. It is currently **dead code**: nobody calls `new GameContext()`, and `GameMain.Awake()` builds everything with local variables and injects sub-contexts by hand. Decide whether to revive it as-is or move to a service-provider approach like the one in Stack&Go (`ServiceConsumer` + services supplied by a core controller). Until then, treat `GameContext` as inactive — it looks like live infrastructure and isn't.
+- [ ] Dependency injection via context aggregator / service layer. `GameContext` (Unity/MVC/Controller/) agrupa los sub-contextos de Core (Data, Session, System, Interaction) mas las piezas de Unity, con API de constructor encadenado. **Ya no es codigo muerto**: `GameMain.Awake` lo crea y lo puebla, y de el salen `InputManager` y `HUDManager`. Lo que sigue pendiente es lo otro: decidir si los servicios se reparten por ahi o se pasa a un proveedor al estilo de Stack&Go (`ServiceConsumer` + servicios suministrados por un controlador). Hoy `InventoryService` se construye suelto en `GameMain` con un comentario que ya avisa de que si crecen los servicios toca un localizador.
 - [ ] Player-facing UI scale setting. `PanelSettings-Inventory` is set to `Constant Pixel Size` (1 UI unit = 1 screen pixel), which is the sharpest option and correct while developing at the monitor's native resolution — `Scale With Screen Size` was resampling every glyph and icon by a fractional factor and made the whole panel look soft. The trade-off is that on a 4K display the UI would render at half its physical size. Fix when it matters by exposing `panelSettings.scale` as an options slider rather than reverting the scale mode; integer factors (1x, 2x) keep it pixel-perfect. Related: judge UI sharpness with the Game view maximised (Shift+Space) or in a build — at 1920x1080 the editor layout can never show the game at 1:1.
 - [ ] Relocate pure rule helpers out of `ECS.Systems`. `CarryCapacity` sits in the systems namespace and is named like one, but it is a **static stateless class**: it implements neither `IPeriodicSystem` nor `IReactiveSystem`, is never registered, holds no state and processes no entities. It owns `GetMaxCarryWeight` plus the encumbrance thresholds and `ClassifyLoad`. Its own comment admits it is a placeholder ("when the real system loop is implemented, this will become a system with its own component"). Misleading as it stands — the meaningful split is *live registered object with side effects* (`InventorySystem`: posts events, mutates inventories, must be injected as an instance) versus *pure function anyone can call for free* (`CarryCapacity`). Consider a `Core/Rules/` namespace for the latter, and move it back when it genuinely becomes a system.
 - [x] **Value objects for coordinates and sizes.** `GridPos` (fila, columna) en `Core/Inventory/` y `CellSize` (lado de celda en px) en `Core/MVC/View/UI/Inventory/`, ambos `readonly struct`.
@@ -419,14 +740,19 @@ Hand added notes (by me by hand):
 
   **No** son candidatos a struct, y se decidio explicitamente dejarlos como clases: los DTO de pintado (`ItemDisplayData` tiene trece campos y es mutable — un struct mutable se copia al iterarlo y las escrituras se pierden), y `GridElement` (mutable, con identidad, referencia a un nodo).
 
-- [ ] **`SubLot`** — nombrar la tupla `(ItemEntity item, int amount)`, que aparece en 34 sitios entre `BatchItem`, `ItemObject`, `InventoryObject` e `InventoryService`. Ya es un tipo valor, asi que no se gana rendimiento: se gana legibilidad (`List<SubLot>` frente a `List<(ItemEntity, int)>`) y un sitio donde colgar `TotalWeight`, hoy recalculado en varios puntos. Refactor mecanico, sin riesgo de cruce de parametros.
+- [x] **`SubLot`** — hecho. `Core/Inventory/SubLot.cs` es un `readonly struct` con `Item`, `Amount`, `TotalWeight`, `Deconstruct` y `Equivalent`. No se gano rendimiento —ya era un tipo valor— sino nombre y un sitio donde colgar el peso, antes recalculado a mano en cada punto. Lo usan `BatchItem`, `ItemLotEvent`, `GroundLotComponent`, los origenes de agarre y el servicio.
 
 - [ ] **Revisar `EntityId` / `NameId`** (`Core/Handler/`). Ambos comparan convirtiendo a texto: `EntityId.Equals` hace `id.ToString() == another.ToString()`, y `CompareTo` ordena **alfabeticamente** un entero — el id 10 va antes que el 9. Consecuencias: `new NameId("5")` es igual a `new EntityId(5)`, dos identidades de tipos distintos que jamas deberian coincidir; y cada comparacion asigna dos cadenas, en un camino que se recorre por cada busqueda de entidad. Tampoco implementan `IEquatable<T>`, asi que usarlos como clave de diccionario boxea y pasa por el `Equals(object)` lento.
 
   El arreglo: comparar por el valor real (int con int, string con string), rechazar la comparacion entre tipos distintos de handler, implementar `IEquatable<T>` y ordenar numericamente en `EntityId`. Pasarlos a `struct` fue considerado y **descartado**: se usan a traves de `IHandler`, y un struct en variable de interfaz se boxea — se perderia justo la ventaja buscada, con conversiones invisibles de propina. El problema no es class-vs-struct, es la comparacion.
 
-- [ ] 3D item preview in inventory UI
-- [ ] Stack&Go full bridge (automated JSON export → item catalog)
+- [ ] 3D item preview in inventory UI. Ahora es viable sin trabajo nuevo: `ModelCache` ya
+  instancia un modelo bajo cualquier transform, asi que es montar un soporte delante de una
+  camara de previsualizacion y pedirle la ruta a `ItemModelResolver`.
+- [ ] Stack&Go full bridge. **Parcialmente hecho**: el catalogo entero, los iconos y ahora los
+  modelos 3D viajan en el zip y se cargan en ejecucion, y el `id` de Stack&Go ya se exporta.
+  Lo que falta es (a) que Unity use ese `id` como typeId y desaparezca `id_mapping.json`, y
+  (b) automatizar el paso manual de descomprimir el zip en `StreamingAssets`.
 - [ ] Save/load inventory state (serialization)
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)

@@ -12,7 +12,8 @@ namespace Core
         /// Links a Core entity with its engine representation.
         /// </summary>
         /// <param name="entity">Entity already created with pure Core components.</param>
-        /// <param name="entityType">Logical type to resolve which visual resource to use.</param>
-        void Link(IEntity entity, string entityType);
+        /// <param name="entityType">Archetype, used to decide whether the engine object is
+        /// found in the scene or created on the spot.</param>
+        void Link(IEntity entity, EntityType entityType);
     }
 }

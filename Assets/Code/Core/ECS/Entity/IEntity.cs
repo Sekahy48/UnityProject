@@ -17,11 +17,6 @@ namespace Core.ECS.Entity
         int GetIdAsInt();
 
         /// <summary>
-        /// Returns the type (handler)
-        /// </summary>
-        Handler.IHandler GetEntityType();
-
-        /// <summary>
         /// Identifying name of the entity
         /// </summary>
         string GetName();
@@ -45,6 +40,12 @@ namespace Core.ECS.Entity
         /// Gets a component by dynamic Type (for when the type isn't known at compile time)
         /// </summary>
         IComponent GetComponentByType(Type target);
+
+        /// <summary>
+        /// Every component the entity carries. Needed by <see cref="Equivalent"/> to compare
+        /// component sets in both directions, not just one.
+        /// </summary>
+        System.Collections.Generic.IEnumerable<IComponent> GetComponents();
 
         /// <summary>
         /// Removes a component by name

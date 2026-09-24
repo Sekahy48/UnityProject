@@ -17,17 +17,18 @@ namespace Core.ECS.Systems
         private int _playerId = -1;
         private PrototypeFactory _prototypeFactory;
         private readonly Dictionary<int, IEntity> _entities = new();
-        private readonly Dictionary<string, IEntity> _prototypes = new(); 
+        private readonly Dictionary<EntityType, IEntity> _prototypes = new();
 
         public EntityManager(PrototypeFactory prototypeFactory)
-        { 
+        {
             _prototypeFactory = prototypeFactory;
-            _prototypes["resourceNode"] = _prototypeFactory.CreateResourceNodePrototype();
-            _prototypes["aliveEntity"] = _prototypeFactory.CreateAliveEntityPrototype();
-            _prototypes["playerEntity"] = _prototypeFactory.CreatePlayerEntityPrototype();
+            _prototypes[EntityType.ResourceNode] = _prototypeFactory.CreateResourceNodePrototype();
+            _prototypes[EntityType.AliveEntity] = _prototypeFactory.CreateAliveEntityPrototype();
+            _prototypes[EntityType.Player] = _prototypeFactory.CreatePlayerEntityPrototype();
+            _prototypes[EntityType.GroundLot] = _prototypeFactory.CreateGroundLotPrototype();
         }
 
-        public IEntity CreateEntity(string type)
+        public IEntity CreateEntity(EntityType type)
         {
             if (!_prototypes.TryGetValue(type, out IEntity prototype))
                 throw new ArgumentException($"No prototype found for type: {type}");
@@ -87,7 +88,7 @@ namespace Core.ECS.Systems
             if (_playerId >= 0 && _entities.TryGetValue(_playerId, out var existing))
                 return existing;
 
-            IEntity playerPrototype = _prototypes["playerEntity"];
+            IEntity playerPrototype = _prototypes[EntityType.Player];
             IEntity player = playerPrototype.Clone();
             _playerId = player.GetIdAsInt();
             _entities[_playerId] = player;

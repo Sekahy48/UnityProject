@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 
 namespace Core.ECS.Component
 {
-    public class StorageComponent : IComponent, IJsonLoadable
+    public class StorageComponent : IComponent, IJsonLoadable, INumericFields
     {
         private int _gridH, _gridW;
         private float _maxWeight; 
@@ -22,11 +21,18 @@ namespace Core.ECS.Component
         public float MaxWeight => _maxWeight;
         public void SetMaxWeight(float value) { _maxWeight = value; }  
 
+        private static readonly NumericFields<StorageComponent> Fields =
+            new NumericFields<StorageComponent>()
+                .Add("gridH", c => c._gridH, (c, v) => c._gridH = (int)v)
+                .Add("gridW", c => c._gridW, (c, v) => c._gridW = (int)v)
+                .Add("maxWeight", c => c._maxWeight, (c, v) => c.SetMaxWeight(v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("gridH")) _gridH = Convert.ToInt32(values["gridH"]);
-            if (values.ContainsKey("gridW")) _gridW = Convert.ToInt32(values["gridW"]);
-            if (values.ContainsKey("maxWeight")) SetMaxWeight(Convert.ToSingle(values["maxWeight"]));
+            Fields.Apply(this, values);
         }
 
         public IComponent Clone()

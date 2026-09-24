@@ -31,7 +31,7 @@ namespace Core.ECS.Component
         Part
     }
 
-    public class BaseItemComponent : BasicComponent, IJsonLoadable
+    public class BaseItemComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         /// <summary>
         /// References the item concept this instance belongs to (catalog key).
@@ -225,16 +225,31 @@ namespace Core.ECS.Component
             _dimensionH = h;
         }
 
+        /// <summary>
+        /// Campos numericos, declarados una sola vez para las dos direcciones.
+        ///
+        /// Las dimensiones se ofrecen aunque sean casillas de la rejilla del inventario y no
+        /// medidas del mundo. Son numeros del item y alguien podria querer compararlos; lo
+        /// que no deben hacer es acabar usandose como tamano fisico.
+        /// </summary>
+        private static readonly NumericFields<BaseItemComponent> Fields =
+            new NumericFields<BaseItemComponent>()
+                .Add("weight", c => c._weight, (c, v) => c.SetWeight(v))
+                .Add("maxStackSize", c => c._maxStackSize, (c, v) => c.SetMaxStackSize((int)v))
+                .Add("durability", c => c._durability, (c, v) => c.SetDurability((int)v))
+                .Add("condition", c => c._condition, (c, v) => c.SetCondition(v))
+                .Add("dimensionW", c => c._dimensionW, (c, v) => c._dimensionW = (int)v)
+                .Add("dimensionH", c => c._dimensionH, (c, v) => c._dimensionH = (int)v);
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
         public void SetFromValues(Dictionary<string, object> values)
         {
-            if (values.ContainsKey("weight")) SetWeight(Convert.ToSingle(values["weight"]));
-            if (values.ContainsKey("maxStackSize")) SetMaxStackSize(Convert.ToInt32(values["maxStackSize"]));
-            if (values.ContainsKey("durability")) SetDurability(Convert.ToInt32(values["durability"]));
-            if (values.ContainsKey("condition")) SetCondition(Convert.ToSingle(values["condition"]));
+            Fields.Apply(this, values);
+
             if (values.ContainsKey("description")) SetDescription(values["description"].ToString());
             if (values.ContainsKey("iconPath")) SetIconPath(values["iconPath"].ToString());
-            if (values.ContainsKey("dimensionW")) _dimensionW = Convert.ToInt32(values["dimensionW"]);
-            if (values.ContainsKey("dimensionH")) _dimensionH = Convert.ToInt32(values["dimensionH"]);
         }
 
         public override IComponent Clone()

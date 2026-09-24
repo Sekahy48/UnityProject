@@ -2,6 +2,7 @@
   "collection": "Artisan",
   "items": [
     {
+      "id": 131,
       "name": "Espada de hierro",
       "description": "Una hoja forjada en hierro con empuñadura de cuero. Equilibrada y fiable, es el arma predilecta de soldados y mercenarios por igual.",
       "imagePath": "images/espada.png",
@@ -46,6 +47,7 @@
       ]
     },
     {
+      "id": 132,
       "name": "Arco corto",
       "description": "Un arco ligero tallado en madera de tejo. Sacrifica alcance por velocidad, ideal para emboscadas y combate a corta distancia",
       "imagePath": "images/arco.png",
@@ -90,6 +92,7 @@
       ]
     },
     {
+      "id": 133,
       "name": "Manzana",
       "description": "Una manzana roja y jugosa, recién recogida. Calma el hambre al instante y su dulzor levanta el ánimo en los días más largos.",
       "imagePath": "images/manzana.png",
@@ -112,10 +115,17 @@
             "protein": 0.5,
             "micronutrients": 8
           }
+        },
+        {
+          "type": "Model",
+          "values": {
+            "stages": "0\u003dmodels/133_manzana_00.glb,models/133_manzana_01.glb,models/133_manzana_02.glb"
+          }
         }
       ]
     },
     {
+      "id": 134,
       "name": "Odre",
       "description": "Un pellejo curtido cosido con hilo encerado. Mantiene el agua fresca durante horas de marcha bajo el sol.",
       "imagePath": "images/item.png",
@@ -149,6 +159,7 @@
       ]
     },
     {
+      "id": 135,
       "name": "Venda",
       "description": "Tiras de lino limpio enrolladas con cuidado. Detienen el sangrado y protegen las heridas de la suciedad del camino.",
       "imagePath": "images/venda.png",
@@ -183,6 +194,7 @@
       ]
     },
     {
+      "id": 136,
       "name": "Arcón pequeño",
       "description": "Un arcón de madera reforzado con remaches de bronce. Cabe bajo un catre y guarda lo justo para no perderlo todo en un saqueo.",
       "imagePath": "images/chest.png",
@@ -203,10 +215,17 @@
             "gridH": 8,
             "maxWeight": 200
           }
+        },
+        {
+          "type": "Model",
+          "values": {
+            "stages": "0\u003dmodels/136_arcon_pequeno_00.glb"
+          }
         }
       ]
     },
     {
+      "id": 139,
       "name": "Pechera",
       "description": "bliblibli ",
       "imagePath": "images/chest-plate.png",
@@ -243,6 +262,7 @@
       ]
     },
     {
+      "id": 140,
       "name": "Camisa",
       "description": "",
       "imagePath": "images/shirt-icon.png",
@@ -279,6 +299,7 @@
       ]
     },
     {
+      "id": 141,
       "name": "Gran Yelmo",
       "description": "Un pesado casco de acero que cubre por completo la cabeza y el rostro, dejando apenas estrechas rendijas para la visión y la respiración. Su estructura robusta ofrece una protección excelente contra golpes y tajos, aunque a costa de una considerable pérdida de visibilidad y comodidad.\n\nDe fabricación sencilla pero resistente, es habitual entre caballeros y soldados de infantería pesada que prefieren soportar el peso del hierro antes que arriesgar el cráneo.",
       "imagePath": "images/helmet-icon.png",
@@ -315,6 +336,7 @@
       ]
     },
     {
+      "id": 145,
       "name": "Mochila",
       "description": "milkel maricon",
       "imagePath": "images/rucksack.png",

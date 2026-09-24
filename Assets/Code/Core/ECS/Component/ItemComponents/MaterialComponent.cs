@@ -15,7 +15,7 @@ namespace Core.ECS.Component.InventoryComponents
     /// <summary>
     /// Gets the general category/type of the material.
     ///
-    public class MaterialComponent : IComponent, IJsonLoadable
+    public class MaterialComponent : IComponent, IJsonLoadable, INumericFields
     {
         #region Atributes
         /// <summary>
@@ -154,14 +154,25 @@ namespace Core.ECS.Component.InventoryComponents
             _thermalInsulation = thermalInsulation;
         }
 
+        /// <summary>
+        /// Campos numericos. El tipo y el nombre del material quedan fuera por no serlo.
+        /// </summary>
+        private static readonly NumericFields<MaterialComponent> Fields =
+            new NumericFields<MaterialComponent>()
+                .Add("flexibility", c => c._flexibility, (c, v) => c.SetFlexibility(v))
+                .Add("hardness", c => c._hardness, (c, v) => c.SetHardness(v))
+                .Add("transpirability", c => c._transpirability, (c, v) => c.SetTranspirability(v))
+                .Add("thermalInsulation", c => c._thermalInsulation, (c, v) => c.SetThermalInsulation(v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
         public void SetFromValues(Dictionary<string, object> values)
         {
+            Fields.Apply(this, values);
+
             if (values.ContainsKey("materialType")) SetMaterialType(Enum.Parse<MaterialType>(values["materialType"].ToString(), true));
             if (values.ContainsKey("materialName")) SetMaterialName(values["materialName"].ToString());
-            if (values.ContainsKey("flexibility")) SetFlexibility(Convert.ToSingle(values["flexibility"]));
-            if (values.ContainsKey("hardness")) SetHardness(Convert.ToSingle(values["hardness"]));
-            if (values.ContainsKey("transpirability")) SetTranspirability(Convert.ToSingle(values["transpirability"]));
-            if (values.ContainsKey("thermalInsulation")) SetThermalInsulation(Convert.ToSingle(values["thermalInsulation"]));
         }
 
         public IComponent Clone()

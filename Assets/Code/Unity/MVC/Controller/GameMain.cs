@@ -102,7 +102,7 @@ public class GameMain : MonoBehaviour
     /// </summary>
     private GameSessionContext BuildSessionContext(GameDataContext dataContext)
     {
-        IEntity player = dataContext._entityManager.CreateEntity("playerEntity");
+        IEntity player = dataContext._entityManager.CreateEntity(EntityType.Player);
         if (player == null)
         {
             Debug.LogError("Player entity could not be created.");
@@ -111,7 +111,7 @@ public class GameMain : MonoBehaviour
 
         // Link Core entity with Unity GameObject via specialized linker
         IEntityLinker linker = new Unity.UnityEntityLinker();
-        linker.Link(player, "playerEntity");
+        linker.Link(player, EntityType.Player);
 
         GameSessionContext sessionCtx = new GameSessionContext();
         sessionCtx.SetPlayer(player); 
@@ -148,7 +148,8 @@ public class GameMain : MonoBehaviour
         systemManager.RegisterEngineSystem(new Unity.TransformSyncSystem());
         systemManager.RegisterReactiveGameSystem(new MovementSystem())
                      .RegisterReactiveGameSystem(new InventorySystem())
-                     .RegisterReactiveGameSystem(new EquipmentSystem());
+                     .RegisterReactiveGameSystem(new EquipmentSystem())
+                     .RegisterReactiveGameSystem(new WorldInteractionSystem(entityManager, new Unity.UnityEntityLinker()));
 
         PresenterManager presenterManager = new PresenterManager();
 

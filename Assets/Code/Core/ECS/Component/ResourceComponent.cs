@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Core.ECS.Component
 {
-    public class ResourceComponent : BasicComponent, IJsonLoadable
+    public class ResourceComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         private ResourceType type;
         private int amount;
@@ -63,10 +63,21 @@ namespace Core.ECS.Component
         public void SetAmount(int value) { amount = value; maxAmount = value; }
         public void SetRenewable(bool value) { renewable = value; }
 
+        /// <summary>
+        /// El tipo y el indicador de renovable quedan fuera por no ser numericos.
+        /// </summary>
+        private static readonly NumericFields<ResourceComponent> Fields =
+            new NumericFields<ResourceComponent>()
+                .Add("amount", c => c.amount, (c, v) => c.SetAmount((int)v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
         public void SetFromValues(Dictionary<string, object> values)
         {
+            Fields.Apply(this, values);
+
             if (values.ContainsKey("resourceType")) SetResourceType(Enum.Parse<ResourceType>(values["resourceType"].ToString(), true));
-            if (values.ContainsKey("amount")) SetAmount(Convert.ToInt32(values["amount"]));
             if (values.ContainsKey("renewable")) SetRenewable(Convert.ToBoolean(values["renewable"]));
         }
 
