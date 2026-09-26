@@ -19,6 +19,10 @@ namespace Core.ECS.Systems
 
         /// <summary>Ver que hay dentro sin cogerlo.</summary>
         [Description("Inspeccionar")]
-        Inspect
+        Inspect,
+
+        /// <summary>Abrir su inventario.</summary>
+        [Description("Abrir inventario")]
+        Inventory
     }
 }

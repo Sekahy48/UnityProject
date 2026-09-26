@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
     <Style src="../uss/InventoryWindow.uss"/>
+    <Style src="../../Theme/ActiveTheme.uss"/>
 
 <!-- Contenedor de todas las ventanas de inventario. Existen en el mismo UIDocument
      (y por tanto en el mismo panel) a proposito: paneles distintos no comparten arbol,

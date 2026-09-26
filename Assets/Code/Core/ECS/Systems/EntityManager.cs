@@ -38,6 +38,17 @@ namespace Core.ECS.Systems
             return created;
         }
 
+        /// <summary>
+        /// Da de alta una entidad que ya existe y no sale de ningun prototipo: un item que
+        /// pasa del inventario al mundo. <see cref="CreateEntity"/> no sirve para eso porque
+        /// fabrica una entidad nueva, y aqui la entidad ES el item.
+        /// </summary>
+        public void Register(IEntity entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            _entities[entity.GetIdAsInt()] = entity;
+        }
+
         public void RemoveEntity(int id)
         {
             _entities.Remove(id);

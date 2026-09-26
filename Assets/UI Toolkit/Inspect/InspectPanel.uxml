@@ -1,0 +1,79 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="InspectPanel.uss" />
+    <Style src="../Theme/ActiveTheme.uss" />
+
+    <!-- Panel de solo lectura para "Inspeccionar" algo del mundo. Hermano de la tira de
+         inspeccion del inventario, pero suelto: cabecera con icono, nombre y descripcion;
+         tabla de datos; y, porque un monton puede traer varias variantes, su desglose.
+         Los textos de ejemplo solo sirven para verlo en el UI Builder: el codigo los
+         sustituye. Las clases title-bar / title-label / close-button se reutilizan para
+         que el tema las vista igual que en el inventario. -->
+    <ui:VisualElement name="inspect-root" class="ip-root" picking-mode="Ignore">
+        <ui:VisualElement name="inspect-panel" class="inspect-panel">
+
+            <ui:VisualElement class="title-bar ip-title-bar">
+                <ui:Label name="ip-title" text="Inspeccionar" class="title-label" />
+                <ui:Button name="ip-close" text="✕" class="close-button ip-close" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="ip-body">
+
+                <ui:VisualElement class="ip-header">
+                    <ui:VisualElement name="ip-icon" class="ip-icon" />
+                    <ui:VisualElement class="ip-identity">
+                        <ui:Label name="ip-name" text="Manzana" class="ip-name" />
+                        <ui:Label name="ip-type" text="Fruta" class="ip-type" />
+                        <ui:Label name="ip-description" text="Una manzana de la huerta, algo golpeada pero comestible." class="ip-description" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="ip-divider" />
+
+                <ui:VisualElement name="ip-stats" class="ip-stats">
+                    <ui:VisualElement class="ip-stat-row">
+                        <ui:Label text="Cantidad" class="ip-stat-key" />
+                        <ui:Label name="ip-amount" text="5" class="ip-stat-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ip-stat-row">
+                        <ui:Label text="Peso total" class="ip-stat-key" />
+                        <ui:Label name="ip-weight-total" text="1,0 kg" class="ip-stat-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ip-stat-row">
+                        <ui:Label text="Peso unitario" class="ip-stat-key" />
+                        <ui:Label name="ip-weight-unit" text="0,2 kg" class="ip-stat-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ip-stat-row">
+                        <ui:Label text="Durabilidad" class="ip-stat-key" />
+                        <ui:Label name="ip-durability" text="80 %" class="ip-stat-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ip-stat-row">
+                        <ui:Label text="Tamaño" class="ip-stat-key" />
+                        <ui:Label name="ip-size" text="1 x 1" class="ip-stat-value" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- Solo se muestra si hay mas de una variante. Las filas las crea el
+                     codigo con la estructura de la fila de ejemplo. -->
+                <ui:VisualElement name="ip-lots-section" class="ip-lots-section">
+                    <ui:Label text="Contenido" class="ip-section-label" />
+                    <ui:ScrollView name="ip-lots" class="ip-lots">
+                        <ui:VisualElement class="ip-lot-row">
+                            <ui:VisualElement class="ip-lot-icon" />
+                            <ui:Label text="Manzana (fresca)" class="ip-lot-name" />
+                            <ui:Label text="x3" class="ip-lot-amount" />
+                            <ui:Label text="0,6 kg" class="ip-lot-weight" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="ip-lot-row">
+                            <ui:VisualElement class="ip-lot-icon" />
+                            <ui:Label text="Manzana (pasada)" class="ip-lot-name" />
+                            <ui:Label text="x2" class="ip-lot-amount" />
+                            <ui:Label text="0,4 kg" class="ip-lot-weight" />
+                        </ui:VisualElement>
+                    </ui:ScrollView>
+                </ui:VisualElement>
+
+                <ui:Label name="ip-footer" text="E · Esc  cerrar" class="ip-footer" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

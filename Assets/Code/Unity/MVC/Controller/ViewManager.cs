@@ -23,7 +23,8 @@ namespace MVC.Controller
                                                           uiRegistry.GetTemplate(UITemplateType.InventoryPanel));
 
              views[PresenterType.WORLD] = new WorldInteractionView(uiRegistry.GetDocument(UIDocumentType.WorldInteraction),
-                                                                   cameras);
+                                                                   cameras,
+                                                                   uiRegistry.GetTemplate(UITemplateType.InspectPanel));
         }
 
         public T GetView<T>(PresenterType type) where T : IView

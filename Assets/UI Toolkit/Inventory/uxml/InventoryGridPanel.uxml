@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
     <Style src="../uss/InventoryWindow.uss"/>
+    <Style src="../../Theme/ActiveTheme.uss"/>
 <!-- Panel inventario: weight bar + tetris grid -->
                     <ui:VisualElement name="inventory-panel" class="inventory-panel">
                         <!-- Barra con nombre y posibles botones -->

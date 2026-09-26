@@ -461,7 +461,27 @@ namespace MVC.View.Inventory
         #region Visibility
 
         public bool IsReady() => _isReady;
-        public void Show() => _mainRoot.style.display = DisplayStyle.Flex;
+        public void Show()
+        {
+            _mainRoot.style.display = DisplayStyle.Flex;
+            SetScreenCapture(true);
+        }
+
+        /// <summary>
+        /// Si el documento del inventario captura el puntero en toda la pantalla.
+        ///
+        /// <para>Abierto tiene que hacerlo: el fantasma de la mano sigue al raton por toda la
+        /// pantalla y soltar fuera de una rejilla es un gesto (PointerMove y PointerUp estan
+        /// registrados en la raiz del documento). Cerrado NO debe: su raiz y "ui-root" ocupan
+        /// la pantalla entera y, como este panel va por encima, se tragaban el raton de todo
+        /// lo que hay debajo —el menu radial nunca recibia un movimiento—.</para>
+        /// </summary>
+        private void SetScreenCapture(bool capture)
+        {
+            PickingMode mode = capture ? PickingMode.Position : PickingMode.Ignore;
+            _uiDocument.rootVisualElement.pickingMode = mode;
+            if (_mainRoot.parent != null) _mainRoot.parent.pickingMode = mode;   // ui-root
+        }
         public void DismissOverlays()
         {
             CloseContextualMenu();
@@ -473,6 +493,7 @@ namespace MVC.View.Inventory
         {
             DismissOverlays();
             _mainRoot.style.display = DisplayStyle.None;
+            SetScreenCapture(false);
             ShowSideContent(PanelType.A, SidePanelContent.None);
             ShowSideContent(PanelType.B, SidePanelContent.None);
             ResetPosition();
@@ -562,8 +583,18 @@ namespace MVC.View.Inventory
         /// se viera centrada en el cursor y cayera en otro sitio.</param>
         public void RenderHandBuffer(ItemDisplayData itemData, CellSize itemSize, CellSize anchorBasis)
         {
+            // El fantasma se monta como una ficha de la rejilla: la ficha es el propio
+            // _handBuffer (su fondo lo pone el tema, y el color del veredicto lo tine) y el
+            // icono va en un hijo. Antes el icono era el fondo del fantasma, y asi no quedaba
+            // sitio para la ficha: un elemento solo tiene una imagen de fondo.
             _handBuffer.Clear();
-            UIElementUtils.SetBackgroundTexture(_handBuffer, itemData.IconPath);
+
+            VisualElement icon = new VisualElement();
+            icon.AddToClassList("item-icon");
+            icon.AddToClassList("hand-buffer-icon");
+            icon.pickingMode = PickingMode.Ignore;
+            UIElementUtils.SetBackgroundTexture(icon, itemData.IconPath);
+            _handBuffer.Add(icon);
 
             _handBuffer.style.width  = itemSize.Width;
             _handBuffer.style.height = itemSize.Height;
@@ -578,9 +609,14 @@ namespace MVC.View.Inventory
             _handBuffer.schedule.Execute(() => _handBuffer.RemoveFromClassList("hand-buffer-instant")).ExecuteLater(120);
         }
 
+        /// <summary>
+        /// Solo cambia la cantidad: el icono se queda. Antes se vaciaba el fantasma entero,
+        /// que valia mientras el icono era su fondo y no un hijo.
+        /// </summary>
         public void RefreshHandBuffer(int amount)
         {
-            _handBuffer.Clear();
+            foreach (Label label in _handBuffer.Query<Label>(className: "amount-label").ToList())
+                label.RemoveFromHierarchy();
             UIElementUtils.AddAmountLabel(_handBuffer, amount);
         }
 
@@ -588,7 +624,9 @@ namespace MVC.View.Inventory
         {
             _handBuffer.Clear();
             _handBuffer.style.display = DisplayStyle.None;
-            _handBuffer.style.backgroundImage = null;
+            // Keyword Null y no null: null fijaria "sin imagen" en linea y taparia la ficha
+            // que pone la hoja de estilos; Null quita lo escrito en linea y deja mandar a la hoja.
+            _handBuffer.style.backgroundImage = StyleKeyword.Null;
  
             _magnetSlot = null; 
         }

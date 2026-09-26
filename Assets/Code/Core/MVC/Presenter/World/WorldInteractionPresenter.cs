@@ -3,6 +3,8 @@ using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
 using Core.ECS.Systems;
+using Core.Inventory;
+using Core.MVC.View.UI.Inventory;
 using Core.MVC.View.UI.World;
 using Core.Services;
 using AC = Core.Utils.ArgumentChecker;
@@ -39,6 +41,25 @@ namespace Core.MVC.Presenter.World
         /// <summary>Lo ultimo que se mando a la vista, para no repintar lo mismo cada fotograma.</summary>
         private WorldPromptData _shown;
 
+        /* Menu radial. Mientras esta abierto el objetivo y sus acciones se CONGELAN: al mover
+           el raton para elegir se mueve la mirada, y sin congelar podrias cambiar de objeto
+           a mitad de eleccion. */
+        private bool _menuOpen;
+        private IEntity _menuTarget;
+        private List<WorldAction> _menuActions = new List<WorldAction>();
+
+        /// <summary>
+        /// Opcion resaltada, o -1. Es el UNICO dato que decide que se ejecuta al soltar: la
+        /// vista solo informa de donde esta el puntero y pinta lo que esta aqui, asi que lo
+        /// resaltado y lo ejecutado no pueden discrepar.
+        /// </summary>
+        private int _highlighted = -1;
+
+        /* Panel de inspeccion. Como el menu, congela su objetivo y se cierra solo si deja de
+           alcanzarse. */
+        private bool _inspecting;
+        private IEntity _inspectTarget;
+
         public WorldInteractionPresenter(IWorldInteractionView view, WorldInteractionService service)
         {
             AC.CheckNotNull(view, nameof(view));
@@ -47,6 +68,11 @@ namespace Core.MVC.Presenter.World
             _view = view;
             _service = service;
             _view.Initialize();
+
+            _view.OnMenuHighlighted += index => _highlighted = _menuOpen ? index : -1;
+            _view.OnMenuClicked += OnMenuClicked;
+            _view.OnMenuDismissed += CloseMenu;
+            _view.OnInspectCloseRequested += CloseInspect;
         }
 
         #region IPresenter
@@ -65,6 +91,8 @@ namespace Core.MVC.Presenter.World
         public void Close(bool absolute)
         {
             _open = false;
+            CloseMenu();
+            CloseInspect();
             Forget();
             _view.SetAttending(false);
         }
@@ -87,6 +115,21 @@ namespace Core.MVC.Presenter.World
         public void Tick()
         {
             if (!_open) return;
+
+            // Con el menu abierto no se busca: el objetivo esta congelado. Solo se vigila que
+            // siga a mano; si no, el menu se cierra solo (la interfaz no se queda ofreciendo
+            // algo que ya no se puede hacer).
+            if (_menuOpen)
+            {
+                if (!_service.CanReach(_actor, _menuTarget)) CloseMenu();
+                return;
+            }
+
+            if (_inspecting)
+            {
+                if (!_service.CanReach(_actor, _inspectTarget)) CloseInspect();
+                return;
+            }
 
             _target = _service.FindTarget(_actor);
             _actions = _target == null
@@ -123,13 +166,157 @@ namespace Core.MVC.Presenter.World
         /// </summary>
         public void OnTapped()
         {
-            if (!_open || _target == null || _actions.Count == 0) return;
+            if (!_open) return;
 
-            _service.Execute(_actor, _target, _actions[0]);
+            // Con el panel abierto, la misma tecla lo cierra: es lo que se espera de la
+            // tecla con la que se abrio.
+            if (_inspecting)
+            {
+                CloseInspect();
+                return;
+            }
+
+            if (_target == null || _actions.Count == 0) return;
+
+            Perform(_target, _actions[0]);
 
             // El monton puede haber desaparecido o cambiado: que la marca lo refleje ya y
             // no un fotograma despues.
             Tick();
+        }
+
+        /// <summary>
+        /// Ejecuta una accion por el servicio y, si es de las que abren interfaz, la abre.
+        ///
+        /// Inspeccionar pasa por el servicio aunque no cambie nada en el mundo: asi su
+        /// comprobacion de alcance y de acciones es la misma que la de las demas. Solo si el
+        /// servicio la da por buena se abre el panel.
+        /// </summary>
+        private void Perform(IEntity target, WorldAction action)
+        {
+            if (!_service.Execute(_actor, target, action)) return;
+
+            if (action == WorldAction.Inspect) OpenInspect(target);
+        }
+
+        /// <summary>Si el menu radial esta abierto. InputManager lo consulta cada fotograma
+        /// para bloquear la vista mientras lo este.</summary>
+        public bool IsMenuOpen => _menuOpen;
+
+        /// <summary>
+        /// Mantener la tecla: abre el menu con las acciones del objetivo actual.
+        /// Sin objetivo no hay menu: mantener sobre nada no hace nada.
+        /// </summary>
+        public void OpenMenu()
+        {
+            if (!_open || _menuOpen || _target == null || _actions.Count == 0) return;
+
+            _menuOpen = true;
+            _menuTarget = _target;
+            _menuActions = new List<WorldAction>(_actions);
+            _highlighted = -1;
+
+            // La marca de la E sobraria con el menu encima.
+            Forget();
+
+            List<string> labels = new List<string>(_menuActions.Count);
+            foreach (WorldAction action in _menuActions) labels.Add(action.GetDescription());
+            _view.OpenMenu(labels);
+        }
+
+        /// <summary>
+        /// Soltar la tecla tras mantener: ejecuta lo resaltado, o nada si el puntero esta en
+        /// el centro o fuera. En los dos casos el menu se cierra.
+        /// </summary>
+        public void ReleaseMenu()
+        {
+            if (!_menuOpen) return;
+
+            int chosen = _highlighted;
+            if (chosen >= 0) ExecuteMenuOption(chosen);
+            CloseMenu();
+        }
+
+        private void OnMenuClicked(int index)
+        {
+            if (!_menuOpen) return;
+
+            ExecuteMenuOption(index);
+            CloseMenu();
+        }
+
+        private void ExecuteMenuOption(int index)
+        {
+            if (index < 0 || index >= _menuActions.Count) return;
+            Perform(_menuTarget, _menuActions[index]);
+        }
+
+        private void CloseMenu()
+        {
+            if (!_menuOpen) return;
+
+            _menuOpen = false;
+            _menuTarget = null;
+            _menuActions = new List<WorldAction>();
+            _highlighted = -1;
+            _view.CloseMenu();
+
+            // La marca vuelve ya, sin esperar al siguiente fotograma.
+            Tick();
+        }
+
+        /// <summary>Si el panel de inspeccion esta abierto. InputManager bloquea la vista
+        /// mientras lo este, para poder usar el cursor.</summary>
+        public bool IsInspecting => _inspecting;
+
+        private void OpenInspect(IEntity target)
+        {
+            InspectPanelData data = BuildInspectData(target);
+            if (data == null) return;
+
+            _inspecting = true;
+            _inspectTarget = target;
+            Forget();
+            _view.ShowInspect(data);
+        }
+
+        /// <summary>Cierra el panel. Publico porque Esc lo pide desde fuera.</summary>
+        public void CloseInspect()
+        {
+            if (!_inspecting) return;
+
+            _inspecting = false;
+            _inspectTarget = null;
+            _view.HideInspect();
+            Tick();
+        }
+
+        /// <summary>
+        /// Describe un monton para el panel. El conjunto usa el representante para nombre,
+        /// icono y descripcion, pero la cantidad y el peso son los de TODOS los lotes. Cada
+        /// lote es una variante, con su propia durabilidad.
+        /// </summary>
+        private static InspectPanelData BuildInspectData(IEntity target)
+        {
+            // Un item suelto se describe a si mismo, una unidad y sin desglose.
+            if (target is ItemEntity single)
+                return new InspectPanelData
+                {
+                    Item = DisplayDTOsBuilder.BuildDisplayData(single, 1),
+                    Lots = new List<ItemDisplayData>()
+                };
+
+            GroundLotComponent lot = target.GetComponent<GroundLotComponent>();
+            if (lot == null || lot.Representative == null) return null;
+
+            ItemDisplayData item = DisplayDTOsBuilder.BuildDisplayData(lot.Representative, lot.TotalUnits);
+            item.TotalWeight = lot.TotalWeight;
+
+            List<ItemDisplayData> lots = new List<ItemDisplayData>(lot.Lots.Count);
+            foreach (SubLot sub in lot.Lots)
+                lots.Add(DisplayDTOsBuilder.BuildDisplayData(sub.Item, sub.Amount));
+
+            return new InspectPanelData { Item = item, Lots = lots };
         }
 
         #endregion
@@ -169,6 +356,8 @@ namespace Core.MVC.Presenter.World
                 string name = lot.Representative.GetDisplayName();
                 return units > 1 ? $"{name} x{units}" : name;
             }
+
+            if (target is ItemEntity item) return item.GetDisplayName();
 
             return string.Empty;
         }

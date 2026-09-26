@@ -84,6 +84,15 @@ namespace Core.ECS.Systems
         {
             if (lotEvent.Lots == null || lotEvent.Lots.Count == 0) return;
 
+            // Tirar una sola unidad es tirarla suelta: el item mismo pasa al mundo, sin
+            // monton que lo envuelva. Asi un contenedor tirado (siempre es una unidad) es a
+            // la vez lo que se alcanza y lo que se abre.
+            if (lotEvent.Lots.Count == 1 && lotEvent.Lots[0].Amount == 1)
+            {
+                PlaceItem(lotEvent.Lots[0].Item, lotEvent.GetEntity());
+                return;
+            }
+
             IEntity pile = _entityManager.CreateEntity(EntityType.GroundLot);
             if (pile == null) return;
 
@@ -91,6 +100,41 @@ namespace Core.ECS.Systems
             PlaceAt(pile, lotEvent.GetEntity());
 
             _linker.Link(pile, EntityType.GroundLot);
+        }
+
+        /// <summary>
+        /// Pone un item suelto en el mundo.
+        ///
+        /// <para>Se pone un CLON. Un item que sale de una pila puede ser la misma instancia
+        /// que siguen usando las unidades que se quedan (una ItemEntity se comparte entre
+        /// sublotes mientras es inmutable): darle posicion a esa instancia se la daria
+        /// tambien a las del inventario.</para>
+        ///
+        /// <para>Pareja de <see cref="TakeItem"/>: lo que se pone aqui se quita alli.</para>
+        /// </summary>
+        private void PlaceItem(ItemEntity item, IEntity dropper)
+        {
+            if (item == null) return;
+
+            ItemEntity placed = item.Clone();
+            WorldPresence.AddTo(placed);
+            PlaceAt(placed, dropper);
+
+            _entityManager.Register(placed);
+            _linker.Link(placed, EntityType.WorldItem);
+        }
+
+        /// <summary>
+        /// Saca del mundo un item suelto que se acaba de recoger.
+        ///
+        /// Al inventario no va este item sino una copia limpia
+        /// (<see cref="WorldPresence.CleanCopyOf"/>); este se destruye entero, igual que un
+        /// monton vacio. Por eso basta con <see cref="Despawn"/>: desenlazar y dar de baja.
+        /// </summary>
+        public void TakeItem(ItemEntity item)
+        {
+            if (item == null || !WorldPresence.IsIn(item)) return;
+            Despawn(item);
         }
 
         /// <summary>
@@ -408,11 +452,23 @@ namespace Core.ECS.Systems
             if (actor == null || target == null) return actions;
 
             GroundLotComponent lot = target.GetComponent<GroundLotComponent>();
+            InventoryComponent inventoryComponent = target.GetComponent<InventoryComponent>();
 
             if (lot != null && !lot.IsEmpty)
             {
                 actions.Add(WorldAction.PickUp);
                 actions.Add(WorldAction.Inspect);
+            }
+            else if (target is ItemEntity)
+            {
+                // Un item suelto: lo mismo que un monton de una unidad.
+                actions.Add(WorldAction.PickUp);
+                actions.Add(WorldAction.Inspect);
+            }
+
+            if (inventoryComponent != null)
+            {
+                actions.Add(WorldAction.Inventory);
             }
 
             return actions;

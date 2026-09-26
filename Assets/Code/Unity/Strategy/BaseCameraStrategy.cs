@@ -39,6 +39,12 @@ namespace Strategy
         /// </summary>
         private const float INTERACT_HOLD_TIME = 0.25f;
 
+        /// <summary>
+        /// Quien decide si la camara puede girar con el raton. Lo pone InputManager al
+        /// activar la estrategia; sin el, la camara gira siempre, que es lo que hacia antes.
+        /// </summary>
+        public Unity.LookControl Look { get; set; }
+
         private bool _interactPressed;
         private bool _interactHoldFired;
         private float _interactHeldFor;
@@ -122,6 +128,20 @@ namespace Strategy
         /// origen, en cambio, lo pone Core en los ojos del personaje, no en la camara, para
         /// que la camara de detras no alcance cosas que el personaje tiene a la espalda.
         /// </summary>
+        /// <summary>
+        /// Lo que se ha movido el raton para girar la vista: cero con la vista bloqueada.
+        ///
+        /// <para>Se bloquea la ENTRADA y no el metodo entero. <c>HandleMouseLook</c> tambien
+        /// coloca la camara (en TPS la lleva detras del personaje); saltarlo dejaba la camara
+        /// clavada donde estaba mientras el personaje se alejaba. Asi la camara sigue al
+        /// personaje y solo deja de girar.</para>
+        /// </summary>
+        protected Vector2 ReadLookDelta()
+        {
+            if (Look != null && Look.IsLocked) return Vector2.zero;
+            return Mouse.current.delta.ReadValue();
+        }
+
         private void WriteGaze()
         {
             Vector3 forward = Camera.transform.forward;

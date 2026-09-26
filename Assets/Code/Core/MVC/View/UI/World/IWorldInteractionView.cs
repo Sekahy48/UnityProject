@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Core.MVC.View;
 
 namespace Core.MVC.View.UI.World
@@ -29,5 +31,37 @@ namespace Core.MVC.View.UI.World
         /// vista muestra u oculta lo que solo tiene sentido entonces, como el punto de mira.
         /// </summary>
         void SetAttending(bool attending);
+
+        #region Menu radial
+
+        /// <summary>
+        /// Abre el menu radial con estas opciones, la primera arriba y el resto en sentido
+        /// horario. Ninguna resaltada al abrir: el puntero empieza en el centro.
+        /// </summary>
+        void OpenMenu(IReadOnlyList<string> labels);
+
+        void CloseMenu();
+
+        /// <summary>El puntero entro en la porcion de la opcion i, o en ninguna (-1).</summary>
+        event Action<int> OnMenuHighlighted;
+
+        /// <summary>Clic sobre la porcion de la opcion i.</summary>
+        event Action<int> OnMenuClicked;
+
+        /// <summary>Clic fuera de toda opcion (centro o lejos): cerrar sin hacer nada.</summary>
+        event Action OnMenuDismissed;
+
+        #endregion
+
+        #region Panel de inspeccion
+
+        void ShowInspect(InspectPanelData data);
+
+        void HideInspect();
+
+        /// <summary>El jugador pidio cerrar el panel desde el propio panel (la X).</summary>
+        event Action OnInspectCloseRequested;
+
+        #endregion
     }
 }

@@ -4,7 +4,11 @@ using Core.ECS.Component;
 
 namespace Unity.ECS.Component
 {
-    public class UnityEntityComponent : IComponent
+    /// <summary>
+    /// Puente entre una entidad de Core y su GameObject. Lo pone y lo quita solo el
+    /// linker, y no se clona (ver <see cref="IEngineBridge"/>).
+    /// </summary>
+    public class UnityEntityComponent : IEngineBridge
     {
         private GameObject GameObject { get; }
 
@@ -15,7 +19,9 @@ namespace Unity.ECS.Component
 
         public IComponent Clone()
         {
-            // Possible issue: GameObjects can't be cloned directly.
+            // No deberia llamarse: InGameEntity.Clone salta los IEngineBridge. Si alguien lo
+            // hiciera, devolveria un segundo puente al MISMO GameObject, que es justo el
+            // error que eso evita.
             return new UnityEntityComponent(this.GameObject);
         }
 

@@ -86,3 +86,5 @@
 .wi-reticle--hidden {
     display: none;
 }
+
+/* El menu radial trae su propia hoja: UI Toolkit/Controls/Resources/Controls/RadialMenu.uss */

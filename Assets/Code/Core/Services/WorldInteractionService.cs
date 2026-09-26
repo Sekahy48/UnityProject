@@ -60,6 +60,10 @@ namespace Core.Services
         public List<WorldAction> GetAvailableActions(IEntity actor, IEntity target)
             => World.GetAvailableActions(actor, target);
 
+        /// <summary>Si el actor sigue alcanzando un objetivo concreto. Ver
+        /// <see cref="WorldInteractionSystem.CanReach"/>.</summary>
+        public bool CanReach(IEntity actor, IEntity target) => World.CanReach(actor, target);
+
         #endregion
 
         #region Ejecutar
@@ -88,9 +92,10 @@ namespace Core.Services
                     return true;
 
                 case WorldAction.Inspect:
-                    // Panel de solo lectura: pendiente (M6 T2, tras el menu radial).
-                    CoreLogger.Instance.Log("Inspeccionar: aun no implementado.");
-                    return false;
+                    // Inspeccionar no cambia nada en el mundo: el panel lo abre la interfaz.
+                    // Pasa igualmente por aqui para que la comprobacion de alcance y de
+                    // acciones sea la misma que para cualquier otra accion.
+                    return true;
 
                 default:
                     return false;
@@ -115,42 +120,71 @@ namespace Core.Services
         /// igual que la transferencia rapida. Meter en la mochila es abrirla y colocar.</para>
         /// </summary>
         /// <returns>Unidades que se quedan en el suelo.</returns>
-        private int PickUp(IEntity actor, IEntity pile)
+        /// <param name="target">Un monton, o un item suelto.</param>
+        private int PickUp(IEntity actor, IEntity target)
         {
             WorldInteractionSystem world = World;
 
             InventoryComponent inventory = actor.GetComponent<InventoryComponent>();
-            if (inventory == null) return UnitsOn(pile);
+            if (inventory == null) return UnitsOn(target);
 
-            InventorySystem inventories = Inventories;
             PickUpLimit limit = PickUpLimit.None;
             int left = 0;
 
-            // Copia: TakeFromLot quita lotes del monton, y al ultimo lo destruye.
-            List<SubLot> lots = new List<SubLot>(pile.GetComponent<GroundLotComponent>().Lots);
-
-            foreach ((ItemEntity variant, int amount) in lots)
+            GroundLotComponent pile = target.GetComponent<GroundLotComponent>();
+            if (pile != null)
             {
-                // Se pregunta por lote y justo antes de mover: cada respuesta tiene que ver
-                // el peso que dejaron los lotes anteriores. source null porque lo recogido
-                // viene de fuera del arbol y no hay techo del que eximirlo.
-                int fitByWeight = inventory.Inventory.FitByWeight(variant, amount, null);
+                // Copia: TakeFromLot quita lotes del monton, y al ultimo lo destruye.
+                List<SubLot> lots = new List<SubLot>(pile.Lots);
 
-                int notPlaced = inventories.TryStackOntoHere(actor, variant, amount, announce: false);
-                int placed = amount - notPlaced;
+                foreach ((ItemEntity variant, int amount) in lots)
+                {
+                    int placed = MoveInto(actor, inventory, variant, amount, ref limit);
+                    left += amount - placed;
 
-                limit = Worst(limit, LimitOf(amount, fitByWeight, placed));
-                left += notPlaced;
+                    if (placed > 0) world.TakeFromLot(target, variant, placed);
+                }
+            }
+            else if (target is ItemEntity worldItem)
+            {
+                // Un item suelto es un lote de una unidad, con una diferencia: lo que entra
+                // es una copia sin nada del mundo. Intentarlo con la copia ES la pregunta de
+                // si cabe; si no cabe, el del suelo no se ha tocado y no hay nada que
+                // deshacer. Si cabe, el del suelo se destruye.
+                ItemEntity clean = WorldPresence.CleanCopyOf(worldItem);
 
-                if (placed > 0) world.TakeFromLot(pile, variant, placed);
+                int placed = MoveInto(actor, inventory, clean, 1, ref limit);
+                left += 1 - placed;
+
+                if (placed > 0) world.TakeItem(worldItem);
             }
 
             // Una ronda de eventos por gesto, no una por lote. fullGrid va a false a
             // proposito: el aviso de "no cabe" sale de Announce, con el motivo ya resuelto.
-            inventories.EvaluateAndFireEvents(actor, false);
+            Inventories.EvaluateAndFireEvents(actor, false);
             Announce(actor, inventory, limit);
 
             return left;
+        }
+
+        /// <summary>
+        /// Mete en el inventario del actor lo que quepa de un lote y acumula el motivo si no
+        /// entra entero. Devuelve las unidades que entraron.
+        ///
+        /// Se pregunta el peso por lote y justo antes de mover: cada respuesta tiene que ver
+        /// el peso que dejaron los lotes anteriores. source null porque lo recogido viene de
+        /// fuera del arbol y no hay techo del que eximirlo.
+        /// </summary>
+        private int MoveInto(IEntity actor, InventoryComponent inventory, ItemEntity item, int amount,
+                             ref PickUpLimit limit)
+        {
+            int fitByWeight = inventory.Inventory.FitByWeight(item, amount, null);
+
+            int notPlaced = Inventories.TryStackOntoHere(actor, item, amount, announce: false);
+            int placed = amount - notPlaced;
+
+            limit = Worst(limit, LimitOf(amount, fitByWeight, placed));
+            return placed;
         }
 
         /// <summary>
@@ -193,8 +227,11 @@ namespace Core.Services
             }
         }
 
-        private static int UnitsOn(IEntity pile) =>
-            pile?.GetComponent<GroundLotComponent>()?.TotalUnits ?? 0;
+        private static int UnitsOn(IEntity target)
+        {
+            if (target is ItemEntity) return 1;
+            return target?.GetComponent<GroundLotComponent>()?.TotalUnits ?? 0;
+        }
 
         #endregion
     }

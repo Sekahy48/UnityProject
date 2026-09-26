@@ -4,78 +4,72 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestone 5 cerrado. M6 a medias: hechas T1, T3, T4 y T7; T2 a medio camino.** Quedan T5
-(cerrar por distancia) y T6 (carros y NPCs). Se cerro ademas M7 T3b por el camino: un
-contenedor guardado ocupa celdas y pesa igual que puesto.
+**Milestones 1–5 cerrados. M6: hechas T1, T2, T3, T4 y T7.** Quedan T5 (cerrar por distancia)
+y T6 (carros y NPCs), y antes un rediseño de los paneles laterales que ya esta decidido.
 
-**Lo siguiente, concreto: falta el cableado y falta `Unlink`.** Tirar funciona de punta a
-punta —el item sale del inventario, aparece un monton en el mundo con su modelo 3D— y existe
-la consulta que decide a que puedes llegar (`WorldInteractionSystem.FindTarget`). **Pero no
-la llama nadie**, asi que nada de eso se ejecuta todavia. Para cerrar T2 hacen falta tres
-piezas, y la segunda arrastra un agujero de arquitectura:
+**T2 cerrada entera** (las decisiones de cada pieza estan en la seccion de M6):
+tirar (una unidad sale suelta como `WorldItem`; varias, en monton), `Unlink`/`Despawn`,
+recoger con aviso de peso/volumen, apuntar con la mirada desde los ojos (`GazeComponent`),
+filtro de pared (`LineOfSightFilter`), marca de la E anclada y punto de mira, menu radial de
+quesitos (mantener E), panel de Inspeccionar, y `LookControl` como unico dueno de la vista y
+del cursor (motivos `Manual`=Alt, `Inventory`, `RadialMenu`, `Inspect`). Tambien dos temas
+visuales intercambiables (medieval y campesino, `Theme/ActiveTheme.uss`).
 
-1. **Input.** Una fuente de interaccion por estrategia de camara, hermana de
-   `IInventoryInputSource`, solo en FPS y TPS —el RTS se queda sin interaccion—. Algo por
-   fotograma pregunta `FindTarget` y guarda el objetivo. Pulsacion corta = accion por
-   defecto; mantener = menu radial.
-2. ~~**Ejecutar `WorldAction.PickUp`**~~ **HECHO** en `WorldInteractionService.PickUp`
-   (decisiones en la seccion de M6). Texto original: moviendo los lotes al inventario con lo que ya sabe
-   hacer `InventorySystem`. Decidido: si no cabe todo se mueve lo que quepa y se avisa
-   ("peso completo" / "demasiado volumen"); si no cabe nada, **la accion se ofrece igual** y
-   mueve cero con su aviso, porque una E que no aparece no le explica al jugador por que.
-   Decidido tambien que la composicion la haga **un servicio nuevo**, no el sistema tirando
-   del `SystemManager`: mismo camino que con el equipo.
-3. ~~**`Unlink`, que no existe.**~~ **HECHO**: `IEntityLinker.Unlink` y
-   `WorldInteractionSystem.Despawn`, sin llamadas aun; la primera sera un monton que se
-   vacia al recogerlo. Decisiones en la seccion de M6.
+**Lo siguiente: rediseño de los paneles A y B (decidido, sin empezar).** Hoy A y B cuelgan
+del inventario principal; para mirar dos contenedores a la vez hay que poder abrirlos sin
+el. Orden acordado:
 
-**Lo que funciona hoy.** Mover items dentro de la rejilla y entre paneles, por clic-agarre y
-por arrastre indistintamente, con el fantasma coloreado segun un veredicto que recorre las
-mismas decisiones que la colocacion real, imantado tanto a los slots de equipo como celda a
-celda. Menu contextual con submenus. Equipar y desequipar por los tres caminos —menu, clic y
-arrastre— incluyendo capas concretas. Desglose de variantes en su propio desplegable, cada
-fila agarrable y con su menu. Cantidades parciales por gesto (shift) y por menu, e
-intercambio de dos items cuando ninguno admite al otro. El fantasma distingue cuatro
-respuestas: verde entra entero, amarillo entra parte, azul se intercambia, rojo nada.
+1. **1a — paneles independientes** del inventario principal (refactor de
+   `InventoryPresenter`: principal, A y B con su propio abierto/cerrado). Se prueba con los
+   atajos Shift+1 / Shift+2, que se quedan como estan.
+2. **1b — disposicion y entrada:**
+   - Posiciones fijas: columna principal a la izquierda y A/B a la derecha siempre en su
+     sitio (el principal se oculta con `visibility`, no `display`, para no liberar su
+     hueco). Dentro de la columna, un panel solo queda centrado en vertical, como hoy.
+   - El documento del inventario captura el raton a pantalla completa solo con el
+     principal abierto o con algo en la mano; si no, solo las propias ventanas A/B (si no,
+     el radial vuelve a quedarse sin raton). Asi se puede arrastrar entre A y B sin la I.
+   - Cursor: con el principal abierto, vista bloqueada y Alt ignorado; al cerrarlo, camara
+     libre SIEMPRE (haya paneles o no: casi siempre se cierra para interactuar con el
+     mundo); con solo paneles, Alt alterna. Si no queda nada abierto, camara libre. La E
+     actua sobre el mundo mientras el principal este cerrado. Esc cierra todo.
+3. **2 — "Abrir inventario" desde el mundo** (`WorldAction.Inventory`, ya en el enum y en
+   `GetAvailableActions` para cualquier entidad con `InventoryComponent`; hoy no hace nada)
+   y **cierre por distancia (cierra T5)**. El cierre usa una comprobacion SOLO de distancia
+   con margen (`IsInRange`), no `CanReach`: con la camara libre, mirar a otro lado cerraria
+   el panel. Lo que no esta en el mundo (cofres de desarrollo, mochila equipada) no se
+   cierra por distancia. Abrir algo que ya esta abierto: se ofrece y no pasa nada. Los
+   presentadores no se conocen: el de mundo habla con los paneles por una interfaz de Core
+   (`IContainerPanels`) que implementa `InventoryPresenter`.
+4. **3 — radial en arbol:** si A o B ya tienen algo, "Abrir inventario" despliega al pasar
+   el raton un anillo exterior con "Principal (lo que hay)" y "Secundario (lo que hay)",
+   que sustituyen al ocupante; si ninguno tiene nada, abre en A directamente. Opciones como
+   Composite `RadialOption` (hoja con accion / rama con hijos), hermano de `MenuOption` sin
+   `Fields`; el control solo lee textos y forma y devuelve un camino (padre, hijo).
 
-**Y contenedores de verdad.** Una mochila equipada aparece como pestaña del panel del jugador
-y se opera como cualquier inventario; su menu la manda a los huecos laterales. Su peso y el de
-su contenido cuelgan del arbol del portador, y la capacidad se pregunta hacia arriba nivel a
-nivel —bolsillo, mochila, personaje—, con aviso en la barra cuando el que frena no es el que
-miras. Un contenedor no puede meterse dentro de si mismo ni de lo que lleva dentro.
+**Despues:** T6 (carros, arcones colocados y NPCs con inventario) con contenido de verdad.
 
-**Y despues de T2**, lo que queda de M6 ya no es inventario-como-interfaz:
+**Reparto de trabajo acordado:** los sistemas del nucleo (inventario, heridas, fisiologia)
+los escribe Sergio con revision; lo accesorio (temas, USS, enganches con Unity) se puede
+delegar. Antes de cada commit, Sergio explica el flujo de lo hecho. Candidata a escribirla
+el: el cierre por distancia del paso 2.
 
-- **T6, carros y NPCs.** Casi solo datos, y su valor real es que pone a prueba T1, T3 y T4 con
-  contenido de verdad en vez de dos arcones de prueba.
-- **T5, cerrar el panel por distancia.** Pequeña, y ahora barata: la comprobacion de distancia
-  ya existe en `WorldInteractionSystem`.
+**Pendiente tecnico de M6:** limpiar `IInventoryElement` (conviven las operaciones del
+Composite con restos del diseño BFS: `StackOntoHere`, `ModifyAmountHere`, `ContainsHere`,
+`GetAmountHere`, `DeleteItemHere`, `FindHere`, `FindNodesHere`, `SetAmount` y los metodos de
+hoja que lanzan).
 
-**Pendiente tecnico de M6:** limpiar `IInventoryElement`. Conviven las operaciones reales del
-Composite —`Extract`, `GetAmount(variant)`, `HasVariants`— con los restos del diseño BFS
-anterior: `StackOntoHere`, `ModifyAmountHere`, `ContainsHere`, `GetAmountHere`,
-`DeleteItemHere`, `FindHere`, `FindNodesHere`, `SetAmount` y los metodos de hoja que lanzan.
+**Pendiente de datos:** una prenda de capa exterior de pecho de categoria distinta a `Plate`
+(p. ej. `Robe` con `topLayer: true`) en Stack&Go, para poder alcanzar `TopLayerBlocked`.
 
-**Pendiente de datos:** falta en Stack&Go una segunda prenda de **capa exterior** para el
-pecho de **categoria distinta** a `Plate` —una capa o tunica de categoria `Robe` con
-`topLayer: true`—, que es lo unico que permite alcanzar `TopLayerBlocked`. Dos pecheras no
-sirven: chocan antes en `DuplicateCategory`, porque `EquipmentSlot.CanEquip` comprueba la
-categoria antes que la capa. El `Insert(Count - 1)` en cambio ya es probable con el catalogo
-actual: Pechera es `topLayer` y Camisa no, asi que equipar la camisa con la pechera puesta la
-mete debajo.
-
-**Deuda conocida que no bloquea:** ni el popup de capas ni el de variantes son destino de
-soltado (se agarra desde ellos, no se suelta en una capa o variante concreta), y en el de
-variantes la asimetria chirria mas, porque el sitio del que sacas una manzana parece
-obviamente un sitio donde devolverla; el menu de una fila del desplegable no ofrece "Dividir"
-aunque `SplitNode` acepte variante; `EquipmentSystem` sigue sin reaccionar a eventos pese a
-implementar `IReactiveSystem`; `GetAvailableActions` acumula flags sueltos (`hasVariants`,
-`splittable`), que es el mismo olor que `MenuContext` vino a arreglar un nivel mas arriba; la
-ropa puesta aun no pesa —solo lo que lleva dentro un contenedor equipado—, asi que equipar
-desde un arcon sigue metiendo peso gratis, decision ya tomada (opcion "el equipo pesa, con
-coeficiente") y pendiente de aplicar; `UpdateInventoryTabs` recorre las capas de todos los
-slots, asi que un contenedor de ocupacion completa saldria con una pestaña por slot; y
-`ClearInveotryTabs` lleva una errata en su nombre.
+**Deuda conocida que no bloquea:** `InventoryPresenter` (Core) recibe la clase concreta
+`InventoryView` en vez de una interfaz; ni el popup de capas ni el de variantes son destino
+de soltado; al desplegable de variantes le falta "Dividir"; `EquipmentSystem` no reacciona
+a eventos pese a ser `IReactiveSystem`; `GetAvailableActions` del inventario acumula flags
+sueltos (`hasVariants`, `splittable`); la ropa puesta aun no pesa (decidido "el equipo pesa,
+con coeficiente", sin aplicar); `UpdateInventoryTabs` sacaria una pestaña por slot a un
+contenedor de ocupacion completa; errata `ClearInveotryTabs`; `InventoryView` no ignora
+llamadas antes de `OnRootReady`. HUD de avisos de peso/volumen: M7 T7.
 
 ---
 
@@ -359,7 +353,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 **Tasks**:
 
 - [x] 1. External container opens as additional panel (extra column). Support opening TWO external containers simultaneously (e.g. cart-to-cart transfer without going through personal inventory).
-- [ ] 2. World item pickup: actions (chopping, mining, etc.) spawn items as world entities with position. Pickup goes to **hands** (carry buffer) → player loads into cart/chest/storage (world containers). Bulky items (logs, planks, ore) do NOT go into personal inventory — personal inventory is pocket/backpack scale only. Crafting uses **proximity**: pulls materials from ALL accessible sources — personal inventory, backpack, AND nearby world containers (cart, chest, etc.). Hands buffer details TBD: capacity, interaction with equipped tool, slot reuse vs dedicated carry state.
+- [x] 2. World item pickup (hecho para T2: tirar, recoger al inventario, interactuar; las manos como reserva de carga y el crafteo por proximidad quedan aplazados): actions (chopping, mining, etc.) spawn items as world entities with position. Pickup goes to **hands** (carry buffer) → player loads into cart/chest/storage (world containers). Bulky items (logs, planks, ore) do NOT go into personal inventory — personal inventory is pocket/backpack scale only. Crafting uses **proximity**: pulls materials from ALL accessible sources — personal inventory, backpack, AND nearby world containers (cart, chest, etc.). Hands buffer details TBD: capacity, interaction with equipped tool, slot reuse vs dedicated carry state.
 - [x] 3. Drag & drop between your inventory and external container
 - [x] 4. Transfer respects both containers' grid space and weight limits
 - [ ] 5. Container closes when player moves away (distance check or explicit close)
@@ -590,20 +584,90 @@ entraba estando entre 1,08 y 1,37 m de el. Mirar hacia la manzana no ayudaba. De
 - **G4: en TPS, direccion de la camara y origen en los ojos del personaje**, no en la camara:
   apuntas con el centro de la pantalla sin alcanzar lo que el personaje tiene detras.
 
-**Pendiente de T2:** menu radial (mantener abre, seguir el cursor resalta, soltar ejecuta lo
-resaltado o nada; clicar un sector ejecuta; la mirada se suspende mientras esta abierto) y
-`Inspect` con panel de solo lectura.
+**Hecho: menu radial (M6 T2).** Mantener la E lo abre con las acciones del objetivo;
+el sector bajo el puntero se resalta; soltar ejecuta lo resaltado o nada; clicar una
+opcion la ejecuta; clicar en el centro o fuera cierra. Decisiones:
 
-**Pendiente, fuera de T2: bloquear/desbloquear la camara con una tecla (Alt)**, para usar el
-inventario comodamente y poder moverse con el abierto. Hoy el cursor no se bloquea en
-ningun sitio (`Cursor.lockState` no aparece). El mecanismo de "mirada suspendida" del radial
-es el mismo que usara esto.
+- **Rueda de quesitos elegidos por angulo.** Primero se hicieron fichas en circulo; al
+  probarlo se pidio quesitos (estilo ARK). Los dibuja `RadialMenu` con Painter2D, y sus
+  colores y radios salen de propiedades USS propias (`--radial-fill`,
+  `--radial-outer-radius`...) para que el tema los siga vistiendo. Lo dibujado es la misma
+  porcion que se elige (`RadialGeometry.SectorOf` / `IndexAt`). Centro = zona muerta; muy lejos = fuera. La accion por defecto
+  (la de la pulsacion corta) va arriba y el resto en sentido horario.
+- **El control trae su hoja**: `RadialMenu.uss` vive en
+  `UI Toolkit/Controls/Resources/Controls/` y el propio control la engancha, al entrar en un
+  panel, en la RAIZ del panel (la posicion mas lejana, para que el tema le gane). Antes
+  estaba en `WorldInteraction.uss` y un radial en otro documento habria salido sin
+  estructura.
+- **Modular en tres piezas:** `RadialGeometry` (Core, sin motor: colocar y elegir usan las
+  mismas cuentas), `RadialMenu` (control de Unity reutilizable: textos dentro, indices
+  fuera, no sabe de que es el menu) y el presentador, que guarda `_highlighted`, el unico
+  dato que decide que se ejecuta.
+- **Con el menu abierto el objetivo se congela** (mover el raton para elegir mueve la
+  mirada) y se vigila `CanReach`: si deja de alcanzarse, el menu se cierra solo.
+- **`LookControl`, unico dueno de la vista y del cursor.** Bloqueo por motivos
+  (`Manual` = Alt, `Inventory`, `RadialMenu`): bloqueada mientras haya alguno, asi nadie
+  desbloquea lo que bloqueo otro. `InputManager` sincroniza los motivos cada fotograma
+  preguntando el estado (como con la interaccion) y `LookControl` solo toca el cursor si
+  cambia. Con camara de avatar y vista libre el cursor va bloqueado y oculto; al
+  liberarlo Unity lo deja en el centro, que es el centro del radial.
+- **Bloquear la vista bloquea la ENTRADA, no el metodo de la camara**
+  (`BaseCameraStrategy.ReadLookDelta` devuelve cero). Saltar `HandleMouseLook` entero
+  dejaba la camara de TPS clavada, porque ese metodo tambien la lleva tras el personaje.
+- **El HUD de barras no captura el puntero** (`picking-mode="Ignore"` en `PlayerHUD.uxml`):
+  comparte panel con la interaccion y va por encima, y su contenedor a pantalla completa se
+  tragaba los movimientos del raton, asi que el radial nunca resaltaba ni ejecutaba nada.
+- **El inventario cerrado tampoco captura el puntero** (`InventoryView.SetScreenCapture`):
+  su raiz y `ui-root` ocupan la pantalla y su panel va por encima de todo, asi que aun
+  cerrado se tragaba el raton y el radial seguia sin recibir nada. Abierto SI debe
+  capturar (el fantasma sigue al raton y soltar fuera es un gesto). Regla general: una
+  capa a pantalla completa solo es pickable mientras la necesita.
+- **Con el inventario abierto la vista se bloquea sola** (motivo `Inventory`): el raton es
+  un cursor. Se puede andar con WASD igualmente. Alt bloquea/desbloquea a mano en juego.
+- **Corregida la deuda de la camara de arranque**: `InputManager` la activa por
+  `SetActiveStrategy` como cualquier otra, asi que se suscribe a sus eventos.
+
+**Hecho: tirar una unidad es tirarla suelta.** Al tirar exactamente 1 unidad no se crea
+monton: el propio item pasa al mundo (`EntityType.WorldItem`). Un contenedor (siempre 1
+unidad) tirado es asi a la vez lo que se alcanza y lo que se abre, sin separar "entidad del
+mundo" y "entidad con inventario". Decisiones:
+
+- **Se pone un CLON** (`PlaceItem`): el item que sale de una pila puede ser la misma
+  instancia que usan las unidades que se quedan; darle posicion le daria posicion a esas.
+- **Se recoge una COPIA LIMPIA** (`WorldPresence.CleanCopyOf`) y el del suelo se destruye
+  (`TakeItem` -> `Despawn`). La equivalencia que decide con que se apila compara todos los
+  componentes, asi que lo que entra tiene que entrar limpio; y si no cabe, el del suelo no
+  se ha tocado. Intentarlo con la copia ES la pregunta de si cabe: no se escribio una
+  consulta previa, que habria repetido la decision de `StackOntoHere` en paralelo.
+- **`WorldPresence` es el unico dueno de "estar en el mundo"** (posicion + volumen): `AddTo`
+  pone y `CleanCopyOf` omite la MISMA lista. El prototipo del monton tambien la usa.
+- **Quien pone, quita:** el cuerpo en el motor lo pone `Link` y lo quita `Unlink`; la
+  presencia la pone `PlaceItem` y desaparece con el item en `TakeItem`.
+- **El puente con el motor no se clona** (`IEngineBridge`, lo implementa
+  `UnityEntityComponent`; `InGameEntity.Clone` lo salta). Antes el clon apuntaba al mismo
+  GameObject que el original: fallo latente, corregido de paso.
+- **`EntityManager.Register`** para dar de alta una entidad que ya existe (el item), porque
+  `CreateEntity` fabrica desde prototipo.
+
+**Hecho: `Inspect` (cierra T2 a falta de probarlo).** Panel de solo lectura
+(`UI Toolkit/Inspect/InspectPanel.uxml`), clonado dentro del documento de interaccion desde
+una plantilla de `UIRegistry`. Decisiones:
+
+- **Pasa por `WorldInteractionService.Execute` aunque no cambie nada en el mundo**, para que
+  su comprobacion de alcance y acciones sea la de todas; el servicio devuelve true y el
+  presentador abre el panel (`Perform`: ejecutar y, si la accion es de interfaz, abrirla).
+- **Datos: `InspectPanelData` reutiliza `ItemDisplayData`**, el DTO de la tira del
+  inventario: el conjunto con el representante y el peso total de todos los lotes, y una
+  entrada por variante (se distinguen por durabilidad). El desglose solo si hay mas de una.
+- **Como el radial: congela su objetivo y se cierra solo si deja de alcanzarse.** Se cierra
+  tambien con la X, con E y con Esc. Mientras esta abierto la vista se bloquea (motivo
+  `Inspect`) para poder usar el cursor.
+
+**Hecho: Alt bloquea/desbloquea la vista** (motivo `Manual` de `LookControl`, ver el menu radial).
 
 **Deuda vista de paso:** `InventoryPresenter` (Core) recibe `InventoryView`, la clase concreta
 de Unity, y no una interfaz; rompe la regla de Core. El presentador nuevo ya no lo hace.
-Ademas, `InputManager` toma la camara inicial con `GetActiveCamera()` sin pasar por
-`SetActiveStrategy`, asi que la camara de arranque no se suscribe a eventos; hoy no se nota
-porque se arranca en RTS.
+(La de la camara de arranque sin suscribir ya esta corregida.)
 
 **Hecho: filtro de pared (`Unity/LineOfSightFilter`).** Decisiones:
 
@@ -640,6 +704,27 @@ herramienta equipada, slot propio). Es aplazamiento consciente, no olvido.
 - [x] 3b. Nested containers don't occupy grid cells. `InventoryObject.AddContainer` adds the child to `_inventory` but never calls `_grid.Place`, so a chest inside a backpack takes up no space and isn't rendered by `RenderGridItems` (which iterates `TetrisGridState.GetElements()`). Decide whether containers should occupy cells like any other item — they have `DimensionW/H` in `BaseItemComponent` already — and if so route `AddContainer` through the grid. Until then `InventoryObject.Clone()` copies them by list only, outside the grid.
 - [ ] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
 - [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
+  - **Tema visual medieval, en prueba** (`UI Toolkit/Theme/MedievalTheme.uss`): una hoja que
+    se carga DESPUES de las base y solo cambia colores, bordes, radios y fuentes, nunca la
+    disposicion. Materiales en vez de colores sueltos (madera, cuero, hierro, laton,
+    pergamino, lacre) y relieve con el color de cada lado del borde, porque USS no tiene
+    degradados. Los cuatro colores de veredicto de la mano se conservan, solo apagados.
+    Reversible quitando su linea `<Style>` de los cuatro UXML.
+  - **Texturas (Kenney, CC0)** en `Theme/textures/` (`kenney-rpg`, `kenney-borders`, con su
+    licencia). Van en una seccion aparte al final del tema, con 9-slice: marco remachado
+    tenido de laton en las ventanas, fichas de madera en los items, pergamino rasgado en el
+    tooltip, tablillas en pestanas, menus y marca de la E. Borrar esa seccion vuelve al
+    tema solo de colores. Los marcos propios (dibujados a mano) podrian sustituirlas
+    manteniendo nombre y medidas de esquina.
+  - **Dos temas intercambiables** (`Theme/MedievalTheme.uss` y `Theme/PeasantTheme.uss`,
+    este con arpillera generada en `textures/generated/burlap.png`). Los UXML cargan
+    `Theme/ActiveTheme.uss`, que solo hace `@import` del tema elegido: cambiar de tema es
+    cambiar esa linea, y vaciarla deja la UI con los estilos base.
+  - **El fantasma de la mano es una ficha como las colocadas**: la ficha es el propio
+    `hand-buffer` y el icono paso a un hijo (`hand-buffer-icon`), porque un elemento solo
+    tiene una imagen de fondo. El veredicto tine la madera (y el borde conserva su color
+    puro), asi que se ve la ficha y se lee el color a la vez. `RefreshHandBuffer` ya no
+    vacia el fantasma: solo cambia la etiqueta de cantidad.
 - [ ] 6. Performance: stress test with large grids (cart/chest with many items)
 - [ ] 7. **HUD de avisos del mundo.** Hoy no existe ningun canal para mensajes en pantalla
   fuera del inventario. `WorldInteractionService.Announce` ya publica un unico evento por

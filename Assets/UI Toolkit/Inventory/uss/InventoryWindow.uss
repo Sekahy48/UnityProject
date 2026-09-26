@@ -525,8 +525,7 @@
     position: absolute;
     /* El tamaño lo fija el presenter segun dimensions del item (w x h en celdas),
        igual que los bloques de items-layer. Aqui solo el aspecto. */
-    -unity-background-image-tint-color: rgba(255, 255, 255, 0.75);   /* icono atenuado: se lleva, no esta colocado */
-    border-width: 2px;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.75);   /* icono atenuado: se lleva, no esta colocado */ 
     border-color: rgba(54, 56, 54, 0.75);                            /* neutro: sobre nada colocable */
 
     transition-property: left, top, width, height;

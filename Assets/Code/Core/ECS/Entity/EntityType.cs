@@ -20,6 +20,13 @@ namespace Core.ECS.Entity
         Player,
         ResourceNode,
         AliveEntity,
-        GroundLot
+        GroundLot,
+
+        /// <summary>
+        /// Un item suelto en el mundo: lo que se tira de una en una unidad. No tiene
+        /// prototipo propio —la entidad ES el item, clonado al tirarlo— y por eso se
+        /// registra con <c>EntityManager.Register</c> en vez de crearse.
+        /// </summary>
+        WorldItem
     }
 }

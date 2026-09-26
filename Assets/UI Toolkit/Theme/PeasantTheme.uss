@@ -1,0 +1,381 @@
+/* =====================================================================================
+   TEMA CAMPESINO — capa de decoracion sobre los estilos base, alternativa al medieval.
+
+   Mismas reglas que MedievalTheme.uss: solo colores, bordes, radios, fuentes y texturas;
+   la disposicion es la de la base. La unica excepcion son los rellenos interiores del
+   final, para que nada pise los filos.
+
+   Donde el medieval es un arcon de noble (madera oscura, laton, remaches), este es un
+   saco en un granero: lo que tiene un campesino a mano.
+
+   Materiales:
+     arpillera       textura generada (textures/generated/burlap.png), fondo de ventanas
+     tierra          rgb(38, 30, 22)     huecos de la rejilla y del equipo
+     madera clara    kenney *_beige      fichas, tablillas, pestanas
+     paja            rgb(222, 196, 120)  acentos, titulos
+     lino            rgb(238, 226, 196)  texto sobre oscuro
+     tinta de hollin rgb(46, 34, 24)     texto sobre claro
+     hierro forjado  rgb(44, 40, 36)     filos, carriles
+     herrumbre       rgb(150, 70, 36)    cerrar, peligro
+
+   Sin laton ni oro a proposito: el acento es la paja. Y el texto sobre madera clara va
+   en tinta oscura, al reves que en el medieval.
+   ===================================================================================== */
+
+
+/* ---------- Ventanas: arpillera con filo de cuerda ---------- */
+
+.main-area,
+.side-panel {
+    background-image: url('textures/generated/burlap.png');
+    background-repeat: repeat;
+    background-size: 96px 96px;
+    background-color: rgb(104, 80, 52);
+    border-top-color: rgb(150, 124, 80);
+    border-left-color: rgb(150, 124, 80);
+    border-right-color: rgb(44, 40, 36);
+    border-bottom-color: rgb(44, 40, 36);
+    border-radius: 2px;
+}
+
+/* La barra de titulo: un tablon de madera clara clavado encima del saco. */
+.title-bar {
+    background-image: url('textures/kenney-rpg/buttonLong_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 10;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+}
+
+.title-label {
+    color: rgb(46, 34, 24);
+    letter-spacing: 1px;
+}
+
+.left-panel {
+    border-color: rgba(44, 40, 36, 0.6);
+}
+
+
+/* ---------- Pestanas: tablillas de madera clara ---------- */
+
+.left-tab,
+.panel-slot-tabs-label {
+    background-image: url('textures/kenney-rpg/buttonLong_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 10;
+    border-color: rgba(0, 0, 0, 0);
+    color: rgb(46, 34, 24);
+    -unity-text-align: middle-center;
+}
+
+.left-tab:hover,
+.panel-slot-tabs-label:hover {
+    -unity-background-image-tint-color: rgb(255, 240, 200);
+}
+
+
+/* ---------- Botones ---------- */
+
+.close-button {
+    background-image: url('textures/kenney-rpg/buttonRound_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(190, 100, 60);
+    color: rgb(238, 226, 196);
+    border-radius: 10px;
+}
+
+.close-button:hover {
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(220, 120, 70);
+}
+
+.dev-button {
+    background-color: rgba(46, 34, 24, 0.35);
+    color: rgb(46, 34, 24);
+}
+
+
+/* ---------- Rejilla y equipo: huecos de tierra apisonada ---------- */
+
+.inventory-grid-cell,
+.equip-slot {
+    background-color: rgba(38, 30, 22, 0.9);
+    border-top-color: rgba(20, 15, 10, 0.95);
+    border-left-color: rgba(20, 15, 10, 0.95);
+    border-bottom-color: rgba(150, 124, 80, 0.35);
+    border-right-color: rgba(150, 124, 80, 0.35);
+}
+
+.equip-slot:hover {
+    border-bottom-color: rgba(222, 196, 120, 0.9);
+    border-right-color: rgba(222, 196, 120, 0.9);
+}
+
+
+/* ---------- Items: tablillas de pino recien cortado ---------- */
+
+.item-block {
+    background-image: url('textures/kenney-rpg/buttonSquare_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 12;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.amount-label {
+    color: rgb(238, 226, 196);
+    background-color: rgba(46, 34, 24, 0.85);
+    border-radius: 2px;
+}
+
+
+/* ---------- Barra de peso: carril de hierro, colores de huerto ---------- */
+
+.weight-rail {
+    background-color: rgb(44, 40, 36);
+}
+
+.load-normal   { background-color: rgba(104, 132, 64, 0.98); }  /* hoja de col */
+.load-extra    { background-color: rgba(206, 170, 70, 0.98); }  /* paja */
+.load-over     { background-color: rgba(176, 100, 44, 0.98); }  /* barro rojo */
+.load-immobile { background-color: rgba(128, 36, 26, 0.98); }   /* remolacha */
+
+.load-normal-label   { color: rgb(238, 226, 196); }
+.load-extra-label    { color: rgb(46, 34, 24); }
+.load-over-label     { color: rgb(238, 226, 196); }
+.load-immobile-label { color: rgb(238, 226, 196); }
+
+.weight-label-note {
+    color: rgb(222, 196, 120);
+}
+
+
+/* ---------- Tira de inspeccion ---------- */
+
+.inspection-strip {
+    border-top-color: rgba(150, 124, 80, 0.6);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.inspect-name {
+    color: rgb(222, 196, 120);
+}
+
+.inspect-description {
+    color: rgb(238, 226, 196);
+}
+
+.inspect-stat {
+    color: rgb(46, 34, 24);
+    background-color: rgba(222, 196, 120, 0.75);
+    border-radius: 2px;
+}
+
+.section-label {
+    color: rgb(222, 196, 120);
+}
+
+
+/* ---------- Menus: tabla de madera clara, tinta oscura ---------- */
+
+.ctx-menu,
+.sublots-popup,
+.layers-popup {
+    background-image: url('textures/kenney-rpg/panel_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 8;
+    border-color: rgba(0, 0, 0, 0);
+    color: rgb(46, 34, 24);
+}
+
+.ctx-menu-option-label,
+.sublots-popup-row-label {
+    color: rgb(46, 34, 24);
+}
+
+.ctx-menu-option.ctx-menu-option-selected,
+.ctx-menu-option:hover {
+    border-color: rgba(120, 90, 50, 0.8);
+    background-color: rgba(120, 90, 50, 0.18);
+}
+
+.sublots-popup-row {
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.sublots-popup-row:hover {
+    border-color: rgba(120, 90, 50, 0.8);
+    background-color: rgba(120, 90, 50, 0.14);
+}
+
+.ctx-menu-widget .unity-base-text-field__input,
+.ctx-menu-widget #unity-text-input {
+    background-color: rgb(238, 226, 196);
+    border-color: rgba(120, 90, 50, 0.8);
+    color: rgb(46, 34, 24);
+}
+
+.ctx-menu-widget .unity-text-element--inner-input-field {
+    color: rgb(46, 34, 24);
+}
+
+
+/* ---------- Tooltip: un trozo de papel de estraza ---------- */
+
+.tooltip {
+    background-image: url('textures/kenney-rpg/panelInset_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 10;
+    -unity-slice-right: 10;
+    -unity-slice-top: 10;
+    -unity-slice-bottom: 10;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.tooltip Label,
+.tooltip-text {
+    color: rgb(46, 34, 24);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+
+/* ---------- Catalogo (desarrollo) ---------- */
+
+.catalog-row {
+    background-color: rgba(222, 196, 120, 0.3);
+    border-color: rgba(44, 40, 36, 0.6);
+}
+
+.catalog-row-label {
+    color: rgb(238, 226, 196);
+}
+
+
+/* ---------- Mano: la tablilla de pino, tenida por el veredicto ---------- */
+
+.hand-buffer {
+    background-image: url('textures/kenney-rpg/buttonSquare_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 12;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.85);
+    padding: 3px;
+    opacity: 0.85;
+}
+
+.hand-buffer-icon {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.8);
+}
+
+.hand-buffer-fits      { border-color: rgba(104, 150, 64, 0.98); }
+.hand-buffer-partial   { border-color: rgba(214, 176, 60, 0.98); }
+.hand-buffer-swap      { border-color: rgba(80, 124, 176, 0.98); }
+.hand-buffer-collision { border-color: rgba(170, 50, 34, 0.98); }
+
+.hand-buffer.hand-buffer-fits      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(170, 225, 140, 0.9); }
+.hand-buffer.hand-buffer-partial   { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(245, 220, 120, 0.9); }
+.hand-buffer.hand-buffer-swap      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(150, 185, 240, 0.9); }
+.hand-buffer.hand-buffer-collision { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 130, 115, 0.9); }
+
+
+/* ---------- Mundo: la E en una tablilla, punto de mira como cabeza de clavo ---------- */
+
+.wi-prompt {
+    background-image: url('textures/kenney-rpg/panel_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 8;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.wi-key {
+    background-image: url('textures/kenney-rpg/buttonSquare_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 6;
+    -unity-slice-right: 6;
+    -unity-slice-top: 6;
+    -unity-slice-bottom: 9;
+    border-color: rgba(0, 0, 0, 0);
+    color: rgb(238, 226, 196);
+}
+
+.wi-action {
+    color: rgb(46, 34, 24);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
+}
+
+.wi-target {
+    color: rgb(80, 62, 44);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+.wi-more {
+    color: rgb(110, 88, 60);
+    -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
+}
+
+/* Un clavo: circulo de hierro con la cabeza clara. Con objetivo, la cabeza brilla a paja. */
+.wi-reticle {
+    border-radius: 5px;
+    border-color: rgba(30, 26, 22, 0.9);
+    background-color: rgba(120, 112, 100, 0.6);
+}
+
+.wi-reticle-core {
+    border-radius: 2px;
+    background-color: rgba(220, 212, 196, 0.7);
+}
+
+.wi-reticle--active {
+    background-color: rgba(222, 196, 120, 0.95);
+    border-color: rgba(44, 32, 18, 1);
+}
+
+
+/* ---------- HUD de barras: carril de hierro con filo de paja ---------- */
+
+.staminaBar,
+.fatigueBar {
+    background-color: rgba(44, 40, 36, 0.9);
+    border-width: 1px;
+    border-top-color: rgba(222, 196, 120, 0.8);
+    border-left-color: rgba(222, 196, 120, 0.6);
+    border-right-color: rgba(20, 15, 10, 0.95);
+    border-bottom-color: rgba(20, 15, 10, 0.95);
+    border-radius: 2px;
+}
+
+
+/* ---------- Holgura ----------
+   Este tema no tiene remates en las esquinas, asi que basta con que nada pise el filo
+   de 1 px y que el titulo no quede pegado a los clavos de la tablilla. */
+
+.title-bar {
+    padding-left: 14px;
+    padding-right: 10px;
+}

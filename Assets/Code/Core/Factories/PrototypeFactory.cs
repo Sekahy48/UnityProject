@@ -4,6 +4,7 @@ using Core.ECS.Component;
 using Core.ECS.Component.Equipment;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
+using Core.ECS.Systems;
 using Core.Inventory;
 using Core.Item;
 
@@ -38,13 +39,11 @@ namespace Core.Factories
         public IEntity CreateGroundLotPrototype()
         {
             var e = new InGameEntity(IdGenerator.GenerateNewId());
-            e.AddComponent(new PositionComponent(0f, 0f, 0f));
             e.AddComponent(new GroundLotComponent());
 
-            // Esfera pequena de partida para que se le pueda apuntar desde el primer
-            // fotograma. Quien enlaza el modelo la sustituye por su caja medida en cuanto
-            // termine de cargar.
-            e.AddComponent(new InteractionVolumeComponent(new SphereVolume(0.2f)));
+            // Posicion y volumen de partida: la misma presencia en el mundo que un item
+            // suelto, de un solo sitio (WorldPresence).
+            WorldPresence.AddTo(e);
 
             return e;
         }

@@ -1,0 +1,60 @@
+/* ===== Menu radial (Unity/MVC/View/Controls/RadialMenu.cs) =====
+   Hoja PROPIA del control: la carga el propio RadialMenu al entrar en un panel, asi que
+   cualquier documento que lo use lo recibe completo, sin tener que acordarse de enlazar
+   nada. Vive en Resources porque en ejecucion es la forma de cargar un asset por nombre.
+
+   Se engancha en la raiz del panel, la posicion MAS LEJANA: a igual especificidad, las
+   hojas de los documentos (y por tanto el tema) le ganan. Esto son solo valores base.
+   Los quesitos se dibujan por codigo (Painter2D); sus colores y medidas se leen de estas
+   propiedades propias, asi que el tema los cambia igual que cualquier otro estilo.
+   La capa ocupa la pantalla; la rueda es un punto sin tamano en el centro. */
+
+.radial-root {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+
+    --radial-fill: rgba(30, 30, 30, 0.88);
+    --radial-fill-highlight: rgba(80, 80, 80, 0.95);
+    --radial-stroke: rgba(150, 150, 150, 0.9);
+    --radial-stroke-highlight: rgb(255, 255, 255);
+    --radial-stroke-width: 2;
+    --radial-inner-radius: 48;
+    --radial-outer-radius: 150;
+    --radial-gap: 2;
+}
+
+.radial-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+}
+
+/* Texto de cada quesito, centrado sobre su punto. Sin fondo: el fondo es el quesito. */
+.radial-option {
+    position: absolute;
+    translate: -50% -50%;
+    -unity-text-align: middle-center;
+    font-size: 15px;
+    color: rgb(225, 225, 225);
+    transition-property: scale, color;
+    transition-duration: 0.08s;
+}
+
+.radial-option--highlighted {
+    scale: 1.1 1.1;
+    color: rgb(255, 255, 255);
+}
+
+/* Centro: la zona muerta, del tamano del radio interior (48 x 2). */
+.radial-hub {
+    position: absolute;
+    width: 96px;
+    height: 96px;
+    translate: -50% -50%;
+    border-radius: 48px;
+    border-width: 2px;
+    border-color: rgba(200, 200, 200, 0.6);
+    background-color: rgba(0, 0, 0, 0.35);
+}

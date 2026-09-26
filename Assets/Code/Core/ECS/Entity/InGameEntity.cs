@@ -99,11 +99,17 @@
                 return new InGameEntity(id);
             }
 
+            /// <summary>
+            /// Copia la entidad con un id nuevo. El puente con el motor
+            /// (<see cref="IEngineBridge"/>) no se copia: el clon nace sin cuerpo en el motor,
+            /// y solo lo tendra si alguien lo enlaza.
+            /// </summary>
             public IEntity Clone()
             {
                 InGameEntity clone = CreateCloneInstance(IdGenerator.GenerateNewId());
                 foreach (IComponent elem in components.Values)
                 {
+                    if (elem is IEngineBridge) continue;
                     clone.AddComponent(elem.Clone());
                 }
                 return clone;

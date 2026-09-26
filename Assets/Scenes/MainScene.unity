@@ -647,10 +647,10 @@ MonoBehaviour:
   m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_PanelSettings: {fileID: 11400000, guid: 3e95e989bf1202247ba673480717ac57, type: 2}
+  m_PanelSettings: {fileID: 11400000, guid: 33c24b64855babf4a9fe94a4f7fb9dcc, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 9197481963319205126, guid: 019c3bf4c6eeb0f44963b2d5468c42ad, type: 3}
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
   m_WorldSpaceHeight: 1080
@@ -773,7 +773,7 @@ MonoBehaviour:
   m_PanelSettings: {fileID: 11400000, guid: 27e7bab42dfda5945a76d7b3a0aced1f, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 9197481963319205126, guid: 1aa6c64d0d5d12d46814a4b005eb8c6b, type: 3}
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
   m_WorldSpaceHeight: 1080
@@ -835,7 +835,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _inventoryDocument: {fileID: 899944977}
   _inventoryPanelTemplate: {fileID: 9197481963319205126, guid: 054d62f5f50d19940a50e54ea7db9875, type: 3}
-  _worldInteractionDocument: {fileID: 0}
+  _worldInteractionDocument: {fileID: 729825964}
+  _inspectPanelTemplate: {fileID: 9197481963319205126, guid: 2eaa0aaf928c37b4c9e1e5bbb6c0645c, type: 3}
 --- !u!1 &1271170563
 GameObject:
   m_ObjectHideFlags: 0

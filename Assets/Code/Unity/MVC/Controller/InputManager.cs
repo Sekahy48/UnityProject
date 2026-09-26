@@ -21,6 +21,12 @@ namespace MVC.Controller
         private readonly GameSessionContext _sessionContext;
         private ICameraStrategy _activeStrategy;
 
+        /// <summary>Unico dueno del bloqueo de la vista y del estado del cursor.</summary>
+        private readonly Unity.LookControl _look = new Unity.LookControl();
+
+        /// <summary>Si el inventario estaba abierto el fotograma anterior, para detectar el cierre.</summary>
+        private bool _inventoryWasOpen;
+
         public InputManager(CameraRegister cameraRegister, PresenterManager presenterManager, GameSessionContext sessionContext)
         {
             this._cameraRegister = cameraRegister;
@@ -32,13 +38,21 @@ namespace MVC.Controller
         {
             if (_activeStrategy == null)
             {
-                _activeStrategy = _cameraRegister.GetActiveCamera();
-                if (_activeStrategy == null)
+                // Pasa por SetActiveStrategy como cualquier cambio de camara: antes se
+                // asignaba a pelo y la camara de arranque no se suscribia a ningun evento.
+                ICameraStrategy initial = _cameraRegister.GetActiveCamera();
+                if (initial == null)
                 {
                     Debug.LogError("No active camera strategy found in InputManager.");
                     return;
                 }
+                SetActiveStrategy(initial);
             }
+
+            // Con el inventario abierto Alt no hace nada: la vista ya esta bloqueada por el
+            // inventario, y cambiar el modo manual a escondidas sorprenderia al cerrarlo.
+            if (Keyboard.current.leftAltKey.wasPressedThisFrame && !IsInventoryOpen())
+                _look.Toggle(Unity.LookLockReason.Manual);
 
             if (Keyboard.current.f1Key.wasPressedThisFrame)
             {
@@ -49,6 +63,33 @@ namespace MVC.Controller
             _activeStrategy.Execute(deltaTime);
 
             UpdateWorldInteraction();
+            UpdateLook();
+        }
+
+        /// <summary>
+        /// Pone al dia los motivos de bloqueo de la vista que dependen de otro estado.
+        /// Se pregunta cada fotograma por la misma razon que la interaccion con el mundo:
+        /// el menu y el inventario se cierran por muchos caminos, y ninguno tiene que
+        /// acordarse de avisar. LookControl solo toca el cursor cuando algo cambia.
+        /// </summary>
+        private void UpdateLook()
+        {
+            _look.SetAvatarCamera(_activeStrategy is Strategy.BaseCameraStrategy);
+
+            bool inventoryOpen = IsInventoryOpen();
+            _look.Set(Unity.LookLockReason.Inventory, inventoryOpen);
+
+            // Cerrar el inventario (I, X o Esc) devuelve al juego: camara libre y cursor
+            // oculto, aunque antes de abrirlo se hubiera pulsado Alt. Se detecta el cierre
+            // (abierto -> cerrado) y no cada camino que cierra, por la misma razon que el
+            // resto de motivos se sincronizan preguntando.
+            if (_inventoryWasOpen && !inventoryOpen)
+                _look.Set(Unity.LookLockReason.Manual, false);
+            _inventoryWasOpen = inventoryOpen;
+
+            WorldInteractionPresenter world = WorldPresenter();
+            _look.Set(Unity.LookLockReason.RadialMenu, world != null && world.IsMenuOpen);
+            _look.Set(Unity.LookLockReason.Inspect, world != null && world.IsInspecting);
         }
 
         /// <summary>
@@ -77,6 +118,12 @@ namespace MVC.Controller
             world.Tick();
         }
 
+        private bool IsInventoryOpen()
+        {
+            InventoryPresenter inventory = _presenterManager.GetPresenter<InventoryPresenter>(PresenterType.INV);
+            return inventory != null && inventory.IsOpen();
+        }
+
         private WorldInteractionPresenter WorldPresenter()
             => _presenterManager.GetPresenter<WorldInteractionPresenter>(PresenterType.WORLD);
 
@@ -92,6 +139,8 @@ namespace MVC.Controller
             if (_activeStrategy is IWorldInteractionInputSource worldSource)
             {
                 worldSource.OnInteractTapped -= OnInteractTapped;
+                worldSource.OnInteractHoldStarted -= OnInteractHoldStarted;
+                worldSource.OnInteractHoldReleased -= OnInteractHoldReleased;
             }
             _activeStrategy = strategy;
 
@@ -104,15 +153,22 @@ namespace MVC.Controller
             }
             if (_activeStrategy is IWorldInteractionInputSource worldSource2)
             {
-                // Mantener y soltar tras mantener se conectan con el menu radial.
                 worldSource2.OnInteractTapped += OnInteractTapped;
+                worldSource2.OnInteractHoldStarted += OnInteractHoldStarted;
+                worldSource2.OnInteractHoldReleased += OnInteractHoldReleased;
             }
 
+            if (_activeStrategy is Strategy.BaseCameraStrategy avatar)
+                avatar.Look = _look;
+
+            // Solo se cierra lo que esta abierto. Ademas de ser lo correcto, evita tocar la
+            // vista antes de que termine de montarse: la camara de arranque pasa por aqui en
+            // el primer fotograma, cuando la vista del inventario aun no tiene sus elementos.
             if (!(_activeStrategy is IInventoryInputSource))
             {
                 InventoryPresenter presenter = _presenterManager
                     .GetPresenter<InventoryPresenter>(PresenterType.INV);
-                presenter.Close(false);
+                if (presenter != null && presenter.IsOpen()) presenter.Close(false);
             }
 
             _activeStrategy.Activate();
@@ -123,6 +179,10 @@ namespace MVC.Controller
         /// esta cerrado y el toque no hace nada.
         /// </summary>
         private void OnInteractTapped() => WorldPresenter()?.OnTapped();
+
+        private void OnInteractHoldStarted() => WorldPresenter()?.OpenMenu();
+
+        private void OnInteractHoldReleased() => WorldPresenter()?.ReleaseMenu();
 
         private void OnInventoryToggleRequested()
         {
@@ -137,10 +197,13 @@ namespace MVC.Controller
 
         private void OnInventoryCancelRequested()
         {
+            // Esc tambien cierra el panel de inspeccion del mundo, si esta abierto.
+            WorldPresenter()?.CloseInspect();
+
             InventoryPresenter presenter = _presenterManager
                 .GetPresenter<InventoryPresenter>(PresenterType.INV);
 
-            presenter.Close(false);
+            if (presenter != null && presenter.IsOpen()) presenter.Close(false);
         }
 
         private void OnInventoryPanelToggleRequested(PanelType panel)

@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="WorldInteraction.uss" />
+    <Style src="../Theme/ActiveTheme.uss" />
     <ui:VisualElement name="world-interaction-root" class="wi-root" picking-mode="Ignore">
         <ui:VisualElement name="reticle" class="wi-reticle" picking-mode="Ignore">
             <ui:VisualElement class="wi-reticle-core" picking-mode="Ignore" />
