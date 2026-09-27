@@ -642,7 +642,9 @@ namespace Core.Services
             List<ItemAction> options = new List<ItemAction>();
             if (target == null) return options;
 
-            EquipmentComponent equipmentComponent = owner.GetComponent<EquipmentComponent>(); 
+            // owner null: el jugador no esta a la vista (principal cerrado), asi que ni equipar
+            // ni desequipar se ofrecen.
+            EquipmentComponent equipmentComponent = owner?.GetComponent<EquipmentComponent>(); 
             if (equipmentComponent != null && target.GetComponent<WearableComponent>() != null)
             {
                 if (equipmentComponent.HasEquiped(target))

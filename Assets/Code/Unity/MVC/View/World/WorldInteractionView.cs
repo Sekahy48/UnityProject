@@ -36,6 +36,8 @@ namespace MVC.View.World
         /* Panel de inspeccion (Inspect/InspectPanel.uxml, clonado dentro de este documento). */
         private readonly VisualTreeAsset _inspectTemplate;
         private VisualElement _inspectRoot;
+        /* Capa a pantalla completa que aloja el panel. Modal mientras se inspecciona (ver ShowInspect). */
+        private VisualElement _inspectLayer;
         private VisualElement _inspectIcon;
         private Label _inspectTitle, _inspectName, _inspectType, _inspectDescription;
         private Label _inspectAmount, _inspectWeightTotal, _inspectWeightUnit, _inspectDurability, _inspectSize;
@@ -78,6 +80,9 @@ namespace MVC.View.World
             }
 
             // La capa ocupa la pantalla entera: sin esto se tragaria los clics del resto de UI.
+            // Tambien la raiz que crea Unity para el documento: este documento va por ENCIMA
+            // del inventario (sort order), y si ella capturara tapara A y B sin que se vea nada.
+            _document.rootVisualElement.pickingMode = PickingMode.Ignore;
             _root.pickingMode = PickingMode.Ignore;
 
             _prompt = _root.Q<VisualElement>("prompt");
@@ -191,6 +196,7 @@ namespace MVC.View.World
             container.style.bottom = 0;
             container.pickingMode = PickingMode.Ignore;
             _root.Add(container);
+            _inspectLayer = container;
 
             _inspectRoot = container.Q<VisualElement>("inspect-root");
             _inspectIcon = container.Q<VisualElement>("ip-icon");
@@ -238,12 +244,18 @@ namespace MVC.View.World
                 foreach (ItemDisplayData lot in data.Lots) _inspectLots.Add(BuildLotRow(lot));
 
             _inspectRoot.style.display = DisplayStyle.Flex;
+
+            // Modal: mientras se inspecciona, la capa captura toda la pantalla y nada de
+            // debajo (paneles A/B) recibe el raton. Un clic fuera no hace nada; se cierra
+            // con su X o con Esc. Igual que el radial mientras esta abierto.
+            _inspectLayer.pickingMode = PickingMode.Position;
         }
 
         public void HideInspect()
         {
             if (_inspectRoot == null) return;
             _inspectRoot.style.display = DisplayStyle.None;
+            _inspectLayer.pickingMode = PickingMode.Ignore;
         }
 
         /// <summary>Una fila del desglose, con las mismas clases que la fila de ejemplo del UXML.</summary>

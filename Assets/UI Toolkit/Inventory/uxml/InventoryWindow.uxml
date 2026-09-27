@@ -111,7 +111,9 @@
 
     </ui:VisualElement>
 
-    <ui:VisualElement name="side-panels" class="side-panels">
+    <!-- Siempre presente (1b): reserva su hueco aunque A y B esten cerrados. Ignore para que
+         la columna vacia no se trague clics; sus ventanas siguen recibiendolos. -->
+    <ui:VisualElement name="side-panels" class="side-panels" picking-mode="Ignore">
     <!-- Hueco lateral A: puede alojar el catalogo de desarrollo o, desde M6, un
          contenedor externo (arcon, carro, NPC). Cada contenido es UN solo hijo,
          para que alternarlos o trasplantarlos a otro hueco sea trivial. -->

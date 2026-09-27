@@ -62,6 +62,19 @@ namespace Unity
             Apply();
         }
 
+        /// <summary>
+        /// Vuelve a capturar el cursor si deberia estarlo y alguien lo solto por fuera. En el
+        /// Editor, Esc suelta el cursor siempre (lo hace Unity, no nosotros), y Apply solo toca
+        /// el cursor cuando cambia el motivo: sin esto se quedaba visible hasta el siguiente
+        /// cambio. Se llama cada fotograma; solo escribe si hay diferencia.
+        /// </summary>
+        public void Reassert()
+        {
+            if (_captured != true || Cursor.lockState == CursorLockMode.Locked) return;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
         private void Apply()
         {
             bool capture = _avatarCamera && !IsLocked;

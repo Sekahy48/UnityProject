@@ -90,6 +90,8 @@ namespace MVC.Controller
             WorldInteractionPresenter world = WorldPresenter();
             _look.Set(Unity.LookLockReason.RadialMenu, world != null && world.IsMenuOpen);
             _look.Set(Unity.LookLockReason.Inspect, world != null && world.IsInspecting);
+
+            _look.Reassert();
         }
 
         /// <summary>
@@ -168,7 +170,7 @@ namespace MVC.Controller
             {
                 InventoryPresenter presenter = _presenterManager
                     .GetPresenter<InventoryPresenter>(PresenterType.INV);
-                if (presenter != null && presenter.IsOpen()) presenter.Close(false);
+                if (presenter != null && presenter.IsAnythingOpen()) presenter.CloseAll();
             }
 
             _activeStrategy.Activate();
@@ -203,7 +205,8 @@ namespace MVC.Controller
             InventoryPresenter presenter = _presenterManager
                 .GetPresenter<InventoryPresenter>(PresenterType.INV);
 
-            if (presenter != null && presenter.IsOpen()) presenter.Close(false);
+            // Esc cierra todo (principal, A y B); con la mano llena, primero solo la suelta.
+            if (presenter != null && presenter.IsAnythingOpen()) presenter.CloseAll(false);
         }
 
         private void OnInventoryPanelToggleRequested(PanelType panel)
@@ -211,8 +214,10 @@ namespace MVC.Controller
             InventoryPresenter presenter = _presenterManager
                 .GetPresenter<InventoryPresenter>(PresenterType.INV);
             
+            if (presenter == null) return;
+
             IEntity entity = panel == PanelType.A ? _sessionContext._firstInventorySrc : _sessionContext._secondInventorySrc;
-            presenter.ToggleExtraInventory(entity, panel);
+            presenter.TogglePanel(panel, entity);
         }
     }
 }

@@ -111,10 +111,6 @@ namespace MVC.View.Inventory
         private const string SUBMENU_NAME = "ctx-submenu";
         private const float DRAG_THRESHOLD_SQR = 64f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
 
-        /* Que ocupa el hueco A ahora, y que ocupaba antes de que el catalogo se lo pidiera
-           prestado. Sin esto, cerrar el catalogo deja el hueco vacio. */
-        private SidePanelContent _slotAContent = SidePanelContent.None;
-        private SidePanelContent _contentBeforeCatalog = SidePanelContent.None; /* Needed to know where to place the hand buffer while moving */
 
         /* DEPRECATED */ 
         private bool _isDragging;
@@ -126,6 +122,8 @@ namespace MVC.View.Inventory
         #region Events
 
         public event Action OnCloseClicked;
+        /* Boton DEV o X del catalogo. Que ocupa el hueco A lo decide el presenter. */
+        public event Action OnCatalogToggleRequested;
         public event Action OnReady;
         public event Action<EquipmentSlotType> OnSlotLayersRequested;
         public event Action<int, int> OnCatalogItemGrabbed;
@@ -227,7 +225,7 @@ namespace MVC.View.Inventory
             _titleBar           = _mainRoot.Q<VisualElement>("title-bar");
             
             _devCatalogButton = _mainRoot.Q<Button>("dev-catalog-button");
-            _devCatalogButton.clicked += SwitchItemCatalog;
+            _devCatalogButton.clicked += () => OnCatalogToggleRequested?.Invoke();
             _catalogScroll = _uiDocument.rootVisualElement.Q<VisualElement>("catalog-scroll");
 
             
@@ -241,7 +239,7 @@ namespace MVC.View.Inventory
             _sidePanelAWindow          = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a");
             _itemCatalog         = _uiDocument.rootVisualElement.Q<VisualElement>("item-catalog");
             Button closeCatalogButton = _itemCatalog.Q<Button>("catalog-close-button");
-            closeCatalogButton.RegisterCallback<ClickEvent>(_ => SwitchItemCatalog());
+            closeCatalogButton.RegisterCallback<ClickEvent>(_ => OnCatalogToggleRequested?.Invoke());
             _sidePanelAContainer = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-a-slot");
             _sidePanelBWindow    = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-b");
             _sidePanelBContainer = _uiDocument.rootVisualElement.Q<VisualElement>("side-panel-b-slot");
@@ -313,9 +311,7 @@ namespace MVC.View.Inventory
             panelB.OnPointerMovedOverGrid += MoveHandToCursor; 
             playerPanel.OnPointerMovedOverGrid += MoveHandToCursor;
  */
-            // El panel pide cerrarse; quien lo cierra es el que reparte los huecos.
-            panelA.OnCloseRequested += () => ShowSideContent(PanelType.A, SidePanelContent.None);
-            panelB.OnCloseRequested += () => ShowSideContent(PanelType.B, SidePanelContent.None);
+            // La X de cada panel la atiende el presenter (propietario de que hay abierto).
 
             
             
@@ -461,10 +457,14 @@ namespace MVC.View.Inventory
         #region Visibility
 
         public bool IsReady() => _isReady;
+        /// <summary>
+        /// Principal con visibility y no con display: oculto sigue ocupando su hueco, asi
+        /// que la columna de A/B no se mueve al abrirlo o cerrarlo (1b). Visibility se hereda
+        /// a los hijos y un elemento oculto no recibe el raton.
+        /// </summary>
         public void Show()
         {
-            _mainRoot.style.display = DisplayStyle.Flex;
-            SetScreenCapture(true);
+            _mainRoot.style.visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -475,8 +475,11 @@ namespace MVC.View.Inventory
         /// registrados en la raiz del documento). Cerrado NO debe: su raiz y "ui-root" ocupan
         /// la pantalla entera y, como este panel va por encima, se tragaban el raton de todo
         /// lo que hay debajo —el menu radial nunca recibia un movimiento—.</para>
+        ///
+        /// <para>Lo decide el presenter (1b): principal abierto O algo en la mano. Sin captura,
+        /// A y B siguen recibiendo el raton porque sus ventanas no dependen de la raiz.</para>
         /// </summary>
-        private void SetScreenCapture(bool capture)
+        public void SetScreenCapture(bool capture)
         {
             PickingMode mode = capture ? PickingMode.Position : PickingMode.Ignore;
             _uiDocument.rootVisualElement.pickingMode = mode;
@@ -492,13 +495,11 @@ namespace MVC.View.Inventory
         public void Hide()
         {
             DismissOverlays();
-            _mainRoot.style.display = DisplayStyle.None;
-            SetScreenCapture(false);
-            ShowSideContent(PanelType.A, SidePanelContent.None);
-            ShowSideContent(PanelType.B, SidePanelContent.None);
+            _mainRoot.style.visibility = Visibility.Hidden;
+            // A y B ya no se cierran aqui: son independientes del principal y los gobierna el presenter.
             ResetPosition();
         }
-        public bool IsVisible() => _mainRoot.style.display == DisplayStyle.Flex;
+        public bool IsVisible() => _mainRoot.style.visibility == Visibility.Visible;
 
         /// <summary>
         /// Decides what a side slot holds. A slot never shows two things at once, so this is
@@ -526,46 +527,13 @@ namespace MVC.View.Inventory
                 _itemCatalog.style.display = content == SidePanelContent.Catalog
                                            ? DisplayStyle.Flex
                                            : DisplayStyle.None;
-                _slotAContent = content;
             }
 
-            RefreshSidePanelsContainer();
+            // La columna de A/B ya no se oculta nunca: vacia sigue reservando su hueco para
+            // que el principal no se mueva al abrir o cerrar un panel (1b).
         }
 
-        /// <summary>
-        /// The column of side bands reserves its width even with both bands hidden, so its
-        /// visibility follows theirs: shown while any band is open, gone when none is.
-        ///
-        /// Reads style and not resolvedStyle on purpose: ShowSideContent has just written the
-        /// bands' display and the engine has not resolved the pass yet, so resolvedStyle would
-        /// still report the previous state.
-        /// </summary>
-        private void RefreshSidePanelsContainer()
-        {
-            bool anyOpen = _sidePanelAWindow.style.display == DisplayStyle.Flex
-                        || _sidePanelBWindow.style.display == DisplayStyle.Flex;
 
-            _sidePanelsContainer.style.display = anyOpen ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
-        /// <summary>
-        /// Whether a side slot is currently showing that content. Its window must be open AND
-        /// the content be the one on display: a hidden window with the grid mounted is not
-        /// visible, and an open window showing the catalog is not showing an inventory.
-        /// </summary>
-        public bool IsSideContentVisible(PanelType slot, SidePanelContent content)
-        {
-            if (slot == PanelType.Player || content == SidePanelContent.None) return false;
-
-            VisualElement window = slot == PanelType.A ? _sidePanelAWindow : _sidePanelBWindow;
-            if (window.resolvedStyle.display != DisplayStyle.Flex) return false;
-
-            VisualElement shown = content == SidePanelContent.Catalog
-                                ? _itemCatalog
-                                : (slot == PanelType.A ? _sidePanelAContainer : _sidePanelBContainer);
-
-            return shown.resolvedStyle.display == DisplayStyle.Flex;
-        }
 
         
 
@@ -950,23 +918,6 @@ namespace MVC.View.Inventory
         #endregion
 
         #region Dev Item catalog
-
-        /// <summary>
-        /// The catalog borrows slot A. Closing it gives the slot back to whatever it was
-        /// showing, instead of leaving it empty: opening a chest and peeking at the catalog
-        /// should not close the chest.
-        /// </summary>
-        private void SwitchItemCatalog()
-        {
-            if (IsSideContentVisible(PanelType.A, SidePanelContent.Catalog))
-            {
-                ShowSideContent(PanelType.A, _contentBeforeCatalog);
-                return;
-            }
-
-            _contentBeforeCatalog = _slotAContent;
-            ShowSideContent(PanelType.A, SidePanelContent.Catalog);
-        }
 
         public void FillItemCatalog(List<ItemDisplayData> items)
         {

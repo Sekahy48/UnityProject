@@ -15,20 +15,45 @@ quesitos (mantener E), panel de Inspeccionar, y `LookControl` como unico dueno d
 del cursor (motivos `Manual`=Alt, `Inventory`, `RadialMenu`, `Inspect`). Tambien dos temas
 visuales intercambiables (medieval y campesino, `Theme/ActiveTheme.uss`).
 
-**Lo siguiente: rediseño de los paneles A y B (decidido, sin empezar).** Hoy A y B cuelgan
+**Lo siguiente: rediseño de los paneles A y B (1a implementado, sin probar).** Hoy A y B cuelgan
 del inventario principal; para mirar dos contenedores a la vez hay que poder abrirlos sin
 el. Orden acordado:
 
 1. **1a — paneles independientes** del inventario principal (refactor de
    `InventoryPresenter`: principal, A y B con su propio abierto/cerrado). Se prueba con los
    atajos Shift+1 / Shift+2, que se quedan como estan.
+   *Implementado, pendiente de compilar y probar.* Decisiones: el presenter es el unico
+   propietario de que hay abierto (`_mainOpen`, `_slots`); la vista solo pinta
+   (desaparece `IsSideContentVisible`, que leia `resolvedStyle` con un fotograma de
+   retraso). `InventoryPresenter` es coordinador, no "el principal": una sola mano, un solo
+   menu, una sola suscripcion a eventos, activa mientras haya cualquier ventana abierta
+   (`Sync`). API: `Open/Close/IsOpen` = solo principal; `OpenPanel/TogglePanel/ClosePanel`,
+   `CloseAll` (Esc, dos tiempos: primero mano), `IsAnythingOpen`. El jugador solo es destino
+   (equipar, transferir) con el principal abierto — si se quiere pasar algo al jugador se
+   abre con la I (propuesta de Sergio; descartado pasar un `owner` a `OpenPanel`). El
+   catalogo DEV es un contenido mas de A, independiente del principal. La X de cada panel
+   la atiende el presenter. Cerrar una ventana vacia la mano solo si lo que lleva salio de
+   ella (Sergio); sin nada abierto, la mano se vacia siempre. Recarga de UI pierde los
+   paneles (aceptado, solo dev).
 2. **1b — disposicion y entrada:**
    - Posiciones fijas: columna principal a la izquierda y A/B a la derecha siempre en su
      sitio (el principal se oculta con `visibility`, no `display`, para no liberar su
      hueco). Dentro de la columna, un panel solo queda centrado en vertical, como hoy.
+     *Implementado, sin probar.* La columna `side-panels` ya no se oculta nunca y lleva
+     `picking-mode="Ignore"`. Consecuencia aceptada: el principal solo queda a la izquierda
+     del centro. Por verificar: que el hueco oculto del principal no se trague clics.
+   - Capas: el documento del mundo va por ENCIMA del inventario (sort order 3 > 2), para
+     que radial e inspeccion no queden tapados por A/B. Nunca tapa a I porque con I abierto
+     el mundo no se atiende y se cierran radial e inspeccion. Lo del mundo en curso (radial,
+     inspeccion) es modal: captura toda la pantalla y A/B no reciben nada; un clic fuera de
+     la inspeccion no hace nada (Sergio). Sin nada del mundo en curso, la capa es `Ignore`.
+   - Esc en el Editor suelta el cursor siempre: `LookControl.Reassert()` lo recaptura
+     cada fotograma si deberia estar capturado.
    - El documento del inventario captura el raton a pantalla completa solo con el
      principal abierto o con algo en la mano; si no, solo las propias ventanas A/B (si no,
      el radial vuelve a quedarse sin raton). Asi se puede arrastrar entre A y B sin la I.
+     *Implementado, sin probar:* lo decide el presenter (`SyncCapture`, tras cada cambio de
+     ventanas o de mano); la vista ya no captura por su cuenta en `Show`/`Hide`.
    - Cursor: con el principal abierto, vista bloqueada y Alt ignorado; al cerrarlo, camara
      libre SIEMPRE (haya paneles o no: casi siempre se cierra para interactuar con el
      mundo); con solo paneles, Alt alterna. Si no queda nada abierto, camara libre. La E
@@ -48,6 +73,11 @@ el. Orden acordado:
    `Fields`; el control solo lee textos y forma y devuelve un camino (padre, hijo).
 
 **Despues:** T6 (carros, arcones colocados y NPCs con inventario) con contenido de verdad.
+
+**Pendiente de Sergio (aprendizaje):** leer de arriba abajo como se dibuja el menu radial
+—`RadialGeometry`, `RadialMenu` (propiedades USS personalizadas -> campos -> `DrawSectors`
+con Painter2D, `PlaceLabels`, `IndexAt`) y su hoja `Controls/Resources/Controls/RadialMenu.uss`—
+para interiorizarlo. Hacerlo en una sesion dedicada, con explicacion paso a paso.
 
 **Reparto de trabajo acordado:** los sistemas del nucleo (inventario, heridas, fisiologia)
 los escribe Sergio con revision; lo accesorio (temas, USS, enganches con Unity) se puede
@@ -710,6 +740,13 @@ herramienta equipada, slot propio). Es aplazamiento consciente, no olvido.
     pergamino, lacre) y relieve con el color de cada lado del borde, porque USS no tiene
     degradados. Los cuatro colores de veredicto de la mano se conservan, solo apagados.
     Reversible quitando su linea `<Style>` de los cuatro UXML.
+  - **Pendiente: paleta en variables USS.** Cada tema repite sus colores a mano (el laton
+    `rgb(176, 138, 70)` sale decenas de veces en `MedievalTheme.uss`). Declararlos una vez
+    como variables en la raiz del tema (`--laton: rgb(176, 138, 70);`) y usarlos con
+    `var(--laton)` en cada regla: cambiar la paleta pasa a ser tocar una linea, y los dos
+    temas quedan con la misma estructura y distintos valores. Ojo: son variables DE USS
+    (solo existen dentro de la hoja); no confundir con las propiedades personalizadas que
+    lee C# (`--radial-*`), que usan la misma sintaxis pero otro mecanismo.
   - **Texturas (Kenney, CC0)** en `Theme/textures/` (`kenney-rpg`, `kenney-borders`, con su
     licencia). Van en una seccion aparte al final del tema, con 9-slice: marco remachado
     tenido de laton en las ventanas, fichas de madera en los items, pergamino rasgado en el

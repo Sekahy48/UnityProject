@@ -30,6 +30,24 @@ namespace Core.MVC.Presenter.Inventory
         private Dictionary<PanelType, InventoryPanelPresenter> _panelPresenters;
         private readonly GrabGesture _grabGesture;
 
+        /* Que ventanas estan abiertas. El presenter es el unico propietario de este estado: la vista
+           solo lo pinta. Antes la verdad vivia en la vista (display + resolvedStyle, que va un
+           fotograma tarde) y el presenter tenia que preguntarle. Principal, A y B se abren y
+           cierran por separado; la mano, el menu contextual y los eventos siguen siendo uno. */
+        private bool _mainOpen;
+        private readonly Dictionary<PanelType, SidePanelContent> _slots = new Dictionary<PanelType, SidePanelContent>
+        {
+            { PanelType.A, SidePanelContent.None },
+            { PanelType.B, SidePanelContent.None },
+        };
+
+        /* Que ocupaba A antes de que el catalogo se lo pidiera prestado. Cerrar el catalogo
+           devuelve el hueco a lo que tenia: mirar el catalogo no cierra el arcon. */
+        private SidePanelContent _catalogReturnsTo = SidePanelContent.None;
+
+        /* Suscrito a InventoryChanged/EquipmentChanged. Lo decide Sync, en un solo sitio. */
+        private bool _subscribed;
+
         public InventoryPresenter(InventoryView view, ItemCatalogue itemCatalogue, InventoryService service)
         {
             _view = view;
@@ -46,6 +64,7 @@ namespace Core.MVC.Presenter.Inventory
             _view.OnInspectionHovered += SetHovered;
             _view.OnLayerLeftPressed += OnLayerLeftPressed;
             _view.OnLayerLeftReleased += OnLayerLeftReleased;
+            _view.OnCatalogToggleRequested += ToggleCatalog;
             _itemCatalog = itemCatalogue;
             _service  = service; 
             _grabGesture = new GrabGesture(service);
@@ -80,13 +99,15 @@ namespace Core.MVC.Presenter.Inventory
                 pres.OnInspectionStripUpdateRequired += UpdateInspectionStrip;
                 pres._panelView.OnCellRightPressed += OnCellRightPressed;
             }
+
+            // El panel pide cerrarse; quien lo cierra es el propietario del estado.
+            _panelPresenters[PanelType.A]._panelView.OnCloseRequested += () => ClosePanel(PanelType.A);
+            _panelPresenters[PanelType.B]._panelView.OnCloseRequested += () => ClosePanel(PanelType.B);
         }
 
         public void Open(IEntity entity)
         {
             _entity = entity; 
-            EventBus.GetInstance().Subscribe(GameEventType.InventoryChanged, this);
-            EventBus.GetInstance().Subscribe(GameEventType.EquipmentChanged, this);
             if (!_view.IsReady())
             {
                 _pendingOpen = true;
@@ -97,6 +118,16 @@ namespace Core.MVC.Presenter.Inventory
 
         private void OnViewReady()
         {
+            // Aqui y no en la primera apertura del principal: los paneles laterales pueden
+            // abrirse sin que el principal se haya abierto nunca.
+            InitPanelPresenters();
+
+            // La vista arranca con lo que diga el UXML; el estado lo pone el presenter.
+            // Sin esto A y B se ven vacios al darle al play.
+            _view.ShowSideContent(PanelType.A, _slots[PanelType.A]);
+            _view.ShowSideContent(PanelType.B, _slots[PanelType.B]);
+            SyncCapture();
+
             if (_pendingOpen && _entity != null)
             {
                 _pendingOpen = false;
@@ -118,35 +149,132 @@ namespace Core.MVC.Presenter.Inventory
             }
             _view.FillItemCatalog(catalogDTO); 
             _panelPresenters[PanelType.Player].Bind(_entity);
+            _mainOpen = true;
             _view.Show();
+            Sync();
         }
 
         /// <summary>
-        /// Two-stroke close view method. It first empties the hand, then if invoked a second time it hides de view. 
-        /// It also hides the view if the parameter absolute is specified as true or not sspecified at all (default value is true).
+        /// Cierra SOLO el principal; A y B siguen como esten.
+        ///
+        /// <para>Dos tiempos si no es absoluto: con algo en la mano, la primera llamada solo
+        /// vacia la mano y la segunda cierra. Absoluto (el valor por defecto) cierra siempre.</para>
         /// </summary>
-        /// <param name="absolute"></param>
         public void Close(bool absolute = true) 
         { 
             _view.DismissOverlays();
-            if (!_service.IsHandCarrying() || absolute)
+            if (_service.IsHandCarrying() && !absolute)
             {
-                _view.Hide();
-                EventBus.GetInstance().Unsubscribe(GameEventType.InventoryChanged, this);
-                EventBus.GetInstance().Unsubscribe(GameEventType.EquipmentChanged, this);
+                CancelHand();
+                return;
             }
-            
-            OnCancelRequested();
+
+            // Igual que en ClosePanel: la mano solo se vacia si lo que lleva salio del
+            // principal (rejilla del jugador, una mochila en sus tabs o el equipo).
+            bool fromMain = HandComesFrom(_entity)
+                         || (_panelPresenters != null && HandComesFrom(_panelPresenters[PanelType.Player].Entity));
+
+            _mainOpen = false;
+            _view.Hide();
+            if (fromMain) CancelHand();
+            Sync();
         }
-        public bool IsOpen() => _view.IsVisible();
+
+        /// <summary>
+        /// Si lo que hay en la mano salio del inventario de esa entidad. Identidad, no
+        /// Equivalent: dos mochilas iguales no son la misma.
+        /// </summary>
+        private bool HandComesFrom(IEntity entity) =>
+            entity != null && ReferenceEquals(_service.GetGrabbedOrigin()?.Owner, entity);
+
+        /// <summary>
+        /// Cierra principal, A y B. Mismos dos tiempos que <see cref="Close"/>: con la mano
+        /// llena y no absoluto, la primera llamada solo suelta la mano (D3).
+        /// </summary>
+        public void CloseAll(bool absolute = true)
+        {
+            _view.DismissOverlays();
+            if (_service.IsHandCarrying() && !absolute)
+            {
+                CancelHand();
+                return;
+            }
+
+            CancelHand();
+            _mainOpen = false;
+            _view.Hide();
+            if (_panelPresenters != null)
+            {
+                SetSlot(PanelType.A, SidePanelContent.None);
+                SetSlot(PanelType.B, SidePanelContent.None);
+            }
+            Sync();
+        }
+
+        /// <summary>Si el inventario PRINCIPAL esta abierto. A y B no cuentan.</summary>
+        public bool IsOpen() => _mainOpen;
+
+        public bool IsPanelOpen(PanelType slot) =>
+            slot == PanelType.Player ? _mainOpen : _slots[slot] != SidePanelContent.None;
+
+        public bool HasOpenPanels() => IsPanelOpen(PanelType.A) || IsPanelOpen(PanelType.B);
+
+        public bool IsAnythingOpen() => _mainOpen || HasOpenPanels();
+
+        /// <summary>Si ese panel esta pintando una rejilla ahora mismo (no el catalogo).</summary>
+        private bool ShowsGrid(PanelType slot) =>
+            slot == PanelType.Player ? _mainOpen && _entity != null
+                                     : _slots[slot] == SidePanelContent.Inventory;
 
         public void Refresh()
         {
-            if (_entity == null || !_view.IsVisible()) return;
-            foreach (InventoryPanelPresenter pres in _panelPresenters.Values)
-                pres.Refresh();
+            if (_panelPresenters == null || !IsAnythingOpen()) return;
+            foreach (KeyValuePair<PanelType, InventoryPanelPresenter> pair in _panelPresenters)
+                if (ShowsGrid(pair.Key)) pair.Value.Refresh();
             _view.CloseContextualMenu();
         }
+
+        /// <summary>
+        /// Unico punto que deja las suscripciones de acuerdo con lo abierto. Se llama tras
+        /// cualquier cambio de ventanas.
+        ///
+        /// <para>Suscrito mientras haya CUALQUIER ventana abierta, no solo el principal: un
+        /// arcon abierto en A con el principal cerrado tambien tiene que repintarse.</para>
+        ///
+        /// <para>Sin nada abierto la mano se vacia: sin ventanas no hay donde verla ni donde
+        /// soltarla, y lo que llevara quedaria en el limbo.</para>
+        /// </summary>
+        private void Sync()
+        {
+            bool any = IsAnythingOpen();
+
+            if (any && !_subscribed)
+            {
+                EventBus.GetInstance().Subscribe(GameEventType.InventoryChanged, this);
+                EventBus.GetInstance().Subscribe(GameEventType.EquipmentChanged, this);
+                _subscribed = true;
+            }
+            else if (!any && _subscribed)
+            {
+                EventBus.GetInstance().Unsubscribe(GameEventType.InventoryChanged, this);
+                EventBus.GetInstance().Unsubscribe(GameEventType.EquipmentChanged, this);
+                _subscribed = false;
+            }
+
+            if (!any) CancelHand();
+            SyncCapture();
+        }
+
+        /// <summary>
+        /// Si el documento captura el raton a pantalla completa: con el principal abierto o
+        /// con algo en la mano. Con la mano llena y solo A/B abiertos hace falta para que el
+        /// fantasma siga al raton fuera de la columna y soltar en vacio cancele. En el resto
+        /// de casos no debe: se tragaria el raton del radial y del mundo.
+        /// </summary>
+        private void SyncCapture() => _view.SetScreenCapture(_mainOpen || _service.IsHandCarrying());
+
+        /// <summary>El jugador como destino u owner, solo con el principal abierto. Ver <see cref="BuildTransferOptions"/>.</summary>
+        private IEntity PlayerIfOpen => _mainOpen ? _entity : null;
 
         
 
@@ -177,6 +305,7 @@ namespace Core.MVC.Presenter.Inventory
             CellSize itemSize = new CellSize(cell.Width * data.DimensionW, cell.Height * data.DimensionH);
 
             _view.RenderHandBuffer(data, itemSize, cell);
+            SyncCapture();
         }
 
         /// <param name="itemSize">Tamaño ya resuelto contra el destino por quien avisa. Cero
@@ -197,6 +326,7 @@ namespace Core.MVC.Presenter.Inventory
             // La mano es una de las fuentes de la franja, y acaba de cambiar: agarrar o soltar
             // tiene que verse sin esperar a que el cursor se mueva.
             PublishInspection();
+            SyncCapture();
         }
 
         private void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
@@ -438,27 +568,80 @@ namespace Core.MVC.Presenter.Inventory
         /// <para>La comparacion es por identidad y no por Equivalent: dos mochilas iguales y
         /// vacias son equivalentes y no son la misma mochila.</para>
         /// </summary>
-        public void ToggleExtraInventory(IEntity entity, PanelType panel)
+        public void TogglePanel(PanelType panel, IEntity container)
         {
-            AC.CheckNotNull(entity, nameof(entity));
+            AC.CheckNotNull(container, nameof(container));
+            if (panel == PanelType.Player || _panelPresenters == null) return;   // vista aun sin montar
             _view.CloseContextualMenu();
 
-            bool sameContainerShown = _view.IsSideContentVisible(panel, SidePanelContent.Inventory)
-                                   && ReferenceEquals(_panelPresenters[panel].Entity, entity);
+            bool sameContainerShown = _slots[panel] == SidePanelContent.Inventory
+                                   && ReferenceEquals(_panelPresenters[panel].Entity, container);
 
             if (sameContainerShown)
             {
-                CloseInventoryPanel(panel);
+                ClosePanel(panel);
                 return;
             }
 
-            _panelPresenters[panel].Bind(entity);
-            _view.ShowSideContent(panel, SidePanelContent.Inventory);
+            OpenPanel(panel, container);
         }
 
-        public void CloseInventoryPanel(PanelType panel)
+        /// <summary>
+        /// Muestra un contenedor en un hueco lateral, sustituya lo que sustituya (otro arcon o
+        /// el catalogo). No toca el principal.
+        /// </summary>
+        public void OpenPanel(PanelType panel, IEntity container)
         {
-            _view.ShowSideContent(panel, SidePanelContent.None);
+            AC.CheckNotNull(container, nameof(container));
+            if (panel == PanelType.Player || _panelPresenters == null) return;
+
+            // Bind antes de mostrar: asi el panel nunca muestra un fotograma la rejilla anterior.
+            _panelPresenters[panel].Bind(container);
+            if (panel == PanelType.A) _catalogReturnsTo = SidePanelContent.None;
+            SetSlot(panel, SidePanelContent.Inventory);
+        }
+
+        public void ClosePanel(PanelType panel)
+        {
+            if (panel == PanelType.Player || _panelPresenters == null) return;   // el del jugador no se negocia
+            _view.CloseContextualMenu();
+
+            // Solo se vacia la mano si lo que lleva salio de ESTA ventana: volveria a un sitio
+            // que ya no se ve. Si salio de otra, se puede seguir llevando a las que quedan.
+            if (HandComesFrom(_panelPresenters[panel].Entity)) CancelHand();
+            SetSlot(panel, SidePanelContent.None);
+        }
+
+        /// <summary>
+        /// El catalogo es un contenido mas de A (D2): lo abre el boton DEV y cerrar el
+        /// principal no lo cierra. Al cerrarlo, A vuelve a lo que tenia.
+        /// </summary>
+        private void ToggleCatalog()
+        {
+            if (_panelPresenters == null) return;
+            _view.CloseContextualMenu();
+
+            if (_slots[PanelType.A] == SidePanelContent.Catalog)
+            {
+                SidePanelContent back = _catalogReturnsTo == SidePanelContent.Inventory
+                                     && _panelPresenters[PanelType.A].Entity != null
+                                      ? SidePanelContent.Inventory
+                                      : SidePanelContent.None;
+                _catalogReturnsTo = SidePanelContent.None;
+                SetSlot(PanelType.A, back);
+                return;
+            }
+
+            _catalogReturnsTo = _slots[PanelType.A];
+            SetSlot(PanelType.A, SidePanelContent.Catalog);
+        }
+
+        /// <summary>Unico sitio que cambia un hueco: estado, vista y suscripciones juntos.</summary>
+        private void SetSlot(PanelType panel, SidePanelContent content)
+        {
+            _slots[panel] = content;
+            _view.ShowSideContent(panel, content);
+            Sync();
         }
     
         /// <summary>
@@ -495,7 +678,9 @@ namespace Core.MVC.Presenter.Inventory
 
             bool hasSublots = target.HasVariants();
             
-            List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), _entity, origin,
+            // Owner null con el principal cerrado: el jugador solo es destino (equipar,
+            // transferir) si su inventario esta a la vista.
+            List<ItemAction> actions = _service.GetAvailableActions(target.GetItemEntity(), PlayerIfOpen, origin,
                                                                     hasSublots, splittable);
 
             // El ancla se mide AQUI y no cuando se pulse la opcion: para entonces el evento de
@@ -626,7 +811,7 @@ namespace Core.MVC.Presenter.Inventory
         /// otra mintiendo hasta el siguiente repintado.
         ///
         /// <para>El barrido incluye el hueco de destino a proposito: asi pedir este contenedor
-        /// SIEMPRE lo muestra aqui, en vez de alternar. La alternancia de ToggleExtraInventory
+        /// SIEMPRE lo muestra aqui, en vez de alternar. La alternancia de TogglePanel
         /// se pierde por este camino, y es lo que se quiere — "mostrar al lado" es una orden,
         /// no un interruptor.</para>
         /// </summary>
@@ -637,10 +822,10 @@ namespace Core.MVC.Presenter.Inventory
                 // Identidad, no equivalencia: dos mochilas iguales y vacias son equivalentes y
                 // cerrar la otra seria cerrar la que no es.
                 if (ReferenceEquals(_panelPresenters[panelType].Entity, container))
-                    CloseInventoryPanel(panelType);
+                    ClosePanel(panelType);
             }
 
-            ToggleExtraInventory(container, targetPanel);
+            TogglePanel(targetPanel, container);
         }
 
         /// <param name="variant">Sub-lote concreto a equipar, o null para el representante del
@@ -701,9 +886,10 @@ namespace Core.MVC.Presenter.Inventory
             {
                 IEntity destiny = _panelPresenters[panel].Entity;
 
+                // Solo ventanas con rejilla a la vista: el jugador no es destino con el
+                // principal cerrado — para eso se abre con la I.
                 if (destiny == null || destiny == origin) continue;
-                if (panel != PanelType.Player &&
-                    !_view.IsSideContentVisible(panel, SidePanelContent.Inventory)) continue;
+                if (!ShowsGrid(panel)) continue;
 
                 destinies.Add(new MenuOption(DestinyName(destiny),
                                             inputs => OnQuickTransferRequested(target, origin, destiny, inputs.GetInt("amount"), variant),
@@ -814,7 +1000,7 @@ namespace Core.MVC.Presenter.Inventory
                 index => _panelPresenters[panel].GrabVariantAt(cell, lots[index].Item, lots[index].Amount),
                 index => {
                     MenuContext sublotContext = MenuContext.FromSublot(context.Origin, itemObject, lots[index].Item, context.Panel.Value, context.Cell, context.Anchor);
-                    RenderContextualMenu(_service.GetAvailableActions(lots[index].Item, _entity, _panelPresenters[panel].Entity, false), sublotContext);
+                    RenderContextualMenu(_service.GetAvailableActions(lots[index].Item, PlayerIfOpen, _panelPresenters[panel].Entity, false), sublotContext);
                 });
         }
 
@@ -832,14 +1018,18 @@ namespace Core.MVC.Presenter.Inventory
             {
                 case GameEventType.InventoryChanged:
                 {
+                    // Si alguna ventana VISIBLE muestra lo que cambio, se repintan todas las
+                    // visibles: un movimiento entre dos contenedores puede avisar solo por uno.
                     IEntity changed = gameEvent.GetEntity();
-                    foreach (InventoryPanelPresenter pres in _panelPresenters.Values)
-                        if (pres.Entity == changed) { Refresh(); return; }
+                    foreach (KeyValuePair<PanelType, InventoryPanelPresenter> pair in _panelPresenters)
+                        if (ShowsGrid(pair.Key) && pair.Value.Entity == changed) { Refresh(); return; }
                     break;
                 }
 
                 case GameEventType.EquipmentChanged:
                 { 
+                    // Equipo y tabs solo existen en el principal.
+                    if (!_mainOpen) break;
                     UpdateEquipmentRelated();
                     RefreshOpenLayers();
                     break;

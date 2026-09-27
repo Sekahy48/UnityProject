@@ -116,6 +116,16 @@ haga, los mensajes terminan con las dos líneas de atribución (`Co-Authored-By`
 `Claude-Session`): Sergio las quiere. No añadas "not compiled" ni similares al mensaje; eso
 se dice en la conversación.
 
+**El código del núcleo lo escribe Sergio.** Núcleo = los sistemas del juego: inventario,
+heridas, fisiología, interacción con el mundo, y sus servicios y presentadores en
+`Assets/Code/Core/`. Ahí tu papel es valorar sus propuestas, validar o discutir sus
+decisiones y revisar lo que escriba; como mucho, esbozar la forma (firmas, diagrama),
+no el cuerpo. Si una tarea de núcleo te llega como "implementa", **no la hagas: díle que
+le toca a él**, salvo que diga explícitamente que es una excepción. Lo accesorio (temas,
+USS/UXML, enganches con Unity, vistas, `InputManager`) sí puedes escribirlo. Si dudas de
+en qué lado cae algo, pregunta antes de escribir. Motivo: es su TFG y quiere ser autor
+real del código, no solo del diseño.
+
 **Sergio compila; tú no puedes.** No hay Unity en el entorno de trabajo, así que ningún
 cambio está compilado ni probado cuando lo entregas. No lo intentes ni lo simules: al
 terminar, di explícitamente qué no has podido verificar (tipos que asumes, firmas que no
