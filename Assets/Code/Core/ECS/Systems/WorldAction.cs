@@ -23,6 +23,7 @@ namespace Core.ECS.Systems
 
         /// <summary>Abrir su inventario.</summary>
         [Description("Abrir inventario")]
-        Inventory
+        Inventory, 
+ 
     }
 }

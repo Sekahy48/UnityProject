@@ -21,6 +21,12 @@
     --radial-inner-radius: 48;
     --radial-outer-radius: 150;
     --radial-gap: 2;
+
+    /* Anillos exteriores (2, 3...): grosor, separacion con el anterior y ancho maximo de
+       cada porcion en grados (como mucho, lo que mide la porcion del padre). */
+    --radial-ring-width: 90;
+    --radial-ring-gap: 8;
+    --radial-child-sector: 50;
 }
 
 .radial-ring {
@@ -40,6 +46,26 @@
     color: rgb(225, 225, 225);
     transition-property: scale, color;
     transition-duration: 0.08s;
+}
+
+/* Opcion con subopciones (abre un anillo en vez de ejecutar). La clase queda para que el
+   tema la distinga si quiere. El aviso es un hijo del texto colgado DEBAJO en absoluto: un
+   Label pinta su texto en su propia caja, y un hijo en el flujo normal se le montaria encima.
+   Mas pequeno y apagado; el tema puede cambiarlo u ocultarlo (display: none). */
+.radial-option__more {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    translate: -50% 0;
+    white-space: nowrap;
+    font-size: 11px;
+    color: rgb(170, 170, 170);
+    -unity-font-style: italic;
+    margin-top: 2px;
+}
+
+.radial-option--child {
+    font-size: 13px;
 }
 
 .radial-option--highlighted {

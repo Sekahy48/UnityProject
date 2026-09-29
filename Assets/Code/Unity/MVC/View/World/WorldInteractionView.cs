@@ -46,8 +46,9 @@ namespace MVC.View.World
 
         public event Action OnInspectCloseRequested;
 
-        public event Action<int> OnMenuHighlighted;
-        public event Action<int> OnMenuClicked;
+        /* (anillo, indice); (-1, -1) si no hay nada bajo el puntero. */
+        public event Action<int, int> OnMenuHighlighted;
+        public event Action<int, int> OnMenuClicked;
         public event Action OnMenuDismissed;
 
         /* Si el presentador quiere la marca visible. Distinto de que quepa en pantalla: un
@@ -96,8 +97,8 @@ namespace MVC.View.World
             // El radial se crea por codigo: su estructura depende de cuantas opciones haya.
             // Va el ultimo para quedar por encima de la marca y del punto de mira.
             _radial = new RadialMenu();
-            _radial.OnHighlighted += index => OnMenuHighlighted?.Invoke(index);
-            _radial.OnClicked += index => OnMenuClicked?.Invoke(index);
+            _radial.OnHighlighted += (level, index) => OnMenuHighlighted?.Invoke(level, index);
+            _radial.OnClicked += (level, index) => OnMenuClicked?.Invoke(level, index);
             _radial.OnDismissed += () => OnMenuDismissed?.Invoke();
             _root.Add(_radial);
 
@@ -287,7 +288,13 @@ namespace MVC.View.World
 
         #endregion
 
-        public void OpenMenu(IReadOnlyList<string> labels) => _radial?.Open(labels);
+        /// <param name="hasChildren">Paralela a labels: true si esa opcion abre un anillo.</param>
+        public void OpenMenu(IReadOnlyList<string> labels, IReadOnlyList<bool> hasChildren)
+            => _radial?.Open(labels, hasChildren);
+
+        public void AddRing(int parentIndex, IReadOnlyList<string> labels) => _radial?.AddRing(parentIndex, labels);
+
+        public void CloseRingsAbove(int level) => _radial?.CloseRingsAbove(level);
 
         public void CloseMenu() => _radial?.Close();
     }

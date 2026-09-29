@@ -29,7 +29,7 @@ namespace Core.ECS.Component.Equipment
         /// Recorrer <see cref="EquipmentSlots"/> y sus capas no equivale a esto: una prenda de
         /// ocupacion completa —un arco a dos manos, una mochila que ocupa espalda y hombros—
         /// esta registrada en todos sus slots a la vez, asi que ese recorrido la visita una vez
-        /// por slot. Para contar (peso, pestañas, inventarios equipados) hay que usar este
+        /// por slot. Para contar (peso, pestanas, inventarios equipados) hay que usar este
         /// metodo; el recorrido por slots solo sirve cuando lo que importa es el slot en si.
         /// </remarks>
         public IEnumerable<ItemEntity> EquippedItems()
@@ -117,8 +117,8 @@ namespace Core.ECS.Component.Equipment
             if (!fullOcupancy)
                 return EquipmentSlots[slotTypes[0]].EquipItem(item);
 
-            List<EquipmentSlotType> slotsWhereSucceeded = new List<EquipmentSlotType>(); // Lista de lo añadido, para poder hacer rollback en caso de ser necesario
-            // Bucle para añdir si fullOcupancy == true
+            List<EquipmentSlotType> slotsWhereSucceeded = new List<EquipmentSlotType>(); // Lista de lo anadido, para poder hacer rollback en caso de ser necesario
+            // Bucle para andir si fullOcupancy == true
             foreach (EquipmentSlotType slotType in slotTypes)
             { 
                 EquipResult equiped = EquipmentSlots[slotType].EquipItem(item);

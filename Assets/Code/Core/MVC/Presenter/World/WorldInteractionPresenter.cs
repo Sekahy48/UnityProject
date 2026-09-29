@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Text;
 using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
@@ -29,6 +31,13 @@ namespace Core.MVC.Presenter.World
         private readonly IWorldInteractionView _view;
         private readonly WorldInteractionService _service;
 
+        /// <summary>
+        /// Los paneles de contenedores, vistos solo a traves de lo que el mundo necesita:
+        /// preguntar que hay abierto y abrir o cerrar. No es el InventoryPresenter entero a
+        /// proposito; los presentadores no se manipulan entre si.
+        /// </summary>
+        private readonly IContainerPanels _panels;
+
         private IEntity _actor;
         private bool _open;
 
@@ -37,6 +46,11 @@ namespace Core.MVC.Presenter.World
 
         /// <summary>Acciones de <see cref="_target"/> en orden de prioridad.</summary>
         private List<WorldAction> _actions = new List<WorldAction>();
+
+        /// <summary>
+        /// Lista que representa si las opciones son finales o llevana a más opciones.
+        /// </summary>
+        private List<bool> _menuHasChildren = new List<bool>();
 
         /// <summary>Lo ultimo que se mando a la vista, para no repintar lo mismo cada fotograma.</summary>
         private WorldPromptData _shown;
@@ -48,28 +62,39 @@ namespace Core.MVC.Presenter.World
         private IEntity _menuTarget;
         private List<WorldAction> _menuActions = new List<WorldAction>();
 
-        /// <summary>
-        /// Opcion resaltada, o -1. Es el UNICO dato que decide que se ejecuta al soltar: la
-        /// vista solo informa de donde esta el puntero y pinta lo que esta aqui, asi que lo
-        /// resaltado y lo ejecutado no pueden discrepar.
-        /// </summary>
-        private int _highlighted = -1;
+        private int _hiLevel = -1;   // anillo resaltado (0 = primero, 1 = exterior)
+        private int _hiIndex = -1;   // opcion resaltada dentro de ese anillo
+        // Las hijas de "Abrir inventario", en el orden en que se pintan.
+        private static readonly PanelType[] RING_SLOTS = { PanelType.A, PanelType.B };
+
+        // Opcion del primer anillo cuyo anillo exterior esta abierto, o -1.
+        private int _expanded = -1;
 
         /* Panel de inspeccion. Como el menu, congela su objetivo y se cierra solo si deja de
            alcanzarse. */
         private bool _inspecting;
         private IEntity _inspectTarget;
 
-        public WorldInteractionPresenter(IWorldInteractionView view, WorldInteractionService service)
+        private static readonly PanelType[] SIDE_PANELS = { PanelType.A, PanelType.B };
+
+        public WorldInteractionPresenter(IWorldInteractionView view, WorldInteractionService service,
+                                         IContainerPanels panels)
         {
             AC.CheckNotNull(view, nameof(view));
             AC.CheckNotNull(service, nameof(service));
+            AC.CheckNotNull(panels, nameof(panels));
 
             _view = view;
             _service = service;
+            _panels = panels;
             _view.Initialize();
 
-            _view.OnMenuHighlighted += index => _highlighted = _menuOpen ? index : -1;
+            // De momento solo hay un anillo: lo que no sea el primero se ignora.
+            _view.OnMenuHighlighted += (level, index) =>
+            {
+                _hiLevel = _menuOpen ? level : -1;
+                _hiIndex = _menuOpen ? index : -1;
+            };
             _view.OnMenuClicked += OnMenuClicked;
             _view.OnMenuDismissed += CloseMenu;
             _view.OnInspectCloseRequested += CloseInspect;
@@ -114,6 +139,8 @@ namespace Core.MVC.Presenter.World
         /// </summary>
         public void Tick()
         {
+
+            TickEvaluateInventoryDistances();
             if (!_open) return;
 
             // Con el menu abierto no se busca: el objetivo esta congelado. Solo se vigila que
@@ -154,6 +181,20 @@ namespace Core.MVC.Presenter.World
                 _view.PlacePrompt(anchor.Value.x, anchor.Value.y, anchor.Value.z);
         }
 
+        private void TickEvaluateInventoryDistances()
+        { 
+
+            // Sin actor el mundo nunca se ha abierto: no hay de quien medir la distancia.
+            if (_actor == null) return;
+
+            foreach (PanelType panelType in SIDE_PANELS)
+            {
+                IEntity target = _panels.OccupantOf(panelType);
+                if (target != null && WorldPresence.IsIn(target) && !_service.IsInRange(_actor, target))
+                    _panels.ClosePanel(panelType);
+            }
+        }
+
         #endregion
 
         #region Intenciones del jugador
@@ -186,22 +227,97 @@ namespace Core.MVC.Presenter.World
         }
 
         /// <summary>
-        /// Ejecuta una accion por el servicio y, si es de las que abren interfaz, la abre.
-        ///
-        /// Inspeccionar pasa por el servicio aunque no cambie nada en el mundo: asi su
-        /// comprobacion de alcance y de acciones es la misma que la de las demas. Solo si el
-        /// servicio la da por buena se abre el panel.
+        /// Ejecuta una accion sobre la entidad objetivo. Segun la accion delega las operaciones de dominio 
+        /// al servicio de interaccion con el mundo; y las operaciones relativas a la vista (mostrar/ocultar/actualizar elementos)
+        /// recaen sobre metodos propios de esta clase.
         /// </summary>
-        private void Perform(IEntity target, WorldAction action)
+        /// <param name="target"></param>
+        /// <param name="action"></param>
+        /// <exception cref="ArgumentOutOfRangeException"> Si se intenta ejecutar una accion cuyo comportamiento no esta definido. </exception>
+        private void Perform(IEntity target, WorldAction action, PanelType? panelType = null)
         {
-            if (!_service.Execute(_actor, target, action)) return;
+            if (!_service.CanPerform(_actor, target, action)) return;
 
-            if (action == WorldAction.Inspect) OpenInspect(target);
+            switch (action)
+            {
+                case WorldAction.PickUp:
+                {
+                    _service.PickUp(_actor, target);
+                    break;
+                }
+                case WorldAction.Inspect:
+                { 
+                    OpenInspect(target);
+                    break;        
+                }
+                case WorldAction.Inventory:
+                {
+                    // Sin panel (toque de E u hoja del primer anillo) se abre en A aunque sustituya:
+                    // decidir si hay que preguntar es cosa de quien construye el menu, no de aqui.
+                    // Si ya se muestra en algun panel, no pasa nada.
+                    if (!_panels.IsShowing(target))
+                        _panels.OpenPanel(panelType ?? PanelType.A, target);
+                    break;    
+                } 
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(action), "Action not supported: " + action.ToString());
+            } 
         }
 
         /// <summary>Si el menu radial esta abierto. InputManager lo consulta cada fotograma
         /// para bloquear la vista mientras lo este.</summary>
         public bool IsMenuOpen => _menuOpen;
+
+        private bool HasChildren(WorldAction action)
+            => action == WorldAction.Inventory
+            && (_panels.OccupantOf(PanelType.A) != null || _panels.OccupantOf(PanelType.B) != null);
+
+        private List<string> RingLabels()
+        {
+            List<string> labels = new List<string>();
+            foreach (PanelType slot in RING_SLOTS)
+            {
+                string name = slot == PanelType.A ? "Principal" : "Secundario";
+                IEntity occupant = _panels.OccupantOf(slot);
+                string who = occupant == null ? "vacio"
+                        : occupant is ItemEntity item ? item.GetDisplayName() : occupant.GetName();
+                labels.Add(name + " (" + who + ")");
+            }
+            return labels;
+        }
+
+        /// <summary>
+        /// Elegir (level, index): abre el anillo exterior si la opcion tiene hijos, o ejecuta.
+        /// Devuelve true si el menu debe cerrarse.
+        /// </summary>
+        private bool Choose(int level, int index)
+        {
+            if (level == 0)
+            {
+                if (index < 0 || index >= _menuActions.Count) return true;
+                WorldAction action = _menuActions[index];
+
+                if (_menuHasChildren[index])
+                {
+                    _view.CloseRingsAbove(0);
+                    _view.AddRing(index, RingLabels());
+                    _expanded = index;
+                    return false;                 // el menu sigue abierto
+                }
+
+                Perform(_menuTarget, action);
+                return true;
+            }
+
+            if (level == 1 && _expanded >= 0 && index >= 0 && index < RING_SLOTS.Length)
+            {
+                Perform(_menuTarget, _menuActions[_expanded], RING_SLOTS[index]);
+                return true;
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// Mantener la tecla: abre el menu con las acciones del objetivo actual.
@@ -214,14 +330,23 @@ namespace Core.MVC.Presenter.World
             _menuOpen = true;
             _menuTarget = _target;
             _menuActions = new List<WorldAction>(_actions);
-            _highlighted = -1;
+            _hiLevel = -1; 
+            _hiIndex = -1; 
+            _expanded = -1;
 
             // La marca de la E sobraria con el menu encima.
             Forget();
 
-            List<string> labels = new List<string>(_menuActions.Count);
-            foreach (WorldAction action in _menuActions) labels.Add(action.GetDescription());
-            _view.OpenMenu(labels);
+            List<string> labels = new List<string>(_menuActions.Count); 
+ 
+            foreach (WorldAction action in _menuActions) 
+            { 
+                labels.Add(action.GetDescription());
+                
+                _menuHasChildren.Add(HasChildren(action)); 
+                
+            }
+            _view.OpenMenu(labels, _menuHasChildren);
         }
 
         /// <summary>
@@ -232,24 +357,20 @@ namespace Core.MVC.Presenter.World
         {
             if (!_menuOpen) return;
 
-            int chosen = _highlighted;
-            if (chosen >= 0) ExecuteMenuOption(chosen);
+            // Soltar sobre un padre con hijos no hace nada (E2); sobre una hoja, la ejecuta (E1).
+            bool parent = _hiLevel == 0 && _hiIndex >= 0 && _hiIndex < _menuActions.Count
+                        && _menuHasChildren[_hiIndex];
+            if (_hiIndex >= 0 && !parent) Choose(_hiLevel, _hiIndex);
+
             CloseMenu();
         }
 
-        private void OnMenuClicked(int index)
+        private void OnMenuClicked(int level, int index)
         {
             if (!_menuOpen) return;
-
-            ExecuteMenuOption(index);
-            CloseMenu();
+            if (Choose(level, index)) CloseMenu();
         }
-
-        private void ExecuteMenuOption(int index)
-        {
-            if (index < 0 || index >= _menuActions.Count) return;
-            Perform(_menuTarget, _menuActions[index]);
-        }
+ 
 
         private void CloseMenu()
         {
@@ -258,9 +379,12 @@ namespace Core.MVC.Presenter.World
             _menuOpen = false;
             _menuTarget = null;
             _menuActions = new List<WorldAction>();
-            _highlighted = -1;
+            _hiLevel = -1; 
+            _hiIndex = -1; 
+            _expanded = -1;
             _view.CloseMenu();
 
+            _menuHasChildren.Clear();
             // La marca vuelve ya, sin esperar al siguiente fotograma.
             Tick();
         }

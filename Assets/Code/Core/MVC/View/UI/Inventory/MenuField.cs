@@ -3,7 +3,7 @@ using System;
 namespace Core.MVC.View.UI.Inventory
 {   
     /// <summary>
-    /// Campo editable que acompaña a una opcion de menu (la cantidad a tirar, por ejemplo).
+    /// Campo editable que acompana a una opcion de menu (la cantidad a tirar, por ejemplo).
     /// Describe QUE pedir, no como pintarlo: la vista elige el widget segun <see cref="Type"/>.
     /// Se construye con las fabricas estaticas, no con new.
     /// </summary>

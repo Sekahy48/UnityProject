@@ -4,6 +4,7 @@ using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
 using Core.Events;
+using Unity.VisualScripting;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
@@ -191,6 +192,13 @@ namespace Core.ECS.Systems
         private const float REACH = 2.0f;
 
         /// <summary>
+        /// Margen extra sobre el alcance normal para decidir cuando algo abierto queda
+        /// demasiado lejos y se cierra. Histeresis: si abrir y cerrar usaran el mismo limite,
+        /// quedarse justo en el borde abriria y cerraria el panel con cualquier balanceo.
+        /// </summary>
+        private const float CLOSE_MARGIN = 0.5f;
+
+        /// <summary>
         /// Coseno del semiangulo del cono de mirada: 0.94 son unos 20 grados a cada lado.
         /// Estrecho porque ahora la mirada incluye la inclinacion de la camara y se apunta
         /// con el centro de la pantalla; con 45 grados, apuntar a una manzana no la separaba
@@ -300,6 +308,22 @@ namespace Core.ECS.Systems
             if (!IsWithinReach(target, gaze.Value, out _, out _)) return false;
 
             return IsInSight(actor, target, gaze.Value);
+        }
+
+        public bool IsInRange(IEntity actor, IEntity target)
+        {
+            if (actor == null || target == null || ReferenceEquals(actor, target)) return false;
+            if (!ReferenceEquals(_entityManager.GetEntity(target.GetIdAsInt()), target)) return false;
+
+            Gaze? gaze = GazeOf(actor);
+            if (!gaze.HasValue) return false;
+
+            InteractionVolumeComponent volume = target.GetComponent<InteractionVolumeComponent>();
+            PositionComponent targetPos = target.GetComponent<PositionComponent>();
+            if (volume == null || targetPos == null) return false;
+
+            float distance = volume.DistanceFrom(targetPos, gaze.Value.Ox, gaze.Value.Oy, gaze.Value.Oz);
+            return distance <= REACH + CLOSE_MARGIN;
         }
 
         /// <summary>

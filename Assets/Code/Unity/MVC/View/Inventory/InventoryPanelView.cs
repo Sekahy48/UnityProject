@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 
 namespace MVC.View.Inventory
 {
-    public class InventoryPanelView
+    public class InventoryPanelView : IInventoryPanelView
     {
         #region Fields
         private readonly  PanelType _panelType;
@@ -55,7 +55,7 @@ namespace MVC.View.Inventory
            de movimiento. MinValue = ninguna, para que la primera siempre emita. */
         public GridPos? LastCell {get; private set;}
 
-        /* Porcion con la que se emitio el ultimo veredicto. Acompaña a LastCell porque el
+        /* Porcion con la que se emitio el ultimo veredicto. Acompana a LastCell porque el
            veredicto depende de las dos cosas: soltar sobre la misma celda no significa lo
            mismo con shift pulsado que sin el. */
         private GrabPortion _lastPortion = GrabPortion.All;

@@ -12,7 +12,7 @@ namespace Core.ECS.Component
     ///
     /// La alternativa era reflexion, y se descarto: ataria el nombre que el autor escribe en
     /// Stack&amp;Go al nombre del miembro en C#, de modo que un renombrado durante un
-    /// refactor compilaria sin quejarse y rompería el dato en tiempo de ejecucion, lejos y
+    /// refactor compilaria sin quejarse y romperia el dato en tiempo de ejecucion, lejos y
     /// en silencio. Escribiendolo a mano, cada componente es dueno del conocimiento de sus
     /// propios campos y un renombrado rompe donde se ve.
     ///

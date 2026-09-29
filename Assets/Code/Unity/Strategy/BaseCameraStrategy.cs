@@ -1,6 +1,7 @@
 using System;
 using Core.ECS.Component;
 using Core.ECS.Entity;
+using Core.MVC.View.UI.Inventory;
 using MVC.View.Inventory;
 using Core.Observer;
 using UnityEngine;

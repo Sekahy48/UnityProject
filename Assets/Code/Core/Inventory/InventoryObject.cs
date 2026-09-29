@@ -43,7 +43,7 @@ namespace Core.Inventory
             _grid = new TetrisGridState(storage.GridH, storage.GridW);
         }
 
-        /// <param name="holder">Entidad dueña de este inventario, de la que sale su techo de
+        /// <param name="holder">Entidad duena de este inventario, de la que sale su techo de
         /// peso. Null deja el inventario sin techo propio.</param>
         public InventoryObject(IEntity holder = null)
         {
@@ -319,10 +319,10 @@ namespace Core.Inventory
         ///
         /// <para>Aqui vive la UNICA regla que hay sobre el origen: un techo no aplica a algo que
         /// ya esta debajo de el. Mover del bolsillo a la mochila, o de la mochila al jugador, no
-        /// cambia lo que el jugador carga. Antes eso lo apañaba el ignoreNodeId de la rejilla,
+        /// cambia lo que el jugador carga. Antes eso lo apanaba el ignoreNodeId de la rejilla,
         /// que solo sabia de un mismo inventario y no de la cadena.</para>
         ///
-        /// <para>Sin entidad dueña no hay techo: el inventario de paso que fabrica
+        /// <para>Sin entidad duena no hay techo: el inventario de paso que fabrica
         /// SpawnIntoHand no es de nadie y no limita nada.</para>
         /// </summary>
         /// <param name="source">Inventario del que sale lo que se va a mover, o null si viene de
@@ -823,7 +823,7 @@ namespace Core.Inventory
         /// aqui y no sale. Ademas seria redundante: _id SALE del item (su typeId) y el
         /// contenido se compara elemento a elemento justo debajo.</para>
         ///
-        /// <para>Lo que si se pierde: el estado de instancia del contenedor (un arcon dañado y
+        /// <para>Lo que si se pierde: el estado de instancia del contenedor (un arcon danado y
         /// otro intacto salen equivalentes). Si algun dia importa, se compara aqui de forma
         /// explicita — nunca delegando en la entidad entera, que es por donde se cierra el
         /// ciclo.</para>

@@ -653,6 +653,11 @@
     color: rgb(250, 236, 200);
 }
 
+/* Aviso "[Mas opciones]" bajo una opcion con subopciones: laton apagado. */
+.radial-option__more {
+    color: rgb(176, 138, 70);
+}
+
 /* El medallon del centro: aro de laton sobre madera oscura; se apaga cuando el puntero
    esta en el (nada elegido). */
 .radial-hub {

@@ -8,7 +8,6 @@ using Core.ECS.Systems;
 using Core.Inventory;
 using Core.Item;
 using Core.MVC.View;
-using MVC.View.Inventory;
 using Core.MVC.View.UI.Inventory;
 using Core.Services;
 using AC = Core.Utils.ArgumentChecker;
@@ -19,9 +18,9 @@ using System.Linq;
 
 namespace Core.MVC.Presenter.Inventory
 {
-    public class InventoryPresenter : IPresenter, IEventObserver
+    public class InventoryPresenter : IPresenter, IEventObserver, IContainerPanels
     {    
-        private readonly InventoryView _view;
+        private readonly IInventoryView _view;
         private readonly ItemCatalogue _itemCatalog;
         private IEntity _entity;
         private bool _pendingOpen = false;
@@ -48,7 +47,7 @@ namespace Core.MVC.Presenter.Inventory
         /* Suscrito a InventoryChanged/EquipmentChanged. Lo decide Sync, en un solo sitio. */
         private bool _subscribed;
 
-        public InventoryPresenter(InventoryView view, ItemCatalogue itemCatalogue, InventoryService service)
+        public InventoryPresenter(IInventoryView view, ItemCatalogue itemCatalogue, InventoryService service)
         {
             _view = view;
             _view.OnCloseClicked += OnCloseClicked;
@@ -308,7 +307,7 @@ namespace Core.MVC.Presenter.Inventory
             SyncCapture();
         }
 
-        /// <param name="itemSize">Tamaño ya resuelto contra el destino por quien avisa. Cero
+        /// <param name="itemSize">Tamano ya resuelto contra el destino por quien avisa. Cero
         /// cuando la mano queda vacia: no hay nada que dimensionar.</param>
         /// <param name="anchorBasis">Unidad de destino: celda en una rejilla, slot en el equipo.</param>
         private void HandChanged(CellSize itemSize, CellSize anchorBasis)
@@ -336,8 +335,8 @@ namespace Core.MVC.Presenter.Inventory
         /// El puntero pasa sobre un slot de equipo llevando algo. Pregunta al servicio por el
         /// mismo camino que usaria para equipar de verdad y sube el veredicto ya traducido.
         ///
-        /// Sobre un slot el fantasma se pinta del tamaño del slot, no celda x dimensiones: el
-        /// destino manda sobre el tamaño, igual que en la rejilla manda la celda.
+        /// Sobre un slot el fantasma se pinta del tamano del slot, no celda x dimensiones: el
+        /// destino manda sobre el tamano, igual que en la rejilla manda la celda.
         /// </summary>
         private void EvaluateHandOverSlot(int layer, bool fromLayersPopup, CellSize slotSize)
         {
@@ -403,7 +402,7 @@ namespace Core.MVC.Presenter.Inventory
 
         
         /// <summary>
-        /// Repinta el fantasma con un tamaño que ya viene resuelto. Este metodo no interpreta
+        /// Repinta el fantasma con un tamano que ya viene resuelto. Este metodo no interpreta
         /// medidas: quien avisa sabe sobre que destino esta y lo calcula alli.
         /// </summary>
         private void RefreshHand(CellSize itemSize, CellSize anchorBasis)
@@ -441,7 +440,7 @@ namespace Core.MVC.Presenter.Inventory
 
             // Puede ser null con la mano todavia "llena": entre que el origen se vacia y que la
             // mano se entera, RunTransfer ya ha anunciado y alguien puede preguntar. No es un
-            // error, es un instante sin nada que enseñar — y por eso se pregunta por el item y
+            // error, es un instante sin nada que ensenar — y por eso se pregunta por el item y
             // no por IsHandCarrying, que responde que si cuando ya no hay nada que pintar.
             return item == null
                 ? null
@@ -458,7 +457,7 @@ namespace Core.MVC.Presenter.Inventory
         /// comportaban distinto en cuanto algo si escribia (un slot vacio).</para>
         ///
         /// <para>Los paneles informan de lo que tienen debajo; quien decide que se muestra es
-        /// esta ventana, que es la dueña de la unica franja que hay.</para>
+        /// esta ventana, que es la duena de la unica franja que hay.</para>
         /// </summary>
         private void PublishInspection()
             => _view.UpdateInspectionStrip(HandData() ?? _hovered ?? _pinned?.FocusedDisplayData);
@@ -494,7 +493,7 @@ namespace Core.MVC.Presenter.Inventory
 
                 _service.GrabFrom(_service.EquipmentOrigin(_entity, OccupiedSlots(item, slotType), item), 1);
 
-                // Sobre un slot la prenda ocupa el slot entero: tamaño y ancla coinciden.
+                // Sobre un slot la prenda ocupa el slot entero: tamano y ancla coinciden.
                 CellSize slotSize = _view.GetEquipmentCellSize();
                 HandChanged(slotSize, slotSize);
             });
@@ -708,9 +707,7 @@ namespace Core.MVC.Presenter.Inventory
 
         private EquipmentSlotType CurrentLayerSlotType(bool fromLayersPopup)
         {
-            return fromLayersPopup
-                ? _view.GetEquipmentLayerSlotType(_view.ActiveEquipmentSlot)
-                : _view.GetEquipmentSlotType(_view.ActiveEquipmentSlot);
+            return _view.ActiveEquipmentSlotType(fromLayersPopup);
         }
 
         private int LayerToRealPos(int layer, int totalLayers) => totalLayers - 1 - layer; 
@@ -830,7 +827,7 @@ namespace Core.MVC.Presenter.Inventory
 
         /// <param name="variant">Sub-lote concreto a equipar, o null para el representante del
         /// nodo. Dos prendas del mismo tipo con desgaste distinto conviven en la misma pila, y
-        /// equipar "una cualquiera" cuando el jugador señalo una seria elegir por el.</param>
+        /// equipar "una cualquiera" cuando el jugador senalo una seria elegir por el.</param>
         private IEnumerable<MenuOption> BuildEquiOptions(IInventoryElement target, IEntity origin, ItemEntity variant = null)
         {
             ItemEntity item = variant ?? target.GetItemEntity();
@@ -1049,7 +1046,7 @@ namespace Core.MVC.Presenter.Inventory
             EquipmentSlotType type = _view.OpenLayersSlotType;
             EquipmentSlot slot = _entity.GetComponent<EquipmentComponent>().GetEquipmentSlot(type);
 
-            // Sin capas por debajo de la superior no hay nada que enseñar, y el boton que lo
+            // Sin capas por debajo de la superior no hay nada que ensenar, y el boton que lo
             // abre tampoco estaria visible: cerrarlo es lo unico coherente.
             if (slot.GetEquippedItemCount() <= 1) { _view.CloseLayersPopup(); return; }
 
@@ -1065,7 +1062,7 @@ namespace Core.MVC.Presenter.Inventory
             _view.AddTabToInventoryTabs(_entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), new List<MenuOption>());
             
             // EquippedItems y no un recorrido por slots: una prenda de ocupacion completa esta
-            // en varios a la vez, y saldria con una pestaña por slot.
+            // en varios a la vez, y saldria con una pestana por slot.
             foreach (ItemEntity item in equipmentComponent.EquippedItems())
             {
                 if (item.GetComponent<InventoryComponent>() == null) continue;
@@ -1084,5 +1081,28 @@ namespace Core.MVC.Presenter.Inventory
             _view.UpdateEquipmentSlots(equipmentComponent);
             UpdateInventoryTabs(equipmentComponent);
         }
+
+        #region IContainerPanels
+        public IEntity OccupantOf(PanelType slot)
+        {
+            // Vista aun sin montar: no hay paneles, luego nada abierto.
+            if (_panelPresenters == null) return null;
+            return ShowsGrid(slot) ? _panelPresenters[slot].Entity : null;
+        }
+
+        public bool IsShowing(IEntity container)
+        {
+            if (_panelPresenters == null) return false;
+            foreach (PanelType panelType in _panelPresenters.Keys)
+            {
+                if (ShowsGrid(panelType) && ReferenceEquals(_panelPresenters[panelType].Entity, container))
+                    return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
     }
 }

@@ -213,9 +213,13 @@ public class GameMain : MonoBehaviour
 
         // No se reabre aqui: InputManager lo abre o cierra cada fotograma segun la camara y
         // el inventario, asi que tras una recarga se recupera solo en el siguiente.
+        // Recibe el inventario recien creado como IContainerPanels: se crean juntos aqui, asi
+        // que tras una recarga el mundo nuevo apunta al inventario nuevo y no hay orden que
+        // respetar ni suscripcion que olvidar.
         WorldInteractionPresenter worldPresenter = new WorldInteractionPresenter(
             viewManager.GetView<WorldInteractionView>(PresenterType.WORLD),
-            _worldInteractionService);
+            _worldInteractionService,
+            presenter);
         presenters.ReplacePresenter(PresenterType.WORLD, worldPresenter);
     }
 

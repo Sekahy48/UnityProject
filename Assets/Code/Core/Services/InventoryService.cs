@@ -172,7 +172,7 @@ namespace Core.Services
         /// Separa unidades de un nodo en una pila nueva dentro del mismo inventario, en el
         /// primer hueco que la admita.
         ///
-        /// Va por RunTransfer y no por un apaño propio porque partir una pila es una
+        /// Va por RunTransfer y no por un apano propio porque partir una pila es una
         /// transferencia como cualquier otra: origen, destino y vuelta atras si el destino no
         /// acepta todo. Que origen y destino sean la misma entidad no cambia nada.
         /// </summary>
@@ -280,7 +280,7 @@ namespace Core.Services
         /// the inventory system are  guarded by a boolean parameter that keeps the invocation of the method in this case free 
         /// of calling UpdateAndFireEvents, and because CanPlace lets a node overlap its own cells.</para>
         /// </summary>
-        /// <param name="origin">De donde salen las unidades. Su dueño reevalua peso tambien:
+        /// <param name="origin">De donde salen las unidades. Su dueno reevalua peso tambien:
         /// descargar en un arcon dejaria si no el debuff de sobrepeso puesto al portador,
         /// porque la colocacion solo dispara eventos para el destino.</param>
         /// <param name="subLot">Variant to move (matched by Equivalent), or null to take at random
@@ -347,7 +347,7 @@ namespace Core.Services
         }
 
         /// <summary>
-        /// Quita una prenda del equipo y la mete en el inventario de su dueño, como
+        /// Quita una prenda del equipo y la mete en el inventario de su dueno, como
         /// transaccion: si no cabe, vuelve al equipo.
         /// </summary>
         /// <param name="pos">Celda concreta, o null para apilar donde quepa.</param>

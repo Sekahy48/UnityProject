@@ -3,6 +3,7 @@ using Core.ECS.Entity;
 using Core.MVC.Presenter;
 using Core.MVC.Presenter.Inventory;
 using Core.MVC.Presenter.World;
+using Core.MVC.View.UI.Inventory;
 using MVC.View.Inventory;
 using Strategy;
 using UnityEngine;

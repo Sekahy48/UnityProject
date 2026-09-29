@@ -10,7 +10,7 @@ namespace Core.Inventory
     /// </summary>
     public interface IGrabOrigin
     {
-        /// <summary>Entidad dueña del origen. Su peso cambia al sacar unidades de aqui.</summary>
+        /// <summary>Entidad duena del origen. Su peso cambia al sacar unidades de aqui.</summary>
         IEntity Owner { get; }
 
         /// <summary>Item que representa lo que hay, para pintar la mano. Null si esta vacio.</summary>

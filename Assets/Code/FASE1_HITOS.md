@@ -4,85 +4,49 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestones 1–5 cerrados. M6: hechas T1, T2, T3, T4 y T7.** Quedan T5 (cerrar por distancia)
-y T6 (carros y NPCs), y antes un rediseño de los paneles laterales que ya esta decidido.
+**Milestones 1–5 cerrados. M6: todas las tareas hechas** (T6 reformulada: inventarios de
+cosas del mundo en generico, probado solo con `ItemEntity` en el suelo; carros aplazados a un
+hito posterior y NPCs a despues de la Fase 2 — ver M6 T6). **M6 cerrado** con el commit del
+paso 2 + T5 + paso 3 (+ M7 T0, aviso de subopciones en el radial).
 
-**T2 cerrada entera** (las decisiones de cada pieza estan en la seccion de M6):
-tirar (una unidad sale suelta como `WorldItem`; varias, en monton), `Unlink`/`Despawn`,
-recoger con aviso de peso/volumen, apuntar con la mirada desde los ojos (`GazeComponent`),
-filtro de pared (`LineOfSightFilter`), marca de la E anclada y punto de mira, menu radial de
-quesitos (mantener E), panel de Inspeccionar, y `LookControl` como unico dueno de la vista y
-del cursor (motivos `Manual`=Alt, `Inventory`, `RadialMenu`, `Inspect`). Tambien dos temas
-visuales intercambiables (medieval y campesino, `Theme/ActiveTheme.uss`).
+**Hecho y commiteado (bb1e7e9):** paneles A y B independientes del principal (1a) y su
+disposicion y entrada (1b): posiciones fijas, captura de raton segun principal/mano, capa del
+mundo por encima de A/B y modal, `LookControl.Reassert` para el Esc del Editor.
 
-**Lo siguiente: rediseño de los paneles A y B (1a implementado, sin probar).** Hoy A y B cuelgan
-del inventario principal; para mirar dos contenedores a la vez hay que poder abrirlos sin
-el. Orden acordado:
+**Hecho en el commit que cierra M6:**
+- Paso 2: "Abrir inventario" desde el mundo via `IContainerPanels` (lo implementa
+  `InventoryPresenter`, se inyecta en `GameMain`). Probado con una mochila en el suelo: abre
+  en A. `Execute` sustituido por `CanPerform` + switch en el presentador (estilo inventario).
+- T5: cierre por distancia (`IsInRange` + `CLOSE_MARGIN`, `TickEvaluateInventoryDistances`,
+  corre aunque la I este abierta; ignora paneles vacios y contenedores fuera del mundo).
+  Probado: la mochila se cierra al alejarse. Lo escribio Sergio.
+- `PanelType`/`SidePanelContent` a Core; `IInventoryView`/`IInventoryPanelView` (Core ya no
+  importa nada de Unity); tildes fuera de comentarios.
+- Control `RadialMenu` con anillos (`AddRing`, `CloseRingsAbove`, eventos `(level, index)`).
+  Probado por Sergio: funciona.
 
-1. **1a — paneles independientes** del inventario principal (refactor de
-   `InventoryPresenter`: principal, A y B con su propio abierto/cerrado). Se prueba con los
-   atajos Shift+1 / Shift+2, que se quedan como estan.
-   *Implementado, pendiente de compilar y probar.* Decisiones: el presenter es el unico
-   propietario de que hay abierto (`_mainOpen`, `_slots`); la vista solo pinta
-   (desaparece `IsSideContentVisible`, que leia `resolvedStyle` con un fotograma de
-   retraso). `InventoryPresenter` es coordinador, no "el principal": una sola mano, un solo
-   menu, una sola suscripcion a eventos, activa mientras haya cualquier ventana abierta
-   (`Sync`). API: `Open/Close/IsOpen` = solo principal; `OpenPanel/TogglePanel/ClosePanel`,
-   `CloseAll` (Esc, dos tiempos: primero mano), `IsAnythingOpen`. El jugador solo es destino
-   (equipar, transferir) con el principal abierto — si se quiere pasar algo al jugador se
-   abre con la I (propuesta de Sergio; descartado pasar un `owner` a `OpenPanel`). El
-   catalogo DEV es un contenido mas de A, independiente del principal. La X de cada panel
-   la atiende el presenter. Cerrar una ventana vacia la mano solo si lo que lleva salio de
-   ella (Sergio); sin nada abierto, la mano se vacia siempre. Recarga de UI pierde los
-   paneles (aceptado, solo dev).
-2. **1b — disposicion y entrada:**
-   - Posiciones fijas: columna principal a la izquierda y A/B a la derecha siempre en su
-     sitio (el principal se oculta con `visibility`, no `display`, para no liberar su
-     hueco). Dentro de la columna, un panel solo queda centrado en vertical, como hoy.
-     *Implementado, sin probar.* La columna `side-panels` ya no se oculta nunca y lleva
-     `picking-mode="Ignore"`. Consecuencia aceptada: el principal solo queda a la izquierda
-     del centro. Por verificar: que el hueco oculto del principal no se trague clics.
-   - Capas: el documento del mundo va por ENCIMA del inventario (sort order 3 > 2), para
-     que radial e inspeccion no queden tapados por A/B. Nunca tapa a I porque con I abierto
-     el mundo no se atiende y se cierran radial e inspeccion. Lo del mundo en curso (radial,
-     inspeccion) es modal: captura toda la pantalla y A/B no reciben nada; un clic fuera de
-     la inspeccion no hace nada (Sergio). Sin nada del mundo en curso, la capa es `Ignore`.
-   - Esc en el Editor suelta el cursor siempre: `LookControl.Reassert()` lo recaptura
-     cada fotograma si deberia estar capturado.
-   - El documento del inventario captura el raton a pantalla completa solo con el
-     principal abierto o con algo en la mano; si no, solo las propias ventanas A/B (si no,
-     el radial vuelve a quedarse sin raton). Asi se puede arrastrar entre A y B sin la I.
-     *Implementado, sin probar:* lo decide el presenter (`SyncCapture`, tras cada cambio de
-     ventanas o de mano); la vista ya no captura por su cuenta en `Show`/`Hide`.
-   - Cursor: con el principal abierto, vista bloqueada y Alt ignorado; al cerrarlo, camara
-     libre SIEMPRE (haya paneles o no: casi siempre se cierra para interactuar con el
-     mundo); con solo paneles, Alt alterna. Si no queda nada abierto, camara libre. La E
-     actua sobre el mundo mientras el principal este cerrado. Esc cierra todo.
-3. **2 — "Abrir inventario" desde el mundo** (`WorldAction.Inventory`, ya en el enum y en
-   `GetAvailableActions` para cualquier entidad con `InventoryComponent`; hoy no hace nada)
-   y **cierre por distancia (cierra T5)**. El cierre usa una comprobacion SOLO de distancia
-   con margen (`IsInRange`), no `CanReach`: con la camara libre, mirar a otro lado cerraria
-   el panel. Lo que no esta en el mundo (cofres de desarrollo, mochila equipada) no se
-   cierra por distancia. Abrir algo que ya esta abierto: se ofrece y no pasa nada. Los
-   presentadores no se conocen: el de mundo habla con los paneles por una interfaz de Core
-   (`IContainerPanels`) que implementa `InventoryPresenter`.
-4. **3 — radial en arbol:** si A o B ya tienen algo, "Abrir inventario" despliega al pasar
-   el raton un anillo exterior con "Principal (lo que hay)" y "Secundario (lo que hay)",
-   que sustituyen al ocupante; si ninguno tiene nada, abre en A directamente. Opciones como
-   Composite `RadialOption` (hoja con accion / rama con hijos), hermano de `MenuOption` sin
-   `Fields`; el control solo lee textos y forma y devuelve un camino (padre, hijo).
+**Paso 3 hecho (Sergio), funciona:** anillos en el presentador del mundo. `Choose(level,
+index)` decide entre expandir (`AddRing` con "Principal/Secundario (ocupante)") o `Perform`;
+`OnMenuClicked` y `ReleaseMenu` delegan en el; `Perform` solo ejecuta hojas y recibe el hueco
+por parametro. Tener hijos = `Inventory` con A o B ocupados.
 
-**Despues:** T6 (carros, arcones colocados y NPCs con inventario) con contenido de verdad.
+**Deuda consciente del paso 3:** los anillos solo sirven para "abrir inventario en A/B"
+(`HasChildren`, `RING_SLOTS`, `RingLabels` y `Choose` lo suponen). Con el SEGUNDO caso de
+subopciones se generaliza a `RadialOption` en Composite (rama con hijos / hoja con accion) y
+`Choose` pasa a ser generico. No antes: con un solo caso no se sabe la forma del segundo.
+
+**Ahora: M7** (pulido y pruebas de integracion). Hecha T0 (aviso de subopciones en el
+radial). Siguen los casos limite de la rejilla (T1-T3), pruebas de integracion (T4), pulido
+de UI (T5, con la paleta en variables USS pendiente) y el HUD de avisos de peso/volumen (T7).
 
 **Pendiente de Sergio (aprendizaje):** leer de arriba abajo como se dibuja el menu radial
-—`RadialGeometry`, `RadialMenu` (propiedades USS personalizadas -> campos -> `DrawSectors`
-con Painter2D, `PlaceLabels`, `IndexAt`) y su hoja `Controls/Resources/Controls/RadialMenu.uss`—
+—`RadialGeometry`, `RadialMenu` (propiedades USS personalizadas -> campos -> `Relayout`,
+`DrawSectors` con Painter2D, `HitAt`) y su hoja `Controls/Resources/Controls/RadialMenu.uss`—
 para interiorizarlo. Hacerlo en una sesion dedicada, con explicacion paso a paso.
 
-**Reparto de trabajo acordado:** los sistemas del nucleo (inventario, heridas, fisiologia)
-los escribe Sergio con revision; lo accesorio (temas, USS, enganches con Unity) se puede
-delegar. Antes de cada commit, Sergio explica el flujo de lo hecho. Candidata a escribirla
-el: el cierre por distancia del paso 2.
+**Reparto de trabajo (en CLAUDE.md):** el nucleo lo escribe Sergio; Claude valora, valida y
+revisa, y solo lo toca si Sergio dice que es una excepcion. Lo accesorio se puede delegar.
+Antes de cada commit, Sergio explica el flujo.
 
 **Pendiente tecnico de M6:** limpiar `IInventoryElement` (conviven las operaciones del
 Composite con restos del diseño BFS: `StackOntoHere`, `ModifyAmountHere`, `ContainsHere`,
@@ -92,8 +56,7 @@ hoja que lanzan).
 **Pendiente de datos:** una prenda de capa exterior de pecho de categoria distinta a `Plate`
 (p. ej. `Robe` con `topLayer: true`) en Stack&Go, para poder alcanzar `TopLayerBlocked`.
 
-**Deuda conocida que no bloquea:** `InventoryPresenter` (Core) recibe la clase concreta
-`InventoryView` en vez de una interfaz; ni el popup de capas ni el de variantes son destino
+**Deuda conocida que no bloquea:** ni el popup de capas ni el de variantes son destino
 de soltado; al desplegable de variantes le falta "Dividir"; `EquipmentSystem` no reacciona
 a eventos pese a ser `IReactiveSystem`; `GetAvailableActions` del inventario acumula flags
 sueltos (`hasVariants`, `splittable`); la ropa puesta aun no pesa (decidido "el equipo pesa,
@@ -376,7 +339,7 @@ Closing inventory / ESC with items in cursor → items return to their original 
 
 ---
 
-## Milestone 6 — Container interaction & transfer
+## Milestone 6 — Container interaction & transfer ✅ CERRADO
 
 **Goal**: Open external inventories (chests, carts) and transfer items between them.
 
@@ -386,8 +349,12 @@ Closing inventory / ESC with items in cursor → items return to their original 
 - [x] 2. World item pickup (hecho para T2: tirar, recoger al inventario, interactuar; las manos como reserva de carga y el crafteo por proximidad quedan aplazados): actions (chopping, mining, etc.) spawn items as world entities with position. Pickup goes to **hands** (carry buffer) → player loads into cart/chest/storage (world containers). Bulky items (logs, planks, ore) do NOT go into personal inventory — personal inventory is pocket/backpack scale only. Crafting uses **proximity**: pulls materials from ALL accessible sources — personal inventory, backpack, AND nearby world containers (cart, chest, etc.). Hands buffer details TBD: capacity, interaction with equipped tool, slot reuse vs dedicated carry state.
 - [x] 3. Drag & drop between your inventory and external container
 - [x] 4. Transfer respects both containers' grid space and weight limits
-- [ ] 5. Container closes when player moves away (distance check or explicit close)
-- [ ] 6. NPC/cart/wheelbarrow inventories work the same way — carts are central to logistics
+- [x] 5. Container closes when player moves away (distance check or explicit close) — `IsInRange` con margen (histeresis), solo distancia, no `CanReach`; ver la seccion de rediseño de paneles.
+- [x] 6. **Reformulada (Sergio):** interactuar a nivel de inventario con cosas del mundo, en generico: cualquier entidad del mundo con `InventoryComponent` se abre desde la E/radial en A/B (`IContainerPanels`), se cierra por distancia y admite traspasos como cualquier panel. **Probado solo con `ItemEntity` tiradas en el suelo** (mochila, arcon con posicion y modelo 3D; no los cofres de Shift+1/2).
+  - *Por que se reformula:* el enunciado original ("NPC/cart/wheelbarrow inventories work the same way") pide entidades que aun no existen. Hoy no hay entidades de mundo que no sean items, aparte del jugador. Meterlas es casi otro hito.
+  - *Lo que NO se ha probado con una entidad no-item* (a revisar cuando exista la primera): `DescribeTarget` y `BuildInspectData` solo saben nombrar montones e `ItemEntity` (un carro saldria sin nombre); `RingLabels` usa `GetName()` para no-items; `UnityEntityLinker` y `EntityType` solo conocen `Player`, `ResourceNode`, `AliveEntity`, `GroundLot`, `WorldItem`; Stack&Go aun no define entidades no-item.
+  - *Carros y arcones colocados* (entidad propia con semantica, definida desde Stack&Go): aplazados a un hito posterior; no son mucho trabajo pero no son de este.
+  - *NPCs con inventario*: despues de la Fase 2. Su comportamiento se plantea como sistema multiagente social (asignatura de Business Intelligence de Sergio), asi que no tiene sentido darles inventario antes de que existan como agentes.
 - [x] 7. Backpack/bag as equipped container: inventory panel gets tabs (pockets, backpack, shoulder bag, etc.). Clicking a tab switches the grid view to that container's grid. Each tab has its own `TetrisGridState` and `StorageComponent`.
 
 **Decided, y CORREGIDO al implementarlo**: una bolsa aporta celdas **y** conserva su propio techo de peso. La condicion es **paralela**: lo que entra tiene que caber por peso en la bolsa Y en quien la lleva. La nota original decia que el peso "subia" al personaje y que el `StorageComponent` de la bolsa solo definia dimensiones; se descarto porque dejaba `MaxWeight` sin uso y hacia inexpresable una mochila grande pero endeble.
@@ -720,6 +687,82 @@ herramienta equipada, slot propio). Es aplazamiento consciente, no olvido.
 
 **Decidido al jugarlo**: desequipar sin sitio **deja la prenda puesta**. `TryUnequipItem` ya lo hace por su rollback, asi que no queda nada pendiente aqui. Se descarta el drop-to-ground que se habia planteado: quitarte algo y que acabe en el suelo sin haberlo pedido convierte un gesto de gestion en una perdida, y el jugador ya tiene "Tirar" para eso. De paso esto suelta la unica atadura que este refactor tenia con M6 T2.
 
+### Rediseño de paneles A/B y abrir inventarios desde el mundo (1a, 1b, 2, 3)
+
+**Contexto.** Hoy A y B cuelgan
+del inventario principal; para mirar dos contenedores a la vez hay que poder abrirlos sin
+el. Orden acordado:
+
+1. **1a — paneles independientes** del inventario principal (refactor de
+   `InventoryPresenter`: principal, A y B con su propio abierto/cerrado). Se prueba con los
+   atajos Shift+1 / Shift+2, que se quedan como estan.
+   *Implementado, pendiente de compilar y probar.* Decisiones: el presenter es el unico
+   propietario de que hay abierto (`_mainOpen`, `_slots`); la vista solo pinta
+   (desaparece `IsSideContentVisible`, que leia `resolvedStyle` con un fotograma de
+   retraso). `InventoryPresenter` es coordinador, no "el principal": una sola mano, un solo
+   menu, una sola suscripcion a eventos, activa mientras haya cualquier ventana abierta
+   (`Sync`). API: `Open/Close/IsOpen` = solo principal; `OpenPanel/TogglePanel/ClosePanel`,
+   `CloseAll` (Esc, dos tiempos: primero mano), `IsAnythingOpen`. El jugador solo es destino
+   (equipar, transferir) con el principal abierto — si se quiere pasar algo al jugador se
+   abre con la I (propuesta de Sergio; descartado pasar un `owner` a `OpenPanel`). El
+   catalogo DEV es un contenido mas de A, independiente del principal. La X de cada panel
+   la atiende el presenter. Cerrar una ventana vacia la mano solo si lo que lleva salio de
+   ella (Sergio); sin nada abierto, la mano se vacia siempre. Recarga de UI pierde los
+   paneles (aceptado, solo dev).
+2. **1b — disposicion y entrada:**
+   - Posiciones fijas: columna principal a la izquierda y A/B a la derecha siempre en su
+     sitio (el principal se oculta con `visibility`, no `display`, para no liberar su
+     hueco). Dentro de la columna, un panel solo queda centrado en vertical, como hoy.
+     *Implementado, sin probar.* La columna `side-panels` ya no se oculta nunca y lleva
+     `picking-mode="Ignore"`. Consecuencia aceptada: el principal solo queda a la izquierda
+     del centro. Por verificar: que el hueco oculto del principal no se trague clics.
+   - Capas: el documento del mundo va por ENCIMA del inventario (sort order 3 > 2), para
+     que radial e inspeccion no queden tapados por A/B. Nunca tapa a I porque con I abierto
+     el mundo no se atiende y se cierran radial e inspeccion. Lo del mundo en curso (radial,
+     inspeccion) es modal: captura toda la pantalla y A/B no reciben nada; un clic fuera de
+     la inspeccion no hace nada (Sergio). Sin nada del mundo en curso, la capa es `Ignore`.
+   - Esc en el Editor suelta el cursor siempre: `LookControl.Reassert()` lo recaptura
+     cada fotograma si deberia estar capturado.
+   - El documento del inventario captura el raton a pantalla completa solo con el
+     principal abierto o con algo en la mano; si no, solo las propias ventanas A/B (si no,
+     el radial vuelve a quedarse sin raton). Asi se puede arrastrar entre A y B sin la I.
+     *Implementado, sin probar:* lo decide el presenter (`SyncCapture`, tras cada cambio de
+     ventanas o de mano); la vista ya no captura por su cuenta en `Show`/`Hide`.
+   - Cursor: con el principal abierto, vista bloqueada y Alt ignorado; al cerrarlo, camara
+     libre SIEMPRE (haya paneles o no: casi siempre se cierra para interactuar con el
+     mundo); con solo paneles, Alt alterna. Si no queda nada abierto, camara libre. La E
+     actua sobre el mundo mientras el principal este cerrado. Esc cierra todo.
+3. **2 — "Abrir inventario" desde el mundo** (`WorldAction.Inventory`, ya en el enum y en
+   `GetAvailableActions` para cualquier entidad con `InventoryComponent`; hoy no hace nada)
+   y **cierre por distancia (cierra T5)**. El cierre usa una comprobacion SOLO de distancia
+   con margen (`IsInRange`), no `CanReach`: con la camara libre, mirar a otro lado cerraria
+   el panel. Lo que no esta en el mundo (cofres de desarrollo, mochila equipada) no se
+   cierra por distancia. Abrir algo que ya esta abierto: se ofrece y no pasa nada. Los
+   presentadores no se conocen: el de mundo habla con los paneles por una interfaz de Core
+   (`IContainerPanels`) que implementa `InventoryPresenter`.
+4. **3 — radial en arbol:** si A o B ya tienen algo, "Abrir inventario" despliega al pasar
+   el raton un anillo exterior con "Principal (lo que hay)" y "Secundario (lo que hay)",
+   que sustituyen al ocupante; si ninguno tiene nada, abre en A directamente. Opciones como
+   Composite `RadialOption` (hoja con accion / rama con hijos), hermano de `MenuOption` sin
+   `Fields`; el control solo lee textos y forma y devuelve un camino (padre, hijo).
+   **Revisado (Sergio):**
+   - `Perform(target, action, PanelType? slot)`: A y B no son acciones del mundo, son un
+     parametro de `Inventory`. `CanPerform` sigue comprobando `Inventory` (paridad intacta).
+   - Toque de E sobre algo con `Inventory` por defecto: abre en A aunque sustituya; para
+     elegir se mantiene E.
+   - Anillo 2 por CLIC en el padre, no al pasar el raton (no se despliega por accidente).
+     Soltar E sobre una hoja resaltada (en cualquier anillo) la ejecuta; sobre un padre con
+     hijos no hace nada. Clic en otro padre del anillo 1: sustituye el anillo 2 (o lo cierra
+     si no tiene hijos).
+   - Sin arbol en la vista: el presentador anade anillos a demanda. Contrato:
+     `OpenMenu(labels)`, `AddRing(parentIndex, labels)` (cuelga del anillo mas exterior),
+     `CloseRingsAbove(level)`, eventos `OnMenuHighlighted(level, index)` y
+     `OnMenuClicked(level, index)`. El presentador sabe que opcion tiene hijos y que
+     significa cada una; el control solo dibuja anillos y mide.
+   - Control (`RadialMenu`): cada anillo exterior va por fuera del anterior, en un arco
+     centrado en el padre; porciones del ancho del padre como mucho
+     (`--radial-child-sector`). Bajo el puntero: distancia -> anillo, angulo -> porcion.
+
 ---
 
 ## Milestone 7 — Polish & integration testing
@@ -728,6 +771,16 @@ herramienta equipada, slot propio). Es aplazamiento consciente, no olvido.
 
 **Tasks**:
 
+- [x] 0. **Radial: avisar de que una opcion tiene subopciones** (primer pulido, detectado por
+  Sergio al cerrar M6). Soltar E sobre una hoja ejecuta y sobre un padre no hace nada: sin
+  aviso, parece aleatorio. El presentador congela al abrir el menu que opciones tienen hijos
+  (`_menuHasChildren`, paralela a `_menuActions`) y lo pasa en
+  `OpenMenu(labels, hasChildren)`; la vista marca esas opciones (`radial-option--branch`) y
+  cuelga debajo "[Mas opciones]" (`radial-option__more`), estilable u ocultable desde el tema.
+  El presentador dice QUE tiene hijos; COMO se avisa lo decide la vista. Congelar evita que,
+  si A se cierra por distancia con el menu abierto, el aviso y el comportamiento discrepen.
+  Alternativa descartada por ahora: que soltar E sobre un padre abra su anillo y deje el menu
+  abierto (cambia E2).
 - [ ] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?)
 - [ ] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells
 - [ ] 3. Edge cases: item removed from middle of grid → gap handling

@@ -17,7 +17,7 @@ using System.Xml.Serialization;
 
 namespace MVC.View.Inventory
 {
-    public class InventoryView : IView
+    public class InventoryView : IInventoryView
     {
         #region Fields
 
@@ -144,7 +144,7 @@ namespace MVC.View.Inventory
         public event Action<int, bool> OnLayerLeftPressed;
         public event Action<int, bool, bool> OnLayerLeftReleased;
 
-        /// <summary>El puntero esta sobre un slot de equipo: (capa, es capa del popup, tamaño del slot).</summary>
+        /// <summary>El puntero esta sobre un slot de equipo: (capa, es capa del popup, tamano del slot).</summary>
         public event Action<int, bool, CellSize> OnPointerMovedOverSlot;
 
         /// <summary>El puntero ha salido de un slot de equipo.</summary>
@@ -356,7 +356,7 @@ namespace MVC.View.Inventory
                     }
                 });
 
-                // El tamaño sale del slot ya resuelto, no de una constante: los slots del
+                // El tamano sale del slot ya resuelto, no de una constante: los slots del
                 // equipo y los del popup no miden lo mismo.
                 // SIN StopPropagation: el move tiene que seguir subiendo hasta la raiz, que es
                 // quien mueve la mano con el cursor. Cortarlo aqui la dejaba congelada sobre
@@ -398,7 +398,7 @@ namespace MVC.View.Inventory
                     {
                         CloseLayersPopup();
                     }
-                    else                                  // cerrado, o abierto en otro slot -> abrir aquí
+                    else                                  // cerrado, o abierto en otro slot -> abrir aqui
                     {
                         _layersOwnerSlot = slot;
                         PositionAndShowPopup(slot);
@@ -541,9 +541,9 @@ namespace MVC.View.Inventory
 
         #region Hand Buffer Rendering 
         
-        /// <param name="itemSize">Tamaño final en pixeles del fantasma, ya calculado por quien
+        /// <param name="itemSize">Tamano final en pixeles del fantasma, ya calculado por quien
         /// llama. Una rejilla multiplica su celda por las dimensiones del item; un slot de
-        /// equipo pasa su propio tamaño, porque ahi la prenda ocupa el slot entero.</param>
+        /// equipo pasa su propio tamano, porque ahi la prenda ocupa el slot entero.</param>
         /// <param name="anchorBasis">Unidad de destino: la celda en una rejilla, el slot en
         /// el equipo. El fantasma se ancla por su mitad, no por la mitad del item, para que
         /// su esquina superior izquierda caiga sobre la unidad a la que estas apuntando —
@@ -599,9 +599,9 @@ namespace MVC.View.Inventory
             _magnetSlot = null; 
         }
 
-        /// <param name="itemSize">Tamaño final del fantasma sobre ESTE destino, ya calculado
+        /// <param name="itemSize">Tamano final del fantasma sobre ESTE destino, ya calculado
         /// por quien llama: una rejilla multiplica su celda por las dimensiones del item, un
-        /// slot de equipo pasa su propio tamaño. Lo decide el destino, no el origen.</param>
+        /// slot de equipo pasa su propio tamano. Lo decide el destino, no el origen.</param>
         /// <param name="anchorBasis">Unidad de destino (celda o slot). El fantasma se ancla
         /// por su mitad para que su esquina superior izquierda caiga sobre la unidad apuntada.</param>
         public void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
@@ -627,7 +627,7 @@ namespace MVC.View.Inventory
                     break;
                 case PlacementVerdict.Outside:
                     // Sin color y sin redimensionar: fuera de una rejilla no hay celda a la que
-                    // escalar, y estirar la mano al tamaño de la ultima visitada seria mentira.
+                    // escalar, y estirar la mano al tamano de la ultima visitada seria mentira.
                     return;
             }
 
@@ -845,7 +845,7 @@ namespace MVC.View.Inventory
 
         /// <param name="anchor">Esquina de la que cuelga el desplegable, ya en espacio de panel.
         /// Llega medida desde fuera y no se calcula aqui: manda quien lo abre, que es el unico
-        /// que sabe a que se esta anclando —hoy la card de la rejilla, mañana otra cosa—.</param>
+        /// que sabe a que se esta anclando —hoy la card de la rejilla, manana otra cosa—.</param>
         public void RenderSublotsPopup(IReadOnlyList<ItemDisplayData> sublots, PanelPoint anchor, Action<int> onLeftClicked, Action<int> onRightClicked)
         {
             _sublotsPopup.Clear();
@@ -1104,7 +1104,7 @@ namespace MVC.View.Inventory
                 VisualElement layerSlot = new VisualElement
                 {
                     // El nombre codifica el slot al que pertenece la capa, y de el sale su
-                    // EquipmentSlotType. Tiene que salir del dueño del popup, no de lo ultimo
+                    // EquipmentSlotType. Tiene que salir del dueno del popup, no de lo ultimo
                     // que se haya pulsado, o las capas se bautizan con el slot equivocado.
                     name = "layer-" + _layersOwnerSlot.name
                 };
@@ -1155,6 +1155,11 @@ namespace MVC.View.Inventory
         #endregion
 
         #region Equipment Rendering - Helpers
+
+        /// <summary>Tipo del slot que origino el gesto en curso, ya traducido: a Core solo llega el enum.</summary>
+        public EquipmentSlotType ActiveEquipmentSlotType(bool fromLayersPopup)
+            => fromLayersPopup ? GetEquipmentLayerSlotType(ActiveEquipmentSlot)
+                               : GetEquipmentSlotType(ActiveEquipmentSlot);
 
         public EquipmentSlotType GetEquipmentSlotType(VisualElement element)
         { 
@@ -1459,7 +1464,7 @@ namespace MVC.View.Inventory
 
         #region Getters
 
-        public InventoryPanelView GetPanel(PanelType type)
+        public IInventoryPanelView GetPanel(PanelType type)
         {
             return _panels[type];
         }
@@ -1467,18 +1472,4 @@ namespace MVC.View.Inventory
         #endregion
     }
 
-    public enum PanelType
-    {
-        Player,
-        A,
-        B,
-    }
-
-    /// <summary>What a side slot is currently holding.</summary>
-    public enum SidePanelContent
-    {
-        None,
-        Catalog,
-        Inventory,
-    }
 }

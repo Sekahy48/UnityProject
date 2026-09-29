@@ -38,18 +38,31 @@ namespace Core.MVC.View.UI.World
         /// Abre el menu radial con estas opciones, la primera arriba y el resto en sentido
         /// horario. Ninguna resaltada al abrir: el puntero empieza en el centro.
         /// </summary>
-        void OpenMenu(IReadOnlyList<string> labels);
+        void OpenMenu(IReadOnlyList<string> labels, IReadOnlyList<bool> hasChildrenList);
 
         void CloseMenu();
 
-        /// <summary>El puntero entro en la porcion de la opcion i, o en ninguna (-1).</summary>
-        event Action<int> OnMenuHighlighted;
+        /// <summary>El puntero entro en la porcion (anillo, indice), o en ninguna (-1, -1).</summary>
+        event Action<int, int> OnMenuHighlighted;
 
-        /// <summary>Clic sobre la porcion de la opcion i.</summary>
-        event Action<int> OnMenuClicked;
+        /// <summary>Clic sobre la porcion (anillo, indice).</summary>
+        event Action<int, int> OnMenuClicked;
 
         /// <summary>Clic fuera de toda opcion (centro o lejos): cerrar sin hacer nada.</summary>
         event Action OnMenuDismissed;
+
+        /// <summary>
+        /// Dibuja un anillo nuevo sobre el último dibujado partiendo de la opcion indicada creandose con las etiquetas proporcioandas.
+        /// </summary>
+        /// <param name="parentIndex"> Etiquetas del nuevo anillo.</param>
+        /// <param name="labels"> Opción de la que partir. </param>
+        void AddRing(int parentIndex, IReadOnlyList<string> labels);
+
+        /// <summary>
+        /// Cierra todos los anillos posteriores al del nivel indicado
+        /// </summary>
+        /// <param name="level"> Nivel al que truncar los anilos. </param>
+        void CloseRingsAbove(int level);
 
         #endregion
 

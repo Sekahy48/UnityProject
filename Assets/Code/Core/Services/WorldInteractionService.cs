@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Core.Contexts;
 using Core.ECS.Component;
@@ -64,44 +65,29 @@ namespace Core.Services
         /// <see cref="WorldInteractionSystem.CanReach"/>.</summary>
         public bool CanReach(IEntity actor, IEntity target) => World.CanReach(actor, target);
 
+        public bool IsInRange(IEntity actor, IEntity target) => World.IsInRange(actor, target);
         #endregion
 
-        #region Ejecutar
+        #region Evaluar
 
         /// <summary>
-        /// Ejecuta una accion sobre un objetivo del mundo.
-        ///
-        /// <para><b>Paridad, una sola vez para todas las acciones.</b> Repite las dos
-        /// preguntas que pintaron la accion —<see cref="WorldInteractionSystem.CanReach"/> y
-        /// <see cref="WorldInteractionSystem.GetAvailableActions"/>—, porque entre verla y
-        /// ejecutarla el jugador ha podido moverse o el objetivo desaparecer. Vive aqui y no
-        /// en cada accion para que una accion nueva no pueda olvidarla.</para>
+        /// Evalua si una accion se puede ejecutar para un objetivo dado un actor.
+        /// Comprueba tanto que el objetivo este en el rango de actuacion del jugador, como
+        /// que la accion sea valida para el par actor-objetivo (para prevenir intentos de ejecucion
+        /// en estados intermedios).
         /// </summary>
-        /// <returns>True si la accion se ejecuto; mover cero unidades cuenta como ejecutada,
-        /// porque el jugador recibe su aviso.</returns>
-        public bool Execute(IEntity actor, IEntity target, WorldAction action)
+        /// <param name="actor"></param>
+        /// <param name="target"></param>
+        /// <param name="action"></param>
+        /// <returns>Si es posible ejecutar</returns>
+        public bool CanPerform(IEntity actor, IEntity target, WorldAction action)
         {
             WorldInteractionSystem world = World;
             if (!world.CanReach(actor, target)) return false;
             if (!world.GetAvailableActions(actor, target).Contains(action)) return false;
 
-            switch (action)
-            {
-                case WorldAction.PickUp:
-                    PickUp(actor, target);
-                    return true;
-
-                case WorldAction.Inspect:
-                    // Inspeccionar no cambia nada en el mundo: el panel lo abre la interfaz.
-                    // Pasa igualmente por aqui para que la comprobacion de alcance y de
-                    // acciones sea la misma que para cualquier otra accion.
-                    return true;
-
-                default:
-                    return false;
-            }
+            return true;
         }
-
         #endregion
 
         #region Recoger
@@ -109,7 +95,7 @@ namespace Core.Services
         /// <summary>
         /// Lleva al inventario del actor todo lo que quepa del monton.
         ///
-        /// <para>Solo se llega aqui a traves de <see cref="Execute"/>, que ya ha comprobado
+        /// <para>Se da por hecho que su uso es exclusivo por parte de metodos que ya han comprobado
         /// alcance y acciones.</para>
         ///
         /// <para><b>Mover cero es un resultado valido.</b> Recoger se ofrece aunque no quepa
@@ -121,7 +107,7 @@ namespace Core.Services
         /// </summary>
         /// <returns>Unidades que se quedan en el suelo.</returns>
         /// <param name="target">Un monton, o un item suelto.</param>
-        private int PickUp(IEntity actor, IEntity target)
+        public int PickUp(IEntity actor, IEntity target)
         {
             WorldInteractionSystem world = World;
 

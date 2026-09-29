@@ -3,7 +3,6 @@ using Core.ECS.Component.Equipment;
 using Core.ECS.Entity;
 using Core.Inventory;
 using Core.MVC.View.UI.Inventory;
-using MVC.View.Inventory;
 
 namespace Core.MVC.Presenter.Inventory
 {
@@ -22,7 +21,7 @@ namespace Core.MVC.Presenter.Inventory
     /// </summary>
     public readonly struct MenuContext
     {
-        /// <summary>Entidad dueña de lo que se va a manipular.</summary>
+        /// <summary>Entidad duena de lo que se va a manipular.</summary>
         public readonly IEntity Origin;
 
         /// <summary>Pila concreta sobre la que se abrio. Null cuando viene del equipamiento.</summary>

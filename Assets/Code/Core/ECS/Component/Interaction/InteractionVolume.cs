@@ -8,7 +8,7 @@ namespace Core.ECS.Component.Interaction
     /// respuesta, y en cambio pagarlos costaria tener geometria de colision por objeto.</para>
     ///
     /// <para>Existe como jerarquia y no como un enum con un <c>switch</c> porque la pregunta
-    /// que se hace es siempre la misma —"¿a que distancia estoy de ti?"— y cada forma sabe
+    /// que se hace es siempre la misma —"a que distancia estoy de ti?"— y cada forma sabe
     /// contestarla a su manera. Quien busca objetivos no tiene por que saber si esta mirando
     /// una caja o una capsula.</para>
     ///

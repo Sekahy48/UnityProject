@@ -4,7 +4,6 @@ using Core.ECS.Component;
 using Core.ECS.Entity;
 using Core.ECS.Systems;
 using Core.Inventory;
-using MVC.View.Inventory;
 using Core.MVC.View.UI.Inventory;
 using Core.Services;
 
@@ -17,17 +16,17 @@ namespace Core.MVC.Presenter.Inventory
     /// </summary>
     public class InventoryPanelPresenter
     {   
-        public InventoryPanelView _panelView {get;}
+        public IInventoryPanelView _panelView {get;}
         private InventoryService _service;  
         public IEntity Entity {get; private set;}
 
-        /// <summary>Tamaño final del fantasma sobre esta rejilla, y celda como ancla.</summary>
+        /// <summary>Tamano final del fantasma sobre esta rejilla, y celda como ancla.</summary>
         public event Action<CellSize, CellSize> OnHandChanged;
-        /// <summary>Veredicto, tamaño final del fantasma sobre esta rejilla, y celda como ancla.</summary>
+        /// <summary>Veredicto, tamano final del fantasma sobre esta rejilla, y celda como ancla.</summary>
         public event Action<PlacementVerdict, CellSize, CellSize> OnHandStyleUpdate;
         public event Action<ItemDisplayData> OnInspectionStripUpdateRequired;
         private readonly GrabGesture _grabGesture;
-        public InventoryPanelPresenter(InventoryPanelView view, InventoryService service)
+        public InventoryPanelPresenter(IInventoryPanelView view, InventoryService service)
         {
             _panelView = view;
             _service =  service;
@@ -212,7 +211,7 @@ namespace Core.MVC.Presenter.Inventory
         }
 
         /// <summary>
-        /// Tamaño del fantasma sobre ESTA rejilla: celda por dimensiones del item. Lo decide
+        /// Tamano del fantasma sobre ESTA rejilla: celda por dimensiones del item. Lo decide
         /// el destino y no el origen — de donde saliera lo que llevas no dice nada de como
         /// se ve encima de una rejilla.
         /// </summary>
@@ -224,7 +223,7 @@ namespace Core.MVC.Presenter.Inventory
         }
 
         /// <summary>
-        /// Anuncia que la mano cambio, ya con el tamaño resuelto contra esta rejilla. Con la
+        /// Anuncia que la mano cambio, ya con el tamano resuelto contra esta rejilla. Con la
         /// mano vacia va en cero: no hay nada que dimensionar y la vista solo limpia.
         /// </summary>
         private void PublishHandChanged()
