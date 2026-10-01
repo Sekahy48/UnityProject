@@ -126,6 +126,14 @@ USS/UXML, enganches con Unity, vistas, `InputManager`) sí puedes escribirlo. Si
 en qué lado cae algo, pregunta antes de escribir. Motivo: es su TFG y quiere ser autor
 real del código, no solo del diseño.
 
+**Excepción: retoques triviales de núcleo que Sergio pide explícitamente.** Cambios que
+cualquiera entiende al leerlos y que no deciden nada: sustituir líneas duplicadas por un
+método que ya existe, añadir o corregir un comentario o `<summary>` que ya se ha acordado,
+renombrar algo ya decidido, arreglar una errata. Si te pide uno de estos, hazlo sin
+reenviarle la tarea: muchas veces está lejos del ordenador (desde el móvil) y copiar tu
+propuesta a mano no le aporta nada. Sigue siendo suyo todo lo que tenga lógica o decisión
+(un método nuevo, un flujo, una regla, un caso límite); ante la duda, propón y espera.
+
 **Sergio compila; tú no puedes.** No hay Unity en el entorno de trabajo, así que ningún
 cambio está compilado ni probado cuando lo entregas. No lo intentes ni lo simules: al
 terminar, di explícitamente qué no has podido verificar (tipos que asumes, firmas que no

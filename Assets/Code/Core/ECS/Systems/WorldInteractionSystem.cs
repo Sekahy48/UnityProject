@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
-using Core.Events;
-using Unity.VisualScripting;
+using Core.Events; 
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems

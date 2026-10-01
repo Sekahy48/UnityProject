@@ -17,6 +17,8 @@ using MVC.View.Inventory;
 using MVC.View.World;
 using Core.MVC.Presenter.World;
 using Core.ECS.Component;
+using Core.ECS.Component.Equipment;
+using Core.Inventory;
 
 
 /// <summary>
@@ -123,8 +125,41 @@ public class GameMain : MonoBehaviour
 
         GameSessionContext sessionCtx = new GameSessionContext();
         sessionCtx.SetPlayer(player); 
+        AddDevTestingPlayerItems(player, dataContext._itemCatalogue);
         AddDevTestingExtraInventories(sessionCtx, dataContext);
         return sessionCtx;
+    }
+
+    /// <summary>
+    /// Dev: objetos y ropa iniciales del jugador para probar rejilla y equipo sin recoger
+    /// nada. Vivian en PrototypeFactory, y eso hacia que EntityManager no pudiera construirse
+    /// sin el catalogo real (los pide por nombre), lo que bloqueaba los tests del mundo.
+    /// Aqui son una llamada que se quita sola el dia que el jugador empiece sin nada.
+    /// </summary>
+    private void AddDevTestingPlayerItems(IEntity player, ItemCatalogue catalogue)
+    {
+        EquipmentComponent equipment = player.GetComponent<EquipmentComponent>();
+        equipment.EquipItem(EquipmentSlotType.Chest, catalogue.CreateItem("Camisa"));
+        equipment.EquipItem(EquipmentSlotType.Chest, catalogue.CreateItem("Pechera"));
+
+        InventoryObject inv = player.GetComponent<InventoryComponent>().Inventory;
+        AddDevTestingItem(inv, catalogue, "Espada de hierro", 1);
+        AddDevTestingItem(inv, catalogue, "Arco corto", 1);
+        AddDevTestingItem(inv, catalogue, "Manzana", 5);
+        AddDevTestingItem(inv, catalogue, "Manzana", 5, 87);
+        AddDevTestingItem(inv, catalogue, "Manzana", 5, 31);
+        AddDevTestingItem(inv, catalogue, "Venda", 3);
+        AddDevTestingItem(inv, catalogue, "Odre", 1);
+    }
+
+    private void AddDevTestingItem(InventoryObject inv, ItemCatalogue catalogue, string itemName,
+                                   int amount, int durability = 100)
+    {
+        ItemEntity item = catalogue.CreateItem(itemName);
+        item.GetComponent<BaseItemComponent>().SetDurability(durability);
+        int remaining = inv.AddItem(item, amount);
+        if (remaining > 0)
+            Debug.LogWarning($"GameMain: no room for {remaining}x '{itemName}' in the dev test inventory.");
     }
 
     private void AddDevTestingExtraInventories(GameSessionContext sessionContext, GameDataContext dataContext)

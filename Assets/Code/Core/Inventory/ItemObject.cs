@@ -243,12 +243,7 @@ namespace Core.Inventory
         public int AddItem(ItemEntity item, int amount)
         {
             throw new InvalidOperationException("AddItem is not supported on leaf nodes.");
-        }
-
-        public void AddContainer(ItemEntity item)
-        {
-            throw new InvalidOperationException("AddContainer is not supported on leaf nodes.");
-        }
+        } 
 
         public int StackOnto(ItemEntity item, int amount)
         {

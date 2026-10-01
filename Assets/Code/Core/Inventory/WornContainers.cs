@@ -30,7 +30,7 @@ namespace Core.Inventory
             // aqui, y colgar dos veces el mismo contenedor lo contaria dos veces.
             if (ReferenceEquals(worn.Parent, host)) return false;
 
-            host.AddContainer(worn);
+            host.AttachWornContainer(worn);
 
             return true;
         }
@@ -43,7 +43,7 @@ namespace Core.Inventory
             InventoryObject host = InventoryOf(wearer);
             if (worn == null || host == null) return false;
 
-            return host.RemoveContainer(worn);
+            return host.DetachWornContainer(worn);
         }
 
         private static InventoryObject InventoryOf(IEntity entity)

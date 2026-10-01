@@ -71,7 +71,6 @@ namespace Core.Factories
 
             var inventory = new InventoryComponent(new InventoryObject(e));
             e.AddComponent(inventory);
-            AddTestItems(inventory);
 
             e.AddComponent(StandardEquipment());
             e.AddComponent(new NameComponent("Jugador"));
@@ -123,44 +122,8 @@ namespace Core.Factories
             component.AddSlot(EquipmentSlotType.Back, 1);
             component.AddSlot(EquipmentSlotType.Hip, 1); 
 
-            // Dev test
-            component.EquipItem(EquipmentSlotType.Chest, _itemCatalogue.CreateItem("Camisa"));
-            component.EquipItem(EquipmentSlotType.Chest, _itemCatalogue.CreateItem("Pechera"));
-            
-
             return component;
         }
 
-        #region Dev Testing
-
-        /// <summary>
-        /// Dev-only: seeds the inventory with items of assorted dimensions so the
-        /// tetris grid rendering can be checked (1x3 blade, 1x1 food, containers...).
-        /// Remove once items can be picked up in-game.
-        /// </summary>
-        private void AddTestItems(InventoryComponent inventory)
-        {
-            InventoryObject inv = inventory.Inventory;
-
-            AddTestItem(inv, "Espada de hierro", 1);
-            AddTestItem(inv, "Arco corto", 1);
-            AddTestItem(inv, "Manzana", 5);
-            AddTestItem(inv, "Manzana", 5, 87);
-            AddTestItem(inv, "Manzana", 5, 31);
-            AddTestItem(inv, "Venda", 3);
-            AddTestItem(inv, "Odre", 1);
-        }
-
-        private void AddTestItem(InventoryObject inv, string itemName, int amount, int durability = 100)
-        {
-            ItemEntity item =_itemCatalogue.CreateItem(itemName);
-            item.GetComponent<BaseItemComponent>().SetDurability(durability);
-            int remaining = inv.AddItem(item, amount);
-            if (remaining > 0)
-                CoreLogger.Instance.LogWarning(
-                    $"PrototypeFactory: no room for {remaining}x '{itemName}' in the test inventory.");
-        }
-
-        #endregion
     }
 }

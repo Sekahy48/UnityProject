@@ -11,7 +11,6 @@ namespace Core.MVC.Model
     public class Logic
     {
         private readonly EntityManager _entityManager;
-        private MapManager MapManager;
 
         public Logic(EntityManager entityManager)
         {
@@ -26,17 +25,6 @@ namespace Core.MVC.Model
         public List<IEntity> GetEntitiesWithComponent(Type componentName)
         {
             return _entityManager.GetEntitiesWithComponent(componentName);
-        }
-
-        public void SetCurrentMap(string map)
-        {
-            MapManager = new MapManager();
-            MapManager.LoadMap(map);
-        }
-
-        public Map GetCurrentMap()
-        {
-            return MapManager.GetCurrentMap();
         }
 
         public IEntity GetPlayer()

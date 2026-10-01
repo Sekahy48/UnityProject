@@ -213,8 +213,7 @@ namespace Core.Inventory
             if (container.WrapsOrIs(this)) return amount;
             if (place(container) != 0) return amount;
 
-            container.Parent = this;
-            _inventory.Add(container);
+            Hang(container);
 
             return amount - 1;
         }
@@ -237,30 +236,39 @@ namespace Core.Inventory
         {
             AC.CheckNotNull(node, nameof(node));
             _inventory.Add(node);
-        }
+        } 
 
-        public void AddContainer(ItemEntity item)
-        {
-            InventoryObject child = new InventoryObject(item);
-            child.Parent = this;
-            _inventory.Add(child);
-        }
+        /// <summary>
+        /// Cuelga un contenedor que lleva puesto el dueno de este inventario. No ocupa celdas:
+        /// no esta guardado, esta puesto.
+        /// </summary>
+        public void AttachWornContainer(InventoryObject container) => Hang(container);
 
-        public void AddContainer(InventoryObject container)
+        /// <summary>
+        /// Cuelga el contenedor del arbol SIN tocar la rejilla. Privado a proposito: solo lo usan
+        /// quienes ya resolvieron las celdas (PlaceContainer, ReattachContainer) o no las necesitan
+        /// (AttachWornContainer). Hacerlo publico reabre el fallo de M7 3b.
+        /// </summary>
+        private void Hang(InventoryObject container)
         {
             container.Parent = this;
             _inventory.Add(container);
         }
 
+
         /// <summary>
         /// Saca un contenedor de este inventario y lo deja suelto.
+        ///
+        /// <para>Solo para contenedores PUESTOS: los que cuelgan del arbol como rama pero no
+        /// ocupan celdas de la rejilla. Uno guardado sale por <see cref="CleanNode"/>, que ademas
+        /// libera sus celdas.</para>
         ///
         /// Perder el padre no es un efecto secundario, es el punto: mientras estaba aqui su
         /// peso subia por esta cadena, y al salir deja de hacerlo. Sin esto quedaria una
         /// mochila en el suelo que sigue pesando sobre quien la llevaba.
         /// </summary>
         /// <returns>True si el contenedor estaba aqui.</returns>
-        public bool RemoveContainer(InventoryObject container)
+        public bool DetachWornContainer(InventoryObject container)
         {
             AC.CheckNotNull(container, nameof(container));
 
@@ -496,7 +504,7 @@ namespace Core.Inventory
 
             if (!pos.IsNone && !_grid.Place(container, pos)) return false;
 
-            AddContainer(container);
+            Hang(container);
 
             return true;
         }
@@ -533,7 +541,7 @@ namespace Core.Inventory
             _grid.Remove(node.GetNodeId());
 
             // Salir de la lista es tambien dejar de tener padre. Desde que un contenedor puede
-            // retirarse por aqui —y no solo por RemoveContainer—, dejarle el padre puesto lo
+            // retirarse por aqui —y no solo por DetachWornContainer—, dejarle el padre puesto lo
             // vuelve un huerfano que dice pertenecer a un arbol en el que ya no esta: quien
             // luego intente colgarlo vera que "ya cuelga de ahi" y no hara nada.
             if (node is InventoryObject container) container.Parent = null;
@@ -895,7 +903,7 @@ namespace Core.Inventory
 
         public List<SubLot> ConsumeRandom(int amount)
         {
-            throw new InvalidOperationException("AddContainer is not supported on leaf nodes."); 
+            throw new InvalidOperationException("ConsumeRandom is not supported on branch nodes."); 
         }
 
         //#endregion

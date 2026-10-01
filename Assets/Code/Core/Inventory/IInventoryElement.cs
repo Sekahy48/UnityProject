@@ -17,10 +17,7 @@ namespace Core.Inventory
         /// <returns> The amount of item that couldnt be added due to internal limitations </returns>
         int  AddItem(ItemEntity item, int amount);
 
-        /// <summary>
-        /// Adds a new container node to this node's inventory.
-        /// </summary>
-        void AddContainer(ItemEntity item);
+         
 
         /// <summary>
         /// Tries to stack the item onto the first equivalent node found.

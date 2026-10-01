@@ -36,7 +36,7 @@ subopciones se generaliza a `RadialOption` en Composite (rama con hijos / hoja c
 `Choose` pasa a ser generico. No antes: con un solo caso no se sabe la forma del segundo.
 
 **Ahora: M7** (pulido y pruebas de integracion). Hecha T0 (aviso de subopciones en el
-radial). Siguen los casos limite de la rejilla (T1-T3), pruebas de integracion (T4), pulido
+radial). T1-T3 (casos limite de la rejilla) resueltas y T4 (44 tests de Core, en verde) hecha. Siguen pulido
 de UI (T5, con la paleta en variables USS pendiente) y el HUD de avisos de peso/volumen (T7).
 
 **Pendiente de Sergio (aprendizaje):** leer de arriba abajo como se dibuja el menu radial
@@ -109,8 +109,9 @@ orden.
 en el arbol Y ocupa celdas; uno equipado es hijo sin celdas. De ahi sale que la UI no necesite
 ninguna bandera para saber si pintarlo: tiene celdas o no las tiene.
 
-**Salir de la lista de un inventario es dejar de tener padre.** `AddContainer` lo pone;
-`CleanNode`, `CleanTree` y `RemoveContainer` lo quitan. Un contenedor con padre obsoleto dice
+**Salir de la lista de un inventario es dejar de tener padre.** `Hang` lo pone (via
+`PlaceContainer`, `ReattachContainer` o `AttachWornContainer`); `CleanNode`, `CleanTree` y
+`DetachWornContainer` lo quitan. Un contenedor con padre obsoleto dice
 pertenecer a un arbol en el que ya no esta, y quien luego intente colgarlo vera que "ya cuelga
 de ahi" y no hara nada.
 
@@ -781,11 +782,32 @@ el. Orden acordado:
   si A se cierra por distancia con el menu abierto, el aviso y el comportamiento discrepen.
   Alternativa descartada por ahora: que soltar E sobre un padre abra su anillo y deje el menu
   abierto (cambia E2).
-- [ ] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?)
-- [ ] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells
-- [ ] 3. Edge cases: item removed from middle of grid → gap handling
-- [x] 3b. Nested containers don't occupy grid cells. `InventoryObject.AddContainer` adds the child to `_inventory` but never calls `_grid.Place`, so a chest inside a backpack takes up no space and isn't rendered by `RenderGridItems` (which iterates `TetrisGridState.GetElements()`). Decide whether containers should occupy cells like any other item — they have `DimensionW/H` in `BaseItemComponent` already — and if so route `AddContainer` through the grid. Until then `InventoryObject.Clone()` copies them by list only, outside the grid.
-- [ ] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect)
+- [x] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?) — **Resuelta por diseño: se deja hueco.** `CleanTree` saca el nodo de la rejilla y sus celdas quedan libres; el resto no se mueve, y una pila consumida en parte conserva sus celdas. Compactar desordenaria lo que el jugador coloco a mano (M5: el jugador decide donde va cada cosa); un "ordenar" seria una herramienta explicita, nunca automatica.
+- [x] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells — **Resuelta en M2 T4 / M3 T3, verificada jugando (Sergio).** Entrada automatica (`TryStackOntoHere`: recoger, transferencia rapida, catalogo): completa las pilas y el sobrante abre pilas nuevas en celdas libres. Colocar con la mano sobre una pila llena: el sobrante se queda en la mano, a proposito (M5).
+- [x] 3. Edge cases: item removed from middle of grid → gap handling — **Misma pregunta que T1; misma respuesta: hueco.**
+- [x] 3b. Nested containers don't occupy grid cells. — **Resuelto: un contenedor GUARDADO ocupa celdas como cualquier item; uno PUESTO no ocupa ninguna.** Entrada guardada: `PlaceContainer` (automatica via `_grid.TryFirstPlace`, o en celda via `AddItemAt` -> `_grid.Place`) coloca en la rejilla ANTES de colgarlo del arbol; salida: `CleanNode` libera sus celdas y le quita el padre; deshacer: `ReattachContainer` lo vuelve a sus celdas; `Clone` recoloca cada hijo en su celda o, si no tenia (puesto), lo cuelga sin celdas. Los contenedores puestos entran y salen solo por `AttachWornContainer`/`DetachWornContainer` (los usa `WornContainers`); el antiguo `AddContainer(ItemEntity)`, que colgaba sin pasar por la rejilla y era la puerta del fallo original, se elimino (Sergio). Colgar del arbol es un `Hang` PRIVADO (no toca la rejilla; solo lo usan quienes ya resolvieron las celdas); desde fuera el unico camino es `AttachWornContainer`, que salio de `IInventoryElement` porque solo tiene sentido en una rama (Sergio).
+- [x] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect) — **44 tests EditMode, todos en verde (Sergio).**
+  - **Entorno (hecho):** `Assets/Code/Core/Artisan.Core.asmdef` (Core como ensamblado propio,
+    `noEngineReferences`: importar Unity desde Core es ya error de compilacion) y
+    `Assets/Tests/EditMode/Artisan.Core.Tests.asmdef` (NUnit, solo Editor). Tests EditMode, C#
+    puro, sin escena. Para montarlo se quito de `Logic` la carga de mapas (codigo muerto que
+    dependia de `GameObject`). Los tests los escribe Claude; los casos los decide Sergio.
+  - **Casos acordados** (Sergio podo la lista): A rejilla (bloques n x m al colocar, solape,
+    fuera de limites, primer hueco, liberar, intercambiar); B sub-lotes (equivalencia, tope de
+    pila, consumo por variante, peso); C inventario (T2, rejilla llena, colocar sobre mismo u
+    otro tipo, 3b guardado/puesto, ciclos, sacar nodo, clonar); D peso (techo propio, paralelo,
+    mover dentro del mismo portador, peso con contenido); E mano y transferencias (reserva,
+    cancelar, parcial, rollback, paridad consulta/ejecucion); F equipo (topLayer, categoria
+    repetida, **ocupacion completa ocupa todos sus slots** (Sergio), cuenta una vez, desequipar
+    sin sitio); G mundo (`IsInRange` con margen, motivo de recoger, tirar suelto/monton).
+  - **Hechos A-D** (`GridTests`, `BatchItemTests`, `InventoryObjectTests`, `WeightTests`, con
+    `TestItems` como fabrica de objetos), pasan todos. **E-F escritos** (`HandAndTransferTests`,
+    `EquipmentTests`, con `ServiceRig`: SystemManager con InventorySystem y EquipmentSystem,
+    `EventBus.Clear()` y un logger mudo en cada test; no hizo falta tocar Core). **G escrito** (`WorldTests`): para poder
+    construir `EntityManager` sin el catalogo real, los objetos y la ropa de desarrollo del
+    jugador salieron de `PrototypeFactory` a `GameMain.AddDevTestingPlayerItems` (decision de
+    Sergio: el jugador acabara empezando sin nada, y entonces se quita esa llamada y listo).
+    Test de humo borrado. A-G pasan: 44 tests en verde.
 - [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
   - **Tema visual medieval, en prueba** (`UI Toolkit/Theme/MedievalTheme.uss`): una hoja que
     se carga DESPUES de las base y solo cambia colores, bordes, radios y fuentes, nunca la
@@ -1099,6 +1121,7 @@ Hand added notes (by me by hand):
   modelos 3D viajan en el zip y se cargan en ejecucion, y el `id` de Stack&Go ya se exporta.
   Lo que falta es (a) que Unity use ese `id` como typeId y desaparezca `id_mapping.json`, y
   (b) automatizar el paso manual de descomprimir el zip en `StreamingAssets`.
+- [ ] **Comentarios del codigo a español.** La regla (CLAUDE.md) es comentarios en español sin tildes, pero hay restos en ingles de los primeros hitos: medido el 2026-09-30, ~21 % de las lineas de comentario (Core ~23 %, Unity ~14 %; clasificacion aproximada por palabras frecuentes). Traduccion mecanica, sin tocar codigo; se puede hacer por ficheros cuando se toquen o de una vez como pulido.
 - [ ] Save/load inventory state (serialization)
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)
