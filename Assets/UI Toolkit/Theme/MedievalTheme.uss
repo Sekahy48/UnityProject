@@ -27,6 +27,37 @@
    ===================================================================================== */
 
 
+/* ---------- Paleta ----------
+   Cada material se declara una vez aqui y las reglas lo usan con var(--nombre). El
+   sufijo -NN es la opacidad (laton-60 = laton al 60%). Los colores de un solo uso se
+   quedan literales: USS no deja cambiar la opacidad de una variable, asi que cada
+   variante tendria que ser otra variable. Las --radial-* del menu radial tambien
+   quedan literales: las lee C# (CustomStyleProperty) y no esta comprobado que
+   resuelva var().
+   ---------- */
+
+:root {
+    --madera-oscura:      rgb(33, 24, 17);
+    --madera:             rgb(52, 38, 26);
+    --cuero:              rgb(92, 64, 40);
+    --hierro:             rgb(18, 13, 9);
+    --hierro-90:          rgba(18, 13, 9, 0.9);
+    --laton:              rgb(176, 138, 70);
+    --laton-90:           rgba(176, 138, 70, 0.9);
+    --laton-70:           rgba(176, 138, 70, 0.7);
+    --laton-60:           rgba(176, 138, 70, 0.6);
+    --laton-vivo:         rgb(222, 184, 110);
+    --laton-vivo-90:      rgba(222, 184, 110, 0.9);
+    --pergamino-claro:    rgb(240, 230, 206);
+    --pergamino:          rgb(232, 218, 188);
+    --pergamino-medio:    rgb(200, 184, 152);
+    --pergamino-viejo:    rgb(176, 156, 122);
+    --lacre:              rgb(128, 30, 24);
+    --hueco-fondo:        rgba(22, 16, 11, 0.92);
+    --hueco-filo:         rgba(10, 7, 4, 0.95);
+}
+
+
 /* ---------- Ventanas: tablones de madera oscura con marco de laton ---------- */
 
 .main-area,
@@ -41,7 +72,7 @@
 }
 
 .title-bar {
-    background-color: rgb(52, 38, 26);
+    background-color: var(--madera);
     border-bottom-width: 1px;
     border-bottom-color: rgba(176, 138, 70, 0.55);
     border-top-left-radius: 3px;
@@ -49,7 +80,7 @@
 }
 
 .title-label {
-    color: rgb(222, 184, 110);
+    color: var(--laton-vivo);
     letter-spacing: 1px;
 }
 
@@ -61,10 +92,10 @@
 /* ---------- Pestanas laterales: lenguetas de madera ---------- */
 
 .left-tab {
-    background-color: rgb(52, 38, 26);
-    border-top-color: rgba(176, 138, 70, 0.9);
-    border-left-color: rgba(176, 138, 70, 0.9);
-    border-bottom-color: rgba(18, 13, 9, 0.9);
+    background-color: var(--madera);
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-90);
+    border-bottom-color: var(--hierro-90);
     border-right-color: rgba(33, 24, 17, 0.96);
 }
 
@@ -73,25 +104,25 @@
 }
 
 .panel-slot-tabs-label {
-    background-color: rgb(52, 38, 26);
-    color: rgb(232, 218, 188);
-    border-top-color: rgba(176, 138, 70, 0.9);
-    border-left-color: rgba(176, 138, 70, 0.7);
-    border-right-color: rgba(18, 13, 9, 0.9);
-    border-bottom-color: rgba(18, 13, 9, 0.9);
+    background-color: var(--madera);
+    color: var(--pergamino);
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-70);
+    border-right-color: var(--hierro-90);
+    border-bottom-color: var(--hierro-90);
     -unity-text-align: middle-center;
 }
 
 .panel-slot-tabs-label:hover {
-    color: rgb(222, 184, 110);
+    color: var(--laton-vivo);
 }
 
 
 /* ---------- Botones: lacre y hierro ---------- */
 
 .close-button {
-    background-color: rgb(128, 30, 24);
-    color: rgb(232, 218, 188);
+    background-color: var(--lacre);
+    color: var(--pergamino);
     border-radius: 10px;
     -unity-font-style: bold;
 }
@@ -102,16 +133,16 @@
 
 .dev-button {
     background-color: rgb(40, 30, 21);
-    color: rgb(176, 156, 122);
+    color: var(--pergamino-viejo);
 }
 
 
 /* ---------- Rejilla: huecos tallados en la madera ---------- */
 
 .inventory-grid-cell {
-    background-color: rgba(22, 16, 11, 0.92);
-    border-top-color: rgba(10, 7, 4, 0.95);
-    border-left-color: rgba(10, 7, 4, 0.95);
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
     border-bottom-color: rgba(78, 58, 38, 0.55);
     border-right-color: rgba(78, 58, 38, 0.55);
 }
@@ -129,7 +160,7 @@
 }
 
 .amount-label {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
     background-color: rgba(18, 13, 9, 0.82);
     border-radius: 2px;
 }
@@ -138,7 +169,7 @@
 /* ---------- Barra de peso: carril de hierro, colores de tierra ---------- */
 
 .weight-rail {
-    background-color: rgb(18, 13, 9);
+    background-color: var(--hierro);
 }
 
 .load-normal   { background-color: rgba(86, 118, 58, 0.98); }   /* musgo */
@@ -146,13 +177,13 @@
 .load-over     { background-color: rgba(172, 88, 34, 0.98); }   /* oxido */
 .load-immobile { background-color: rgba(128, 24, 18, 0.98); }   /* sangre */
 
-.load-normal-label   { color: rgb(240, 230, 206); }
-.load-extra-label    { color: rgb(33, 24, 17); }
-.load-over-label     { color: rgb(240, 230, 206); }
-.load-immobile-label { color: rgb(240, 230, 206); }
+.load-normal-label   { color: var(--pergamino-claro); }
+.load-extra-label    { color: var(--madera-oscura); }
+.load-over-label     { color: var(--pergamino-claro); }
+.load-immobile-label { color: var(--pergamino-claro); }
 
 .weight-label-note {
-    color: rgb(222, 184, 110);
+    color: var(--laton-vivo);
 }
 
 
@@ -164,52 +195,52 @@
 }
 
 .inspect-icon {
-    background-color: rgba(22, 16, 11, 0.92);
-    border-top-color: rgba(10, 7, 4, 0.95);
-    border-left-color: rgba(10, 7, 4, 0.95);
-    border-bottom-color: rgba(176, 138, 70, 0.6);
-    border-right-color: rgba(176, 138, 70, 0.6);
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
+    border-bottom-color: var(--laton-60);
+    border-right-color: var(--laton-60);
     border-radius: 2px;
 }
 
 .inspect-name {
-    color: rgb(222, 184, 110);
+    color: var(--laton-vivo);
 }
 
 .inspect-description {
-    color: rgb(200, 184, 152);
+    color: var(--pergamino-medio);
     -unity-font-style: italic;
 }
 
 .inspect-stat {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
     background-color: rgba(92, 64, 40, 0.45);
     border-radius: 2px;
 }
 
 .section-label {
-    color: rgb(176, 156, 122);
+    color: var(--pergamino-viejo);
 }
 
 
 /* ---------- Equipo: huecos con marco de hierro ---------- */
 
 .equip-slot {
-    background-color: rgba(22, 16, 11, 0.92);
-    border-top-color: rgba(10, 7, 4, 0.95);
-    border-left-color: rgba(10, 7, 4, 0.95);
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
     border-bottom-color: rgba(120, 92, 48, 0.7);
     border-right-color: rgba(120, 92, 48, 0.7);
 }
 
 .equip-slot:hover {
-    border-bottom-color: rgba(222, 184, 110, 0.9);
-    border-right-color: rgba(222, 184, 110, 0.9);
+    border-bottom-color: var(--laton-vivo-90);
+    border-right-color: var(--laton-vivo-90);
 }
 
 .layers-popup {
     background-color: rgba(33, 24, 17, 0.98);
-    border-color: rgba(176, 138, 70, 0.9);
+    border-color: var(--laton-90);
     border-radius: 2px;
 }
 
@@ -218,14 +249,14 @@
 
 .ctx-menu,
 .sublots-popup {
-    background-color: rgb(33, 24, 17);
-    border-color: rgba(176, 138, 70, 0.9);
-    color: rgb(232, 218, 188);
+    background-color: var(--madera-oscura);
+    border-color: var(--laton-90);
+    color: var(--pergamino);
 }
 
 .ctx-menu-option-label,
 .sublots-popup-row-label {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
 }
 
 .ctx-menu-option.ctx-menu-option-selected,
@@ -239,19 +270,19 @@
 }
 
 .sublots-popup-row:hover {
-    border-color: rgba(222, 184, 110, 0.9);
+    border-color: var(--laton-vivo-90);
     background-color: rgba(176, 138, 70, 0.12);
 }
 
 .ctx-menu-widget .unity-base-text-field__input,
 .ctx-menu-widget #unity-text-input {
     background-color: rgb(22, 16, 11);
-    border-color: rgba(176, 138, 70, 0.7);
-    color: rgb(232, 218, 188);
+    border-color: var(--laton-70);
+    color: var(--pergamino);
 }
 
 .ctx-menu-widget .unity-text-element--inner-input-field {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
 }
 
 
@@ -261,8 +292,8 @@
     background-color: rgb(226, 208, 170);
     border-top-color: rgb(160, 128, 84);
     border-left-color: rgb(160, 128, 84);
-    border-bottom-color: rgb(92, 64, 40);
-    border-right-color: rgb(92, 64, 40);
+    border-bottom-color: var(--cuero);
+    border-right-color: var(--cuero);
     border-radius: 2px;
 }
 
@@ -277,11 +308,11 @@
 
 .catalog-row {
     background-color: rgba(92, 64, 40, 0.55);
-    border-color: rgba(176, 138, 70, 0.6);
+    border-color: var(--laton-60);
 }
 
 .catalog-row-label {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
 }
 
 
@@ -301,32 +332,32 @@
 .wi-prompt {
     background-color: rgba(33, 24, 17, 0.88);
     border-width: 1px;
-    border-top-color: rgba(176, 138, 70, 0.9);
-    border-left-color: rgba(176, 138, 70, 0.7);
-    border-right-color: rgba(18, 13, 9, 0.9);
-    border-bottom-color: rgba(18, 13, 9, 0.9);
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-70);
+    border-right-color: var(--hierro-90);
+    border-bottom-color: var(--hierro-90);
     border-radius: 3px;
 }
 
 .wi-key {
-    background-color: rgb(222, 184, 110);
-    color: rgb(33, 24, 17);
+    background-color: var(--laton-vivo);
+    color: var(--madera-oscura);
     border-width: 1px;
     border-color: rgb(96, 72, 36);
 }
 
 .wi-action {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
 }
 
 .wi-target {
-    color: rgb(200, 184, 152);
+    color: var(--pergamino-medio);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
 .wi-more {
-    color: rgb(176, 156, 122);
+    color: var(--pergamino-viejo);
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
@@ -337,12 +368,12 @@
 
 .staminaBar,
 .fatigueBar {
-    background-color: rgba(18, 13, 9, 0.9);
+    background-color: var(--hierro-90);
     border-width: 1px;
-    border-top-color: rgba(176, 138, 70, 0.9);
-    border-left-color: rgba(176, 138, 70, 0.7);
-    border-right-color: rgba(10, 7, 4, 0.95);
-    border-bottom-color: rgba(10, 7, 4, 0.95);
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-70);
+    border-right-color: var(--hueco-filo);
+    border-bottom-color: var(--hueco-filo);
     border-radius: 2px;
 }
 
@@ -372,7 +403,7 @@
 .side-panel,
 .inspect-panel {
     background-image: url('textures/kenney-borders/Default/Border/panel-border-011.png');
-    -unity-background-image-tint-color: rgb(176, 138, 70);
+    -unity-background-image-tint-color: var(--laton);
     -unity-background-scale-mode: stretch-to-fill;
     -unity-slice-left: 12;
     -unity-slice-right: 12;
@@ -581,17 +612,17 @@
    inventario (.inspect-panel esta en las listas de arriba). Aqui solo lo suyo. */
 
 .ip-icon {
-    background-color: rgba(22, 16, 11, 0.92);
-    border-top-color: rgba(10, 7, 4, 0.95);
-    border-left-color: rgba(10, 7, 4, 0.95);
-    border-bottom-color: rgba(176, 138, 70, 0.6);
-    border-right-color: rgba(176, 138, 70, 0.6);
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
+    border-bottom-color: var(--laton-60);
+    border-right-color: var(--laton-60);
     border-radius: 2px;
 }
 
-.ip-name        { color: rgb(222, 184, 110); }
-.ip-type        { color: rgb(176, 156, 122); letter-spacing: 1px; }
-.ip-description { color: rgb(200, 184, 152); -unity-font-style: italic; }
+.ip-name        { color: var(--laton-vivo); }
+.ip-type        { color: var(--pergamino-viejo); letter-spacing: 1px; }
+.ip-description { color: var(--pergamino-medio); -unity-font-style: italic; }
 
 /* Separador: una linea de laton que se desvanece a los lados (divider-fade del paquete
    de marcos, tenido). */
@@ -599,15 +630,15 @@
     height: 6px;
     background-color: rgba(0, 0, 0, 0);
     background-image: url('textures/kenney-borders/Default/Divider Fade/divider-fade-000.png');
-    -unity-background-image-tint-color: rgb(176, 138, 70);
+    -unity-background-image-tint-color: var(--laton);
     -unity-background-scale-mode: stretch-to-fill;
 }
 
 .ip-stat-row:hover { background-color: rgba(176, 138, 70, 0.08); }
-.ip-stat-key       { color: rgb(176, 156, 122); }
-.ip-stat-value     { color: rgb(232, 218, 188); }
+.ip-stat-key       { color: var(--pergamino-viejo); }
+.ip-stat-value     { color: var(--pergamino); }
 
-.ip-section-label  { color: rgb(222, 184, 110); letter-spacing: 1px; }
+.ip-section-label  { color: var(--laton-vivo); letter-spacing: 1px; }
 
 .ip-lot-row {
     background-color: rgba(92, 64, 40, 0.35);
@@ -615,8 +646,8 @@
     border-bottom-color: rgba(176, 138, 70, 0.25);
 }
 
-.ip-lot-name                 { color: rgb(232, 218, 188); }
-.ip-lot-amount, .ip-lot-weight { color: rgb(200, 184, 152); }
+.ip-lot-name                 { color: var(--pergamino); }
+.ip-lot-amount, .ip-lot-weight { color: var(--pergamino-medio); }
 
 .ip-footer { color: rgb(150, 128, 96); }
 
@@ -641,12 +672,12 @@
 }
 
 .radial-option {
-    color: rgb(232, 218, 188);
+    color: var(--pergamino);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
 }
 
 .radial-option--default {
-    color: rgb(222, 184, 110);
+    color: var(--laton-vivo);
 }
 
 .radial-option--highlighted {
@@ -655,7 +686,7 @@
 
 /* Aviso "[Mas opciones]" bajo una opcion con subopciones: laton apagado. */
 .radial-option__more {
-    color: rgb(176, 138, 70);
+    color: var(--laton);
 }
 
 /* El medallon del centro: aro de laton sobre madera oscura; se apaga cuando el puntero

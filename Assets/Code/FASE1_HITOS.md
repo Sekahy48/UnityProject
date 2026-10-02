@@ -36,8 +36,8 @@ subopciones se generaliza a `RadialOption` en Composite (rama con hijos / hoja c
 `Choose` pasa a ser generico. No antes: con un solo caso no se sabe la forma del segundo.
 
 **Ahora: M7** (pulido y pruebas de integracion). Hecha T0 (aviso de subopciones en el
-radial). T1-T3 (casos limite de la rejilla) resueltas y T4 (44 tests de Core, en verde) hecha. Siguen pulido
-de UI (T5, con la paleta en variables USS pendiente) y el HUD de avisos de peso/volumen (T7).
+radial). T1-T3 (casos limite de la rejilla) resueltas y T4 (44 tests de Core, en verde) hecha. T5 (pulido
+de UI, tema medieval y paleta en variables) cerrada. Siguen rendimiento (T6) y el HUD de avisos de peso/volumen (T7).
 
 **Pendiente de Sergio (aprendizaje):** leer de arriba abajo como se dibuja el menu radial
 —`RadialGeometry`, `RadialMenu` (propiedades USS personalizadas -> campos -> `Relayout`,
@@ -808,20 +808,23 @@ el. Orden acordado:
     jugador salieron de `PrototypeFactory` a `GameMain.AddDevTestingPlayerItems` (decision de
     Sergio: el jugador acabara empezando sin nada, y entonces se quita esa llamada y listo).
     Test de humo borrado. A-G pasan: 44 tests en verde.
-- [ ] 5. UI polish: drag feedback, placement preview, invalid placement indicator
-  - **Tema visual medieval, en prueba** (`UI Toolkit/Theme/MedievalTheme.uss`): una hoja que
+- [x] 5. UI polish: drag feedback, placement preview, invalid placement indicator
+  - **Tema visual medieval, adoptado como principal** (`UI Toolkit/Theme/MedievalTheme.uss`): una hoja que
     se carga DESPUES de las base y solo cambia colores, bordes, radios y fuentes, nunca la
     disposicion. Materiales en vez de colores sueltos (madera, cuero, hierro, laton,
     pergamino, lacre) y relieve con el color de cada lado del borde, porque USS no tiene
     degradados. Los cuatro colores de veredicto de la mano se conservan, solo apagados.
     Reversible quitando su linea `<Style>` de los cuatro UXML.
-  - **Pendiente: paleta en variables USS.** Cada tema repite sus colores a mano (el laton
-    `rgb(176, 138, 70)` sale decenas de veces en `MedievalTheme.uss`). Declararlos una vez
-    como variables en la raiz del tema (`--laton: rgb(176, 138, 70);`) y usarlos con
-    `var(--laton)` en cada regla: cambiar la paleta pasa a ser tocar una linea, y los dos
-    temas quedan con la misma estructura y distintos valores. Ojo: son variables DE USS
-    (solo existen dentro de la hoja); no confundir con las propiedades personalizadas que
-    lee C# (`--radial-*`), que usan la misma sintaxis pero otro mecanismo.
+  - **Paleta en variables USS (hecho).** Cada tema declara sus materiales una vez en un
+    bloque `:root` al principio (`--laton: rgb(176, 138, 70);`) y las reglas los usan con
+    `var(--laton)`: cambiar la paleta es tocar una linea. Sufijo `-NN` = opacidad
+    (`--laton-60`). Criterio: variable para cada material y para cada variante que se
+    repite 3 o mas veces; los colores de un solo uso siguen literales, porque USS no deja
+    cambiar la opacidad de una variable y cada variante seria otra variable. Medieval: 18
+    variables, 85 usos; campesino: 10 variables, 40 usos. Los nombres NO coinciden entre
+    temas (son materiales distintos: laton/pergamino frente a paja/lino); solo comparten
+    `--hueco-filo`. Las `--radial-*` siguen literales: las lee C# (`CustomStyleProperty`) y
+    no esta comprobado que resuelva `var()`.
   - **Texturas (Kenney, CC0)** en `Theme/textures/` (`kenney-rpg`, `kenney-borders`, con su
     licencia). Van en una seccion aparte al final del tema, con 9-slice: marco remachado
     tenido de laton en las ventanas, fichas de madera en los items, pergamino rasgado en el

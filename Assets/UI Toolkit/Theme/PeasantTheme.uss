@@ -23,6 +23,29 @@
    ===================================================================================== */
 
 
+/* ---------- Paleta ----------
+   Cada material se declara una vez aqui y las reglas lo usan con var(--nombre). El
+   sufijo -NN es la opacidad (laton-60 = laton al 60%). Los colores de un solo uso se
+   quedan literales: USS no deja cambiar la opacidad de una variable, asi que cada
+   variante tendria que ser otra variable. Las --radial-* del menu radial tambien
+   quedan literales: las lee C# (CustomStyleProperty) y no esta comprobado que
+   resuelva var().
+   ---------- */
+
+:root {
+    --tierra-90:          rgba(38, 30, 22, 0.9);
+    --paja:               rgb(222, 196, 120);
+    --paja-90:            rgba(222, 196, 120, 0.9);
+    --lino:               rgb(238, 226, 196);
+    --hollin:             rgb(46, 34, 24);
+    --hierro-forjado:     rgb(44, 40, 36);
+    --hierro-forjado-60:  rgba(44, 40, 36, 0.6);
+    --madera-clara:       rgb(150, 124, 80);
+    --cuerda-80:          rgba(120, 90, 50, 0.8);
+    --hueco-filo:         rgba(20, 15, 10, 0.95);
+}
+
+
 /* ---------- Ventanas: arpillera con filo de cuerda ---------- */
 
 .main-area,
@@ -31,10 +54,10 @@
     background-repeat: repeat;
     background-size: 96px 96px;
     background-color: rgb(104, 80, 52);
-    border-top-color: rgb(150, 124, 80);
-    border-left-color: rgb(150, 124, 80);
-    border-right-color: rgb(44, 40, 36);
-    border-bottom-color: rgb(44, 40, 36);
+    border-top-color: var(--madera-clara);
+    border-left-color: var(--madera-clara);
+    border-right-color: var(--hierro-forjado);
+    border-bottom-color: var(--hierro-forjado);
     border-radius: 2px;
 }
 
@@ -52,12 +75,12 @@
 }
 
 .title-label {
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
     letter-spacing: 1px;
 }
 
 .left-panel {
-    border-color: rgba(44, 40, 36, 0.6);
+    border-color: var(--hierro-forjado-60);
 }
 
 
@@ -73,7 +96,7 @@
     -unity-slice-top: 8;
     -unity-slice-bottom: 10;
     border-color: rgba(0, 0, 0, 0);
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
     -unity-text-align: middle-center;
 }
 
@@ -90,7 +113,7 @@
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: scale-to-fit;
     -unity-background-image-tint-color: rgb(190, 100, 60);
-    color: rgb(238, 226, 196);
+    color: var(--lino);
     border-radius: 10px;
 }
 
@@ -101,7 +124,7 @@
 
 .dev-button {
     background-color: rgba(46, 34, 24, 0.35);
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
 }
 
 
@@ -109,16 +132,16 @@
 
 .inventory-grid-cell,
 .equip-slot {
-    background-color: rgba(38, 30, 22, 0.9);
-    border-top-color: rgba(20, 15, 10, 0.95);
-    border-left-color: rgba(20, 15, 10, 0.95);
+    background-color: var(--tierra-90);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
     border-bottom-color: rgba(150, 124, 80, 0.35);
     border-right-color: rgba(150, 124, 80, 0.35);
 }
 
 .equip-slot:hover {
-    border-bottom-color: rgba(222, 196, 120, 0.9);
-    border-right-color: rgba(222, 196, 120, 0.9);
+    border-bottom-color: var(--paja-90);
+    border-right-color: var(--paja-90);
 }
 
 
@@ -136,7 +159,7 @@
 }
 
 .amount-label {
-    color: rgb(238, 226, 196);
+    color: var(--lino);
     background-color: rgba(46, 34, 24, 0.85);
     border-radius: 2px;
 }
@@ -145,7 +168,7 @@
 /* ---------- Barra de peso: carril de hierro, colores de huerto ---------- */
 
 .weight-rail {
-    background-color: rgb(44, 40, 36);
+    background-color: var(--hierro-forjado);
 }
 
 .load-normal   { background-color: rgba(104, 132, 64, 0.98); }  /* hoja de col */
@@ -153,13 +176,13 @@
 .load-over     { background-color: rgba(176, 100, 44, 0.98); }  /* barro rojo */
 .load-immobile { background-color: rgba(128, 36, 26, 0.98); }   /* remolacha */
 
-.load-normal-label   { color: rgb(238, 226, 196); }
-.load-extra-label    { color: rgb(46, 34, 24); }
-.load-over-label     { color: rgb(238, 226, 196); }
-.load-immobile-label { color: rgb(238, 226, 196); }
+.load-normal-label   { color: var(--lino); }
+.load-extra-label    { color: var(--hollin); }
+.load-over-label     { color: var(--lino); }
+.load-immobile-label { color: var(--lino); }
 
 .weight-label-note {
-    color: rgb(222, 196, 120);
+    color: var(--paja);
 }
 
 
@@ -171,21 +194,21 @@
 }
 
 .inspect-name {
-    color: rgb(222, 196, 120);
+    color: var(--paja);
 }
 
 .inspect-description {
-    color: rgb(238, 226, 196);
+    color: var(--lino);
 }
 
 .inspect-stat {
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
     background-color: rgba(222, 196, 120, 0.75);
     border-radius: 2px;
 }
 
 .section-label {
-    color: rgb(222, 196, 120);
+    color: var(--paja);
 }
 
 
@@ -202,17 +225,17 @@
     -unity-slice-top: 8;
     -unity-slice-bottom: 8;
     border-color: rgba(0, 0, 0, 0);
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
 }
 
 .ctx-menu-option-label,
 .sublots-popup-row-label {
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
 }
 
 .ctx-menu-option.ctx-menu-option-selected,
 .ctx-menu-option:hover {
-    border-color: rgba(120, 90, 50, 0.8);
+    border-color: var(--cuerda-80);
     background-color: rgba(120, 90, 50, 0.18);
 }
 
@@ -221,19 +244,19 @@
 }
 
 .sublots-popup-row:hover {
-    border-color: rgba(120, 90, 50, 0.8);
+    border-color: var(--cuerda-80);
     background-color: rgba(120, 90, 50, 0.14);
 }
 
 .ctx-menu-widget .unity-base-text-field__input,
 .ctx-menu-widget #unity-text-input {
-    background-color: rgb(238, 226, 196);
-    border-color: rgba(120, 90, 50, 0.8);
-    color: rgb(46, 34, 24);
+    background-color: var(--lino);
+    border-color: var(--cuerda-80);
+    color: var(--hollin);
 }
 
 .ctx-menu-widget .unity-text-element--inner-input-field {
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
 }
 
 
@@ -252,7 +275,7 @@
 
 .tooltip Label,
 .tooltip-text {
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
@@ -261,11 +284,11 @@
 
 .catalog-row {
     background-color: rgba(222, 196, 120, 0.3);
-    border-color: rgba(44, 40, 36, 0.6);
+    border-color: var(--hierro-forjado-60);
 }
 
 .catalog-row-label {
-    color: rgb(238, 226, 196);
+    color: var(--lino);
 }
 
 
@@ -321,11 +344,11 @@
     -unity-slice-top: 6;
     -unity-slice-bottom: 9;
     border-color: rgba(0, 0, 0, 0);
-    color: rgb(238, 226, 196);
+    color: var(--lino);
 }
 
 .wi-action {
-    color: rgb(46, 34, 24);
+    color: var(--hollin);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
 }
 
@@ -365,8 +388,8 @@
     border-width: 1px;
     border-top-color: rgba(222, 196, 120, 0.8);
     border-left-color: rgba(222, 196, 120, 0.6);
-    border-right-color: rgba(20, 15, 10, 0.95);
-    border-bottom-color: rgba(20, 15, 10, 0.95);
+    border-right-color: var(--hueco-filo);
+    border-bottom-color: var(--hueco-filo);
     border-radius: 2px;
 }
 
