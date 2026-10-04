@@ -362,6 +362,15 @@
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
+.wi-hint {
+    color: rgb(140, 60, 32);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+.wi-prompt--disabled .wi-action {
+    color: rgb(130, 120, 108);
+}
+
 /* Un clavo: circulo de hierro con la cabeza clara. Con objetivo, la cabeza brilla a paja. */
 .wi-reticle {
     border-radius: 5px;

@@ -48,12 +48,16 @@ namespace Core.ECS.Systems
         public int TryStackOntoHere(IEntity entity, ItemEntity item, int amount, bool announce = true,
                                     InventoryObject source = null)
         {
-            int toAdd = GetFitByWeight(entity, item, amount, source, out InventoryComponent invComp);
-            if (toAdd <= 0) return amount;
-            int remaining = invComp.Inventory.StackOntoHere(item, toAdd);
+            InventoryComponent invComp = entity.GetComponent<InventoryComponent>();
+            if (invComp == null) return amount;
+
+            int notPlaced = invComp.Inventory.TryStackOntoHere(item, amount, source, out int toAdd);
+            if (toAdd <= 0) return amount;                    // como antes: sin eventos
+
+            // Solo lo que rechazo la rejilla cuenta como "no cabe"; lo que freno el peso no.
             if (announce)
-                EvaluateAndFireEvents(entity, remaining > 0);   
-            return remaining + (amount - toAdd);
+                EvaluateAndFireEvents(entity, notPlaced - (amount - toAdd) > 0);
+            return notPlaced;
         }
 
         /// <summary>

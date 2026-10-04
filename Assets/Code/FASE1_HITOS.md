@@ -848,6 +848,67 @@ el. Orden acordado:
   que escuche esos eventos, **filtrando por actor** (un NPC que recoja no debe avisarte), y
   pinte un mensaje breve. Va aqui y no en M6 porque es pulido de un flujo que ya funciona:
   el jugador puede recoger sin el; lo que pierde es saber por que algo se quedo en el suelo.
+  - **Diseno (decidido):**
+    - **Estados, no barras ni popups.** Fuera del inventario, una columna de iconos a la
+      derecha, uno por estado activo (al estilo de los *moodles* de Project Zomboid). El
+      icono cambia con la gravedad (ExtraWeight → Overweight → Immobile; Normal no muestra
+      nada) y al aparecer o cambiar de grado se sacude o resalta un momento. Tooltip con
+      texto que diga la consecuencia ("andas mas lento y te cansas antes"); se lee soltando
+      el cursor con Alt. Motivo: un campesino no ve porcentajes, nota "estoy cargado". Las
+      barras de fatiga y estamina quedan para replantear con este criterio.
+    - **Alcance de T7: solo el peso.** La columna se piensa para cualquier metrica (hambre,
+      cansancio, heridas), pero esas dependen de la fisiologia y llegan despues. Cuando
+      lleguen las continuas, margen en los umbrales para que el icono no parpadee (el peso
+      no lo necesita: solo cambia con un gesto).
+    - **Dentro del inventario, nada nuevo:** la mano y la barra de peso ya explican el
+      rechazo.
+    - **El cuerpo ya no frena por peso, se sobrecarga.** Antes el techo del jugador era un
+      muro (mano roja, se quedaba en el suelo) salvo al equiparse una mochila cargada, que lo
+      saltaba. Ahora es la regla general: `CarryCapacity.GetTransferLimit` devuelve sin
+      limite para un cuerpo y el `maxWeight` para cualquier contenedor. La barra y la banda
+      de carga siguen midiendo contra `GetMaxLoad`, asi que pasarse lleva a Inmovil. Los
+      contenedores (mochila, cofre, carro) siguen siendo duros: el saco se rompe, el eje no
+      aguanta. El intercambio no cruza contenedores, asi que no puede saltarse esos techos.
+      Consecuencias: al recoger, `PickUpLimit.Weight` / `WeightLimitReached` ya no salen con
+      un actor con cuerpo (quedan para uno sin el); la nota de peso de la barra
+      (`CarrierBlocks`) solo sale ya con un contenedor dentro de otro. Tests: 2 nuevos en
+      `WeightTests` (el cuerpo se sobrecarga; su mochila sigue frenando).
+    - **"No cabe" al recoger: sin aviso, al estilo RimWorld (decidido; escrito por Claude con visto bueno de Sergio, pendiente de
+      probar en Unity).** El motivo
+      se ve ANTES de actuar, en la marca de la E y en el radial: si cabe todo, "Coger"; si
+      cabe parte, "Coger 3" (lo que entrara); si no cabe nada, "Coger" en gris con "No hay
+      espacio suficiente" debajo, y elegirlo no hace nada. `Announce` y sus eventos se
+      quedan solo para el log.
+      - Servicio: `int CountPickable(actor, target)` en `WorldInteractionService`, hermana
+        pura de `PickUp`: clona el inventario raiz y pasa los mismos lotes (los lotes de un
+        monton compiten por el mismo hueco; sumarlos por separado contaria de mas). El total
+        lo pide quien lo necesite (`UnitsOn`, a exponer). Paso por lote compartido:
+        `InventoryObject.TryStackOntoHere` (peso y luego rejilla), que tambien usa
+        `InventorySystem.TryStackOntoHere`. Paridad del recorrido de lotes: test, no codigo
+        compartido.
+      - Clonar gasta ids de nodo y de entidad pero no registra nada (EntityManager es un
+        diccionario; los ids de nodo solo valen dentro de su arbol). Inofensivo.
+      - Cache en el presenter, SIN eventos: se recalcula al cambiar de objetivo, al cambiar
+        el total del monton, tras un `Perform` propio y al volver a atender al mundo
+        (`Open`). Mientras se atiende al mundo el inventario solo cambia por lo que hace el
+        jugador; si un dia algo lo cambia sin pasar por el (comer con tecla, un robo), se
+        anade ahi. Se descarto un calculo "analitico" sin clon: tendria que repetir el
+        algoritmo de colocacion y seria un segundo algoritmo a mantener igual que el real.
+      - `RadialOption { Label, Hint, HasChildren, Disabled }` (en `Core.MVC.View.UI.Radial`,
+        junto a `RadialGeometry`): salda la deuda de generalizar el radial (segundo caso).
+        `OpenMenu`/`AddRing` reciben opciones; `WorldPromptData` lleva una (`Option`, no
+        `Action`, para no tapar a `System.Action`) en vez de `ActionLabel`. Bajo la opcion,
+        un bloque `radial-option__more` con una etiqueta por linea (motivo y "[Mas
+        opciones]"); en la marca de la E, la etiqueta `prompt-hint` (`.wi-hint`). Una sola `OptionFor(target, action)`
+        alimenta marca y radial. Parcial: "Coger x3" en la etiqueta. Con `Hint` y
+        `HasChildren` a la vez se ven los dos; la clase USS sigue siendo
+        `radial-option__more`. Clic en una opcion gris: nada, el menu sigue abierto.
+      - `InventorySystem.TryStackOntoHere` conserva su comportamiento: si el peso da 0, no
+        publica eventos.
+      - Reparto: Sergio, servicio, cache, `OptionFor` y presenter; Claude, vista, RadialMenu,
+        USS y tests (paridad con dos lotes compitiendo por la rejilla, no toca el inventario
+        real, item suelto que cabe y que no, monton donde no cabe nada). Orden: datos e
+        interfaz, vista, presenter.
 
 **Note**: The old "organization bonus" concept is no longer needed — with grid-as-capacity, good organization is its own reward (more items fit). If a bonus mechanic is desired later, it can be added as a Phase 2+ feature.
 
@@ -1125,6 +1186,22 @@ Hand added notes (by me by hand):
   Lo que falta es (a) que Unity use ese `id` como typeId y desaparezca `id_mapping.json`, y
   (b) automatizar el paso manual de descomprimir el zip en `StreamingAssets`.
 - [ ] **Comentarios del codigo a español.** La regla (CLAUDE.md) es comentarios en español sin tildes, pero hay restos en ingles de los primeros hitos: medido el 2026-09-30, ~21 % de las lineas de comentario (Core ~23 %, Unity ~14 %; clasificacion aproximada por palabras frecuentes). Traduccion mecanica, sin tocar codigo; se puede hacer por ficheros cuando se toquen o de una vez como pulido.
+- [ ] **"Coger" con destino elegible.** Si el personaje lleva contenedores equipados, Coger
+  abre un segundo anillo con el destino: inventario principal/bolsillos, mochila, zurron...
+  (hoy siempre va al inventario raiz). Requisito previo: **estandarizar las subopciones del
+  radial**, que hoy son ad hoc para "Inventario" (`HasChildren` mira solo esa accion,
+  `RING_SLOTS`/`RingOptions` solo saben de los paneles A/B y `Choose` lo supone). Cada
+  accion deberia poder declarar sus hijos. `RadialOption` ya lleva `HasChildren`; lo que
+  falta es que el presenter no los decida por accion a mano. `CountPickable` tendria que
+  aceptar el inventario destino para que la cantidad de cada hijo sea la suya.
+- [ ] **Clases USS a BEM.** Hoy conviven tres estilos (contados el 2026-10-03): ~143 clases en
+  kebab-case con guion simple (`inventory-grid-cell`, `ctx-menu-option-selected`, donde el
+  estado va con un guion normal), 13 en BEM (`radial-option--disabled`,
+  `radial-option__more`, `wi-reticle--active`: radial y marca de la E) y ~8 en camelCase
+  (HUD antiguo: `fatigueBar`, `bloodOrb`). Unificar a BEM: `bloque`, `bloque__elemento`
+  (pieza hija), `bloque--modificador` (variante o estado). Hay que renombrar a la vez en
+  USS, UXML, temas y en las cadenas de C# (`AddToClassList`, `Q(className:)`).
+  **Preferible que lo haga Sergio**, para familiarizarse con las vistas y sus estilos.
 - [ ] Save/load inventory state (serialization)
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)

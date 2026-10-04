@@ -169,12 +169,10 @@ namespace MVC.View.Controls
         private const string MORE_OPTIONS_HINT = "[M\u00e1s opciones]";
 
         /// <summary>Abre el menu con un solo anillo: la rueda completa.</summary>
-        /// <param name="hasChildren">Paralela a <paramref name="labels"/>: true si esa opcion
-        /// abre un anillo. Null o mas corta: ninguna (o las que falten) sin hijos.</param>
-        public void Open(IReadOnlyList<string> labels, IReadOnlyList<bool> hasChildren = null)
+        public void Open(IReadOnlyList<RadialOption> options)
         {
             RemoveRingsFrom(0);
-            AppendRing(-1, labels, hasChildren);
+            AppendRing(-1, options);
 
             SetHighlighted(-1, -1, notify: false);
             IsOpen = true;
@@ -188,14 +186,14 @@ namespace MVC.View.Controls
         /// <paramref name="parentIndex"/>. Para sustituir un anillo ya abierto, primero
         /// <see cref="CloseRingsAbove"/> y luego esto.
         /// </summary>
-        public void AddRing(int parentIndex, IReadOnlyList<string> labels)
+        public void AddRing(int parentIndex, IReadOnlyList<RadialOption> options)
         {
             if (!IsOpen || _rings.Count == 0) return;
             Ring outermost = _rings[_rings.Count - 1];
             if (parentIndex < 0 || parentIndex >= outermost.Count) return;
-            if (labels == null || labels.Count == 0) return;
+            if (options == null || options.Count == 0) return;
 
-            AppendRing(parentIndex, labels, null);
+            AppendRing(parentIndex, options);
             Relayout();
         }
 
@@ -222,27 +220,48 @@ namespace MVC.View.Controls
             RemoveRingsFrom(0);
         }
 
-        private void AppendRing(int parent, IReadOnlyList<string> labels, IReadOnlyList<bool> hasChildren)
+        /// <summary>Lo que va bajo la etiqueta, en orden: el motivo y el aviso de subopciones.</summary>
+        private static List<string> BelowLines(RadialOption option)
+        {
+            List<string> lines = new List<string>(2);
+            if (!string.IsNullOrEmpty(option.Hint)) lines.Add(option.Hint);
+            if (option.HasChildren) lines.Add(MORE_OPTIONS_HINT);
+            return lines;
+        }
+
+        private void AppendRing(int parent, IReadOnlyList<RadialOption> options)
         {
             Ring ring = new Ring { Parent = parent };
             bool first = _rings.Count == 0;
 
-            for (int i = 0; i < labels.Count; i++)
+            for (int i = 0; i < options.Count; i++)
             {
-                Label label = new Label(labels[i]);
+                RadialOption option = options[i];
+                Label label = new Label(option.Label);
                 label.AddToClassList("radial-option");
                 if (first && i == 0) label.AddToClassList("radial-option--default");
                 if (!first) label.AddToClassList("radial-option--child");
+                // Con subopciones: clase para que el tema la distinga. En gris: no se puede elegir.
+                if (option.HasChildren) label.AddToClassList("radial-option--branch");
+                if (option.Disabled) label.AddToClassList("radial-option--disabled");
                 label.pickingMode = PickingMode.Ignore;
 
-                // Opcion con subopciones: clase para que el tema la distinga y un aviso debajo,
-                // para que se sepa antes de elegir que no ejecuta sino que abre mas opciones.
-                if (hasChildren != null && i < hasChildren.Count && hasChildren[i])
+                // Debajo, en un solo bloque: primero el motivo (si lo hay) y luego el aviso de
+                // subopciones, para que se sepa antes de elegir que no ejecuta sino que abre mas.
+                // Un bloque y no dos etiquetas sueltas para que el tema las coloque juntas sin
+                // solaparse; color y fuente se heredan del bloque.
+                List<string> below = BelowLines(option);
+                if (below.Count > 0)
                 {
-                    label.AddToClassList("radial-option--branch");
-                    Label more = new Label(MORE_OPTIONS_HINT);
+                    VisualElement more = new VisualElement();
                     more.AddToClassList("radial-option__more");
                     more.pickingMode = PickingMode.Ignore;
+                    foreach (string line in below)
+                    {
+                        Label text = new Label(line);
+                        text.pickingMode = PickingMode.Ignore;
+                        more.Add(text);
+                    }
                     label.Add(more);
                 }
                 _wheel.Add(label);

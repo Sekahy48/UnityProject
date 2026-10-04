@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.MVC.View;
+using Core.MVC.View.UI.Radial;
 
 namespace Core.MVC.View.UI.World
 {
@@ -38,7 +39,7 @@ namespace Core.MVC.View.UI.World
         /// Abre el menu radial con estas opciones, la primera arriba y el resto en sentido
         /// horario. Ninguna resaltada al abrir: el puntero empieza en el centro.
         /// </summary>
-        void OpenMenu(IReadOnlyList<string> labels, IReadOnlyList<bool> hasChildrenList);
+        void OpenMenu(IReadOnlyList<RadialOption> options);
 
         void CloseMenu();
 
@@ -52,11 +53,12 @@ namespace Core.MVC.View.UI.World
         event Action OnMenuDismissed;
 
         /// <summary>
-        /// Dibuja un anillo nuevo sobre el último dibujado partiendo de la opcion indicada creandose con las etiquetas proporcioandas.
+        /// Dibuja un anillo nuevo sobre el ultimo dibujado, partiendo de la opcion indicada y
+        /// con las opciones proporcionadas.
         /// </summary>
-        /// <param name="parentIndex"> Etiquetas del nuevo anillo.</param>
-        /// <param name="labels"> Opción de la que partir. </param>
-        void AddRing(int parentIndex, IReadOnlyList<string> labels);
+        /// <param name="parentIndex">Opcion de la que partir.</param>
+        /// <param name="options">Opciones del nuevo anillo.</param>
+        void AddRing(int parentIndex, IReadOnlyList<RadialOption> options);
 
         /// <summary>
         /// Cierra todos los anillos posteriores al del nivel indicado

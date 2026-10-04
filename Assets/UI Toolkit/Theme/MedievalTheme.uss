@@ -361,6 +361,15 @@
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
+.wi-hint {
+    color: rgb(196, 120, 96);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+.wi-prompt--disabled .wi-action {
+    color: rgb(120, 110, 100);
+}
+
 
 /* ---------- HUD de barras: marco de hierro con filo de laton ----------
    El color del relleno esta en linea en PlayerHUD.uxml y lo que va en linea gana a
@@ -687,6 +696,11 @@
 /* Aviso "[Mas opciones]" bajo una opcion con subopciones: laton apagado. */
 .radial-option__more {
     color: var(--laton);
+}
+
+/* Opcion en gris (no se puede elegir ahora): hierro frio, tambien resaltada. */
+.radial-option.radial-option--disabled {
+    color: rgb(120, 110, 100);
 }
 
 /* El medallon del centro: aro de laton sobre madera oscura; se apaga cuando el puntero

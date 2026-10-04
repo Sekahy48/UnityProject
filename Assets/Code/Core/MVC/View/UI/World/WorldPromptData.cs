@@ -1,3 +1,5 @@
+using Core.MVC.View.UI.Radial;
+
 namespace Core.MVC.View.UI.World
 {
     /// <summary>
@@ -8,8 +10,12 @@ namespace Core.MVC.View.UI.World
     /// </summary>
     public class WorldPromptData
     {
-        /// <summary>La accion de la pulsacion corta, ya con su nombre ("Recoger").</summary>
-        public string ActionLabel;
+        /// <summary>
+        /// La accion de la pulsacion corta, ya resuelta: nombre, texto de debajo y si esta en
+        /// gris. La misma clase que una porcion del radial, para que marca y menu no puedan
+        /// contar cosas distintas.
+        /// </summary>
+        public RadialOption Option;
 
         /// <summary>Sobre que se hace ("Manzana x5"). Vacio si no hay nada que decir.</summary>
         public string TargetLabel;
@@ -23,7 +29,7 @@ namespace Core.MVC.View.UI.World
 
         public bool SameAs(WorldPromptData other)
             => other != null
-               && other.ActionLabel == ActionLabel
+               && other.Option != null && other.Option.SameAs(Option)
                && other.TargetLabel == TargetLabel
                && other.HasMoreActions == HasMoreActions;
     }

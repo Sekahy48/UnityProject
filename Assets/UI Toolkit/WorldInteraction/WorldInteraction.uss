@@ -49,6 +49,19 @@
     color: rgb(160, 150, 132);
 }
 
+/* Motivo bajo la accion cuando no se puede hacer ("No hay espacio suficiente"). */
+.wi-hint {
+    font-size: 12px;
+    -unity-font-style: italic;
+    color: rgb(200, 150, 130);
+    display: none;
+}
+
+/* Accion en gris: se ve, pero ahora no se puede hacer. */
+.wi-prompt--disabled .wi-action {
+    color: rgb(140, 140, 140);
+}
+
 /* Punto de mira. Un rombo pequeno de laton con filo oscuro: se lee sobre cielo claro y sobre
    tierra oscura, y la forma de gema/remache encaja con una fantasia medieval sin ser un
    adorno que tape lo que apuntas. Sin objetivo es discreto; con objetivo se aviva y crece,

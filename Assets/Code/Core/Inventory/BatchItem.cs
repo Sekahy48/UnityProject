@@ -195,6 +195,12 @@ namespace Core.Inventory
         }
         //#endregion
 
+        /// <summary>
+        /// Si la pila ya guarda una variante Equivalent a ese item. Sirve para apilar primero
+        /// donde ya estan sus iguales y no repartir una misma variante entre varias pilas.
+        /// </summary>
+        public bool HasVariant(ItemEntity item) => GetBatchAmount(item) > 0;
+
         //#region Private helpers
 
         /// <summary>

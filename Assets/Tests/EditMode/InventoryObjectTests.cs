@@ -146,5 +146,35 @@ namespace Core.Tests
             Assert.AreEqual(4, cloned[0].GetAmount());
             Assert.AreEqual(new GridPos(1, 2), clone.GetGrid().GetElementOf(cloned[0].GetNodeId()).GetPos());
         }
+
+        [Test]
+        public void Apilar_rellena_una_pila_que_no_es_la_primera_de_su_tipo()
+        {
+            InventoryObject tiny = TestItems.InventoryOf(TestItems.Container(1, 2, 1000f));   // 2 celdas
+            tiny.StackOntoHere(TestItems.Apple(), 10);   // primera pila, llena
+            tiny.StackOntoHere(TestItems.Apple(), 5);    // segunda pila a medias; rejilla llena
+
+            int left = tiny.StackOntoHere(TestItems.Apple(), 3);
+
+            Assert.AreEqual(0, left, "la primera pila esta llena, pero la segunda tiene hueco");
+            CollectionAssert.AreEquivalent(new[] { 10, 8 }, Leaves(tiny).Select(s => s.GetAmount()));
+        }
+
+        [Test]
+        public void Apilar_prefiere_la_pila_que_ya_tiene_esa_variante()
+        {
+            InventoryObject tiny = TestItems.InventoryOf(TestItems.Container(1, 2, 1000f));
+            // AddItem y no StackOntoHere para montar las dos pilas: apilando, la segunda tanda
+            // se meteria en la primera (que tiene hueco) y no habria dos pilas que comparar.
+            tiny.AddItem(TestItems.Apple(durability: 50f), 5);    // primera en la lista
+            tiny.AddItem(TestItems.Apple(durability: 100f), 5);   // segunda: la variante buena
+
+            ItemEntity fresh = TestItems.Apple(durability: 100f);
+            tiny.StackOntoHere(fresh, 3);
+
+            ItemObject withFresh = Leaves(tiny).Single(s => s.GetBatch().HasVariant(fresh));
+            Assert.AreEqual(8, withFresh.GetAmount(), "va con sus iguales aunque haya otra pila antes");
+            Assert.AreEqual(2, Leaves(tiny).Count);
+        }
     }
 }

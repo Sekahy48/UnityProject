@@ -143,6 +143,13 @@ has abierto, avisos esperables) para que él sepa dónde mirar cuando compile.
 respuesta en vez de elegir por tu cuenta. Empújalo a pensar en lugar de darle la solución
 hecha. Si una decisión te parece equivocada, dilo: sinceridad sin dorar y sin castigar.
 
+**En dos fases, sin ramificar.** Al empezar una tarea, primero la lista COMPLETA de lo que
+hay que decidir, y nada más: ni propuestas ni código. Cuando Sergio la haya resuelto entera,
+y solo cuando pida propuesta, una propuesta cerrada en la que no quede ninguna duda abierta.
+Si al preparar la propuesta sale una decisión nueva, se vuelve a la lista en vez de colarla
+dentro. Abrir frentes nuevos a mitad de una propuesta (ideas sueltas, "por cierto", dudas
+que no se han planteado antes) agota y desordena.
+
 **Con cada implementación de algo diseñado en conjunto, acompaña un pseudo diagrama** de flujo
 o de secuencia, en ASCII, sin refinar pero legible.
 

@@ -73,6 +73,12 @@
     color: rgb(255, 255, 255);
 }
 
+/* En gris: se ve y se puede resaltar, pero elegirla no hace nada. Doble clase para ganar
+   a --default y --highlighted, que tambien ponen color. */
+.radial-option.radial-option--disabled {
+    color: rgb(140, 140, 140);
+}
+
 /* Centro: la zona muerta, del tamano del radio interior (48 x 2). */
 .radial-hub {
     position: absolute;

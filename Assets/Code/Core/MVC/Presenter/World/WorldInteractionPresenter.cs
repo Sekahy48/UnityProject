@@ -7,6 +7,7 @@ using Core.ECS.Entity;
 using Core.ECS.Systems;
 using Core.Inventory;
 using Core.MVC.View.UI.Inventory;
+using Core.MVC.View.UI.Radial;
 using Core.MVC.View.UI.World;
 using Core.Services;
 using AC = Core.Utils.ArgumentChecker;
@@ -48,9 +49,17 @@ namespace Core.MVC.Presenter.World
         private List<WorldAction> _actions = new List<WorldAction>();
 
         /// <summary>
-        /// Lista que representa si las opciones son finales o llevana a más opciones.
+        /// Opciones del primer anillo, ya resueltas y congeladas al abrir el menu: texto, si
+        /// llevan a mas opciones y si estan en gris.
         /// </summary>
-        private List<bool> _menuHasChildren = new List<bool>();
+        private List<RadialOption> _menuOptions = new List<RadialOption>();
+
+        /* Cache de "cuanto cabe" de Coger. Clonar el inventario en cada fotograma seria caro;
+           se recalcula solo cuando algo pudo cambiar la respuesta (ver PickableOf). */
+        private IEntity _pickableFor;
+        private int _pickableTotal;
+        private int _pickable;
+        private bool _pickableDirty = true;
 
         /// <summary>Lo ultimo que se mando a la vista, para no repintar lo mismo cada fotograma.</summary>
         private WorldPromptData _shown;
@@ -106,6 +115,7 @@ namespace Core.MVC.Presenter.World
         {
             _actor = actor;
             _open = actor != null;
+            _pickableDirty = true;   // el inventario pudo cambiar mientras no se atendia al mundo
             _view.SetAttending(_open);
         }
 
@@ -219,6 +229,9 @@ namespace Core.MVC.Presenter.World
 
             if (_target == null || _actions.Count == 0) return;
 
+            // En gris no hace nada: el motivo ya se esta viendo en la marca.
+            if (OptionFor(_target, _actions[0]).Disabled) return;
+
             Perform(_target, _actions[0]);
 
             // El monton puede haber desaparecido o cambiado: que la marca lo refleje ya y
@@ -237,6 +250,7 @@ namespace Core.MVC.Presenter.World
         private void Perform(IEntity target, WorldAction action, PanelType? panelType = null)
         {
             if (!_service.CanPerform(_actor, target, action)) return;
+            _pickableDirty = true;   // cualquier accion propia puede cambiar lo que cabe
 
             switch (action)
             {
@@ -273,18 +287,18 @@ namespace Core.MVC.Presenter.World
             => action == WorldAction.Inventory
             && (_panels.OccupantOf(PanelType.A) != null || _panels.OccupantOf(PanelType.B) != null);
 
-        private List<string> RingLabels()
+        private List<RadialOption> RingOptions()
         {
-            List<string> labels = new List<string>();
+            List<RadialOption> options = new List<RadialOption>();
             foreach (PanelType slot in RING_SLOTS)
             {
                 string name = slot == PanelType.A ? "Principal" : "Secundario";
                 IEntity occupant = _panels.OccupantOf(slot);
                 string who = occupant == null ? "vacio"
                         : occupant is ItemEntity item ? item.GetDisplayName() : occupant.GetName();
-                labels.Add(name + " (" + who + ")");
+                options.Add(new RadialOption { Label = name + " (" + who + ")" });
             }
-            return labels;
+            return options;
         }
 
         /// <summary>
@@ -297,11 +311,14 @@ namespace Core.MVC.Presenter.World
             {
                 if (index < 0 || index >= _menuActions.Count) return true;
                 WorldAction action = _menuActions[index];
+                RadialOption option = _menuOptions[index];
 
-                if (_menuHasChildren[index])
+                if (option.Disabled) return false;    // en gris: nada, y el menu sigue abierto
+
+                if (option.HasChildren)
                 {
                     _view.CloseRingsAbove(0);
-                    _view.AddRing(index, RingLabels());
+                    _view.AddRing(index, RingOptions());
                     _expanded = index;
                     return false;                 // el menu sigue abierto
                 }
@@ -337,16 +354,11 @@ namespace Core.MVC.Presenter.World
             // La marca de la E sobraria con el menu encima.
             Forget();
 
-            List<string> labels = new List<string>(_menuActions.Count); 
- 
-            foreach (WorldAction action in _menuActions) 
-            { 
-                labels.Add(action.GetDescription());
-                
-                _menuHasChildren.Add(HasChildren(action)); 
-                
-            }
-            _view.OpenMenu(labels, _menuHasChildren);
+            // Congeladas al abrir: mientras el menu este abierto no cambian.
+            _menuOptions = new List<RadialOption>(_menuActions.Count);
+            foreach (WorldAction action in _menuActions)
+                _menuOptions.Add(OptionFor(_menuTarget, action));
+            _view.OpenMenu(_menuOptions);
         }
 
         /// <summary>
@@ -359,7 +371,7 @@ namespace Core.MVC.Presenter.World
 
             // Soltar sobre un padre con hijos no hace nada (E2); sobre una hoja, la ejecuta (E1).
             bool parent = _hiLevel == 0 && _hiIndex >= 0 && _hiIndex < _menuActions.Count
-                        && _menuHasChildren[_hiIndex];
+                        && _menuOptions[_hiIndex].HasChildren;
             if (_hiIndex >= 0 && !parent) Choose(_hiLevel, _hiIndex);
 
             CloseMenu();
@@ -384,7 +396,7 @@ namespace Core.MVC.Presenter.World
             _expanded = -1;
             _view.CloseMenu();
 
-            _menuHasChildren.Clear();
+            _menuOptions = new List<RadialOption>();
             // La marca vuelve ya, sin esperar al siguiente fotograma.
             Tick();
         }
@@ -447,6 +459,50 @@ namespace Core.MVC.Presenter.World
 
         #region Auxiliares
 
+        /// <summary>
+        /// Cuanto del objetivo entraria al recogerlo, con cache. Se recalcula si cambia el
+        /// objetivo, si cambia lo que hay en el (otro le quito al monton) o si algo lo ensucio:
+        /// una accion propia (Perform) o volver a atender al mundo (Open). Mientras se atiende al
+        /// mundo el inventario solo cambia por lo que hace el jugador.
+        /// </summary>
+        private int PickableOf(IEntity target)
+        {
+            int total = WorldInteractionService.UnitsOn(target);
+            if (_pickableDirty || !ReferenceEquals(target, _pickableFor) || total != _pickableTotal)
+            {
+                _pickable = _service.CountPickable(_actor, target);
+                _pickableFor = target;
+                _pickableTotal = total;
+                _pickableDirty = false;
+            }
+            return _pickable;
+        }
+
+        /// <summary>
+        /// La opcion de una accion, ya resuelta, para la marca y para el radial. Unico sitio que
+        /// decide texto y gris: asi marca y menu no pueden contar cosas distintas.
+        /// </summary>
+        private RadialOption OptionFor(IEntity target, WorldAction action)
+        {
+            RadialOption option = new RadialOption
+            {
+                Label = action.GetDescription(),
+                HasChildren = HasChildren(action)
+            };
+            if (action != WorldAction.PickUp) return option;
+
+            int fits = PickableOf(target);
+            if (fits == 0)
+            {
+                option.Disabled = true;
+                option.Hint = "No hay espacio suficiente";
+            }
+            else if (fits < WorldInteractionService.UnitsOn(target))
+                option.Label += " x" + fits;
+
+            return option;
+        }
+
         private void Forget()
         {
             _target = null;
@@ -457,11 +513,11 @@ namespace Core.MVC.Presenter.World
             _shown = null;
         }
 
-        private static WorldPromptData BuildPrompt(IEntity target, List<WorldAction> actions)
+        private WorldPromptData BuildPrompt(IEntity target, List<WorldAction> actions)
         {
             return new WorldPromptData
             {
-                ActionLabel = actions[0].GetDescription(),
+                Option = OptionFor(target, actions[0]),
                 TargetLabel = DescribeTarget(target),
                 HasMoreActions = actions.Count > 1
             };

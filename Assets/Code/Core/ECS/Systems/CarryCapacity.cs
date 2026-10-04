@@ -42,9 +42,10 @@ namespace Core.ECS.Systems
         }
 
         /// <summary>
-        /// Weight limit of whatever holds an inventory. A body carries what its muscles allow;
-        /// anything else (a chest, a cart) is limited by its own StorageComponent. Single rule,
-        /// so the UI bar and the transfer check can never disagree about the ceiling.
+        /// Techo de carga de quien lleva un inventario: un cuerpo, lo que aguantan sus musculos;
+        /// cualquier otra cosa (cofre, carro, mochila), el maxWeight de su StorageComponent.
+        /// Es la referencia de la barra y de la banda de carga (ClassifyLoad). Lo que frena una
+        /// transferencia es <see cref="GetTransferLimit"/>, que parte de aqui.
         /// </summary>
         public static float GetMaxLoad(IEntity entity)
         {
@@ -54,6 +55,18 @@ namespace Core.ECS.Systems
             StorageComponent storage = entity.GetComponent<StorageComponent>();
             return storage != null ? storage.MaxWeight : float.MaxValue;
         }
+
+        /// <summary>
+        /// Techo que FRENA meter cosas, distinto del que se pinta.
+        ///
+        /// Un cuerpo no tiene: puede cargar por encima de lo que aguanta, y la consecuencia es
+        /// moverse peor hasta quedarse Inmovil (ClassifyLoad). Eso ya pasaba al equiparse una
+        /// mochila cargada; ahora es la regla para todo, y el limite de peso del jugador deja
+        /// de ser un muro y pasa a ser un estado. Un contenedor si lo tiene: el saco se rompe y
+        /// el eje del carro no aguanta, asi que su maxWeight sigue siendo duro.
+        /// </summary>
+        public static float GetTransferLimit(IEntity entity)
+            => entity.HasComponent(typeof(BodyComponent)) ? float.MaxValue : GetMaxLoad(entity);
 
         public static float GetMaxCarryWeight(IEntity entity)
         {

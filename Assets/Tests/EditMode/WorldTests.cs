@@ -105,7 +105,9 @@ namespace Core.Tests
         [Test]
         public void Al_recoger_si_faltan_hueco_y_peso_el_motivo_es_el_peso()
         {
-            // El inventario del actor es un contenedor de 1 celda y 1 kg.
+            // El inventario del actor es un contenedor de 1 celda y 1 kg. Contenedor y no cuerpo a
+            // proposito: un cuerpo no frena por peso (CarryCapacity.GetTransferLimit), asi que
+            // este caso solo existe con un actor sin cuerpo.
             InGameEntity actor = ActorAtOrigin();
             actor.AddComponent(new InventoryComponent(TestItems.InventoryOf(TestItems.Container(1, 1, maxWeight: 1f))));
 
@@ -147,6 +149,82 @@ namespace Core.Tests
             List<IEntity> piles = _entities.GetEntitiesWithComponent(typeof(GroundLotComponent));
             Assert.AreEqual(1, piles.Count);
             Assert.AreEqual(3, piles[0].GetComponent<GroundLotComponent>().TotalUnits);
+        }
+
+        // ---- Cuanto cabe al recoger (M7 T7) ----
+
+        private static InGameEntity ActorWithGrid(int h, int w)
+        {
+            InGameEntity actor = ActorAtOrigin();
+            actor.AddComponent(new InventoryComponent(TestItems.InventoryOf(TestItems.Container(h, w, maxWeight: 100f))));
+            return actor;
+        }
+
+        private static InventoryObject InventoryOfActor(IEntity actor)
+            => actor.GetComponent<InventoryComponent>().Inventory;
+
+        private IEntity PileOf(params SubLot[] lots)
+        {
+            IEntity pile = _entities.CreateEntity(EntityType.GroundLot);
+            pile.GetComponent<GroundLotComponent>().AddRange(new List<SubLot>(lots));
+            return pile;
+        }
+
+        /// Dos espadas de 1x2 llenan una rejilla 2x2; detras, tres manzanas que ya no caben.
+        private IEntity SwordsThenApples()
+            => PileOf(new SubLot(TestItems.Item(TestItems.SWORD, weight: 1f, maxStack: 1, w: 1, h: 2), 2),
+                      new SubLot(TestItems.Apple(), 3));
+
+        [Test]
+        public void Lo_que_cuenta_CountPickable_es_lo_que_mueve_PickUp()
+        {
+            InGameEntity actor = ActorWithGrid(2, 2);
+            IEntity pile = SwordsThenApples();
+
+            int counted = _service.CountPickable(actor, pile);
+            int left = _service.PickUp(actor, pile);
+
+            Assert.AreEqual(2, counted, "las espadas llenan la rejilla y las manzanas ya no caben");
+            Assert.AreEqual(counted, 5 - left, "contar y recoger tienen que coincidir");
+        }
+
+        [Test]
+        public void Contar_no_toca_el_inventario_ni_el_monton()
+        {
+            InGameEntity actor = ActorWithGrid(2, 2);
+            InventoryObject inventory = InventoryOfActor(actor);
+            IEntity pile = SwordsThenApples();
+
+            int freeBefore = inventory.GetGrid().GetFreeCellCount();
+            float weightBefore = inventory.GetTotalWeight();
+
+            _service.CountPickable(actor, pile);
+
+            Assert.AreEqual(freeBefore, inventory.GetGrid().GetFreeCellCount());
+            Assert.AreEqual(weightBefore, inventory.GetTotalWeight(), 1e-4f);
+            Assert.AreEqual(5, WorldInteractionService.UnitsOn(pile));
+        }
+
+        [Test]
+        public void Un_item_suelto_cuenta_uno_si_cabe_y_cero_si_no()
+        {
+            InGameEntity roomy = ActorWithGrid(2, 2);
+            Assert.AreEqual(1, _service.CountPickable(roomy, TestItems.Apple()));
+
+            InGameEntity full = ActorWithGrid(1, 1);
+            InventoryOfActor(full).AddItem(TestItems.Bandage(), 1);   // ocupa la unica celda y no apila con manzanas
+            Assert.AreEqual(0, _service.CountPickable(full, TestItems.Apple()));
+        }
+
+        [Test]
+        public void Si_no_cabe_nada_cuenta_cero_y_recoger_lo_deja_todo()
+        {
+            InGameEntity actor = ActorWithGrid(1, 1);
+            InventoryOfActor(actor).AddItem(TestItems.Bandage(), 1);
+            IEntity pile = PileOf(new SubLot(TestItems.Apple(), 5));
+
+            Assert.AreEqual(0, _service.CountPickable(actor, pile));
+            Assert.AreEqual(5, _service.PickUp(actor, pile));
         }
     }
 }

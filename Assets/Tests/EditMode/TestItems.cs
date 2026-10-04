@@ -62,6 +62,19 @@ namespace Core.Tests
             return item;
         }
 
+        /// <summary>
+        /// Un cuerpo adulto con su inventario: lo unico cuyo techo de peso no frena, sino que
+        /// sobrecarga. Sin hambre ni cansancio, para que su techo dependa solo del cuerpo.
+        /// </summary>
+        public static (InGameEntity body, InventoryObject inventory) Body()
+        {
+            InGameEntity body = new InGameEntity(_nextEntityId++);
+            body.AddComponent(new BodyComponent(height: 1.75f, weight: 75f, age: 25f, sex: 0));
+            InventoryObject inventory = new InventoryObject(body);
+            body.AddComponent(new InventoryComponent(inventory));
+            return (body, inventory);
+        }
+
         public static InventoryObject InventoryOf(ItemEntity container)
             => container.GetComponent<InventoryComponent>().Inventory;
     }

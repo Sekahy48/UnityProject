@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.MVC.View.UI.Inventory;
+using Core.MVC.View.UI.Radial;
 using Core.MVC.View.UI.World;
 using MVC.View.Controls;
 using Unity;
@@ -28,6 +29,7 @@ namespace MVC.View.World
         private VisualElement _root;
         private VisualElement _prompt;
         private Label _actionLabel;
+        private Label _hintLabel;
         private Label _targetLabel;
         private Label _moreLabel;
         private VisualElement _reticle;
@@ -88,6 +90,7 @@ namespace MVC.View.World
 
             _prompt = _root.Q<VisualElement>("prompt");
             _actionLabel = _root.Q<Label>("prompt-action");
+            _hintLabel = _root.Q<Label>("prompt-hint");
             _targetLabel = _root.Q<Label>("prompt-target");
             _moreLabel = _root.Q<Label>("prompt-more");
             _reticle = _root.Q<VisualElement>("reticle");
@@ -110,7 +113,11 @@ namespace MVC.View.World
         {
             if (_prompt == null || data == null) return;
 
-            _actionLabel.text = data.ActionLabel;
+            _actionLabel.text = data.Option.Label;
+            bool hint = !string.IsNullOrEmpty(data.Option.Hint);
+            _hintLabel.text = hint ? data.Option.Hint : "";
+            _hintLabel.style.display = hint ? DisplayStyle.Flex : DisplayStyle.None;
+            _prompt.EnableInClassList("wi-prompt--disabled", data.Option.Disabled);
             _targetLabel.text = data.TargetLabel;
             _targetLabel.style.display = string.IsNullOrEmpty(data.TargetLabel) ? DisplayStyle.None : DisplayStyle.Flex;
             _moreLabel.style.display = data.HasMoreActions ? DisplayStyle.Flex : DisplayStyle.None;
@@ -288,11 +295,9 @@ namespace MVC.View.World
 
         #endregion
 
-        /// <param name="hasChildren">Paralela a labels: true si esa opcion abre un anillo.</param>
-        public void OpenMenu(IReadOnlyList<string> labels, IReadOnlyList<bool> hasChildren)
-            => _radial?.Open(labels, hasChildren);
+        public void OpenMenu(IReadOnlyList<RadialOption> options) => _radial?.Open(options);
 
-        public void AddRing(int parentIndex, IReadOnlyList<string> labels) => _radial?.AddRing(parentIndex, labels);
+        public void AddRing(int parentIndex, IReadOnlyList<RadialOption> options) => _radial?.AddRing(parentIndex, options);
 
         public void CloseRingsAbove(int level) => _radial?.CloseRingsAbove(level);
 

@@ -332,13 +332,16 @@ namespace Core.Inventory
         ///
         /// <para>Sin entidad duena no hay techo: el inventario de paso que fabrica
         /// SpawnIntoHand no es de nadie y no limita nada.</para>
+        ///
+        /// <para>El techo es el de transferencia, no el de la barra: un cuerpo no frena
+        /// (ver CarryCapacity.GetTransferLimit). En la cadena solo limitan los contenedores.</para>
         /// </summary>
         /// <param name="source">Inventario del que sale lo que se va a mover, o null si viene de
         /// fuera del arbol: el equipo, el catalogo, el mundo.</param>
         public float OwnFreeWeight(InventoryObject source = null)
             => _holder == null || (source != null && WrapsOrIs(source))
                 ? float.MaxValue
-                : CarryCapacity.GetMaxLoad(_holder) - GetTotalWeight();
+                : CarryCapacity.GetTransferLimit(_holder) - GetTotalWeight();
 
         /// <summary>
         /// Kilos que admite de verdad: el minimo de toda la cadena.
@@ -590,6 +593,23 @@ namespace Core.Inventory
 
         //#region Local operations
 
+        /// <summary>
+        /// Peso primero, luego rejilla. Devuelve las unidades que NO entran. Unico paso por lote:
+        /// lo usan la transferencia real (InventorySystem) y la simulacion de recoger
+        /// (WorldInteractionService.CountPickable).
+        /// </summary>
+        /// <param name="fitByWeight">Cuantas permitia el peso. InventorySystem lo necesita para no
+        /// publicar nada cuando el peso no deja entrar ninguna, y para separar lo que rechazo la
+        /// rejilla de lo que rechazo el peso.</param>
+        public int TryStackOntoHere(ItemEntity item, int amount, InventoryObject source, out int fitByWeight)
+        {
+            fitByWeight = FitByWeight(item, amount, source);
+            if (fitByWeight <= 0) return amount;
+
+            int remaining = StackOntoHere(item, fitByWeight);
+            return remaining + (amount - fitByWeight);
+        }
+
         public int StackOntoHere(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, "item");
@@ -599,16 +619,32 @@ namespace Core.Inventory
             // AddItem. Buscar una hoja equivalente lo convertiria en unidades de una pila.
             if (ContainerOf(item) != null) return AddItem(item, amount);
 
-            foreach (IInventoryElement elem in _inventory)
+            List<ItemObject> notEqualStacks = new List<ItemObject>();
+            BaseItemComponent baseItemComponent = item.GetComponent<BaseItemComponent>();
+
+            // Pasada de nodos con la variante
+            for (int i = 0; i < _inventory.Count && amount > 0; i++)
             {
-                if (elem.IsLeaf() && elem.GetTypeId() == item.GetComponent<BaseItemComponent>().TypeId)
+                IInventoryElement elem = _inventory[i];
+                if (elem.IsLeaf() && elem.GetTypeId() == baseItemComponent.TypeId && elem.GetAmount() < baseItemComponent.MaxStackSize)
                 {
-                    amount = elem.StackOntoHere(item, amount);
-                    break;
+                    ItemObject current = (ItemObject) elem; // Downcast seguro, el IsLeaf lo salvaguarda.
+                    if (current.GetBatch().HasVariant(item))
+                        amount = current.StackOntoHere(item, amount); 
+                    else  
+                        notEqualStacks.Add(current);
                 }
             }
+
+            // Pasada de nodos sin la variante
+            if (amount > 0) 
+                for (int i = 0; i < notEqualStacks.Count && amount > 0; i++) 
+                    amount = notEqualStacks[i].StackOntoHere(item, amount);
+
+            // Sobrante a nodos nuevos
             if (amount > 0)
                 amount = AddItem(item, amount);
+
             return amount;
         }
 

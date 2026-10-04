@@ -90,8 +90,7 @@ namespace Core.Services
         }
         #endregion
 
-        #region Recoger
-
+        #region Recoger  
         /// <summary>
         /// Lleva al inventario del actor todo lo que quepa del monton.
         ///
@@ -99,8 +98,9 @@ namespace Core.Services
         /// alcance y acciones.</para>
         ///
         /// <para><b>Mover cero es un resultado valido.</b> Recoger se ofrece aunque no quepa
-        /// nada, porque una tecla que no aparece no le explica al jugador por que. En ese caso
-        /// no se mueve nada y se avisa del motivo.</para>
+        /// nada, porque una tecla que no aparece no le explica al jugador por que: el presenter
+        /// la muestra en gris con el motivo (ver <see cref="CountPickable"/>) y no la ejecuta.
+        /// Si aun asi llega aqui, no se mueve nada y el motivo va al log.</para>
         ///
         /// <para>Destino: el inventario raiz del actor, sin entrar en contenedores equipados,
         /// igual que la transferencia rapida. Meter en la mochila es abrirla y colocar.</para>
@@ -197,6 +197,9 @@ namespace Core.Services
         /// manda sobre la rejilla.
         ///
         /// Hoy nadie escucha estos eventos; el log es el aviso hasta que exista el HUD.
+        ///
+        /// Con un actor con cuerpo, Weight ya no sale: el cuerpo no frena por peso
+        /// (CarryCapacity.GetTransferLimit), se sobrecarga. Queda para un actor sin cuerpo.
         /// </summary>
         private static void Announce(IEntity actor, InventoryComponent inventory, PickUpLimit limit)
         {
@@ -213,7 +216,43 @@ namespace Core.Services
             }
         }
 
-        private static int UnitsOn(IEntity target)
+        /// <summary>
+        /// Cuantas unidades de ese objetivo entrarian si se recogiese ahora, sin mover nada.
+        ///
+        /// Hermana de PickUp: mismos lotes, mismo orden y mismo paso por lote
+        /// (InventoryObject.TryStackOntoHere), pero sobre un clon del inventario. Hace falta el
+        /// clon porque los lotes compiten por el mismo hueco: sumar cada uno por separado
+        /// contaria dos veces las mismas celdas. El clon gasta ids de nodo y de entidad pero no
+        /// se registra en nada (ver FASE1_HITOS, M7 T7).
+        ///
+        /// La paridad del recorrido de lotes con PickUp no esta forzada por el codigo: la cubre
+        /// un test (WorldTests).
+        /// </summary>
+        public int CountPickable(IEntity actor, IEntity target)
+        {
+            InventoryComponent inventory = actor.GetComponent<InventoryComponent>();
+            if (inventory == null) return 0;
+
+            InventoryObject sim = (InventoryObject)inventory.Inventory.Clone();
+            int fits = 0;
+
+            GroundLotComponent pile = target.GetComponent<GroundLotComponent>();
+            if (pile != null)
+            {
+                foreach ((ItemEntity variant, int amount) in pile.Lots)
+                    fits += amount - sim.TryStackOntoHere(variant, amount, null, out _);
+            }
+            else if (target is ItemEntity worldItem)
+            {
+                // La misma copia limpia que PickUp.
+                fits = 1 - sim.TryStackOntoHere(WorldPresence.CleanCopyOf(worldItem), 1, null, out _);
+            }
+
+            return fits;
+        }
+
+        /// <summary>Unidades que hay en el objetivo: 1 si es un item suelto, el total si es un monton.</summary>
+        public static int UnitsOn(IEntity target)
         {
             if (target is ItemEntity) return 1;
             return target?.GetComponent<GroundLotComponent>()?.TotalUnits ?? 0;

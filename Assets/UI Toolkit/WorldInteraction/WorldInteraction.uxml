@@ -10,6 +10,7 @@
                 <ui:Label name="prompt-key" text="E" class="wi-key" picking-mode="Ignore" />
                 <ui:Label name="prompt-action" text="Recoger" class="wi-action" picking-mode="Ignore" />
             </ui:VisualElement>
+            <ui:Label name="prompt-hint" text="" class="wi-hint" picking-mode="Ignore" />
             <ui:Label name="prompt-target" text="" class="wi-target" picking-mode="Ignore" />
             <ui:Label name="prompt-more" text="Mantén: más acciones" class="wi-more" picking-mode="Ignore" />
         </ui:VisualElement>
