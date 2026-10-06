@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.MVC.Presenter;
 using Core.MVC.View;
 using MVC.View;
+using MVC.View.HUD;
 using MVC.View.Inventory;
 using MVC.View.World;
 
@@ -25,6 +26,8 @@ namespace MVC.Controller
              views[PresenterType.WORLD] = new WorldInteractionView(uiRegistry.GetDocument(UIDocumentType.WorldInteraction),
                                                                    cameras,
                                                                    uiRegistry.GetTemplate(UITemplateType.InspectPanel));
+
+             views[PresenterType.HUD] = new HUDView(uiRegistry.GetDocument(UIDocumentType.HUD));
         }
 
         public T GetView<T>(PresenterType type) where T : IView

@@ -13,26 +13,11 @@ namespace MVC.Controller
     {
         private readonly GameSystemContext _systemCtx;
         private readonly InputManager _inputManager;
-        private readonly HUDManager _hudManager;
 
-        public GameController(GameSystemContext systemCtx, InputManager inputManager, HUDManager hudManager)
+        public GameController(GameSystemContext systemCtx, InputManager inputManager)
         {
             _systemCtx = systemCtx;
             _inputManager = inputManager;
-            _hudManager = hudManager;
-        }
-
-        /// <summary>
-        /// Connects observers on startup. Example: HUD observes FatigueStaminaSystem.
-        /// </summary>
-        public void SetUpOnStart()
-        {
-            FatigueStaminaSystem staminaSystem = _systemCtx.SystemManager
-                .GetPeriodicSystem<FatigueStaminaSystem>();
-            if (staminaSystem != null && _hudManager != null)
-            {
-                staminaSystem.Attach(_hudManager);
-            }
         }
 
         /// <summary>

@@ -837,6 +837,7 @@ MonoBehaviour:
   _inventoryPanelTemplate: {fileID: 9197481963319205126, guid: 054d62f5f50d19940a50e54ea7db9875, type: 3}
   _worldInteractionDocument: {fileID: 729825964}
   _inspectPanelTemplate: {fileID: 9197481963319205126, guid: 2eaa0aaf928c37b4c9e1e5bbb6c0645c, type: 3}
+  _hudDocument: {fileID: 1825484307}
 --- !u!1 &1271170563
 GameObject:
   m_ObjectHideFlags: 0
@@ -1326,6 +1327,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1825484308}
   - component: {fileID: 1825484307}
+  - component: {fileID: 1825484309}
   m_Layer: 5
   m_Name: PlayerHUD
   m_TagString: PlayerHUD
@@ -1367,6 +1369,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 477728563}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1825484309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1825484306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76785f80ebd8ab64aa7157b459332f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

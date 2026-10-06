@@ -16,6 +16,8 @@ using Core.Services;
 using MVC.View.Inventory;
 using MVC.View.World;
 using Core.MVC.Presenter.World;
+using Core.MVC.Presenter.HUD;
+using MVC.View.HUD;
 using Core.ECS.Component;
 using Core.ECS.Component.Equipment;
 using Core.Inventory;
@@ -66,10 +68,7 @@ public class GameMain : MonoBehaviour
         BuildUnityPieces(sessionCtx._player, systemCtx.PresenterManager);
 
         // GameController receives only what it needs
-        _gameController = new GameController(systemCtx,
-                                             _gameContext.InputManager,
-                                             _gameContext.HUDManager);
-        _gameController.SetUpOnStart();
+        _gameController = new GameController(systemCtx, _gameContext.InputManager);
 
         UIReloadNotifier.OnUIRecreated += BuildViewsAndPresenters;
         BuildServices();
@@ -201,14 +200,14 @@ public class GameMain : MonoBehaviour
     }
 
     /// <summary>
-    /// Unity-only pieces that do not belong in Core: HUD, cameras and input.
-    /// HUD and input are handed to the game context; CameraRegister deliberately is not
+    /// Unity-only pieces that do not belong in Core: cameras and input (the HUD is a
+    /// presenter now, built with the other views). Input is handed to the game context;
+    /// CameraRegister deliberately is not
     /// (it self-instantiates its cameras and a stored copy would drift from this one), so
     /// it stays local — only InputManager and the startup activation need it.
     /// </summary>
     private void BuildUnityPieces(IEntity player, PresenterManager presenterManager)
     {
-        HUDManager hudManager = new HUDManager(player);
         CameraRegister cameraRegister = new CameraRegister();
         _cameraRegister = cameraRegister;
         InputManager inputManager = new InputManager(cameraRegister, presenterManager, _gameContext.Session);
@@ -216,8 +215,7 @@ public class GameMain : MonoBehaviour
         cameraRegister.InitizalizeCameras(player);
         cameraRegister.ActivateCamera(CameraRegister.CameraType.RTS);
 
-        _gameContext.SetHUDManager(hudManager)
-                    .SetInputManager(inputManager);
+        _gameContext.SetInputManager(inputManager);
     }
 
     private void BuildServices()
@@ -256,6 +254,13 @@ public class GameMain : MonoBehaviour
             _worldInteractionService,
             presenter);
         presenters.ReplacePresenter(PresenterType.WORLD, worldPresenter);
+
+        // El viejo se cierra antes de sustituirlo: asi se da de baja del EventBus y no sigue
+        // pintando sobre elementos huerfanos. No se reabre aqui: lo abre InputManager segun
+        // la camara, igual que la interaccion con el mundo.
+        presenters.GetPresenter<IPresenter>(PresenterType.HUD)?.Close(true);
+        HUDPresenter hudPresenter = new HUDPresenter(viewManager.GetView<HUDView>(PresenterType.HUD));
+        presenters.ReplacePresenter(PresenterType.HUD, hudPresenter);
     }
 
     private void OnDestroy() => UIReloadNotifier.OnUIRecreated -= BuildViewsAndPresenters;

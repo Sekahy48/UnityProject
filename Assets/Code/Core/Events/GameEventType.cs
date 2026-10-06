@@ -18,5 +18,6 @@ namespace Core.Events
         /// dicen cuanto vas cargado, no que algo se haya quedado fuera.
         /// </summary>
         WeightLimitReached,
+        EnergyChanged,
     }
 }

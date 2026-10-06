@@ -410,21 +410,13 @@ namespace MVC.View.Inventory
             }
         }
 
+        /// <summary>
+        /// Despliega el popup de capas a la derecha del slot, alineado en altura y con un hueco
+        /// de 4 px; si no cabe, al otro lado (ver UIElementUtils.PlaceNextTo).
+        /// </summary>
         private void PositionAndShowPopup(VisualElement slot)
-        {
-            Rect slotRect = slot.worldBound;
-
-            // Esquina superior-derecha del slot, en coordenadas de panel:
-            // el popup se despliega hacia la derecha, alineado en altura con el slot.
-            Vector2 worldAnchor = new Vector2(slotRect.xMax, slotRect.yMin);
-
-            // Traducida al sistema de coordenadas del padre del popup (main-area)
-            Vector2 localAnchor = _layersPopup.parent.WorldToLocal(worldAnchor);
-
-            _layersPopup.style.left = localAnchor.x + 4;   // hueco de 4px
-            _layersPopup.style.top  = localAnchor.y;
-            _layersPopup.style.display = DisplayStyle.Flex;
-        }
+            => UIElementUtils.PlaceNextTo(_layersPopup, slot, _uiDocument.rootVisualElement,
+                                          UIElementUtils.Side.Right, gap: 4f);
 
         
 
@@ -1143,13 +1135,7 @@ namespace MVC.View.Inventory
         {
             _tooltip.Clear();
             _tooltip.Add(content);
-
-            Rect originRect = origin.worldBound;
-            Vector2 worldAnchor = new Vector2(originRect.xMax, originRect.yMin);
-            Vector2 localAnchor = _tooltip.parent.WorldToLocal(worldAnchor);
-            _tooltip.style.left = localAnchor.x;  
-            _tooltip.style.top  = localAnchor.y;
-            _tooltip.style.display = DisplayStyle.Flex;
+            UIElementUtils.PlaceNextTo(_tooltip, origin, _uiDocument.rootVisualElement, UIElementUtils.Side.Right);
         }
 
         #endregion
@@ -1408,6 +1394,13 @@ namespace MVC.View.Inventory
         /// ventana, escala de UI) y el ancho debe seguirlo.
         /// El alto debe venir de otro sitio: height explicito, o el stretch por
         /// defecto de un contenedor en fila.
+        ///
+        /// <para>Ademas cuadra una vez al registrarse, si el alto ya se conoce. Se llama desde
+        /// OnRootReady, despues de la primera maquetacion: el primer GeometryChanged del
+        /// elemento ya ha pasado sin nadie escuchando. Antes no se notaba porque abrir el
+        /// inventario cambiaba display y lo volvia a maquetar; desde que se oculta con
+        /// visibility (M6 1a) no hay evento nuevo y un elemento de alto fijo no se cuadraba
+        /// nunca.</para>
         /// </summary>
         private void MakeSquare(VisualElement element)
         {
@@ -1417,6 +1410,11 @@ namespace MVC.View.Inventory
                 if (Mathf.Approximately(evt.newRect.width, evt.newRect.height)) return;
                 element.style.width = evt.newRect.height;
             });
+
+            Rect current = element.layout;
+            if (float.IsNaN(current.height) || current.height <= 0f) return;
+            if (!Mathf.Approximately(current.width, current.height))
+                element.style.width = current.height;
         }
 
         #endregion

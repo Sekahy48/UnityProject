@@ -26,7 +26,6 @@ namespace MVC.Controller
 
         // ---- Unity pieces (do not go in Core) ---- 
         public InputManager InputManager { get; private set; }
-        public HUDManager HUDManager { get; private set; } 
 
         // ---- Builders ----
 
@@ -57,12 +56,6 @@ namespace MVC.Controller
         public GameContext SetInputManager(InputManager inputManager)
         {
             InputManager = inputManager;
-            return this;
-        }
-
-        public GameContext SetHUDManager(HUDManager hudManager)
-        {
-            HUDManager = hudManager;
             return this;
         }
     }

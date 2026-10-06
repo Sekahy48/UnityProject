@@ -17,9 +17,9 @@ namespace MVC.View.World
     /// <c>WorldInteractionPresenter</c>; esta clase recibe texto ya resuelto y un punto del
     /// mundo, y lo lleva a la pantalla con la camara activa.</para>
     ///
-    /// <para>Vive en su propio <c>UIDocument</c> y no dentro del HUD de barras: sigue el
-    /// patron del inventario (documento registrado en <c>UIRegistry</c>) en vez del de
-    /// <c>HUDUtils</c>, que busca su documento por etiqueta.</para>
+    /// <para>Vive en su propio <c>UIDocument</c> y no dentro del HUD de barras: cada pieza
+    /// de UI tiene su documento registrado en <c>UIRegistry</c>, y este necesita un orden de
+    /// dibujo distinto (por encima del inventario).</para>
     /// </summary>
     public class WorldInteractionView : IWorldInteractionView
     {

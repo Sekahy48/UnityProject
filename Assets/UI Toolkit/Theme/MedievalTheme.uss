@@ -372,8 +372,8 @@
 
 
 /* ---------- HUD de barras: marco de hierro con filo de laton ----------
-   El color del relleno esta en linea en PlayerHUD.uxml y lo que va en linea gana a
-   cualquier hoja: aqui solo se decora el carril. */
+   El color del relleno vive en PlayerHUDStyle.uss (.staminaBar .fill, .fatigueBar .fill);
+   aqui solo se decora el carril. */
 
 .staminaBar,
 .fatigueBar {

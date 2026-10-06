@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using Core.ECS.Component;
 using Core.ECS.Entity;
-using Core.Observer;
+using Core.Events; 
 
 namespace Core.ECS.Systems
 {
-    public class FatigueStaminaSystem : GenericSubject, IPeriodicSystem
+    public class FatigueStaminaSystem : IPeriodicSystem
     {
         private const float STAMINA_REGEN_RATE = 5f;
         private const float FATIGUE_REGEN_RATE = 0.5f;
@@ -73,7 +73,7 @@ namespace Core.ECS.Systems
 
             if (changed)
             {
-                this.NotifyObservers();
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.EnergyChanged, entity, energy));
             }
         }
 

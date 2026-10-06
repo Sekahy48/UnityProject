@@ -3,6 +3,7 @@ namespace Core.MVC.Presenter
     public enum PresenterType
     {
                 INV,
-                WORLD
+                WORLD,
+                HUD
     }
 } 

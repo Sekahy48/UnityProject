@@ -4,52 +4,37 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Milestones 1–5 cerrados. M6: todas las tareas hechas** (T6 reformulada: inventarios de
-cosas del mundo en generico, probado solo con `ItemEntity` en el suelo; carros aplazados a un
-hito posterior y NPCs a despues de la Fase 2 — ver M6 T6). **M6 cerrado** con el commit del
-paso 2 + T5 + paso 3 (+ M7 T0, aviso de subopciones en el radial).
+**Fase 1 casi cerrada.** M1–M6 cerrados. **Ahora: M7** (pulido y pruebas de integracion).
+Hechas T0 (aviso de subopciones en el radial), T1–T3 (casos limite de la rejilla), T4 (tests
+de Core: 52, en verde) y T5 (pulido de UI, tema medieval, paleta en variables). Quedan:
 
-**Hecho y commiteado (bb1e7e9):** paneles A y B independientes del principal (1a) y su
-disposicion y entrada (1b): posiciones fijas, captura de raton segun principal/mano, capa del
-mundo por encima de A/B y modal, `LookControl.Reassert` para el Esc del Editor.
+- **T7 cerrada.** Commit 71ef56a: el cuerpo se sobrecarga en vez de frenar por peso; "Coger"
+  al estilo RimWorld ("Coger", "Coger xN" o en gris con el motivo); `RadialOption`; apilado que
+  rellena cualquier pila con hueco. Commit siguiente: HUD a presentador + vista (`HUDPresenter`,
+  `HUDView`, `EnergyChanged` en el bus) y la columna de estados de peso (icono por nivel,
+  tooltip con Alt, sacudida al cambiar), con dos utilidades de vista en `UIElementUtils`:
+  `PlaceNextTo` (coloca y voltea flotantes; ya la usan el tooltip del inventario y el popup
+  de capas) y `Shake`. Probado en juego por Sergio.
+- **T6 rendimiento**, sin empezar. Es lo unico que queda de M7.
 
-**Hecho en el commit que cierra M6:**
-- Paso 2: "Abrir inventario" desde el mundo via `IContainerPanels` (lo implementa
-  `InventoryPresenter`, se inyecta en `GameMain`). Probado con una mochila en el suelo: abre
-  en A. `Execute` sustituido por `CanPerform` + switch en el presentador (estilo inventario).
-- T5: cierre por distancia (`IsInRange` + `CLOSE_MARGIN`, `TickEvaluateInventoryDistances`,
-  corre aunque la I este abierta; ignora paneles vacios y contenedores fuera del mundo).
-  Probado: la mochila se cierra al alejarse. Lo escribio Sergio.
-- `PanelType`/`SidePanelContent` a Core; `IInventoryView`/`IInventoryPanelView` (Core ya no
-  importa nada de Unity); tildes fuera de comentarios.
-- Control `RadialMenu` con anillos (`AddRing`, `CloseRingsAbove`, eventos `(level, index)`).
-  Probado por Sergio: funciona.
+Con T6 cerrada, la Fase 1 (inventario) esta terminada.
 
-**Paso 3 hecho (Sergio), funciona:** anillos en el presentador del mundo. `Choose(level,
-index)` decide entre expandir (`AddRing` con "Principal/Secundario (ocupante)") o `Perform`;
-`OnMenuClicked` y `ReleaseMenu` delegan en el; `Perform` solo ejecuta hojas y recibe el hueco
-por parametro. Tener hijos = `Inventory` con A o B ocupados.
-
-**Deuda consciente del paso 3:** los anillos solo sirven para "abrir inventario en A/B"
-(`HasChildren`, `RING_SLOTS`, `RingLabels` y `Choose` lo suponen). Con el SEGUNDO caso de
-subopciones se generaliza a `RadialOption` en Composite (rama con hijos / hoja con accion) y
-`Choose` pasa a ser generico. No antes: con un solo caso no se sabe la forma del segundo.
-
-**Ahora: M7** (pulido y pruebas de integracion). Hecha T0 (aviso de subopciones en el
-radial). T1-T3 (casos limite de la rejilla) resueltas y T4 (44 tests de Core, en verde) hecha. T5 (pulido
-de UI, tema medieval y paleta en variables) cerrada. Siguen rendimiento (T6) y el HUD de avisos de peso/volumen (T7).
+**Forma de trabajo (CLAUDE.md):** el nucleo lo escribe Sergio (Claude valora y revisa; solo
+lo toca si Sergio lo pide como excepcion o es un retoque trivial pedido). En dos fases: primero
+la lista completa de decisiones, luego, cuando Sergio la pide, una propuesta cerrada.
 
 **Pendiente de Sergio (aprendizaje):** leer de arriba abajo como se dibuja el menu radial
 —`RadialGeometry`, `RadialMenu` (propiedades USS personalizadas -> campos -> `Relayout`,
 `DrawSectors` con Painter2D, `HitAt`) y su hoja `Controls/Resources/Controls/RadialMenu.uss`—
-para interiorizarlo. Hacerlo en una sesion dedicada, con explicacion paso a paso.
+en una sesion dedicada, con explicacion paso a paso.
 
-**Reparto de trabajo (en CLAUDE.md):** el nucleo lo escribe Sergio; Claude valora, valida y
-revisa, y solo lo toca si Sergio dice que es una excepcion. Lo accesorio se puede delegar.
-Antes de cada commit, Sergio explica el flujo.
+**Deuda del radial (parcial):** `RadialOption` ya generaliza lo que se PINTA, pero las
+subopciones siguen siendo ad hoc para "Inventario" (`HasChildren`, `RING_SLOTS`,
+`RingOptions`, `Choose`). Se generaliza con el siguiente caso: "Coger" con destino elegible
+(ver Future).
 
-**Pendiente tecnico de M6:** limpiar `IInventoryElement` (conviven las operaciones del
-Composite con restos del diseño BFS: `StackOntoHere`, `ModifyAmountHere`, `ContainsHere`,
+**Pendiente tecnico:** limpiar `IInventoryElement` (conviven las operaciones del Composite
+con restos del diseno BFS: `StackOntoHere`, `ModifyAmountHere`, `ContainsHere`,
 `GetAmountHere`, `DeleteItemHere`, `FindHere`, `FindNodesHere`, `SetAmount` y los metodos de
 hoja que lanzan).
 
@@ -62,7 +47,13 @@ a eventos pese a ser `IReactiveSystem`; `GetAvailableActions` del inventario acu
 sueltos (`hasVariants`, `splittable`); la ropa puesta aun no pesa (decidido "el equipo pesa,
 con coeficiente", sin aplicar); `UpdateInventoryTabs` sacaria una pestaña por slot a un
 contenedor de ocupacion completa; errata `ClearInveotryTabs`; `InventoryView` no ignora
-llamadas antes de `OnRootReady`. HUD de avisos de peso/volumen: M7 T7.
+llamadas antes de `OnRootReady`; `FatigueStaminaSystem._staminaRestrictionActive` y
+`MovementSystem._weightRestrictionActive` son del sistema y no de cada entidad (con NPCs, uno
+le quitaria la restriccion a otro).
+
+**Historico reciente:** M6 se cerro con los paneles A/B independientes (bb1e7e9), abrir
+inventarios del mundo via `IContainerPanels`, cierre por distancia y el radial con anillos;
+el detalle esta en M6.
 
 ---
 
@@ -783,7 +774,7 @@ el. Orden acordado:
   Alternativa descartada por ahora: que soltar E sobre un padre abra su anillo y deje el menu
   abierto (cambia E2).
 - [x] 1. Edge cases: what happens to tetris positions when items are consumed/removed? (free cells, leave gaps, or auto-compact?) — **Resuelta por diseño: se deja hueco.** `CleanTree` saca el nodo de la rejilla y sus celdas quedan libres; el resto no se mueve, y una pila consumida en parte conserva sus celdas. Compactar desordenaria lo que el jugador coloco a mano (M5: el jugador decide donde va cada cosa); un "ordenar" seria una herramienta explicita, nunca automatica.
-- [x] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells — **Resuelta en M2 T4 / M3 T3, verificada jugando (Sergio).** Entrada automatica (`TryStackOntoHere`: recoger, transferencia rapida, catalogo): completa las pilas y el sobrante abre pilas nuevas en celdas libres. Colocar con la mano sobre una pila llena: el sobrante se queda en la mano, a proposito (M5).
+- [x] 2. Edge cases: stack overflow — item added to full BatchItem (maxStackSize reached) but grid has space → create new BatchItem in free cells — **Resuelta en M2 T4 / M3 T3, verificada jugando (Sergio).** Entrada automatica (`TryStackOntoHere`: recoger, transferencia rapida, catalogo): completa las pilas y el sobrante abre pilas nuevas en celdas libres. **Correccion (M7 T7):** hasta entonces solo probaba la PRIMERA pila de su tipo (un `break`), y con esa llena no llegaba a otra con hueco; ahora recorre todas, primero las que tienen la misma variante (`BatchItem.HasVariant`), y tiene tests. Colocar con la mano sobre una pila llena: el sobrante se queda en la mano, a proposito (M5).
 - [x] 3. Edge cases: item removed from middle of grid → gap handling — **Misma pregunta que T1; misma respuesta: hueco.**
 - [x] 3b. Nested containers don't occupy grid cells. — **Resuelto: un contenedor GUARDADO ocupa celdas como cualquier item; uno PUESTO no ocupa ninguna.** Entrada guardada: `PlaceContainer` (automatica via `_grid.TryFirstPlace`, o en celda via `AddItemAt` -> `_grid.Place`) coloca en la rejilla ANTES de colgarlo del arbol; salida: `CleanNode` libera sus celdas y le quita el padre; deshacer: `ReattachContainer` lo vuelve a sus celdas; `Clone` recoloca cada hijo en su celda o, si no tenia (puesto), lo cuelga sin celdas. Los contenedores puestos entran y salen solo por `AttachWornContainer`/`DetachWornContainer` (los usa `WornContainers`); el antiguo `AddContainer(ItemEntity)`, que colgaba sin pasar por la rejilla y era la puerta del fallo original, se elimino (Sergio). Colgar del arbol es un `Hang` PRIVADO (no toca la rejilla; solo lo usan quienes ya resolvieron las celdas); desde fuera el unico camino es `AttachWornContainer`, que salio de `IInventoryElement` porque solo tiene sentido en una rama (Sergio).
 - [x] 4. Integration tests for full inventory flow (add, remove, transfer, equip, stack, inspect) — **44 tests EditMode, todos en verde (Sergio).**
@@ -841,7 +832,7 @@ el. Orden acordado:
     puro), asi que se ve la ficha y se lee el color a la vez. `RefreshHandBuffer` ya no
     vacia el fantasma: solo cambia la etiqueta de cantidad.
 - [ ] 6. Performance: stress test with large grids (cart/chest with many items)
-- [ ] 7. **HUD de avisos del mundo.** Hoy no existe ningun canal para mensajes en pantalla
+- [x] 7. **HUD de avisos del mundo.** Hoy no existe ningun canal para mensajes en pantalla
   fuera del inventario. `WorldInteractionService.Announce` ya publica un unico evento por
   gesto —`InventoryFull` (demasiado volumen) o `WeightLimitReached` (peso completo), con la
   prioridad ya resuelta: gana el peso— y de momento solo lo escribe en el log. Falta un HUD
@@ -873,8 +864,8 @@ el. Orden acordado:
       un actor con cuerpo (quedan para uno sin el); la nota de peso de la barra
       (`CarrierBlocks`) solo sale ya con un contenedor dentro de otro. Tests: 2 nuevos en
       `WeightTests` (el cuerpo se sobrecarga; su mochila sigue frenando).
-    - **"No cabe" al recoger: sin aviso, al estilo RimWorld (decidido; escrito por Claude con visto bueno de Sergio, pendiente de
-      probar en Unity).** El motivo
+    - **"No cabe" al recoger: sin aviso, al estilo RimWorld (decidido; escrito por Claude con visto bueno de Sergio; probado en
+      juego, commit 71ef56a).** El motivo
       se ve ANTES de actuar, en la marca de la E y en el radial: si cabe todo, "Coger"; si
       cabe parte, "Coger 3" (lo que entrara); si no cabe nada, "Coger" en gris con "No hay
       espacio suficiente" debajo, y elegirlo no hace nada. `Announce` y sus eventos se
@@ -908,6 +899,35 @@ el. Orden acordado:
       - Reparto: Sergio, servicio, cache, `OptionFor` y presenter; Claude, vista, RadialMenu,
         USS y tests (paridad con dos lotes compitiendo por la rejilla, no toca el inventario
         real, item suelto que cabe y que no, monton donde no cabe nada). Orden: datos e
+    - **HUD a presenter + vista (paso previo a los estados; escrito por Claude, validado por
+      Sergio).** Antes: `HUDManager` (un `IObserver` del `FatigueStaminaSystem`, enganchado en
+      `GameController.SetUpOnStart`) pintaba con `HUDUtils`, un singleton que buscaba el
+      documento por etiqueta. Ahora: `FatigueStaminaSystem` publica `EnergyChanged` (entidad +
+      `EnergyComponent`) en el `EventBus` (Sergio); `HUDPresenter` (Core, `PresenterType.HUD`)
+      se suscribe al abrirse, filtra al jugador y pasa proporciones a `IHUDView`; `HUDView`
+      (Unity) sobre el documento registrado en `UIRegistry` (`UIDocumentType.HUD`). Se crea en
+      `BuildViewsAndPresenters` como los demas (el viejo se cierra antes para darse de baja del
+      bus) e `InputManager.UpdateHUD` lo abre con camara de avatar y lo cierra en RTS, cada
+      fotograma. Bus y no observador: es lo que usan los demas presentadores, los estados
+      tambien vienen del bus, y el evento dice de que entidad es. Un solo presentador con una
+      region por pieza (barras provisionales / estados). Orbe de sangre retirado del UXML;
+      estilos en linea pasados a `PlayerHUDStyle.uss`.
+    - **Estados (hecho; presentador y vista de Sergio, utilidades de Claude).** Al final se
+      separo el estado del `GameEventType`: `PlayerStatus { StatusCategory, int Level }` con un
+      enum de niveles por categoria (`WeightLevel`, numeros fijados a mano porque las clases
+      USS `status--weight-N` dependen de ellos; nivel 0 = sin estado, quita el icono). El texto
+      del tooltip es el `[Description]` de cada nivel (`GetDescription()`). La traduccion
+      franja -> nivel es un diccionario en `HUDPresenter` que usan el evento y `Refresh` (al
+      abrir el HUD se pinta la franja actual, sin esperar a un cambio). La vista compara el
+      nivel previo para sacudir solo al cambiar (o al aparecer). Diseno original: grado = la franja de carga tal cual
+      (`GameEventType`, como `LoadClasses` del inventario; un enum propio se valorara si el
+      hambre lo pide), sacado de los eventos de franja. Columna dentro de `PlayerHUD.uxml`, a
+      la derecha del todo sin pisar el orbe; puede verse detras del inventario. Iconos en
+      `UI Toolkit/HUD/images/status/`, con el nombre del valor del enum (`Overweight.png`);
+      la vista pone una clase USS por estado (`status--overweight`) y el USS elige la imagen.
+      Sacudida horizontal de ~1 s en cada cambio de grado (subir o bajar). Tooltip con la
+      clase `.tooltip` (el pergamino del tema), legible con Alt; textos de Sergio. Orden de
+      llegada: si ya hay icono de esa categoria cambia en su sitio; si no, al final.
         interfaz, vista, presenter.
 
 **Note**: The old "organization bonus" concept is no longer needed — with grid-as-capacity, good organization is its own reward (more items fit). If a bonus mechanic is desired later, it can be added as a Phase 2+ feature.

@@ -1,6 +1,7 @@
 using Core.Contexts;
 using Core.ECS.Entity;
 using Core.MVC.Presenter;
+using Core.MVC.Presenter.HUD;
 using Core.MVC.Presenter.Inventory;
 using Core.MVC.Presenter.World;
 using Core.MVC.View.UI.Inventory;
@@ -64,7 +65,26 @@ namespace MVC.Controller
             _activeStrategy.Execute(deltaTime);
 
             UpdateWorldInteraction();
+            UpdateHUD();
             UpdateLook();
+        }
+
+        /// <summary>
+        /// Muestra el HUD con camara de avatar (FPS, TPS) y lo oculta en RTS. Misma pregunta que
+        /// la interaccion con el mundo, pero sin mirar el inventario: con la ventana abierta el
+        /// HUD sigue ahi detras. Se evalua cada fotograma por la misma razon: ningun camino
+        /// tiene que acordarse de avisar, y tras una recarga de UI el HUD nuevo se pone al dia
+        /// solo.
+        /// </summary>
+        private void UpdateHUD()
+        {
+            HUDPresenter hud = _presenterManager.GetPresenter<HUDPresenter>(PresenterType.HUD);
+            if (hud == null) return;
+
+            bool avatarCamera = _activeStrategy is IWorldInteractionInputSource;
+
+            if (avatarCamera && !hud.IsOpen()) hud.Open(_sessionContext._player);
+            else if (!avatarCamera && hud.IsOpen()) hud.Close(false);
         }
 
         /// <summary>
