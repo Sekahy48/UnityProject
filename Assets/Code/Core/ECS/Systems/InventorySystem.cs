@@ -110,11 +110,7 @@ namespace Core.ECS.Systems
             // Physical carry capacity check
             if (entity.HasComponent(typeof(BodyComponent)) && movementComponent != null)
             {
-                float carryWeight = GetMaxWeight(entity); 
-
-                float weightRatio = carryWeight > 0 ? totalWeight / carryWeight : 1;
-
-                GameEventType load = CarryCapacity.ClassifyLoad(weightRatio);
+                GameEventType load = CarryCapacity.ClassifyLoad(totalWeight, GetMaxWeight(entity));
                 EventBus.GetInstance().Post(new GameEvent(load, entity, movementComponent));
                 LogLoad(load);
 

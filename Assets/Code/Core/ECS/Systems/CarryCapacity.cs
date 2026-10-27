@@ -42,6 +42,13 @@ namespace Core.ECS.Systems
         }
 
         /// <summary>
+        /// Banda de carga a partir del peso y del techo. Unico sitio con la guarda del ratio
+        /// (sin techo cuenta como ratio 1): InventorySystem, HUD y panel la usan para no divergir.
+        /// </summary>
+        public static GameEventType ClassifyLoad(float weight, float maxLoad)
+            => ClassifyLoad(maxLoad > 0 ? weight / maxLoad : 1f);
+
+        /// <summary>
         /// Techo de carga de quien lleva un inventario: un cuerpo, lo que aguantan sus musculos;
         /// cualquier otra cosa (cofre, carro, mochila), el maxWeight de su StorageComponent.
         /// Es la referencia de la barra y de la banda de carga (ClassifyLoad). Lo que frena una

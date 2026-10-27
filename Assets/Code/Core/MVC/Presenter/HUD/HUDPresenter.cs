@@ -165,7 +165,7 @@ namespace Core.MVC.Presenter.HUD
 
             float weight = inventory.Inventory.GetTotalWeight();
             float maxLoad = CarryCapacity.GetMaxLoad(_player);
-            ShowLoad(CarryCapacity.ClassifyLoad(maxLoad > 0 ? weight / maxLoad : 1f));
+            ShowLoad(CarryCapacity.ClassifyLoad(weight, maxLoad));
         }
 
         private static PlayerStatus Weight(WeightLevel level) => new PlayerStatus(StatusCategory.Weight, (int)level);

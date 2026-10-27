@@ -281,7 +281,7 @@ namespace Core.MVC.Presenter.Inventory
             // No se exige BodyComponent: un arcon no tiene cuerpo pero si limite de peso.
             float currentWeight = invComp.Inventory.GetTotalWeight();
             float maxWeight = CarryCapacity.GetMaxLoad(Entity);
-            _panelView.UpdateWeightStats(currentWeight, maxWeight, CarryCapacity.ClassifyLoad(maxWeight > 0 ? currentWeight / maxWeight : 1f));
+            _panelView.UpdateWeightStats(currentWeight, maxWeight, CarryCapacity.ClassifyLoad(currentWeight, maxWeight));
         } 
 
         private void CancelHand()
