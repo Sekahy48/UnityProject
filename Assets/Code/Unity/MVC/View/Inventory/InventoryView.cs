@@ -389,7 +389,7 @@ namespace MVC.View.Inventory
             foreach (VisualElement slot in slots)
             {
                 VisualElement layersButton = new VisualElement();
-                layersButton.AddToClassList("layers-button");
+                layersButton.AddToClassList("equip-slot__layers-button");
 
                 layersButton.RegisterCallback<PointerDownEvent>(evt =>
                 {
@@ -551,7 +551,7 @@ namespace MVC.View.Inventory
 
             VisualElement icon = new VisualElement();
             icon.AddToClassList("item-icon");
-            icon.AddToClassList("hand-buffer-icon");
+            icon.AddToClassList("hand-buffer__icon");
             icon.pickingMode = PickingMode.Ignore;
             UIElementUtils.SetBackgroundTexture(icon, itemData.IconPath);
             _handBuffer.Add(icon);
@@ -563,10 +563,10 @@ namespace MVC.View.Inventory
 
             _handAnchorOffset = new Vector2(anchorBasis.Width, anchorBasis.Height) / 2f;
             
-            _handBuffer.AddToClassList("hand-buffer-instant");
+            _handBuffer.AddToClassList("hand-buffer--instant");
             PlaceHand(_lastPointerPosition);
             _handBuffer.style.display = DisplayStyle.Flex;
-            _handBuffer.schedule.Execute(() => _handBuffer.RemoveFromClassList("hand-buffer-instant")).ExecuteLater(120);
+            _handBuffer.schedule.Execute(() => _handBuffer.RemoveFromClassList("hand-buffer--instant")).ExecuteLater(120);
         }
 
         /// <summary>
@@ -598,24 +598,24 @@ namespace MVC.View.Inventory
         /// por su mitad para que su esquina superior izquierda caiga sobre la unidad apuntada.</param>
         public void UpdateHandDisplay(PlacementVerdict verdict, CellSize itemSize, CellSize anchorBasis)
         {
-            _handBuffer.RemoveFromClassList("hand-buffer-fits");
-            _handBuffer.RemoveFromClassList("hand-buffer-partial");
-            _handBuffer.RemoveFromClassList("hand-buffer-swap");
-            _handBuffer.RemoveFromClassList("hand-buffer-collision");
+            _handBuffer.RemoveFromClassList("hand-buffer--fits");
+            _handBuffer.RemoveFromClassList("hand-buffer--partial");
+            _handBuffer.RemoveFromClassList("hand-buffer--swap");
+            _handBuffer.RemoveFromClassList("hand-buffer--collision");
 
             switch (verdict)
             {
                 case PlacementVerdict.Fits:
-                    _handBuffer.AddToClassList("hand-buffer-fits");
+                    _handBuffer.AddToClassList("hand-buffer--fits");
                     break;
                 case PlacementVerdict.Partial:
-                    _handBuffer.AddToClassList("hand-buffer-partial");
+                    _handBuffer.AddToClassList("hand-buffer--partial");
                     break;
                 case PlacementVerdict.Swap:
-                    _handBuffer.AddToClassList("hand-buffer-swap");
+                    _handBuffer.AddToClassList("hand-buffer--swap");
                     break;
                 case PlacementVerdict.Blocked:
-                    _handBuffer.AddToClassList("hand-buffer-collision");
+                    _handBuffer.AddToClassList("hand-buffer--collision");
                     break;
                 case PlacementVerdict.Outside:
                     // Sin color y sin redimensionar: fuera de una rejilla no hay celda a la que
@@ -663,10 +663,10 @@ namespace MVC.View.Inventory
         private VisualElement BuildOptionRow(MenuOption option)
         {
             VisualElement row = new VisualElement();
-            row.AddToClassList("ctx-menu-option");
+            row.AddToClassList("ctx-menu__option");
 
             Label label = new Label(option.OptionName);
-            label.AddToClassList("ctx-menu-option-label");
+            label.AddToClassList("ctx-menu__label");
             row.Add(label);
 
             // Un diccionario por fila: dos filas pueden declarar el mismo id de campo.
@@ -675,7 +675,7 @@ namespace MVC.View.Inventory
             foreach (MenuField field in option.Fields)
             {
                 VisualElement widget = BuildFieldWidget(field);
-                widget.AddToClassList("ctx-menu-widget");
+                widget.AddToClassList("ctx-menu__widget");
                 widgets[field.Id] = widget;
                 row.Add(widget);
             }
@@ -683,7 +683,7 @@ namespace MVC.View.Inventory
             row.RegisterCallback<PointerDownEvent>(evt =>
             {
                 evt.StopPropagation();
-                row.AddToClassList("ctx-menu-option-selected");
+                row.AddToClassList("ctx-menu__option--selected");
                 if (option.IsLeaf) 
                 {   
                     CloseSublotsPopup();
@@ -710,7 +710,7 @@ namespace MVC.View.Inventory
 
             VisualElement subMenu = new VisualElement { name = SUBMENU_NAME };
             subMenu.AddToClassList("ctx-menu");
-            subMenu.AddToClassList("ctx-submenu");
+            subMenu.AddToClassList("ctx-menu--submenu");
 
             foreach (MenuOption subOption in option.SubOptions)
                 subMenu.Add(BuildOptionRow(subOption));
@@ -806,7 +806,7 @@ namespace MVC.View.Inventory
             float screenWidth = _uiDocument.rootVisualElement.worldBound.width;
             bool overflows = row.worldBound.xMax + submenu.worldBound.width > screenWidth;
 
-            submenu.EnableInClassList("ctx-submenu--flipped", overflows);
+            submenu.EnableInClassList("ctx-menu--flipped", overflows);
         }
                 
         /// <summary>
@@ -820,7 +820,7 @@ namespace MVC.View.Inventory
             foreach (VisualElement row in menuPanel.Children())
             {
                 row.Children().FirstOrDefault(c => c.name == SUBMENU_NAME)?.RemoveFromHierarchy();
-                row.RemoveFromClassList("ctx-menu-option-selected");
+                row.RemoveFromClassList("ctx-menu__option--selected");
             }
         }
 
@@ -850,14 +850,14 @@ namespace MVC.View.Inventory
             foreach (ItemDisplayData sublot in sublots)
             {
                 VisualElement sublotRow = new VisualElement();
-                sublotRow.AddToClassList("sublots-popup-row");
+                sublotRow.AddToClassList("sublots-popup__row");
 
                 Label sublotName = new Label(sublot.Name + " X" + sublot.Amount);
-                sublotName.AddToClassList("sublots-popup-row-label");
+                sublotName.AddToClassList("sublots-popup__label");
 
                 // NOTA: cambiar clase
                 Label sublotCondition = new Label("Durability: " + sublot.Durability.ToString());
-                sublotCondition.AddToClassList("sublots-popup-row-label");
+                sublotCondition.AddToClassList("sublots-popup__label");
 
                 VisualElement icon = new VisualElement();
                 UIElementUtils.SetBackgroundTexture(icon, sublot.IconPath);
@@ -923,26 +923,26 @@ namespace MVC.View.Inventory
         private void BuildCatalogRow(ItemDisplayData item)
         {
             VisualElement row = new VisualElement();
-            row.AddToClassList("catalog-row");
+            row.AddToClassList("catalog__row");
 
             VisualElement rowIcon = new VisualElement();
             UIElementUtils.SetBackgroundTexture(rowIcon, item.IconPath);
             MakeSquare(rowIcon);
 
             Label rowLabel = new Label(item.TypeName);
-            rowLabel.AddToClassList("alegreyaSansSC");
-            rowLabel.AddToClassList("catalog-row-label");
+            rowLabel.AddToClassList("u-font-alegreya");
+            rowLabel.AddToClassList("catalog__row-label");
             Label tooltipLabel = new Label(item.TypeName + "\n\n" + item.Description + "\n\n" + "Peso: " + item.UnitWeight);
-            tooltipLabel.AddToClassList("alegreyaSansSC");
-            tooltipLabel.AddToClassList("beigeColor");
-            tooltipLabel.AddToClassList("tooltip-text");
+            tooltipLabel.AddToClassList("u-font-alegreya");
+            tooltipLabel.AddToClassList("u-color-beige");
+            tooltipLabel.AddToClassList("tooltip__text");
             RegisterDelayedAction(rowLabel, () => ShowTooltip(rowLabel, tooltipLabel), 500);
 
             Label dimLabel = new Label($"{item.DimensionH}x{item.DimensionW}");
-            dimLabel.AddToClassList("alegreyaSansSC");
+            dimLabel.AddToClassList("u-font-alegreya");
 
             IntegerField amountField = new IntegerField { value = 1 };
-            amountField.AddToClassList("row-amount");
+            amountField.AddToClassList("catalog__amount");
             amountField.RegisterValueChangedCallback(evt =>
             {
                 if (evt.newValue < 1) amountField.SetValueWithoutNotify(1);
@@ -952,7 +952,7 @@ namespace MVC.View.Inventory
             {
                 text = "+"
             };
-            addButton.AddToClassList("add-button");
+            addButton.AddToClassList("catalog__add-button");
             addButton.clicked += () => OnCatalogItemGrabbed?.Invoke(item.TypeId, amountField.value);
             MakeSquare(addButton);
 
@@ -989,7 +989,7 @@ namespace MVC.View.Inventory
                 UIElementUtils.SetBackgroundTexture(_inspectIcon, item.IconPath); 
                 foreach (VisualElement element in _inspectStats.Children())
                 {
-                    element.AddToClassList("inspect-stat");
+                    element.AddToClassList("inspection-strip__stat");
                 }
 
             } 
@@ -1004,7 +1004,7 @@ namespace MVC.View.Inventory
                 UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImages.EmptyIcon);
                 foreach (VisualElement element in _inspectStats.Children())
                 {
-                    element.RemoveFromClassList("inspect-stat");
+                    element.RemoveFromClassList("inspection-strip__stat");
                 }
             }
             
@@ -1029,7 +1029,7 @@ namespace MVC.View.Inventory
             foreach (VisualElement viewSlot in _equipmentSlots)
             { 
                 EquipmentSlot realSlot = equipment.GetEquipmentSlot(GetEquipmentSlotType(viewSlot));
-                VisualElement popUpButton = viewSlot.Q<VisualElement>(className: "layers-button");
+                VisualElement popUpButton = viewSlot.Q<VisualElement>(className: "equip-slot__layers-button");
                 popUpButton.style.display = DisplayStyle.None;
 
                 if (!realSlot.IsEnabled) 
@@ -1076,7 +1076,7 @@ namespace MVC.View.Inventory
             {
                 clickEvent?.Invoke();
             });
-            tabLabel.AddToClassList("panel-slot-tabs-label");
+            tabLabel.AddToClassList("panel-slot-tabs__label");
 
             
             tab.RegisterCallback<PointerDownEvent>(evt =>
@@ -1266,7 +1266,7 @@ namespace MVC.View.Inventory
         private static bool IsLayersButton(VisualElement element)
         {
             for (VisualElement e = element; e != null; e = e.parent)
-                if (e.ClassListContains("layers-button")) return true;
+                if (e.ClassListContains("equip-slot__layers-button")) return true;
             return false;
         }
 
@@ -1364,7 +1364,7 @@ namespace MVC.View.Inventory
         private string GetRelationClass(VisualElement element)
         {
             foreach (string cls in element.GetClasses())
-                if (cls != "left-tab" && cls != "internal-personal-panel") return cls;
+                if (cls != "left-tabs__tab" && cls != "player-panels__section") return cls;
             return null;
         }
 

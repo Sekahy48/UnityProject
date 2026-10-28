@@ -61,7 +61,7 @@
 /* ---------- Ventanas: tablones de madera oscura con marco de laton ---------- */
 
 .main-area,
-.side-panel,
+.side-panels__panel,
 .inspect-panel {
     background-color: rgba(33, 24, 17, 0.96);
     border-top-color: rgba(176, 138, 70, 0.95);
@@ -79,19 +79,19 @@
     border-top-right-radius: 3px;
 }
 
-.title-label {
+.title-bar__label {
     color: var(--laton-vivo);
     letter-spacing: 1px;
 }
 
-.left-panel {
+.player-panels__left {
     border-color: rgba(96, 72, 36, 0.8);
 }
 
 
 /* ---------- Pestanas laterales: lenguetas de madera ---------- */
 
-.left-tab {
+.left-tabs__tab {
     background-color: var(--madera);
     border-top-color: var(--laton-90);
     border-left-color: var(--laton-90);
@@ -99,11 +99,11 @@
     border-right-color: rgba(33, 24, 17, 0.96);
 }
 
-.left-tab:hover {
+.left-tabs__tab:hover {
     background-color: rgb(70, 51, 33);
 }
 
-.panel-slot-tabs-label {
+.panel-slot-tabs__label {
     background-color: var(--madera);
     color: var(--pergamino);
     border-top-color: var(--laton-90);
@@ -113,25 +113,25 @@
     -unity-text-align: middle-center;
 }
 
-.panel-slot-tabs-label:hover {
+.panel-slot-tabs__label:hover {
     color: var(--laton-vivo);
 }
 
 
 /* ---------- Botones: lacre y hierro ---------- */
 
-.close-button {
+.title-bar__close {
     background-color: var(--lacre);
     color: var(--pergamino);
     border-radius: 10px;
     -unity-font-style: bold;
 }
 
-.close-button:hover {
+.title-bar__close:hover {
     background-color: rgb(158, 42, 32);
 }
 
-.dev-button {
+.title-bar__dev-button {
     background-color: rgb(40, 30, 21);
     color: var(--pergamino-viejo);
 }
@@ -139,7 +139,7 @@
 
 /* ---------- Rejilla: huecos tallados en la madera ---------- */
 
-.inventory-grid-cell {
+.inventory-grid__cell {
     background-color: var(--hueco-fondo);
     border-top-color: var(--hueco-filo);
     border-left-color: var(--hueco-filo);
@@ -172,17 +172,17 @@
     background-color: var(--hierro);
 }
 
-.load-normal   { background-color: rgba(86, 118, 58, 0.98); }   /* musgo */
-.load-extra    { background-color: rgba(192, 150, 44, 0.98); }  /* ocre */
-.load-over     { background-color: rgba(172, 88, 34, 0.98); }   /* oxido */
-.load-immobile { background-color: rgba(128, 24, 18, 0.98); }   /* sangre */
+.weight-rail__bar--normal   { background-color: rgba(86, 118, 58, 0.98); }   /* musgo */
+.weight-rail__bar--extra    { background-color: rgba(192, 150, 44, 0.98); }  /* ocre */
+.weight-rail__bar--over     { background-color: rgba(172, 88, 34, 0.98); }   /* oxido */
+.weight-rail__bar--immobile { background-color: rgba(128, 24, 18, 0.98); }   /* sangre */
 
-.load-normal-label   { color: var(--pergamino-claro); }
-.load-extra-label    { color: var(--madera-oscura); }
-.load-over-label     { color: var(--pergamino-claro); }
-.load-immobile-label { color: var(--pergamino-claro); }
+.weight-rail__label--normal   { color: var(--pergamino-claro); }
+.weight-rail__label--extra    { color: var(--madera-oscura); }
+.weight-rail__label--over     { color: var(--pergamino-claro); }
+.weight-rail__label--immobile { color: var(--pergamino-claro); }
 
-.weight-label-note {
+.weight-rail__label--note {
     color: var(--laton-vivo);
 }
 
@@ -194,7 +194,7 @@
     background-color: rgba(26, 19, 13, 0.6);
 }
 
-.inspect-icon {
+.inspection-strip__icon {
     background-color: var(--hueco-fondo);
     border-top-color: var(--hueco-filo);
     border-left-color: var(--hueco-filo);
@@ -203,16 +203,16 @@
     border-radius: 2px;
 }
 
-.inspect-name {
+.inspection-strip__name {
     color: var(--laton-vivo);
 }
 
-.inspect-description {
+.inspection-strip__description {
     color: var(--pergamino-medio);
     -unity-font-style: italic;
 }
 
-.inspect-stat {
+.inspection-strip__stat {
     color: var(--pergamino);
     background-color: rgba(92, 64, 40, 0.45);
     border-radius: 2px;
@@ -254,34 +254,34 @@
     color: var(--pergamino);
 }
 
-.ctx-menu-option-label,
-.sublots-popup-row-label {
+.ctx-menu__label,
+.sublots-popup__label {
     color: var(--pergamino);
 }
 
-.ctx-menu-option.ctx-menu-option-selected,
-.ctx-menu-option:hover {
+.ctx-menu__option.ctx-menu__option--selected,
+.ctx-menu__option:hover {
     border-color: rgba(222, 184, 110, 0.85);
     background-color: rgba(176, 138, 70, 0.16);
 }
 
-.sublots-popup-row {
+.sublots-popup__row {
     border-color: rgba(52, 38, 26, 0.9);
 }
 
-.sublots-popup-row:hover {
+.sublots-popup__row:hover {
     border-color: var(--laton-vivo-90);
     background-color: rgba(176, 138, 70, 0.12);
 }
 
-.ctx-menu-widget .unity-base-text-field__input,
-.ctx-menu-widget #unity-text-input {
+.ctx-menu__widget .unity-base-text-field__input,
+.ctx-menu__widget #unity-text-input {
     background-color: rgb(22, 16, 11);
     border-color: var(--laton-70);
     color: var(--pergamino);
 }
 
-.ctx-menu-widget .unity-text-element--inner-input-field {
+.ctx-menu__widget .unity-text-element--inner-input-field {
     color: var(--pergamino);
 }
 
@@ -297,8 +297,7 @@
     border-radius: 2px;
 }
 
-.tooltip Label,
-.tooltip-text {
+.tooltip__text {
     color: rgb(52, 36, 22);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
@@ -306,12 +305,12 @@
 
 /* ---------- Catalogo (herramienta de desarrollo) ---------- */
 
-.catalog-row {
+.catalog__row {
     background-color: rgba(92, 64, 40, 0.55);
     border-color: var(--laton-60);
 }
 
-.catalog-row-label {
+.catalog__row-label {
     color: var(--pergamino);
 }
 
@@ -321,10 +320,10 @@
    respuesta y no se puede sacrificar a la estetica. Solo se apagan un poco para que no
    chirrien contra la madera. */
 
-.hand-buffer-fits      { background-color: rgba(86, 118, 58, 0.28);  border-color: rgba(120, 168, 82, 0.98); }
-.hand-buffer-partial   { background-color: rgba(192, 150, 44, 0.28); border-color: rgba(222, 184, 70, 0.98); }
-.hand-buffer-swap      { background-color: rgba(64, 104, 150, 0.28); border-color: rgba(96, 146, 204, 0.98); }
-.hand-buffer-collision { background-color: rgba(128, 24, 18, 0.28);  border-color: rgba(186, 44, 32, 0.98); }
+.hand-buffer--fits      { background-color: rgba(86, 118, 58, 0.28);  border-color: rgba(120, 168, 82, 0.98); }
+.hand-buffer--partial   { background-color: rgba(192, 150, 44, 0.28); border-color: rgba(222, 184, 70, 0.98); }
+.hand-buffer--swap      { background-color: rgba(64, 104, 150, 0.28); border-color: rgba(96, 146, 204, 0.98); }
+.hand-buffer--collision { background-color: rgba(128, 24, 18, 0.28);  border-color: rgba(186, 44, 32, 0.98); }
 
 
 /* ---------- Mundo: marca de la E en madera y laton ---------- */
@@ -339,44 +338,44 @@
     border-radius: 3px;
 }
 
-.wi-key {
+.wi-prompt__key {
     background-color: var(--laton-vivo);
     color: var(--madera-oscura);
     border-width: 1px;
     border-color: rgb(96, 72, 36);
 }
 
-.wi-action {
+.wi-prompt__action {
     color: var(--pergamino);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
 }
 
-.wi-target {
+.wi-prompt__target {
     color: var(--pergamino-medio);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.wi-more {
+.wi-prompt__more {
     color: var(--pergamino-viejo);
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.wi-hint {
+.wi-prompt__hint {
     color: rgb(196, 120, 96);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.wi-prompt--disabled .wi-action {
+.wi-prompt--disabled .wi-prompt__action {
     color: rgb(120, 110, 100);
 }
 
 
 /* ---------- HUD de barras: marco de hierro con filo de laton ----------
-   El color del relleno vive en PlayerHUDStyle.uss (.staminaBar .fill, .fatigueBar .fill);
+   El color del relleno vive en PlayerHUDStyle.uss (.hud-bar--stamina .hud-bar__fill, .hud-bar--fatigue .hud-bar__fill);
    aqui solo se decora el carril. */
 
-.staminaBar,
-.fatigueBar {
+.hud-bar--stamina,
+.hud-bar--fatigue {
     background-color: var(--hierro-90);
     border-width: 1px;
     border-top-color: var(--laton-90);
@@ -409,7 +408,7 @@
    de fondo (madera) se ve por dentro. */
 
 .main-area,
-.side-panel,
+.side-panels__panel,
 .inspect-panel {
     background-image: url('textures/kenney-borders/Default/Border/panel-border-011.png');
     -unity-background-image-tint-color: var(--laton);
@@ -449,8 +448,8 @@
 
 /* ---------- Pestanas: tablillas de madera ---------- */
 
-.left-tab,
-.panel-slot-tabs-label {
+.left-tabs__tab,
+.panel-slot-tabs__label {
     background-image: url('textures/kenney-rpg/buttonLong_brown.png');
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: stretch-to-fill;
@@ -461,7 +460,7 @@
     border-color: rgba(0, 0, 0, 0);
 }
 
-.left-tab:hover {
+.left-tabs__tab:hover {
     background-color: rgba(0, 0, 0, 0);
     -unity-background-image-tint-color: rgb(230, 210, 180);
 }
@@ -472,7 +471,7 @@
    UXML: el caracter depende de que la fuente tenga ese glifo y no se veia. El texto se
    deja transparente. Con el raton encima el laton se aviva. */
 
-.close-button {
+.title-bar__close {
     background-image: url('textures/kenney-rpg/iconCross_grey.png');
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: scale-to-fit;
@@ -482,7 +481,7 @@
     padding: 0;
 }
 
-.close-button:hover {
+.title-bar__close:hover {
     background-color: rgba(0, 0, 0, 0);
     -unity-background-image-tint-color: rgb(250, 214, 140);
 }
@@ -535,7 +534,7 @@
     border-color: rgba(0, 0, 0, 0);
 }
 
-.wi-key {
+.wi-prompt__key {
     background-image: url('textures/kenney-rpg/buttonSquare_beige.png');
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: stretch-to-fill;
@@ -558,7 +557,7 @@
 
 /* La linea del marco, que nada la pise. */
 .main-area,
-.side-panel,
+.side-panels__panel,
 .inspect-panel {
     padding: 4px;
 }
@@ -575,8 +574,9 @@
     padding-left: 22px;
 }
 
-/* En los paneles laterales la rejilla llega hasta las esquinas de abajo. */
-.side-panel .grid-mount {
+/* En los paneles laterales la rejilla llega hasta las esquinas de abajo. Anidado a
+   proposito (excepcion BEM): la rejilla no sabe en que hueco esta montada. */
+.side-panels__panel .inventory-panel__grid-mount {
     padding-left: 22px;
     padding-right: 22px;
     padding-bottom: 22px;
@@ -584,12 +584,12 @@
 
 
 /* ---------- Mano: el fantasma es la misma ficha de madera que en la rejilla ----------
-   La ficha es el propio fantasma y el icono va en un hijo (.hand-buffer-icon), igual que
+   La ficha es el propio fantasma y el icono va en un hijo (.hand-buffer__icon), igual que
    en una ficha colocada. Lo que cambia es que esta translucida y TENIDA con el color del
    veredicto: el tinte multiplica la madera, asi que se sigue viendo la ficha y a la vez
    se lee verde/amarillo/azul/rojo. El borde conserva el color puro del veredicto.
 
-   Los veredictos van con dos clases (.hand-buffer.hand-buffer-fits) para ganar a la
+   Los veredictos van con dos clases (.hand-buffer.hand-buffer--fits) para ganar a la
    regla de .hand-buffer sin depender del orden. */
 
 .hand-buffer {
@@ -606,21 +606,21 @@
 }
 
 /* El icono, algo apagado: se lleva, no esta colocado. */
-.hand-buffer-icon {
+.hand-buffer__icon {
     -unity-background-image-tint-color: rgba(255, 255, 255, 0.8);
 }
 
-.hand-buffer.hand-buffer-fits      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(170, 225, 140, 0.9); }
-.hand-buffer.hand-buffer-partial   { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 215, 120, 0.9); }
-.hand-buffer.hand-buffer-swap      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(150, 185, 240, 0.9); }
-.hand-buffer.hand-buffer-collision { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 130, 115, 0.9); }
+.hand-buffer.hand-buffer--fits      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(170, 225, 140, 0.9); }
+.hand-buffer.hand-buffer--partial   { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 215, 120, 0.9); }
+.hand-buffer.hand-buffer--swap      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(150, 185, 240, 0.9); }
+.hand-buffer.hand-buffer--collision { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 130, 115, 0.9); }
 
 
 /* ---------- Panel de inspeccion (Inspect/InspectPanel.uxml) ----------
    El marco, la barra de titulo y el aspa le llegan por las mismas reglas que al
    inventario (.inspect-panel esta en las listas de arriba). Aqui solo lo suyo. */
 
-.ip-icon {
+.ip__icon {
     background-color: var(--hueco-fondo);
     border-top-color: var(--hueco-filo);
     border-left-color: var(--hueco-filo);
@@ -629,13 +629,13 @@
     border-radius: 2px;
 }
 
-.ip-name        { color: var(--laton-vivo); }
-.ip-type        { color: var(--pergamino-viejo); letter-spacing: 1px; }
-.ip-description { color: var(--pergamino-medio); -unity-font-style: italic; }
+.ip__name        { color: var(--laton-vivo); }
+.ip__type        { color: var(--pergamino-viejo); letter-spacing: 1px; }
+.ip__description { color: var(--pergamino-medio); -unity-font-style: italic; }
 
 /* Separador: una linea de laton que se desvanece a los lados (divider-fade del paquete
    de marcos, tenido). */
-.ip-divider {
+.ip__divider {
     height: 6px;
     background-color: rgba(0, 0, 0, 0);
     background-image: url('textures/kenney-borders/Default/Divider Fade/divider-fade-000.png');
@@ -643,26 +643,26 @@
     -unity-background-scale-mode: stretch-to-fill;
 }
 
-.ip-stat-row:hover { background-color: rgba(176, 138, 70, 0.08); }
-.ip-stat-key       { color: var(--pergamino-viejo); }
-.ip-stat-value     { color: var(--pergamino); }
+.ip-stat:hover { background-color: rgba(176, 138, 70, 0.08); }
+.ip-stat__key       { color: var(--pergamino-viejo); }
+.ip-stat__value     { color: var(--pergamino); }
 
-.ip-section-label  { color: var(--laton-vivo); letter-spacing: 1px; }
+.ip__section-label  { color: var(--laton-vivo); letter-spacing: 1px; }
 
-.ip-lot-row {
+.ip-lot {
     background-color: rgba(92, 64, 40, 0.35);
     border-bottom-width: 1px;
     border-bottom-color: rgba(176, 138, 70, 0.25);
 }
 
-.ip-lot-name                 { color: var(--pergamino); }
-.ip-lot-amount, .ip-lot-weight { color: var(--pergamino-medio); }
+.ip-lot__name                 { color: var(--pergamino); }
+.ip-lot__amount, .ip-lot__weight { color: var(--pergamino-medio); }
 
-.ip-footer { color: rgb(150, 128, 96); }
+.ip__footer { color: rgb(150, 128, 96); }
 
 /* Holgura: la barra de titulo ya la aparta el bloque de holgura de arriba (.title-bar);
    el cuerpo, fuera de las esquinas de abajo. */
-.ip-body {
+.ip__body {
     padding-bottom: 22px;
 }
 

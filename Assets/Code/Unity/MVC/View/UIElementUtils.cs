@@ -22,7 +22,7 @@ namespace MVC.View
             if (tex != null)
             {
                 element.style.backgroundImage = new StyleBackground(tex);
-                element.AddToClassList("icon-fit");
+                element.AddToClassList("u-icon-fit");
             } 
             else
                 Debug.LogWarning($"No texture found at '{texturePath}'");

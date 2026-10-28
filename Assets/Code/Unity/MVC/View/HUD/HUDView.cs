@@ -38,11 +38,17 @@ namespace MVC.View.HUD
                 return;
             }
 
-            _root = _document.rootVisualElement.Q<VisualElement>("Container");
-            _staminaFill = _root?.Q<VisualElement>("StaminaBar")?.Q<VisualElement>("Fill");
-            _fatigueFill = _root?.Q<VisualElement>("FatigueBar")?.Q<VisualElement>("Fill");
-            _statesBar = _root?.Q<VisualElement>("StatesBar");
+            _root = _document.rootVisualElement.Q<VisualElement>("hud-root");
+            _staminaFill = _root?.Q<VisualElement>("stamina-bar")?.Q<VisualElement>("fill");
+            _fatigueFill = _root?.Q<VisualElement>("fatigue-bar")?.Q<VisualElement>("fill");
+            _statesBar = _root?.Q<VisualElement>("states-bar");
             _statesTooltip = _root?.Q<VisualElement>("states-tooltip");
+
+            // El HUD va por encima del inventario (orden 4 en su PanelSettings) para que el
+            // tooltip de estados se pueda leer con el inventario abierto. Ni la raiz que crea
+            // Unity ni la capa capturan el raton: solo los iconos, asi que el resto de la
+            // pantalla sigue llegando a los paneles de debajo.
+            _document.rootVisualElement.pickingMode = PickingMode.Ignore;
 
             Hide();   // lo abre InputManager segun la camara
         }
@@ -70,7 +76,6 @@ namespace MVC.View.HUD
         {
             string category = _stateClasses[state.Category];
             string stateClass = $"{category}-{state.Level}";
-            _statesTooltip.Clear();
 
             VisualElement previousState = _statesBar.Q<VisualElement>(category);
             VisualElement newState = new VisualElement();
@@ -90,6 +95,14 @@ namespace MVC.View.HUD
                 previousState.AddToClassList(DEFAULT_STATUS_CLASS);
 
                 previousState.name = category; 
+                previousState.userData = description;   // el texto del nivel nuevo
+
+                // Si el tooltip esta abierto sobre este icono, que cambie con el nivel.
+                if (_statesTooltip.resolvedStyle.display == DisplayStyle.Flex)
+                {
+                    _statesTooltip.Clear();
+                    _statesTooltip.Add(TooltipText(description));
+                }
                 if (shake)
                     UIElementUtils.Shake(previousState);
             }
@@ -104,7 +117,7 @@ namespace MVC.View.HUD
                 newState.RegisterCallback<PointerEnterEvent>(_ =>
                 {
                     _statesTooltip.Clear();
-                    _statesTooltip.Add(new Label((string)newState.userData));
+                    _statesTooltip.Add(TooltipText((string)newState.userData));
                     UIElementUtils.PlaceNextTo(_statesTooltip, newState, _root, Side.Left);
                 });
 
@@ -115,9 +128,18 @@ namespace MVC.View.HUD
                 
             }  
 
-            _statesTooltip.Add(new Label (description)); 
 
             
+        }
+
+        /// <summary>
+        /// Texto del tooltip con su clase BEM: el tema lo estiliza por clase, no por tipo.
+        /// </summary>
+        private static Label TooltipText(string text)
+        {
+            Label label = new Label(text);
+            label.AddToClassList("tooltip__text");
+            return label;
         }
 
         

@@ -3,24 +3,33 @@ VisualElement {
 
 /* Contenedor del HUD: ocupa la pantalla para que lo que se ancle a sus bordes (la futura
    columna de estados) tenga referencia. La vista lo oculta y lo muestra con display. */
-.hudContainer {
+.hud {
     flex-grow: 1;
     flex-direction: row;
 }
 
-.barsContainer {
+.hud__bars {
     flex-direction: column;
     
     flex-grow: 1;
 }
 
-.statesBar {
+.hud__states {
     flex-direction: column;
+}
+
+/* Tooltip de los estados. Fuera del flujo: dentro de la fila del HUD empujaba la columna
+   de estados, el icono salia de debajo del cursor y el tooltip parpadeaba. Oculto hasta que
+   la vista lo coloca (PlaceNextTo). El aspecto lo pone el tema con .tooltip; esta hoja no
+   carga InventoryWindow.uss, que es donde vive la base del tooltip del inventario. */
+.hud__tooltip {
+    position: absolute;
+    display: none;
 }
 
 /* Relleno de una barra: tapa el carril entero y la vista solo cambia su ancho. El color
    va aqui y no en linea en el UXML, para que un tema pueda cambiarlo. */
-.fill {
+.hud-bar__fill {
     position: absolute;
     top: 0;
     left: 0;
@@ -28,15 +37,15 @@ VisualElement {
     height: 100%;
 }
 
-.fatigueBar .fill {
+.hud-bar--fatigue .hud-bar__fill {
     background-color: rgb(200, 255, 0);
 }
 
-.staminaBar .fill {
+.hud-bar--stamina .hud-bar__fill {
     background-color: rgb(250, 255, 81);
 }
 
-.staminaBar {
+.hud-bar--stamina {
     width: 300px;
     height: 18px;
     margin-top: 3px;
@@ -46,7 +55,7 @@ VisualElement {
     background-color: rgba(0, 0, 0, 0.86);
 }
 
-.fatigueBar {
+.hud-bar--fatigue {
     width: 450px;
     height: 18px;
     margin-top: 25px;

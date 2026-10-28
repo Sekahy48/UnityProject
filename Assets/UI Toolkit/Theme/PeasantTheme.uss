@@ -49,7 +49,7 @@
 /* ---------- Ventanas: arpillera con filo de cuerda ---------- */
 
 .main-area,
-.side-panel {
+.side-panels__panel {
     background-image: url('textures/generated/burlap.png');
     background-repeat: repeat;
     background-size: 96px 96px;
@@ -74,20 +74,20 @@
     border-top-right-radius: 2px;
 }
 
-.title-label {
+.title-bar__label {
     color: var(--hollin);
     letter-spacing: 1px;
 }
 
-.left-panel {
+.player-panels__left {
     border-color: var(--hierro-forjado-60);
 }
 
 
 /* ---------- Pestanas: tablillas de madera clara ---------- */
 
-.left-tab,
-.panel-slot-tabs-label {
+.left-tabs__tab,
+.panel-slot-tabs__label {
     background-image: url('textures/kenney-rpg/buttonLong_beige.png');
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: stretch-to-fill;
@@ -100,15 +100,15 @@
     -unity-text-align: middle-center;
 }
 
-.left-tab:hover,
-.panel-slot-tabs-label:hover {
+.left-tabs__tab:hover,
+.panel-slot-tabs__label:hover {
     -unity-background-image-tint-color: rgb(255, 240, 200);
 }
 
 
 /* ---------- Botones ---------- */
 
-.close-button {
+.title-bar__close {
     background-image: url('textures/kenney-rpg/buttonRound_brown.png');
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: scale-to-fit;
@@ -117,12 +117,12 @@
     border-radius: 10px;
 }
 
-.close-button:hover {
+.title-bar__close:hover {
     background-color: rgba(0, 0, 0, 0);
     -unity-background-image-tint-color: rgb(220, 120, 70);
 }
 
-.dev-button {
+.title-bar__dev-button {
     background-color: rgba(46, 34, 24, 0.35);
     color: var(--hollin);
 }
@@ -130,7 +130,7 @@
 
 /* ---------- Rejilla y equipo: huecos de tierra apisonada ---------- */
 
-.inventory-grid-cell,
+.inventory-grid__cell,
 .equip-slot {
     background-color: var(--tierra-90);
     border-top-color: var(--hueco-filo);
@@ -171,17 +171,17 @@
     background-color: var(--hierro-forjado);
 }
 
-.load-normal   { background-color: rgba(104, 132, 64, 0.98); }  /* hoja de col */
-.load-extra    { background-color: rgba(206, 170, 70, 0.98); }  /* paja */
-.load-over     { background-color: rgba(176, 100, 44, 0.98); }  /* barro rojo */
-.load-immobile { background-color: rgba(128, 36, 26, 0.98); }   /* remolacha */
+.weight-rail__bar--normal   { background-color: rgba(104, 132, 64, 0.98); }  /* hoja de col */
+.weight-rail__bar--extra    { background-color: rgba(206, 170, 70, 0.98); }  /* paja */
+.weight-rail__bar--over     { background-color: rgba(176, 100, 44, 0.98); }  /* barro rojo */
+.weight-rail__bar--immobile { background-color: rgba(128, 36, 26, 0.98); }   /* remolacha */
 
-.load-normal-label   { color: var(--lino); }
-.load-extra-label    { color: var(--hollin); }
-.load-over-label     { color: var(--lino); }
-.load-immobile-label { color: var(--lino); }
+.weight-rail__label--normal   { color: var(--lino); }
+.weight-rail__label--extra    { color: var(--hollin); }
+.weight-rail__label--over     { color: var(--lino); }
+.weight-rail__label--immobile { color: var(--lino); }
 
-.weight-label-note {
+.weight-rail__label--note {
     color: var(--paja);
 }
 
@@ -193,15 +193,15 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
-.inspect-name {
+.inspection-strip__name {
     color: var(--paja);
 }
 
-.inspect-description {
+.inspection-strip__description {
     color: var(--lino);
 }
 
-.inspect-stat {
+.inspection-strip__stat {
     color: var(--hollin);
     background-color: rgba(222, 196, 120, 0.75);
     border-radius: 2px;
@@ -228,34 +228,34 @@
     color: var(--hollin);
 }
 
-.ctx-menu-option-label,
-.sublots-popup-row-label {
+.ctx-menu__label,
+.sublots-popup__label {
     color: var(--hollin);
 }
 
-.ctx-menu-option.ctx-menu-option-selected,
-.ctx-menu-option:hover {
+.ctx-menu__option.ctx-menu__option--selected,
+.ctx-menu__option:hover {
     border-color: var(--cuerda-80);
     background-color: rgba(120, 90, 50, 0.18);
 }
 
-.sublots-popup-row {
+.sublots-popup__row {
     border-color: rgba(0, 0, 0, 0);
 }
 
-.sublots-popup-row:hover {
+.sublots-popup__row:hover {
     border-color: var(--cuerda-80);
     background-color: rgba(120, 90, 50, 0.14);
 }
 
-.ctx-menu-widget .unity-base-text-field__input,
-.ctx-menu-widget #unity-text-input {
+.ctx-menu__widget .unity-base-text-field__input,
+.ctx-menu__widget #unity-text-input {
     background-color: var(--lino);
     border-color: var(--cuerda-80);
     color: var(--hollin);
 }
 
-.ctx-menu-widget .unity-text-element--inner-input-field {
+.ctx-menu__widget .unity-text-element--inner-input-field {
     color: var(--hollin);
 }
 
@@ -273,8 +273,7 @@
     border-color: rgba(0, 0, 0, 0);
 }
 
-.tooltip Label,
-.tooltip-text {
+.tooltip__text {
     color: var(--hollin);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
@@ -282,12 +281,12 @@
 
 /* ---------- Catalogo (desarrollo) ---------- */
 
-.catalog-row {
+.catalog__row {
     background-color: rgba(222, 196, 120, 0.3);
     border-color: var(--hierro-forjado-60);
 }
 
-.catalog-row-label {
+.catalog__row-label {
     color: var(--lino);
 }
 
@@ -307,19 +306,19 @@
     opacity: 0.85;
 }
 
-.hand-buffer-icon {
+.hand-buffer__icon {
     -unity-background-image-tint-color: rgba(255, 255, 255, 0.8);
 }
 
-.hand-buffer-fits      { border-color: rgba(104, 150, 64, 0.98); }
-.hand-buffer-partial   { border-color: rgba(214, 176, 60, 0.98); }
-.hand-buffer-swap      { border-color: rgba(80, 124, 176, 0.98); }
-.hand-buffer-collision { border-color: rgba(170, 50, 34, 0.98); }
+.hand-buffer--fits      { border-color: rgba(104, 150, 64, 0.98); }
+.hand-buffer--partial   { border-color: rgba(214, 176, 60, 0.98); }
+.hand-buffer--swap      { border-color: rgba(80, 124, 176, 0.98); }
+.hand-buffer--collision { border-color: rgba(170, 50, 34, 0.98); }
 
-.hand-buffer.hand-buffer-fits      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(170, 225, 140, 0.9); }
-.hand-buffer.hand-buffer-partial   { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(245, 220, 120, 0.9); }
-.hand-buffer.hand-buffer-swap      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(150, 185, 240, 0.9); }
-.hand-buffer.hand-buffer-collision { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 130, 115, 0.9); }
+.hand-buffer.hand-buffer--fits      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(170, 225, 140, 0.9); }
+.hand-buffer.hand-buffer--partial   { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(245, 220, 120, 0.9); }
+.hand-buffer.hand-buffer--swap      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(150, 185, 240, 0.9); }
+.hand-buffer.hand-buffer--collision { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 130, 115, 0.9); }
 
 
 /* ---------- Mundo: la E en una tablilla, punto de mira como cabeza de clavo ---------- */
@@ -335,7 +334,7 @@
     border-color: rgba(0, 0, 0, 0);
 }
 
-.wi-key {
+.wi-prompt__key {
     background-image: url('textures/kenney-rpg/buttonSquare_brown.png');
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: stretch-to-fill;
@@ -347,27 +346,27 @@
     color: var(--lino);
 }
 
-.wi-action {
+.wi-prompt__action {
     color: var(--hollin);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
 }
 
-.wi-target {
+.wi-prompt__target {
     color: rgb(80, 62, 44);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.wi-more {
+.wi-prompt__more {
     color: rgb(110, 88, 60);
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.wi-hint {
+.wi-prompt__hint {
     color: rgb(140, 60, 32);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.wi-prompt--disabled .wi-action {
+.wi-prompt--disabled .wi-prompt__action {
     color: rgb(130, 120, 108);
 }
 
@@ -378,7 +377,7 @@
     background-color: rgba(120, 112, 100, 0.6);
 }
 
-.wi-reticle-core {
+.wi-reticle__core {
     border-radius: 2px;
     background-color: rgba(220, 212, 196, 0.7);
 }
@@ -391,8 +390,8 @@
 
 /* ---------- HUD de barras: carril de hierro con filo de paja ---------- */
 
-.staminaBar,
-.fatigueBar {
+.hud-bar--stamina,
+.hud-bar--fatigue {
     background-color: rgba(44, 40, 36, 0.9);
     border-width: 1px;
     border-top-color: rgba(222, 196, 120, 0.8);

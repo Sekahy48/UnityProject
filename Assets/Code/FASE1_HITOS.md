@@ -1214,7 +1214,7 @@ Hand added notes (by me by hand):
   accion deberia poder declarar sus hijos. `RadialOption` ya lleva `HasChildren`; lo que
   falta es que el presenter no los decida por accion a mano. `CountPickable` tendria que
   aceptar el inventario destino para que la cantidad de cada hijo sea la suya.
-- [ ] **Clases USS a BEM.** Hoy conviven tres estilos (contados el 2026-10-03): ~143 clases en
+- [x] **Clases USS a BEM.** Hecho el 2026-10-28 en la rama `bem` (Claude; Sergio ya domina la notación, así que dejó de tener sentido reservárselo). 98 clases renombradas en UXML, USS, temas y vistas C#; utilitarias con prefijo `u-`; `name` del HUD a kebab-case; anidados aplanados salvo las excepciones permitidas. Corrige de paso el `Q("title-bar-panel")` roto de `InventoryPanelView`. Tabla completa, excepciones y restos muertos en `BEM_RENOMBRES.md`. Pendiente: probarlo en Unity con los dos temas y fusionar. Contexto original: hoy conviven tres estilos (contados el 2026-10-03): ~143 clases en
   kebab-case con guion simple (`inventory-grid-cell`, `ctx-menu-option-selected`, donde el
   estado va con un guion normal), 13 en BEM (`radial-option--disabled`,
   `radial-option__more`, `wi-reticle--active`: radial y marca de la E) y ~8 en camelCase

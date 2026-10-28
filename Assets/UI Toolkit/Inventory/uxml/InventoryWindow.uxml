@@ -11,11 +11,11 @@
     <ui:VisualElement name="inventory-root" class="inventory-root">
 
         <!-- Tabs de eleccion -->
-        <ui:VisualElement name="left-tabs-bar" class="left-tabs-bar">
-            <ui:VisualElement name="equipment-tab" class="left-tab equipment-related">
+        <ui:VisualElement name="left-tabs-bar" class="left-tabs">
+            <ui:VisualElement name="equipment-tab" class="left-tabs__tab equipment-related">
             
             </ui:VisualElement>
-            <ui:VisualElement name="health-tab" class="left-tab health-related">
+            <ui:VisualElement name="health-tab" class="left-tabs__tab health-related">
             
             </ui:VisualElement>
         </ui:VisualElement>
@@ -25,59 +25,59 @@
 
             <!-- Barra de título para drag -->
             <ui:VisualElement name="title-bar" class="title-bar">
-                <ui:Label name="title-label" text="Inventario" class="title-label"/>
-                <ui:Button name="dev-catalog-button" text="DEV: Items Catalog" class="dev-button"/>
-                <ui:Button name="close-button" text="✕" class="close-button"/>
+                <ui:Label name="title-label" text="Inventario" class="title-bar__label"/>
+                <ui:Button name="dev-catalog-button" text="DEV: Items Catalog" class="title-bar__dev-button"/>
+                <ui:Button name="close-button" text="✕" class="title-bar__close"/>
             </ui:VisualElement>
             
 
             
 
-            <ui:VisualElement name="content-area" class="content-area">
+            <ui:VisualElement name="content-area" class="main-area__content">
                 <!-- Zona principal -->
                 <ui:VisualElement name="player-panels" class="player-panels">
                     <!-- Panel personal: equipment + health placeholder -->
-                    <ui:VisualElement name="left-panel" class="left-panel">
-                        <ui:VisualElement name="health-panel" class="internal-personal-panel health-related">
+                    <ui:VisualElement name="left-panel" class="player-panels__left">
+                        <ui:VisualElement name="health-panel" class="player-panels__section health-related">
                             <ui:VisualElement name="health-placeholder" class="health-placeholder">
                                 <ui:Label text="Health" class="section-label"/>
                             </ui:VisualElement>
                         </ui:VisualElement>
 
-                        <ui:VisualElement name="equipment-panel" class="internal-personal-panel equipment-panel equipment-related">
-                            <ui:VisualElement name="equipment-cross" class="equipment-cross">
+                        <ui:VisualElement name="equipment-panel" class="player-panels__section equipment-panel equipment-related">
+                            <ui:VisualElement name="equipment-cross" class="equipment-panel__cross">
                                 <!-- Cruz -->
-                                <ui:VisualElement class="equip-row">
-                                    <ui:VisualElement class="equip-spacer"/>
+                                <ui:VisualElement class="equipment-panel__row">
+                                    <ui:VisualElement class="equipment-panel__spacer"/>
                                     <ui:VisualElement name="slot-head" class="equip-slot"/>
-                                    <ui:VisualElement class="equip-spacer"/>
+                                    <ui:VisualElement class="equipment-panel__spacer"/>
                                 </ui:VisualElement>
-                                <ui:VisualElement class="equip-row">
+                                <ui:VisualElement class="equipment-panel__row">
                                     <ui:VisualElement name="slot-righthand" class="equip-slot"/>
                                     <ui:VisualElement name="slot-chest" class="equip-slot"/>
                                     <ui:VisualElement name="slot-lefthand" class="equip-slot"/>
                                 </ui:VisualElement>
-                                <ui:VisualElement class="equip-row">
-                                    <ui:VisualElement class="equip-spacer"/>
+                                <ui:VisualElement class="equipment-panel__row">
+                                    <ui:VisualElement class="equipment-panel__spacer"/>
                                     <ui:VisualElement name="slot-legs" class="equip-slot"/>
-                                    <ui:VisualElement class="equip-spacer"/>
+                                    <ui:VisualElement class="equipment-panel__spacer"/>
                                 </ui:VisualElement>
-                                <ui:VisualElement class="equip-row">
-                                    <ui:VisualElement class="equip-spacer"/>
+                                <ui:VisualElement class="equipment-panel__row">
+                                    <ui:VisualElement class="equipment-panel__spacer"/>
                                     <ui:VisualElement name="slot-feet" class="equip-slot"/>
-                                    <ui:VisualElement class="equip-spacer"/>
+                                    <ui:VisualElement class="equipment-panel__spacer"/>
                                 </ui:VisualElement>
                             </ui:VisualElement>
 
                             <!-- Columna lateral -->
-                            <ui:VisualElement class="equip-side">
+                            <ui:VisualElement class="equipment-panel__side">
                                 <ui:VisualElement name="slot-back" class="equip-slot"/>
                                 <ui:VisualElement name="slot-hip" class="equip-slot"/>
                             </ui:VisualElement>
                         </ui:VisualElement>
                     </ui:VisualElement>
 
-                    <ui:VisualElement name="rightside-container" class="rightside-container">
+                    <ui:VisualElement name="rightside-container" class="player-panels__right">
                         <ui:VisualElement name="panel-slot-tabs" class="panel-slot-tabs"/>
                         <!-- Hueco de la rejilla del jugador. Contenedor VACIO a proposito: la
                             sub-vista de panel hace Clear() sobre el antes de clonar su plantilla,
@@ -89,14 +89,14 @@
 
                 <!-- Franja inferior: info del item seleccionado -->
                 <ui:VisualElement name="inspection-strip" class="inspection-strip">
-                    <ui:VisualElement name="inspect-icon" class="inspect-icon"/>
-                    <ui:VisualElement name="inspect-info" class="inspect-info">
-                        <ui:Label name="inspect-name" class="inspect-name"/>
+                    <ui:VisualElement name="inspect-icon" class="inspection-strip__icon"/>
+                    <ui:VisualElement name="inspect-info" class="inspection-strip__info">
+                        <ui:Label name="inspect-name" class="inspection-strip__name"/>
                         <ui:ScrollView name="inspect-description-scroll">
-                            <ui:Label name="inspect-description" class="inspect-description"/>
+                            <ui:Label name="inspect-description" class="inspection-strip__description"/>
                         </ui:ScrollView>
                     </ui:VisualElement>
-                    <ui:VisualElement name="inspect-stats" class="inspect-stats">
+                    <ui:VisualElement name="inspect-stats" class="inspection-strip__stats">
                         <ui:Label name="inspect-weight-total"/>
                         <ui:Label name="inspect-weight-unit"/>
                         <ui:Label name="inspect-durability"/>
@@ -117,18 +117,18 @@
     <!-- Hueco lateral A: puede alojar el catalogo de desarrollo o, desde M6, un
          contenedor externo (arcon, carro, NPC). Cada contenido es UN solo hijo,
          para que alternarlos o trasplantarlos a otro hueco sea trivial. -->
-        <ui:VisualElement name="side-panel-a" class="side-panel">
+        <ui:VisualElement name="side-panel-a" class="side-panels__panel">
 
-            <ui:VisualElement name="item-catalog" class="panel-content">
+            <ui:VisualElement name="item-catalog" class="side-panels__content catalog">
 
                 <ui:VisualElement name="catalog-title-bar" class="title-bar">
-                    <ui:Label text="Items Catalog" class="title-label"/>
-                    <ui:Button name="catalog-close-button" text="✕" class="close-button"/>
+                    <ui:Label text="Items Catalog" class="title-bar__label"/>
+                    <ui:Button name="catalog-close-button" text="✕" class="title-bar__close"/>
                 </ui:VisualElement>
 
-                <ui:TextField name="catalog-search" class="catalog-search"/>
+                <ui:TextField name="catalog-search" class="catalog__search"/>
 
-                <ui:ScrollView name="catalog-scroll" class="catalog-scroll"/>
+                <ui:ScrollView name="catalog-scroll" class="catalog__scroll"/>
 
             </ui:VisualElement>
 
@@ -138,7 +138,7 @@
 
         <!-- Hueco lateral B: vacio hasta M6. Permite transferir entre dos contenedores
             externos sin pasar por el inventario del jugador. -->
-        <ui:VisualElement name="side-panel-b" class="side-panel">
+        <ui:VisualElement name="side-panel-b" class="side-panels__panel">
             <ui:VisualElement name="side-panel-b-slot" class="panel-slot"/>
         </ui:VisualElement>
     </ui:VisualElement>

@@ -44,7 +44,7 @@
     justify-content: center;
 }
 
-.side-panel {
+.side-panels__panel {
     /* Reparto del alto entre las bandas abiertas. La proporcion importa: para que la
        anchura no sea el cuello de botella de la celda, ancho/alto debe ser >= cols/filas
        (1.5 con una rejilla 6x4). */
@@ -67,17 +67,17 @@
 /* ===== Items Catalog ===== */
 /* Contenido de un hueco lateral. Llena el hueco sin asumir su tamano, para que
    pueda trasplantarse a otro o convivir alternandose con otro contenido. */
-.panel-content {
+.side-panels__content {
     flex-grow: 1;
     flex-direction: column;
 }
 
-.catalog-search {
+.catalog__search {
     margin: 6px;
     flex-shrink: 0;
 }
 
-.catalog-scroll {
+.catalog__scroll {
     flex-grow: 1;
 }
 
@@ -93,14 +93,14 @@
     cursor: move;
 }
 
-.title-label {
+.title-bar__label {
     flex-grow: 1;
     color: rgba(200, 200, 200, 1);
     font-size: 18px; 
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.catalog-row {
+.catalog__row {
     flex-direction: row;
     height: 60px;
     margin: 2px;
@@ -110,26 +110,26 @@
     border-color: rgba(90, 46, 5, 0.75); 
 }
 
-.catalog-row-label {
+.catalog__row-label {
     flex-grow: 1;
     flex-shrink: 1;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.row-amount {
+.catalog__amount {
     width: 50px;
     flex-shrink: 0;
 }
 
-.add-button {
+.catalog__add-button {
     margin: 10px;
 }
  
 
 /* Herramienta de desarrollo: abre/cierra el catalogo de items.
    Quitar (o esconder tras un flag de build) antes de publicar. */
-.dev-button {
+.title-bar__dev-button {
     height: 20px;
     margin-right: 6px;
     padding-left: 8px;
@@ -144,7 +144,7 @@
 
 
 /* -------------------- */
-.close-button {
+.title-bar__close {
     width: 20px;
     height: 20px;
     background-color: rgba(180, 50, 50, 0.8);
@@ -165,7 +165,7 @@
     border-color: rgba(80, 80, 80, 0.8);
 }
 
-.content-area {
+.main-area__content {
     flex-direction: column;
     flex-grow: 1;
 }
@@ -180,7 +180,7 @@
 /* Ancho fijo, no derivado del contenido: al cambiar de pestana, el panel de salud
    solo tiene una imagen de fondo (que no aporta tamano intrinseco) y el panel
    colapsaria, haciendo saltar el ancho de toda la ventana. */
-.left-panel {
+.player-panels__left {
     flex-grow: 0;
     flex-shrink: 0;
     width: 300px;
@@ -201,13 +201,13 @@
 
 /* ===== Left tabs ===== */
 
-.left-tabs-bar{
+.left-tabs{
     flex-direction: column; 
     width: 48px;
     padding-top: 32px;
 }
 
-.left-tab {
+.left-tabs__tab {
     width: 48px;
     height: 40px;
     background-color: rgba(20, 20, 20, 0.95);
@@ -238,7 +238,7 @@
     font-size: 11px;
 }
 
-.internal-personal-panel {
+.player-panels__section {
     flex-grow: 1;
 }
  
@@ -246,7 +246,7 @@
 
 /* Ocupa el hueco bajo la stats-bar y centra la grid en horizontal
    (align-items actua sobre el eje cruzado: flex-direction es column por defecto). */
-.grid-mount {
+.inventory-panel__grid-mount {
     flex-grow: 1;
     width: 100%;    
     align-items: center;
@@ -266,7 +266,7 @@
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
 }
 
-.inspect-icon { 
+.inspection-strip__icon { 
     width: 70px;
     height: 100%;
     border-width: 1px;
@@ -276,35 +276,35 @@
     flex-shrink: 0;
 }
 
-.inspect-info {
+.inspection-strip__info {
     flex-grow: 1;
     padding-left: 10px;
     flex-direction: column;
     justify-content: center;
 }
 
-.inspect-name {
+.inspection-strip__name {
     font-size: 18px;
     color: rgba(220, 220, 220, 1);
     -unity-font-style: bold; 
     -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
 }
 
-.inspect-description {
+.inspection-strip__description {
     font-size: 16px;
     color: rgba(160, 160, 160, 1);
     margin-top: 4px;
     white-space: normal;
 }
 
-.inspect-stats {
+.inspection-strip__stats {
     width: 25%;
     flex-direction: column;
     justify-content: center;
     padding-right: 8px;
 }
 
-.inspect-stat { 
+.inspection-strip__stat { 
     font-size: 14px;
     color: rgba(180, 180, 180, 1);
     margin-bottom: 2px;  
@@ -320,13 +320,13 @@
     flex-direction: column;
 }
 
-.inventory-grid-row {
+.inventory-grid__row {
     flex-direction: row;
     flex-grow: 1;
     flex-shrink: 0;
 }
 
-.inventory-grid-cell {
+.inventory-grid__cell {
     flex-grow: 1;
     flex-basis: 0;
     border-width: 2px;
@@ -345,52 +345,52 @@
     align-items: center;
 }
 
-.weight-bar{
+.weight-rail__bar{
     position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
 }
 
-.load-normal{
+.weight-rail__bar--normal{
     background-color: rgba(62, 141, 75, 0.98);
 }
 
-.load-extra{
+.weight-rail__bar--extra{
     background-color: rgba(204, 207, 14, 0.98); 
 }
 
-.load-over{
+.weight-rail__bar--over{
     background-color: rgba(214, 117, 37, 0.98); 
 }
 
-.load-immobile{
+.weight-rail__bar--immobile{
     background-color: rgba(163, 8, 8, 0.98);
 }
 
-.load-normal-label{
+.weight-rail__label--normal{
     color: rgb(255, 255, 255);
 }
 
-.load-extra-label{
+.weight-rail__label--extra{
     color: rgb(12, 11, 11);
 }
 
-.load-over-label{
+.weight-rail__label--over{
     color: rgb(7, 21, 85);
 }
 
-.load-immobile-label{
+.weight-rail__label--immobile{
     color: rgb(124, 231, 124);
 }
 
 /* La etiqueta esta explicando por que no cabe, no reportando carga. Ambar para que se
    distinga de las bandas de peso, que ocupan la misma etiqueta. */
-.weight-label-note {
+.weight-rail__label--note {
     color: rgba(204, 207, 14, 0.95);
 } 
 
-.weight-label {
+.weight-rail__label {
     font-size: 15px;
     -unity-text-align: middle-center;
     -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
@@ -445,16 +445,16 @@
     padding: 8px;
 }
 
-.equipment-cross {
+.equipment-panel__cross {
     flex-direction: column;
     padding: 8px;
 }
 
-.equip-side {
+.equipment-panel__side {
     flex-direction: column;
     padding: 8px;
 }
-.equip-row {
+.equipment-panel__row {
     flex-direction: row;   
 }
 
@@ -467,7 +467,7 @@
     background-color: rgba(40, 40, 40, 0.8);
 }
 
-.equip-spacer {
+.equipment-panel__spacer {
     width: 60px;
     height: 60px; 
     margin: 1px;
@@ -484,7 +484,7 @@
     border-radius: 4px;
 }
 
-.layers-button {
+.equip-slot__layers-button {
     position: absolute;
     bottom: 2px;
     right: 2px;
@@ -496,12 +496,12 @@
 }
 
 /* ===== Fonts ===== */
-.alegreyaSansSC {
+.u-font-alegreya {
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
 }
 
 /* ===== Colors =====*/
-.beigeColor {
+.u-color-beige {
     color: rgb(207, 185, 151);
 }
 /* ===== Independient ===== */
@@ -513,7 +513,7 @@
     display: none;  
 }
 
-.tooltip-text {
+.tooltip__text {
     max-width: 280px;
     white-space: normal;
 }
@@ -532,45 +532,45 @@
     transition-duration: 60ms, 60ms, 60ms, 60ms;
 }
 
-.hand-buffer-instant {
+.hand-buffer--instant {
     transition-duration: 0s;
 }
 
 
-/* Sobre celda ocupada: no cabe. Mismo rojo que .load-immobile. */
-.hand-buffer-collision {
+/* Sobre celda ocupada: no cabe. Mismo rojo que .weight-rail__bar--immobile. */
+.hand-buffer--collision {
     background-color: rgba(163, 8, 8, 0.25);
     border-color: rgba(163, 8, 8, 0.98);
 }
 
-/* Hueco valido, o stack compatible con sitio. Mismo verde que .load-normal. */
-.hand-buffer-fits {
+/* Hueco valido, o stack compatible con sitio. Mismo verde que .weight-rail__bar--normal. */
+.hand-buffer--fits {
     background-color: rgba(62, 141, 75, 0.25);
     border-color: rgba(62, 141, 75, 0.98);
 }
 
-/* Entra parte de lo que se lleva; el resto se queda en la mano. Mismo amarillo que .load-extra. */
-.hand-buffer-partial {
+/* Entra parte de lo que se lleva; el resto se queda en la mano. Mismo amarillo que .weight-rail__bar--extra. */
+.hand-buffer--partial {
     background-color: rgba(204, 207, 14, 0.25);
     border-color: rgba(204, 207, 14, 0.98);
 }
 
 /* No cabe, pero se pueden intercambiar las celdas: lo que llevas aqui y lo de aqui a tu hueco. */
-.hand-buffer-swap {
+.hand-buffer--swap {
     background-color: rgba(37, 116, 214, 0.25);
     border-color: rgba(37, 116, 214, 0.98);
 }
 
 
-.icon-fit {
+.u-icon-fit {
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.item-block-grabbed {
+.item-block--grabbed {
     opacity: 0.35;
 }
 
-.rightside-container {
+.player-panels__right {
     flex-direction: column;
     flex-grow: 1;
 }
@@ -586,7 +586,7 @@
     flex-direction: row;
 }
 
-.panel-slot-tabs-label {
+.panel-slot-tabs__label {
     height: 20px;
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset'); 
     
@@ -605,36 +605,36 @@
     color: rgb(255, 255, 255);
 }
 
-.ctx-menu-option{
+.ctx-menu__option{
     flex-direction: row;
     justify-content: space-between;
 }
 
-.ctx-menu-option.ctx-menu-option-selected, .ctx-menu-option:hover{
+.ctx-menu__option.ctx-menu__option--selected, .ctx-menu__option:hover{
     border-color: rgba(141, 122, 75, 0.85);
     background-color: rgba(255, 245, 220, 0.08);
 }
 
 
-.ctx-menu-option-label{
+.ctx-menu__label{
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
     text-decoration: underline;
 }
 
 
-.ctx-submenu {
+.ctx-menu--submenu {
     position: absolute;
     left: 100%;
     top: 50%;
     translate: 0 -50%;
 }
 
-.ctx-submenu--flipped {
+.ctx-menu--flipped {
     left: auto;
     right: 100%;
 }
 
-.ctx-menu-widget {
+.ctx-menu__widget {
     flex-grow: 0;
     flex-shrink: 0;
     width: 45px;
@@ -643,7 +643,7 @@
 }
  
 
-.ctx-menu-widget .unity-base-text-field__input {
+.ctx-menu__widget .unity-base-text-field__input {
     background-color: rgb(22, 21, 21);
     border-color: rgba(54, 56, 54, 0.75);
     border-width: 1px;
@@ -653,7 +653,7 @@
     margin: 0;
 }
 
-.ctx-menu-widget #unity-text-input {
+.ctx-menu__widget #unity-text-input {
     flex-grow: 1;
     height: 100%;
     min-height: 0;
@@ -667,7 +667,7 @@
     -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset');
 }
 
-.ctx-menu-widget .unity-text-element--inner-input-field {
+.ctx-menu__widget .unity-text-element--inner-input-field {
     margin: 0;
     padding: 0;
     color: rgb(255, 255, 255);
@@ -685,7 +685,7 @@
     color: rgb(255, 255, 255);
 }
 
-.sublots-popup-row {
+.sublots-popup__row {
     flex-direction: row;
     height: 30px;
     justify-content: space-between;
@@ -693,12 +693,12 @@
     border-color: rgba(54, 56, 54, 0.75); 
 }
 
-.sublots-popup-row:hover {
+.sublots-popup__row:hover {
     border-color: rgb(250, 255, 250); 
     
 }
 
-.sublots-popup-row-label {
+.sublots-popup__label {
     -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 

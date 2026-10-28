@@ -270,24 +270,24 @@ namespace MVC.View.World
         private static VisualElement BuildLotRow(ItemDisplayData lot)
         {
             VisualElement row = new VisualElement();
-            row.AddToClassList("ip-lot-row");
+            row.AddToClassList("ip-lot");
 
             VisualElement icon = new VisualElement();
-            icon.AddToClassList("ip-lot-icon");
+            icon.AddToClassList("ip-lot__icon");
             UIElementUtils.SetBackgroundTexture(icon, lot.IconPath);
             row.Add(icon);
 
             // La variante se distingue por su estado: nombre + durabilidad.
             Label name = new Label($"{lot.Name} ({lot.Durability:0} %)");
-            name.AddToClassList("ip-lot-name");
+            name.AddToClassList("ip-lot__name");
             row.Add(name);
 
             Label amount = new Label($"x{lot.Amount}");
-            amount.AddToClassList("ip-lot-amount");
+            amount.AddToClassList("ip-lot__amount");
             row.Add(amount);
 
             Label weight = new Label($"{lot.TotalWeight:F1} kg");
-            weight.AddToClassList("ip-lot-weight");
+            weight.AddToClassList("ip-lot__weight");
             row.Add(weight);
 
             return row;

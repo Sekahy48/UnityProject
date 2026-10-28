@@ -21,7 +21,7 @@
 
 /* Mismas medidas que la barra de titulo del inventario (InventoryWindow.uss no se carga
    aqui, asi que se repiten las que importan). */
-.ip-title-bar {
+.ip__title-bar {
     height: 32px;
     flex-shrink: 0;
     flex-direction: row;
@@ -31,21 +31,22 @@
     background-color: rgba(40, 40, 40, 1);
 }
 
-.ip-title-bar .title-label {
+/* Doble clase en el mismo elemento (no anidado) para ganar al tema, como antes. */
+.title-bar__label.ip__title {
     flex-grow: 1;
     font-size: 18px;
     color: rgba(200, 200, 200, 1);
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.ip-close {
+.ip__close {
     width: 20px;
     height: 20px;
     border-width: 0;
     font-size: 11px;
 }
 
-.ip-body {
+.ip__body {
     flex-direction: column;
     flex-shrink: 1;
     padding: 12px 16px 10px 16px;
@@ -53,11 +54,11 @@
 
 /* ---------- Cabecera: icono grande + quien es ---------- */
 
-.ip-header {
+.ip__header {
     flex-direction: row;
 }
 
-.ip-icon {
+.ip__icon {
     width: 96px;
     height: 96px;
     flex-shrink: 0;
@@ -68,35 +69,35 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.ip-identity {
+.ip__identity {
     flex-grow: 1;
     flex-shrink: 1;
     padding-left: 12px;
     justify-content: center;
 }
 
-.ip-name {
+.ip__name {
     font-size: 22px;
     -unity-font-style: bold;
     color: rgba(220, 220, 220, 1);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.ip-type {
+.ip__type {
     font-size: 13px;
     color: rgba(150, 150, 150, 1);
     margin-bottom: 4px;
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.ip-description {
+.ip__description {
     font-size: 15px;
     white-space: normal;
     color: rgba(170, 170, 170, 1);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.ip-divider {
+.ip__divider {
     height: 1px;
     margin: 10px 0;
     background-color: rgba(80, 80, 80, 0.8);
@@ -104,11 +105,11 @@
 
 /* ---------- Tabla de datos: clave a la izquierda, valor a la derecha ---------- */
 
-.ip-stats {
+.ip__stats {
     flex-direction: column;
 }
 
-.ip-stat-row {
+.ip-stat {
     flex-direction: row;
     justify-content: space-between;
     height: 24px;
@@ -116,13 +117,13 @@
     padding: 0 6px;
 }
 
-.ip-stat-key {
+.ip-stat__key {
     font-size: 14px;
     color: rgba(150, 150, 150, 1);
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.ip-stat-value {
+.ip-stat__value {
     font-size: 15px;
     color: rgba(220, 220, 220, 1);
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
@@ -130,24 +131,24 @@
 
 /* ---------- Desglose de variantes ---------- */
 
-.ip-lots-section {
+.ip__lots-section {
     flex-direction: column;
     flex-shrink: 1;
     margin-top: 10px;
 }
 
-.ip-section-label {
+.ip__section-label {
     font-size: 14px;
     color: rgba(150, 150, 150, 1);
     margin-bottom: 4px;
     -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.ip-lots {
+.ip__lots {
     max-height: 180px;
 }
 
-.ip-lot-row {
+.ip-lot {
     flex-direction: row;
     align-items: center;
     height: 34px;
@@ -156,7 +157,7 @@
     background-color: rgba(40, 40, 40, 0.6);
 }
 
-.ip-lot-icon {
+.ip-lot__icon {
     width: 26px;
     height: 26px;
     flex-shrink: 0;
@@ -164,7 +165,7 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.ip-lot-name {
+.ip-lot__name {
     flex-grow: 1;
     flex-shrink: 1;
     overflow: hidden;
@@ -174,8 +175,8 @@
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.ip-lot-amount,
-.ip-lot-weight {
+.ip-lot__amount,
+.ip-lot__weight {
     width: 60px;
     flex-shrink: 0;
     -unity-text-align: middle-right;
@@ -184,7 +185,7 @@
     -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
 }
 
-.ip-footer {
+.ip__footer {
     margin-top: 10px;
     -unity-text-align: middle-right;
     font-size: 12px;

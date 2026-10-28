@@ -16,12 +16,12 @@
     border-radius: 4px;
 }
 
-.wi-row {
+.wi-prompt__row {
     flex-direction: row;
     align-items: center;
 }
 
-.wi-key {
+.wi-prompt__key {
     min-width: 22px;
     height: 22px;
     margin-right: 6px;
@@ -32,25 +32,25 @@
     border-radius: 3px;
 }
 
-.wi-action {
+.wi-prompt__action {
     font-size: 16px;
     -unity-font-style: bold;
     color: rgb(240, 232, 216);
 }
 
-.wi-target {
+.wi-prompt__target {
     font-size: 13px;
     color: rgb(200, 190, 170);
 }
 
-.wi-more {
+.wi-prompt__more {
     font-size: 11px;
     -unity-font-style: italic;
     color: rgb(160, 150, 132);
 }
 
 /* Motivo bajo la accion cuando no se puede hacer ("No hay espacio suficiente"). */
-.wi-hint {
+.wi-prompt__hint {
     font-size: 12px;
     -unity-font-style: italic;
     color: rgb(200, 150, 130);
@@ -58,7 +58,7 @@
 }
 
 /* Accion en gris: se ve, pero ahora no se puede hacer. */
-.wi-prompt--disabled .wi-action {
+.wi-prompt--disabled .wi-prompt__action {
     color: rgb(140, 140, 140);
 }
 
@@ -84,7 +84,7 @@
 }
 
 /* Brillo interior: un punto mas claro en el centro, como el reflejo de un remache. */
-.wi-reticle-core {
+.wi-reticle__core {
     width: 3px;
     height: 3px;
     background-color: rgba(250, 238, 205, 0.7);

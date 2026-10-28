@@ -64,10 +64,10 @@ namespace MVC.View.Inventory
 
         private static readonly Dictionary<GameEventType, string> LoadClasses = new()
         {
-            { GameEventType.NormalWeight, "load-normal"   },
-            { GameEventType.ExtraWeight,  "load-extra"    },
-            { GameEventType.Overweight,   "load-over"     },
-            { GameEventType.Immobile,     "load-immobile" },
+            { GameEventType.NormalWeight, "weight-rail__bar--normal"   },
+            { GameEventType.ExtraWeight,  "weight-rail__bar--extra"    },
+            { GameEventType.Overweight,   "weight-rail__bar--over"     },
+            { GameEventType.Immobile,     "weight-rail__bar--immobile" },
         };
 
         /* Clases del texto, en su propio mapa en vez de concatenar un sufijo al de la barra.
@@ -76,10 +76,10 @@ namespace MVC.View.Inventory
            avisa y la concatenacion no. */
         private static readonly Dictionary<GameEventType, string> LoadLabelClasses = new()
         {
-            { GameEventType.NormalWeight, "load-normal-label"   },
-            { GameEventType.ExtraWeight,  "load-extra-label"    },
-            { GameEventType.Overweight,   "load-over-label"     },
-            { GameEventType.Immobile,     "load-immobile-label" },
+            { GameEventType.NormalWeight, "weight-rail__label--normal"   },
+            { GameEventType.ExtraWeight,  "weight-rail__label--extra"    },
+            { GameEventType.Overweight,   "weight-rail__label--over"     },
+            { GameEventType.Immobile,     "weight-rail__label--immobile" },
         }; 
 
         #endregion
@@ -122,7 +122,7 @@ namespace MVC.View.Inventory
             _gridMount = RootPanel.Q<VisualElement>("grid-mount");
 
             _topBar = RootPanel.Q<VisualElement>("inventory-bar");
-            _titelLabel = RootPanel.Q<Label>("title-bar-panel");
+            _titelLabel = RootPanel.Q<Label>("title-label-panel");
             _closeButton = RootPanel.Q<Button>("close-button-panel");
             _closeButton.RegisterCallback<ClickEvent>(_ => OnCloseRequested?.Invoke());
             _weightLabel = RootPanel.Q<Label>("weight-label");
@@ -157,11 +157,11 @@ namespace MVC.View.Inventory
             {
                 VisualElement row = new VisualElement();
                 grid.Add(row);
-                row.AddToClassList("inventory-grid-row");
+                row.AddToClassList("inventory-grid__row");
                 for (int j = 0; j < cols; j++)
                 {
                     VisualElement cell = new VisualElement();
-                    cell.AddToClassList("inventory-grid-cell");
+                    cell.AddToClassList("inventory-grid__cell");
                     row.Add(cell);
                 }
             }
@@ -340,7 +340,7 @@ namespace MVC.View.Inventory
                 itemCard.Add(itemBackground);
                 UIElementUtils.AddAmountLabel(itemCard, item.Item.Amount);
 
-                if (item.IsGrabbed) itemCard.AddToClassList("item-block-grabbed");
+                if (item.IsGrabbed) itemCard.AddToClassList("item-block--grabbed");
 
                 _itemsLayer.Add(itemCard);
 
@@ -378,7 +378,7 @@ namespace MVC.View.Inventory
             if (carrierBlocks == _carrierBlocks) return;
 
             _carrierBlocks = carrierBlocks;
-            _weightLabel.EnableInClassList("weight-label-note", carrierBlocks);
+            _weightLabel.EnableInClassList("weight-rail__label--note", carrierBlocks);
             RenderWeightLabel();
         }
 
