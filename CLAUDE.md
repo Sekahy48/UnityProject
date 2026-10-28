@@ -110,6 +110,10 @@ usa; está apuntado como limpieza pendiente.
 
 ## Cómo se trabaja aquí
 
+- **Comentarios `// CLAUDE` en el código:** si encuentras un comentario que empieza por
+  `// CLAUDE` con una duda o pregunta en un archivo que Sergio ha editado, responde a la cuestión
+  por el chat y borra ese comentario del archivo.
+
 **Sergio conduce.** Los comandos de git los lanza él: no ejecutes `git commit`, `git push` ni
 nada que modifique el repositorio; si hace falta un mensaje de commit, escríbelo para que lo
 copie. **No propongas mensaje de commit por tu cuenta: solo cuando te lo pida.** Cuando lo
@@ -181,7 +185,6 @@ Assets/Code/
     Services/     TextureCache, ModelCache
     UnityEntityLinker, TransformSyncSystem
   FASE1_HITOS.md            ← memoria de diseño. Empieza por aquí.
-  SistemaSocial.md          ← memoria de diseño del sistema social de NPCs.
 
 Assets/StreamingAssets/
   data.json, images/, models/   ← exportado desde Stack&Go, se lee en ejecución
@@ -209,29 +212,8 @@ inventario» de `FASE1_HITOS.md`.
 
 ## Referente al sistema social
 
-El sistema social de NPCs se desarrolla a la vez como práctica de la asignatura **Business
-Intelligence y Sistemas Inteligentes (BISI)** de la ULE y como pieza del TFG. Su memoria de
-diseño es **`Assets/Code/SistemaSocial.md`**: si la tarea toca NPCs o lo social, empieza por
-ahí, igual que con `FASE1_HITOS.md` para el inventario.
-
-**Es un módulo propio.** No importa `UnityEngine` y no depende del Core actual: tiene sus
-propias entidades, se prueba solo y se conecta a Artisan mediante interfaces. La ubicación
-física (ensamblado aparte o subcarpeta de Core) está pendiente; ver el documento.
-
-**Es núcleo.** Lo escribe Sergio, con la misma regla de «Cómo se trabaja aquí». Además Claude
-hace de profesor: teoría corta al empezar cada módulo, que lleve a Sergio a deducir el
-proceso, y preguntas socráticas durante el desarrollo. Las lecturas se enlazan cuando toca
-leerlas, no antes.
-
-**Entregables semanales en el OSF de BISI.** Cada semana se sube algo al OSF de la
-asignatura. Eso no significa generar ficheros sin ton ni son, sino trabajar sabiéndolo: cada
-sesión debe dejar algo enseñable (decisión documentada con su porqué, diagrama, test en verde,
-captura o traza del simulador, nota de aprendizaje). **Al cerrar cada sesión, Claude dice qué
-se ha producido que pueda subirse**; si la semana avanza sin nada subible, da el toque de
-atención. El registro de lo subido vive en `SistemaSocial.md`.
-
-**Plazo pesimista: 30 de diciembre de 2026.** Entrega prevista: memoria + demo (o presentación
-en clase). No hay formato oficial.
-
-**Nada de código de usar y tirar.** Todo debe acabar sirviendo al sistema de NPCs del juego,
-así que aplican los mismos principios y el mismo estilo que al resto del repositorio.
+El sistema social de NPCs vive en un **repositorio aparte: `Fuero`** (`D:\git\Fuero`). Allí
+están su memoria de diseño (`SistemaSocial.md`), sus normas de trabajo (`CLAUDE.md`) y las
+entregas de la asignatura BISI. Es un módulo independiente: no depende de Unity ni de
+`Artisan.Core`, y Artisan lo consumirá como paquete a través de interfaces. Si una tarea toca
+NPCs o lo social, empieza por ese repositorio. Aquí solo se hará la capa de integración.

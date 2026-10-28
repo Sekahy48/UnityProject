@@ -4,20 +4,32 @@
 
 > Esta seccion existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Fase 1 casi cerrada.** M1–M6 cerrados. **Ahora: M7** (pulido y pruebas de integracion).
-Hechas T0 (aviso de subopciones en el radial), T1–T3 (casos limite de la rejilla), T4 (tests
-de Core: 52, en verde) y T5 (pulido de UI, tema medieval, paleta en variables). Quedan:
+**Fase 1 (inventario) cerrada (2026-10-28).** M1–M7 cerrados. T6 (rendimiento) se aplazó a
+Future: no había un problema medido y lo caro probablemente esté en la vista, que solo se
+mide en juego con el Profiler. Método y sospechosos, en Future → «Rendimiento».
 
-- **T7 cerrada.** Commit 71ef56a: el cuerpo se sobrecarga en vez de frenar por peso; "Coger"
-  al estilo RimWorld ("Coger", "Coger xN" o en gris con el motivo); `RadialOption`; apilado que
-  rellena cualquier pila con hueco. Commit siguiente: HUD a presentador + vista (`HUDPresenter`,
-  `HUDView`, `EnergyChanged` en el bus) y la columna de estados de peso (icono por nivel,
-  tooltip con Alt, sacudida al cambiar), con dos utilidades de vista en `UIElementUtils`:
-  `PlaceNextTo` (coloca y voltea flotantes; ya la usan el tooltip del inventario y el popup
-  de capas) y `Shake`. Probado en juego por Sergio.
-- **T6 rendimiento**, sin empezar. Es lo unico que queda de M7.
+Lo último de M7:
 
-Con T6 cerrada, la Fase 1 (inventario) esta terminada.
+- **T7** (commits 71ef56a y b624482): el cuerpo se sobrecarga en vez de frenar por peso;
+  "Coger" al estilo RimWorld ("Coger", "Coger xN" o en gris con el motivo); `RadialOption`;
+  apilado que rellena cualquier pila con hueco; HUD a presentador + vista (`HUDPresenter`,
+  `HUDView`, `EnergyChanged` en el bus) y columna de estados de peso (icono por nivel,
+  tooltip, sacudida al cambiar), con `PlaceNextTo` y `Shake` en `UIElementUtils`.
+- **Helper de banda de carga** (192c1eb): `CarryCapacity.ClassifyLoad(weight, maxLoad)` con
+  la única guarda del ratio; la usan `InventorySystem`, `HUDPresenter` e
+  `InventoryPanelPresenter`.
+- **Refactor BEM** (2fe4772, fusionado en `fase1.1`): ver Future y `BEM_RENOMBRES.md`.
+- **Tooltip de estados arreglado** (mismo commit): estaba en el flujo de la fila del HUD,
+  empujaba la columna y parpadeaba, y además salía fuera de pantalla. Ahora es absoluto y
+  oculto por defecto (`hud__tooltip`), sale a la izquierda del icono a su altura (como en
+  Project Zomboid), y el HUD va por encima del inventario (orden 4, raíz en `Ignore`) para
+  poder leerlo con el inventario abierto. Probado en juego por Sergio, salvo la última
+  versión de la colocación.
+
+**Síntoma abierto:** tirón la primera vez que se abre el inventario, en los dos ordenadores.
+Ver Future → «Rendimiento».
+
+**Siguiente:** sin decidir (Fase 2 o lo que salga de la reunión con David del 2026-10-29).
 
 **Forma de trabajo (CLAUDE.md):** el nucleo lo escribe Sergio (Claude valora y revisa; solo
 lo toca si Sergio lo pide como excepcion o es un retoque trivial pedido). En dos fases: primero
@@ -262,7 +274,9 @@ Interaction:
   **Decided — where `HandBuffer` lives.** Not in `InventoryPresenter` (interaction state, not game state, and presenters are rebuilt on live reload — the hand must survive that). Not in `PresenterManager` (that is a registry; giving it state would add a second reason to change). Not in an ECS component either (nothing systemic consumes it, it is never serialised, and it holds a reference to *whichever* `InventoryObject` is being manipulated — a chest, a corpse — so it is not player-simulation state). It goes in a new **`GameInteractionContext`** — see Future section.
 
   **Self-collision on move.** Since the hand moves nothing until placement, the source node's cells stay occupied, so nudging a node onto a position overlapping itself would fail against itself. `TetrisGridState.CanPlace`/`FindFirstFit` take `ignoreNodeId` (cells holding that id count as free) and `Place` calls `Remove` before writing, which covers it — but the decision belongs at the placement call, not in the grid: only the hand knows the source node (`GetSourceNode()`) and whether this placement empties it. Pass `ignoreNodeId = <source nodeId>` **only when the units leaving now empty the source node**, `-1` otherwise. Note the condition is *not* "grabbed == node total": with a node of 20 and `maxStackSize` 10, placing onto an empty cell moves only 10, the source survives with 10, and its cells are legitimately occupied. Compare against the amount that will actually move.
-  **Pendiente — feedback de validez al colocar.** Las clases `.hand-buffer-collision` y
+  **Hecho (antes pendiente) — feedback de validez al colocar.** Resuelto con
+  `InventoryService.EvaluatePlacement` y `PlacementVerdict`; hoy las clases son
+  `hand-buffer--fits/--partial/--swap/--collision` (BEM). Texto original: las clases `.hand-buffer-collision` y
   `.hand-buffer-fits` ya existen en el USS (rojo de `.load-immobile`, verde de `.load-normal`)
   pero nadie las aplica. Falta evaluar el destino en cada `PointerMove` y pintar la mano segun
   el veredicto. Requisitos: consulta pura y barata (dispara en cada frame con movimiento) y
@@ -654,8 +668,8 @@ una plantilla de `UIRegistry`. Decisiones:
 
 **Hecho: Alt bloquea/desbloquea la vista** (motivo `Manual` de `LookControl`, ver el menu radial).
 
-**Deuda vista de paso:** `InventoryPresenter` (Core) recibe `InventoryView`, la clase concreta
-de Unity, y no una interfaz; rompe la regla de Core. El presentador nuevo ya no lo hace.
+**~~Deuda vista de paso~~ RESUELTA:** `InventoryPresenter` (Core) recibía `InventoryView`, la
+clase concreta de Unity; hoy recibe `IInventoryView`.
 (La de la camara de arranque sin suscribir ya esta corregida.)
 
 **Hecho: filtro de pared (`Unity/LineOfSightFilter`).** Decisiones:
@@ -757,7 +771,7 @@ el. Orden acordado:
 
 ---
 
-## Milestone 7 — Polish & integration testing
+## Milestone 7 — Polish & integration testing ✅ CERRADO
 
 **Goal**: Edge cases, polish, and full flow testing.
 
@@ -831,7 +845,8 @@ el. Orden acordado:
     tiene una imagen de fondo. El veredicto tine la madera (y el borde conserva su color
     puro), asi que se ve la ficha y se lee el color a la vez. `RefreshHandBuffer` ya no
     vacia el fantasma: solo cambia la etiqueta de cantidad.
-- [ ] 6. Performance: stress test with large grids (cart/chest with many items)
+- [x] 6. ~~Performance: stress test with large grids (cart/chest with many items)~~ —
+  **Aplazada a Future (2026-10-28, Sergio).** Ver Future → «Rendimiento».
 - [x] 7. **HUD de avisos del mundo.** Hoy no existe ningun canal para mensajes en pantalla
   fuera del inventario. `WorldInteractionService.Announce` ya publica un unico evento por
   gesto —`InventoryFull` (demasiado volumen) o `WeightLimitReached` (peso completo), con la
@@ -1214,7 +1229,7 @@ Hand added notes (by me by hand):
   accion deberia poder declarar sus hijos. `RadialOption` ya lleva `HasChildren`; lo que
   falta es que el presenter no los decida por accion a mano. `CountPickable` tendria que
   aceptar el inventario destino para que la cantidad de cada hijo sea la suya.
-- [x] **Clases USS a BEM.** Hecho el 2026-10-28 en la rama `bem` (Claude; Sergio ya domina la notación, así que dejó de tener sentido reservárselo). 98 clases renombradas en UXML, USS, temas y vistas C#; utilitarias con prefijo `u-`; `name` del HUD a kebab-case; anidados aplanados salvo las excepciones permitidas. Corrige de paso el `Q("title-bar-panel")` roto de `InventoryPanelView`. Tabla completa, excepciones y restos muertos en `BEM_RENOMBRES.md`. Pendiente: probarlo en Unity con los dos temas y fusionar. Contexto original: hoy conviven tres estilos (contados el 2026-10-03): ~143 clases en
+- [x] **Clases USS a BEM.** Hecho el 2026-10-28 en la rama `bem` (Claude; Sergio ya domina la notación, así que dejó de tener sentido reservárselo). 98 clases renombradas en UXML, USS, temas y vistas C#; utilitarias con prefijo `u-`; `name` del HUD a kebab-case; anidados aplanados salvo las excepciones permitidas. Corrige de paso el `Q("title-bar-panel")` roto de `InventoryPanelView`. Tabla completa, excepciones y restos muertos en `BEM_RENOMBRES.md`. Probado en Unity con el tema medieval (Sergio) y fusionado en `fase1.1` (2fe4772); falta probar el tema Peasant. Contexto original: hoy conviven tres estilos (contados el 2026-10-03): ~143 clases en
   kebab-case con guion simple (`inventory-grid-cell`, `ctx-menu-option-selected`, donde el
   estado va con un guion normal), 13 en BEM (`radial-option--disabled`,
   `radial-option__more`, `wi-reticle--active`: radial y marca de la E) y ~8 en camelCase
@@ -1222,6 +1237,27 @@ Hand added notes (by me by hand):
   (pieza hija), `bloque--modificador` (variante o estado). Hay que renombrar a la vez en
   USS, UXML, temas y en las cadenas de C# (`AddToClassList`, `Q(className:)`).
   **Preferible que lo haga Sergio**, para familiarizarse con las vistas y sus estilos.
+- [ ] **Rendimiento (antes M7 T6).** Solo si aparece un problema en partida o en el testing
+  final; entonces se diagnostica con esto:
+  - **Método:** benchmarks del Core con `Unity.PerformanceTesting` (operaciones puras sobre
+    rejillas grandes: carro o arcón con muchos ítems) y Profiler con Deep Profile para la
+    vista (el fotograma del pico).
+  - **Síntoma ya visto:** tirón la primera vez que se abre el inventario (confirmado en los
+    dos ordenadores, 2026-10-28). Sospechosos, sin medir:
+    1. `OpenInternal` reconstruye el catálogo DEV en cada apertura, y la primera vez
+       `TextureCache.Get` lee y decodifica todos los iconos en el hilo principal
+       (`File.ReadAllBytes` + `LoadImage`). Varios iconos miden 2133–2500 px para mostrarse a
+       60–96 px, y `new Texture2D(2, 2)` crea mipmaps y deja copia legible (~33 MB cada uno).
+    2. Fuentes SDF dinámicas (Alegreya, Vollkorn) generando caracteres al dibujarlos por
+       primera vez; prueba de ello, sus `.asset` aparecen modificados tras jugar.
+    3. Primera resolución de estilos y maquetación de cientos de elementos.
+  - **Arreglos candidatos:** iconos a 256–512 px; `TextureCache` sin mipmaps ni copia
+    legible (`new Texture2D(2, 2, TextureFormat.RGBA32, false)`, `LoadImage(bytes, true)`) y
+    guardando también los fallos (hoy `slot-hip.png` vuelve a mirar el disco y avisa cada
+    vez); construir el catálogo una sola vez (Core, Sergio); fuentes con atlas estático.
+  - **Otros sospechosos de M7:** `EvaluatePlacement` en cada `PointerMove`, el clon de
+    `CountPickable`, `StackOntoHere` sobre muchas pilas, re-render del panel en cada
+    `InventoryChanged`.
 - [ ] Save/load inventory state (serialization)
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)

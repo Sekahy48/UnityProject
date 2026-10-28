@@ -118,7 +118,8 @@ namespace MVC.View.HUD
                 {
                     _statesTooltip.Clear();
                     _statesTooltip.Add(TooltipText((string)newState.userData));
-                    UIElementUtils.PlaceNextTo(_statesTooltip, newState, _root, Side.Left);
+                    // A la izquierda del icono y centrado con el en vertical (como en Project Zomboid).
+                    UIElementUtils.PlaceNextTo(_statesTooltip, newState, _root, Side.Left, centered: true);
                 });
 
                 newState.RegisterCallback<PointerLeaveEvent>(_ =>

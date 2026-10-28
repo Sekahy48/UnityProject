@@ -50,8 +50,10 @@ namespace MVC.View
         /// superior izquierda.</para>
         /// </summary>
         /// <param name="gap">Separacion en pixeles entre el ancla y el flotante.</param>
+        /// <param name="centered">En el otro eje, centrado con el ancla en vez de alineado por
+        /// su inicio (sin salirse del marco).</param>
         public static void PlaceNextTo(VisualElement floating, VisualElement anchor, VisualElement frame,
-                                       Side preferred, float gap = 0f)
+                                       Side preferred, float gap = 0f, bool centered = false)
         {
             if (floating == null || anchor == null || frame == null || floating.parent == null) return;
 
@@ -69,6 +71,7 @@ namespace MVC.View
             placement.Frame = frame;
             placement.Side = preferred;
             placement.Gap = gap;
+            placement.Centered = centered;
 
             // Invisible hasta colocarlo: si aun no tiene tamano (venia oculto), lo pondra el
             // GeometryChanged que llegue tras maquetarlo, sin verse antes en el sitio viejo.
@@ -86,6 +89,7 @@ namespace MVC.View
             public VisualElement Frame;
             public Side Side;
             public float Gap;
+            public bool Centered;
         }
 
         /* Datos de colocacion por flotante. Tabla debil: si el flotante desaparece (recarga de
@@ -132,6 +136,14 @@ namespace MVC.View
                     if (x + w > f.xMax) x = a.xMin - gap - w;
                     y = AlignStart(a.yMin, a.yMax, h, f.yMax);
                     break;
+            }
+
+            if (placement.Centered)
+            {
+                if (placement.Side == Side.Left || placement.Side == Side.Right)
+                    y = Mathf.Clamp(a.center.y - h / 2f, f.yMin, Mathf.Max(f.yMin, f.yMax - h));
+                else
+                    x = Mathf.Clamp(a.center.x - w / 2f, f.xMin, Mathf.Max(f.xMin, f.xMax - w));
             }
 
             Vector2 local = floating.parent.WorldToLocal(new Vector2(x, y));
