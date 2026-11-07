@@ -1258,6 +1258,28 @@ Hand added notes (by me by hand):
   - **Otros sospechosos de M7:** `EvaluatePlacement` en cada `PointerMove`, el clon de
     `CountPickable`, `StackOntoHere` sobre muchas pilas, re-render del panel en cada
     `InventoryChanged`.
+- [ ] **Evaluación doble de la carga en transferencias.** Contexto (2026-11-07, Sergio): un
+  contenedor dentro de otro inventario no avisaba a su portador, así que meter cosas en la
+  mochila puesta cambiaba la barra pero no el movimiento ni el icono de estado. Arreglado en
+  `InventorySystem.EvaluateAndFireEvents`: la rama de `StorageComponent` sube un nivel por
+  `Parent` y se llama de nuevo con el dueño, hasta la raíz (`InventoryObject.GetHolder()`).
+  Efecto secundario aceptado: `RunTransfer` evalúa destino y origen, y cuando sus cadenas de
+  dueños se solapan (tu rejilla ↔ tu mochila, bolsa → mochila) los dueños comunes se evalúan
+  dos veces: dos `InventoryChanged` y dos eventos de banda iguales. Inofensivo (el HUD no
+  sacude, la banda no cambia), solo un redibujado de más. Arreglo previsto si se quiere:
+  separar «evaluar una entidad» de «subir»; una sobrecarga para destino + origen que une sus
+  cadenas sin repetir y evalúa cada entidad una vez, con `fullGrid` solo para el destino (no
+  vale saltarse el origen: en «mochila → rejilla» el aviso de rejilla llena es del jugador).
+- [ ] **Contenedores dentro de un inventario clonado apuntan al item original.** Contexto
+  (2026-11-07): `InGameEntity.Clone()` ya reapunta el inventario del clon a su nueva entidad
+  (`Rebind(IEntity)`; antes el jugador, clonado de su prototipo, publicaba la banda de carga a
+  nombre del prototipo). Pero `InventoryObject.Clone()` copia los contenedores GUARDADOS dentro
+  con `new InventoryObject(this._item)`: el clon de esa mochila sigue teniendo como dueño el
+  ítem ORIGINAL, y de él sacaría su techo de peso y el portador al subir avisos. Hoy no se
+  nota (el prototipo del jugador empieza vacío). Arreglo previsto: que al clonar un contenedor
+  guardado se clone también su ítem y se reapunte, o que el clon del árbol reciba la entidad
+  nueva de cada nivel. Revisar a la vez `CountPickable`, que clona el inventario raíz para
+  simular.
 - [ ] Save/load inventory state (serialization)
 - [ ] Item tooltips with detailed stats
 - [ ] Normalize `this.` usage — remove unnecessary `this.` references (underscore-prefixed fields make it redundant)

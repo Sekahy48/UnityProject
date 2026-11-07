@@ -112,6 +112,13 @@
                     if (elem is IEngineBridge) continue;
                     clone.AddComponent(elem.Clone());
                 }
+
+                // El inventario clonado sigue teniendo como dueno a ESTA entidad: se reapunta al
+                // clon. Sin esto, un jugador sacado de su prototipo publicaria su banda de carga a
+                // nombre del prototipo, y el movimiento y el HUD, que filtran por el jugador, no
+                // se enterarian. Vale tambien para los items (ItemEntity.Clone pasa por aqui).
+                clone.GetComponent<InventoryComponent>()?.Inventory.Rebind(clone);
+
                 return clone;
             }
 

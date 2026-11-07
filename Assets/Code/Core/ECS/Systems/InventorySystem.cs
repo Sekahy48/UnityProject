@@ -117,8 +117,21 @@ namespace Core.ECS.Systems
             }
             else if (entity.HasComponent(typeof(StorageComponent)))
             {
+                // Un contenedor dentro de otro inventario (mochila puesta o guardada, bolsa
+                // dentro de la mochila) avisa a quien lo lleva: su peso sube por la cadena y la
+                // banda de carga es del portador, no suya. Sube un nivel por llamada; la
+                // recursion llega hasta la raiz, y cada nivel publica su InventoryChanged.
+                // fullGrid no sube: la rejilla llena es la de este contenedor.
+                InventoryObject parent = inventoryComponent.Inventory.Parent;
+                if (parent != null)
+                {
+                    IEntity parentHolder = parent.GetHolder();
+                    if (parentHolder != null && parentHolder != entity)
+                        EvaluateAndFireEvents(parentHolder, false);
+                }
+
                 // TODO: StorageComponent capacity checks
-            }  
+            }
 
             if (fullGrid)
             {

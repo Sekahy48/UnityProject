@@ -60,17 +60,36 @@ namespace Core.Inventory
         public ItemEntity GetItemEntity() => _item;
 
         /// <summary>
+        /// Entidad duena de ESTE inventario. En el de un contenedor es el propio contenedor
+        /// (la mochila), no quien lo lleva: para llegar al portador hay que subir por
+        /// <see cref="Parent"/>.
+        /// </summary>
+        public IEntity GetHolder() => _holder;
+
+        /// <summary>
         /// Reapunta este inventario a la entidad a la que pertenece.
         ///
-        /// Existe por el clonado: Clone copia el arbol pero no la entidad, asi que el clon
-        /// nace apuntando al item ORIGINAL y sacaria de el su techo de peso. Quien clona la
-        /// entidad es el unico que conoce la nueva, y la enchufa aqui.
+        /// Existe por el clonado: Clone copia el arbol pero no la entidad, asi que el clon nace
+        /// apuntando a la entidad ORIGINAL (el prototipo del jugador, o el item del que se
+        /// copio). De ella sacaria su techo de peso y, al subir avisos por la cadena, el nombre
+        /// del portador. Quien clona la entidad es el unico que conoce la nueva, y la enchufa
+        /// aqui (lo hace InGameEntity.Clone).
+        ///
+        /// <para>Si el inventario es de un item (una mochila), el item cambia con el: es el
+        /// mismo dueno visto como item. Un inventario de cuerpo no tiene item y no lo gana.</para>
         /// </summary>
-        public void Rebind(ItemEntity owner)
+        public void Rebind(IEntity owner)
         {
             AC.CheckNotNull(owner, nameof(owner));
 
-            _item = owner;
+            if (_item != null)
+            {
+                if (owner is not ItemEntity item)
+                    throw new System.ArgumentException(
+                        "El inventario de un item solo puede reapuntarse a otro item.", nameof(owner));
+                _item = item;
+            }
+
             _holder = owner;
         }
         public bool IsLeaf() => false;
