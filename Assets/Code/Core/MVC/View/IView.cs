@@ -1,4 +1,4 @@
-namespace MVC.View
+namespace Core.MVC.View
 {
     public interface IView
     {

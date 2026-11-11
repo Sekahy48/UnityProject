@@ -1,69 +1,175 @@
 using System;
+using System.Collections.Generic;
 using Core;
-using ECS.Component;
-using ECS.Entity;
-using Events;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Events;
+using Core.Inventory;
+using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
-    public class InventorySystem : IEventObserver
+    public class InventorySystem : IReactiveSystem
     {
-        private readonly ILogger _logger;
-
-        public InventorySystem(ILogger logger)
+        private static readonly GameEventType[] _subscribedEvents =
         {
-            _logger = logger;
+            /*Emtpy for the moment*/
+        };
+
+        public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
+
+
+        /// <summary>
+        /// Returns how many items can be added by weight, and outputs the InventoryComponent.
+        /// Returns 0 if entity has no inventory.
+        /// </summary>
+        /// <param name="source">Inventario del que salen las unidades, o null si vienen de
+        /// fuera del arbol (equipo, catalogo, mundo). No es un detalle opcional: un techo no se
+        /// aplica a algo que ya esta debajo de el, y sin este dato mover del jugador a su propia
+        /// mochila se rechaza por un peso que no ha cambiado. La exencion la decide
+        /// InventoryObject.OwnFreeWeight; aqui solo se le hace llegar.</param>
+        private int GetFitByWeight(IEntity entity, ItemEntity item, int amount,
+                                   InventoryObject source, out InventoryComponent invComp)
+        {
+            invComp = entity.GetComponent<InventoryComponent>();
+            if (invComp == null) return 0;
+
+            // La cadena de contenedores responde por si misma: cada nivel aplica su techo y
+            // pasa la pregunta al que lo contiene.
+            return invComp.Inventory.FitByWeight(item, amount, source);
         }
 
-        public void ProcessEntity(IEntity entity)
+        /// <summary>
+        /// Tries to stack items checking weight first, then grid.
+        /// Stacks onto existing compatible node if possible, creates new nodes for overflow.
+        /// Returns the amount that could not be added.
+        /// </summary>
+        public int TryStackOntoHere(IEntity entity, ItemEntity item, int amount, bool announce = true,
+                                    InventoryObject source = null)
         {
+            InventoryComponent invComp = entity.GetComponent<InventoryComponent>();
+            if (invComp == null) return amount;
+
+            int notPlaced = invComp.Inventory.TryStackOntoHere(item, amount, source, out int toAdd);
+            if (toAdd <= 0) return amount;                    // como antes: sin eventos
+
+            // Solo lo que rechazo la rejilla cuenta como "no cabe"; lo que freno el peso no.
+            if (announce)
+                EvaluateAndFireEvents(entity, notPlaced - (amount - toAdd) > 0);
+            return notPlaced;
+        }
+
+        /// <summary>
+        /// Tries to stack items onto a specific node by nodeId, checking weight first.
+        /// Returns the amount that could not be added.
+        /// </summary>
+        public int TryStackOntoNode(IEntity entity, ItemEntity item, int amount, int nodeId, bool announce = true,
+                                    InventoryObject source = null)
+        {
+            int toAdd = GetFitByWeight(entity, item, amount, source, out InventoryComponent invComp);
+            if (toAdd <= 0) return amount;
+            int remaining = invComp.Inventory.StackOntoNode(nodeId, item, toAdd);
+            if (announce)
+                EvaluateAndFireEvents(entity, false);
+            return remaining + (amount - toAdd);
+        }
+
+        /// <summary>
+        /// Tries to add items at a specific grid position, checking weight first.
+        /// Returns the amount that could not be added.
+        /// </summary>
+        public int TryAddItemAt(IEntity entity, ItemEntity item, int amount, GridPos pos, int ignoreNodeId = -1,
+                                bool announce = true, InventoryObject source = null)
+        {
+            // La exencion por origen la resuelve el peso, no la rejilla. Antes se deducia de
+            // ignoreNodeId != -1, que es un criterio distinto y mas estrecho: solo veia un mismo
+            // inventario, nunca la cadena, y cuando decidia eximir se saltaba la comprobacion
+            // entera en vez de descontar lo que tocaba. ignoreNodeId vuelve a significar solo lo
+            // suyo — que celdas no estorban — y el peso se pregunta siempre igual.
+            int toAdd = GetFitByWeight(entity, item, amount, source, out InventoryComponent invComp);
+
+            if (toAdd <= 0) return amount;
+            int remaining = invComp.Inventory.AddItemAt(item, toAdd, pos, ignoreNodeId);
+            if (announce)
+                EvaluateAndFireEvents(entity, remaining > 0);
+            return remaining + (amount - toAdd);
+        }  
+
+        public void EvaluateAndFireEvents(IEntity entity, bool fullGrid)
+        {
+
+            AC.CheckNotNull(entity, nameof(entity));
             InventoryComponent inventoryComponent = entity.GetComponent<InventoryComponent>();
-            if (inventoryComponent != null)
+            MovementComponent movementComponent = entity.GetComponent<MovementComponent>();
+            AC.CheckNotNull(inventoryComponent, "inventoryComponent"); 
+  
+            float totalWeight = inventoryComponent.Inventory.GetTotalWeight();
+            CoreLogger.Instance.Log("Total weight: " + totalWeight);
+
+            // Physical carry capacity check
+            if (entity.HasComponent(typeof(BodyComponent)) && movementComponent != null)
             {
-                float totalVolume = inventoryComponent.Inventory.GetTotalVolume();
-                float totalWeight = inventoryComponent.Inventory.GetTotalWeight();
-                _logger.Log("Total volume: " + totalVolume + ", Total weight: " + totalWeight);
+                GameEventType load = CarryCapacity.ClassifyLoad(totalWeight, GetMaxWeight(entity));
+                EventBus.GetInstance().Post(new GameEvent(load, entity, movementComponent));
+                LogLoad(load);
 
-                // Physical carry capacity check
-                if (entity.HasComponent(typeof(BodyComponent)))
+            }
+            else if (entity.HasComponent(typeof(StorageComponent)))
+            {
+                // Un contenedor dentro de otro inventario (mochila puesta o guardada, bolsa
+                // dentro de la mochila) avisa a quien lo lleva: su peso sube por la cadena y la
+                // banda de carga es del portador, no suya. Sube un nivel por llamada; la
+                // recursion llega hasta la raiz, y cada nivel publica su InventoryChanged.
+                // fullGrid no sube: la rejilla llena es la de este contenedor.
+                InventoryObject parent = inventoryComponent.Inventory.Parent;
+                if (parent != null)
                 {
-                    float carryWeight = CarryCapacity.GetMaxCarryWeight(entity);
-                    float carryVolume = CarryCapacity.GetMaxCarryVolume(entity);
-
-                    if (carryVolume < totalVolume)
-                    {
-                        _logger.LogWarning("Volume exceeds carry capacity. Max: " + carryVolume);
-                    }
-
-                    float weightRatio = totalWeight / carryWeight;
-                    if (weightRatio > 0.6f && weightRatio <= 0.8f)
-                    {
-                        _logger.Log("Heavy load. Speed reduced.");
-                    }
-                    else if (weightRatio > 0.8f && weightRatio < 1f)
-                    {
-                        _logger.LogWarning("Overloaded. Speed heavily reduced, energy penalty.");
-                    }
-                    else if (weightRatio >= 1f)
-                    {
-                        _logger.LogWarning("Cannot move due to excess weight.");
-                    }
-
+                    IEntity parentHolder = parent.GetHolder();
+                    if (parentHolder != null && parentHolder != entity)
+                        EvaluateAndFireEvents(parentHolder, false);
                 }
-                else if (entity.HasComponent(typeof(StorageComponent)))
-                {
-                    // TODO: StorageComponent capacity checks
-                }
+
+                // TODO: StorageComponent capacity checks
+            }
+
+            if (fullGrid)
+            {
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryFull , entity, inventoryComponent));
+                CoreLogger.Instance.Log("Inventory overflow: cannot transfere more object due to insufficient grid space.");
+            }
+
+            EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryChanged , entity, inventoryComponent));
+        }
+
+        /// <summary>
+        /// Reports the encumbrance band. Separate from the classification itself:
+        /// logging is a consequence of the band, not part of deciding it.
+        /// </summary>
+        private void LogLoad(GameEventType load)
+        {
+            switch (load)
+            {
+                case GameEventType.ExtraWeight:
+                    CoreLogger.Instance.Log("Heavy load. Speed reduced.");
+                    break;
+                case GameEventType.Overweight:
+                    CoreLogger.Instance.Log("Overloaded. Speed heavily reduced, energy penalty.");
+                    break;
+                case GameEventType.Immobile:
+                    CoreLogger.Instance.Log("Cannot move due to excess weight.");
+                    break;
+                default:
+                    CoreLogger.Instance.Log("No movement restrictions.");
+                    break;
             }
         }
+
+        private float GetMaxWeight(IEntity entity) => CarryCapacity.GetMaxLoad(entity); 
     
         public void UpdateOnEvent(GameEvent gameEvent)
         {
-            if (gameEvent.GetEventType() == GameEventType.INVENTORY_CHANGED)
-            {
-                ProcessEntity(gameEvent.GetEntity());
-            }
+            /*Emtpy for the moment*/
         }
     }
 }

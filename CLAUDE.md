@@ -1,0 +1,237 @@
+# Artisan — guía para trabajar en este repositorio
+
+Juego de supervivencia y logística en Unity 6 (6000.1.17f1), URP. Es además el TFG de Sergio.
+
+Antes de proponer nada, lee **`Docs/ROADMAP.md`** para saber qué fase está en curso, y el
+**documento de hitos de esa fase** (`Assets/Code/FASE<n>_HITOS.md`). Los documentos de hitos
+son la memoria de diseño del proyecto: qué está hecho, qué falta, y —sobre todo— **por qué**
+cada decisión se tomó así y qué alternativas se descartaron. Su sección «Dónde estamos» (o
+«Where we are right now» en el de la Fase 1) dice en qué punto está el trabajo; está escrita
+para el relevo entre conversaciones. Las fases cerradas conservan su documento: el
+razonamiento de lo que ya existe (el inventario, por ejemplo) está en `FASE1_HITOS.md`.
+
+**Los hitos de cada fase se construyen en modo socrático:** Claude pregunta y Sergio decide;
+el documento se escribe a partir de sus respuestas.
+
+---
+
+## La regla dura
+
+**`Assets/Code/Core/` no puede importar `UnityEngine` ni `UnityEditor`.** Ni una línea, ni
+para un `Vector3`, ni para un `Debug.Log`.
+
+Core contiene el dominio completo: ECS, inventario, equipo, sistemas, presentadores. La capa
+de Unity (`Assets/Code/Unity/`) contiene todo lo que necesita el motor: vistas, MonoBehaviours,
+carga de recursos, sincronización de transforms.
+
+Cuando Core necesita algo del motor, se define una **interfaz en Core** y la implementación
+vive al otro lado. Ejemplos vivos: `IEntityLinker`, `ILogger`, `IReachFilter`.
+
+Cuando Core necesita matemáticas que parecen de motor, se escriben en Core.
+`PositionComponent.Forward()` y `WorldToLocal()` salen de un cuaternión con aritmética a
+mano, precisamente para no importar nada.
+
+---
+
+## Arquitectura
+
+**ECS propio, no DOTS.** `IEntity` con un `Dictionary<Type, IComponent>`. Los componentes son
+clases con `Clone()` y `Equivalent()`. Las entidades se crean clonando prototipos de
+`PrototypeFactory`, registrados en `EntityManager` por `EntityType` (enum, no cadenas).
+
+**Sistemas.** Tres familias, registradas en `SystemManager` desde `GameMain`:
+- `IPeriodicSystem` de juego: corren por tick del reloj.
+- `IPeriodicSystem` de motor: corren por fotograma con deltaTime real.
+- `IReactiveSystem`: reaccionan a `GameEventType` por el `EventBus`.
+
+**Los sistemas no se conocen entre sí.** Cuando una operación necesita dos, la compone un
+**servicio** (`InventoryService` es el precedente: `TryEquipItem` coordina `EquipmentSystem`
+e `InventorySystem` sin que ninguno importe al otro).
+
+**El inventario es un Composite.** `InventoryObject` (rama) / `ItemObject` (hoja, envuelve un
+`BatchItem` de `SubLot`s). La rejilla tetris (`TetrisGridState`) **es** el sistema de
+capacidad, no un adorno visual.
+
+**MVC en `Core/MVC/`.** Los presentadores viven en Core y hablan con vistas a través de
+interfaces; las vistas de UI Toolkit están en `Unity/MVC/View/`.
+
+**Catálogo de items desde Stack&Go.** `data.json` en `StreamingAssets`, exportado por la app
+Java de autoría (repo aparte). `JsonItemCatalogLoader` lo lee y `ItemComponentRegistry`
+traduce el nombre de cada componente al tipo de Core.
+
+---
+
+## Principios que el código ya sigue
+
+No son aspiraciones: están aplicados y hay cicatrices de cuando no lo estaban. Romperlos
+produce fallos silenciosos, no errores de compilación.
+
+**Paridad consulta/ejecución.** Si algo pinta un veredicto antes de actuar, la acción real
+tiene que **empezar llamando a esa misma consulta**. `EquipItem` llama a `CanEquip`;
+`PlaceAt` decide con el mismo `EvaluatePlacement` que colorea el fantasma. Las cuatro veces
+que este proyecto ha pintado verde sin mover nada fue por preguntar una parte de la decisión,
+o preguntarla en otro orden.
+
+**Un hecho, un dueño.** Si un dato se puede deducir, no se guarda. Si se guarda en dos
+sitios, algún día discreparán. Ejemplos de cómo se ha aplicado: `NumericFields<T>` declara
+cada campo una vez y de ahí salen la lectura y la escritura; el volumen de interacción se
+mide del modelo en vez de declararse en el catálogo; el arquetipo de entidad dejó de guardarse
+como campo porque quien lo necesita ya lo tiene en la mano.
+
+**Nombres, no banderas.** Una interfaz con nombre antes que un `Func` suelto (`IReachFilter`,
+no `Func<IEntity, IEntity, bool>`). Un campo por hecho antes que un campo que cambia de
+significado según el momento.
+
+**Una acción que no puede cumplirse no se ofrece** — salvo que ocultarla deje al jugador sin
+saber por qué no pasa nada. En el menú del inventario se oculta; en el mundo se ofrece en
+gris con el motivo («No hay espacio suficiente») y elegirla no hace nada, al estilo RimWorld.
+La diferencia está razonada en `FASE1_HITOS.md` (M7 T7).
+
+**Lo que decide un diseñador va a Stack&Go; lo que se deriva del asset se mide; lo que es
+constante de ajuste vive en el código.** Peso y modelo son lo primero; el volumen de un objeto
+es lo segundo; alcance de interacción y ángulo del cono son lo tercero.
+
+---
+
+## Estilo
+
+**Comentarios en español, como documentación, no como consejo.** `<summary>` en los miembros
+públicos que lo merezcan. Se documenta **por qué** algo es así y qué se descartó, no qué hace
+la línea siguiente. Si un comentario se puede sustituir leyendo el código, sobra.
+
+Los comentarios del repositorio **no llevan tildes** (el código ya existente es así; respétalo).
+Los documentos `.md` sí las llevan.
+
+**Nomenclatura.** Campos privados `_camelCase`; propiedades y métodos `PascalCase`. Hay
+excepciones antiguas —algunos campos sin guion bajo— y están apuntadas como deuda; no las
+propagues.
+
+**Sin `this.` innecesario.** El guion bajo ya distingue el campo. Hay código antiguo que lo
+usa; está apuntado como limpieza pendiente.
+
+**Regiones.** `#region` para agrupar bloques largos dentro de una clase, como ya se hace en
+`InventoryService` y `WorldInteractionSystem`.
+
+---
+
+## Cómo se trabaja aquí
+
+- **Comentarios `// CLAUDE` en el código:** si encuentras un comentario que empieza por
+  `// CLAUDE` con una duda o pregunta en un archivo que Sergio ha editado, responde a la cuestión
+  por el chat y borra ese comentario del archivo.
+- **Bitácora:** al cerrar cada sesión de trabajo, añade su entrada al final de
+  `Docs/BITACORA.md` (formato en su cabecera). Las horas las da Sergio: dedúcelas del ritmo de
+  la conversación solo como «estimación, confirmar» y pregúntale si dudas; nunca las inventes.
+  Si Sergio cuenta trabajo que hizo por su cuenta, también va ahí.
+
+**Sergio conduce.** Los comandos de git los lanza él: no ejecutes `git commit`, `git push` ni
+nada que modifique el repositorio; si hace falta un mensaje de commit, escríbelo para que lo
+copie. **No propongas mensaje de commit por tu cuenta: solo cuando te lo pida.** Cuando lo
+haga, los mensajes terminan con las dos líneas de atribución (`Co-Authored-By` y
+`Claude-Session`): Sergio las quiere. No añadas "not compiled" ni similares al mensaje; eso
+se dice en la conversación.
+
+**El código del núcleo lo escribe Sergio.** Núcleo = los sistemas del juego: inventario,
+heridas, fisiología, interacción con el mundo, y sus servicios y presentadores en
+`Assets/Code/Core/`. Ahí tu papel es valorar sus propuestas, validar o discutir sus
+decisiones y revisar lo que escriba; como mucho, esbozar la forma (firmas, diagrama),
+no el cuerpo. Si una tarea de núcleo te llega como "implementa", **no la hagas: díle que
+le toca a él**, salvo que diga explícitamente que es una excepción. Lo accesorio (temas,
+USS/UXML, enganches con Unity, vistas, `InputManager`) sí puedes escribirlo. Si dudas de
+en qué lado cae algo, pregunta antes de escribir. Motivo: es su TFG y quiere ser autor
+real del código, no solo del diseño.
+
+**Excepción: retoques triviales de núcleo que Sergio pide explícitamente.** Cambios que
+cualquiera entiende al leerlos y que no deciden nada: sustituir líneas duplicadas por un
+método que ya existe, añadir o corregir un comentario o `<summary>` que ya se ha acordado,
+renombrar algo ya decidido, arreglar una errata. Si te pide uno de estos, hazlo sin
+reenviarle la tarea: muchas veces está lejos del ordenador (desde el móvil) y copiar tu
+propuesta a mano no le aporta nada. Sigue siendo suyo todo lo que tenga lógica o decisión
+(un método nuevo, un flujo, una regla, un caso límite); ante la duda, propón y espera.
+
+**Sergio compila; tú no puedes.** No hay Unity en el entorno de trabajo, así que ningún
+cambio está compilado ni probado cuando lo entregas. No lo intentes ni lo simules: al
+terminar, di explícitamente qué no has podido verificar (tipos que asumes, firmas que no
+has abierto, avisos esperables) para que él sepa dónde mirar cuando compile.
+
+**Diseñar antes que escribir.** Cuando una tarea tenga decisiones dentro, plantéalas y espera
+respuesta en vez de elegir por tu cuenta. Empújalo a pensar en lugar de darle la solución
+hecha. Si una decisión te parece equivocada, dilo: sinceridad sin dorar y sin castigar.
+
+**En dos fases, sin ramificar.** Al empezar una tarea, primero la lista COMPLETA de lo que
+hay que decidir, y nada más: ni propuestas ni código. Cuando Sergio la haya resuelto entera,
+y solo cuando pida propuesta, una propuesta cerrada en la que no quede ninguna duda abierta.
+Si al preparar la propuesta sale una decisión nueva, se vuelve a la lista en vez de colarla
+dentro. Abrir frentes nuevos a mitad de una propuesta (ideas sueltas, "por cierto", dudas
+que no se han planteado antes) agota y desordena.
+
+**Con cada implementación de algo diseñado en conjunto, acompaña un pseudo diagrama** de flujo
+o de secuencia, en ASCII, sin refinar pero legible.
+
+**Verifica antes de afirmar.** Este proyecto ha encontrado varios fallos porque se comprobó el
+fichero en vez de razonar sobre lo que debería contener. Antes de añadir un método a una clase,
+haz grep del nombre: ya ha pasado duplicar un `Forward()` que existía cincuenta líneas más
+abajo.
+
+**Cuando tomes una decisión de diseño con su razonamiento, apúntala en
+el documento de hitos de la fase en curso** (`Assets/Code/FASE<n>_HITOS.md`). Ese documento es lo que permite que una conversación nueva
+empiece sabiendo por qué las cosas son como son.
+
+---
+
+## Estructura
+
+```
+Assets/Code/
+  Core/                     ← sin UnityEngine, jamás
+    ECS/          Component, Entity, Systems
+    Inventory/    Composite, rejilla, HandBuffer, SubLot
+    Services/     InventoryService (coreógrafo)
+    MVC/          Presenters y modelos de vista
+    Item/         Catálogo, carga de JSON, registro de componentes
+    Factories/    PrototypeFactory
+  Unity/                    ← todo lo que toca el motor
+    MVC/          Vistas de UI Toolkit, GameMain
+    Services/     TextureCache, ModelCache
+    UnityEntityLinker, TransformSyncSystem
+  FASE1_HITOS.md            ← memoria de diseño de la Fase 1 (inventario), cerrada.
+  FASE<n>_HITOS.md          ← la de cada fase siguiente. La fase en curso, en Docs/ROADMAP.md.
+
+Assets/StreamingAssets/
+  data.json, images/, models/   ← exportado desde Stack&Go, se lee en ejecución
+
+Docs/
+  BITACORA.md        ← registro de sesiones (fecha, horas, qué se hizo). Al cerrar sesión, entrada nueva.
+  NOTAS_MEMORIA.md   ← lo que la memoria del TFG tiene que cubrir (recomendaciones de David…)
+  CREDITOS.md        ← recursos de terceros con origen y licencia
+  MECANICAS.md       ← catálogo de mecánicas (lo que se quiere en el juego)
+  ROADMAP.md         ← fases: qué se hace y en qué orden
+```
+
+---
+
+## Cosas que sorprenden si no las sabes
+
+- **La mano es una reserva, no una posesión.** Agarrar no mueve nada; la extracción y su
+  vuelta atrás ocurren dentro de la misma llamada a `InventoryService.RunTransfer`.
+- **`ItemEntity` es inmutable mientras está en un sub-lote.** Una misma instancia puede estar
+  compartida por varias pilas; para cambiar el estado de unas unidades se clona.
+- **Un contenedor no se cuenta a sí mismo** en el peso: su barra mide lo que le has metido, y
+  su propio peso lo suma quien lo lleva.
+- **Recorrer los slots de equipo no es recorrer las prendas puestas.** Una prenda de ocupación
+  completa está registrada en varios slots; para contar se usa `EquipmentComponent.EquippedItems()`.
+- **El catálogo se lee en ejecución desde `StreamingAssets`**, así que los modelos e iconos no
+  son assets de Unity y no pasan por su importador.
+
+La lista completa, con el razonamiento de cada una, está en la sección «Invariantes del
+inventario» de `FASE1_HITOS.md`.
+
+---
+
+## Referente al sistema social
+
+El sistema social de NPCs vive en un **repositorio aparte: `Fuero`** (`D:\git\Fuero`). Allí
+están su memoria de diseño (`SistemaSocial.md`), sus normas de trabajo (`CLAUDE.md`) y las
+entregas de la asignatura BISI. Es un módulo independiente: no depende de Unity ni de
+`Artisan.Core`, y Artisan lo consumirá como paquete a través de interfaces. Si una tarea toca
+NPCs o lo social, empieza por ese repositorio. Aquí solo se hará la capa de integración.

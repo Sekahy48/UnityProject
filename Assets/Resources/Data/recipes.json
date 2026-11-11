@@ -1,0 +1,14 @@
+{
+    "recipes": [
+    {
+      "id": 1,
+      "inputs": [
+        { "itemId": 3, "quantity": 2 },
+        { "itemId": 4, "quantity": 1 }
+      ],
+      "outputs": [
+        { "itemId": 1, "quantity": 1 }
+      ]
+    }
+  ]
+}

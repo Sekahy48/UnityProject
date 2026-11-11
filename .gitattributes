@@ -1,0 +1,47 @@
+# Regla general: en el repositorio, todo el texto va en LF.
+# En disco, cada plataforma escribe lo suyo. Ni Windows ni Linux vuelven
+# a "ensuciar" el diff solo por abrir un archivo.
+* text=auto
+
+# --- Codigo y datos -------------------------------------------------
+*.cs        text diff=csharp
+*.json      text
+*.md        text
+*.txt       text
+*.uss       text
+*.uxml      text
+*.shader    text
+*.hlsl      text
+*.cginc     text
+*.shadergraph text
+
+# --- Assets de Unity en YAML ----------------------------------------
+# Son texto, pero solo Unity sabe fusionarlos. Marcarlos como merge=unityyamlmerge
+# evita que git intente mezclarlos linea a linea y destroce una escena.
+# Requiere configurar la herramienta en .gitconfig (ver nota abajo).
+*.unity           text merge=unityyamlmerge eol=lf
+*.prefab          text merge=unityyamlmerge eol=lf
+*.asset           text merge=unityyamlmerge eol=lf
+*.mat             text merge=unityyamlmerge eol=lf
+*.controller      text merge=unityyamlmerge eol=lf
+*.meta            text merge=unityyamlmerge eol=lf
+*.scenetemplate   text merge=unityyamlmerge eol=lf
+*.inputactions    text eol=lf
+
+# --- Binarios: no tocar un solo byte --------------------------------
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.tga    binary
+*.psd    binary
+*.fbx    binary
+*.dae    binary
+*.blend  binary
+*.ttf    binary
+*.otf    binary
+*.wav    binary
+*.mp3    binary
+*.ogg    binary
+*.zip    binary
+*.dll    binary
+*.pdf    binary

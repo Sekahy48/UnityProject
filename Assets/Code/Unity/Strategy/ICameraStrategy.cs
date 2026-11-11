@@ -1,5 +1,5 @@
 using System;
-using ECS.Entity;
+using Core.ECS.Entity;
 using UnityEngine;
 
 namespace Strategy
@@ -9,8 +9,7 @@ namespace Strategy
         void Execute(float deltaTime);
         void Activate();
         void Deactivate();
-        Camera GetCamera();
-        IEntity GetPlayer(); 
+        Camera GetCamera(); 
   
     }
     

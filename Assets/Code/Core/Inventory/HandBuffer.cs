@@ -1,0 +1,117 @@
+using System;
+using Core.ECS.Entity;
+using AC = Core.Utils.ArgumentChecker;
+
+namespace Core.Inventory
+{
+    public class HandBuffer
+    {
+        private IGrabOrigin _origin;
+        private ItemEntity _subLotItem;
+        private int _grabbed;
+
+        /// <summary>
+        /// Marca unidades como agarradas. No mueve nada: siguen en su origen hasta que se
+        /// colocan. La mano solo recuerda de donde salen y cuantas quedan pendientes.
+        /// </summary>
+        /// <param name="amount">Unidades a agarrar. Se acota a lo que el origen tenga.</param>
+        /// <param name="subLotItem">Variante concreta, o null para el origen entero.</param>
+        /// <returns>Unidades realmente agarradas.</returns>
+        public int Grab(IGrabOrigin origin, int amount, ItemEntity subLotItem = null)
+        {
+            AC.CheckNotNull(origin, nameof(origin));
+            AC.CheckPositive(amount, nameof(amount));
+
+            // Sobrescribir un agarre abandonaria las unidades anteriores: nunca salieron de
+            // su origen, pero sin referencia nadie puede colocarlas.
+            if (!IsEmpty())
+                throw new InvalidOperationException(
+                    "Cannot grab with a full hand. Place or clear it first.");
+
+            _origin = origin;
+            _subLotItem = subLotItem;
+            _grabbed = Math.Min(amount, origin.Available(subLotItem));
+
+            return _grabbed;
+        }
+
+        /// <summary>
+        /// Anade unidades al agarre en curso, del MISMO origen y la MISMA variante.
+        ///
+        /// Existe porque agarrar no mueve nada: lo reservado sigue contando en su origen, asi
+        /// que "coger mas" no es agarrar otra vez —eso reventaria contra la guarda de Grab—
+        /// sino subir la reserva. El tope es lo que el origen tenga sin reservar.
+        /// </summary>
+        /// <param name="amount">Unidades a sumar. Se acota a lo que quede sin agarrar.</param>
+        /// <returns>Unidades realmente sumadas.</returns>
+        public int GrabMore(int amount)
+        {
+            if (IsEmpty())
+                throw new InvalidOperationException("Cannot add to a grab that does not exist.");
+            AC.CheckPositive(amount, nameof(amount));
+
+            int taken = Math.Min(amount, Math.Max(Ungrabbed(), 0));
+            _grabbed += taken;
+
+            return taken;
+        }
+
+        /// <summary>Unidades del origen que aun no estan reservadas por esta mano.</summary>
+        public int Ungrabbed() => IsEmpty() ? 0 : _origin.Available(_subLotItem) - _grabbed;
+
+        /// <summary>
+        /// Descuenta unidades que el llamante YA ha sacado del origen. Llamar con lo que
+        /// realmente se movio, nunca con lo que se pidio.
+        /// La mano se vacia sola al llegar a cero, porque el origen puede haber dejado de
+        /// existir y la referencia quedaria colgando.
+        /// </summary>
+        public int NotifyPlaced(int amount)
+        {
+            if (amount <= 0) return 0;
+
+            int placed = Math.Min(amount, _grabbed);
+            _grabbed -= placed;
+            if (_grabbed <= 0) Clear();
+            return placed;
+        }
+
+        /// <summary>
+        /// Vacia la mano. Seguro como cancelacion: lo que quede nunca salio de su origen.
+        /// Solo cancela lo pendiente; lo ya reportado por NotifyPlaced esta colocado y ahi se queda.
+        ///
+        /// <para><b>INVARIANTE del que depende este metodo:</b> nada sale del arbol fuera de una
+        /// transaccion de <c>InventoryService.RunTransfer</c>. Agarrar no extrae: solo apunta de
+        /// donde sale y cuantas unidades quedan reservadas. La extraccion y su vuelta atras
+        /// ocurren dentro de la misma llamada, asi que cuando esa llamada termina, o lo movido
+        /// esta en el destino o ha vuelto a su sitio. Por eso aqui basta con soltar la
+        /// referencia: no hay nada que devolver.</para>
+        ///
+        /// <para>Si algun dia un camino extrae al AGARRAR en vez de al colocar, este metodo se
+        /// convierte en una fuga — y con contenedores no seria un contador descuadrado sino una
+        /// mochila con su contenido que desaparece. Ese seria el momento en que "cancelar es
+        /// gratis" tendria que pasar a ser "cancelar deshace", que es otro contrato y afecta a
+        /// todo lo que descansa en el primero.</para>
+        /// </summary>
+        public void Clear()
+        {
+            _origin = null;
+            _subLotItem = null;
+            _grabbed = 0;
+        }
+
+        public bool IsEmpty() => _origin == null;
+
+        public int GetHeldAmount() => _grabbed;
+
+        /// <summary>Origen de lo agarrado. Null con la mano vacia.</summary>
+        public IGrabOrigin GetOrigin() => _origin;
+
+        /// <summary>Variante agarrada, o null si se agarro el origen entero.</summary>
+        public ItemEntity GetHeldSubLot() => _subLotItem;
+
+        /// <summary>Item con el que pintar el icono que sigue al cursor.</summary>
+        public ItemEntity GetHeldItem() => IsEmpty() ? null : (_subLotItem ?? _origin.Representative);
+
+        public IEntity GetEntity() => _origin?.Owner;
+    }
+}

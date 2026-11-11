@@ -1,6 +1,6 @@
 
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,8 +25,9 @@ namespace Strategy
         {
             MovementComponent movComp = GetMov();
 
-            float mouseX = Mouse.current.delta.x.ReadValue() * movComp.GetMouseSensitivity();
-            float mouseY = Mouse.current.delta.y.ReadValue() * movComp.GetMouseSensitivity();
+            Vector2 delta = ReadLookDelta();
+            float mouseX = delta.x * movComp.MouseSensitivity;
+            float mouseY = delta.y * movComp.MouseSensitivity;
 
             rotation.x += mouseX;
             rotation.y -= mouseY;

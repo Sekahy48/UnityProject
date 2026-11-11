@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using Factories;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Factories;
+using Core.Observer;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
     /// Manages the game's entities. No UnityEngine dependencies.
@@ -15,47 +15,60 @@ namespace ECS.Systems
     public class EntityManager : IObserver
     {
         private int _playerId = -1;
-        private readonly Dictionary<int, IEntity> entities = new();
-        private readonly Dictionary<string, IEntity> prototypes = new();
-        private readonly Dictionary<string, ItemEntity> itemsCatalog = new();
+        private PrototypeFactory _prototypeFactory;
+        private readonly Dictionary<int, IEntity> _entities = new();
+        private readonly Dictionary<EntityType, IEntity> _prototypes = new();
 
-        public EntityManager()
+        public EntityManager(PrototypeFactory prototypeFactory)
         {
-            prototypes["resourceNode"] = PrototypeFactory.CreateResourceNodePrototype();
-            prototypes["aliveEntity"] = PrototypeFactory.CreateAliveEntityPrototype();
-            prototypes["playerEntity"] = PrototypeFactory.CreatePlayerEntityPrototype();
+            _prototypeFactory = prototypeFactory;
+            _prototypes[EntityType.ResourceNode] = _prototypeFactory.CreateResourceNodePrototype();
+            _prototypes[EntityType.AliveEntity] = _prototypeFactory.CreateAliveEntityPrototype();
+            _prototypes[EntityType.Player] = _prototypeFactory.CreatePlayerEntityPrototype();
+            _prototypes[EntityType.GroundLot] = _prototypeFactory.CreateGroundLotPrototype();
         }
 
-        public IEntity CreateEntity(string type)
+        public IEntity CreateEntity(EntityType type)
         {
-            if (!prototypes.TryGetValue(type, out IEntity prototype))
+            if (!_prototypes.TryGetValue(type, out IEntity prototype))
                 throw new ArgumentException($"No prototype found for type: {type}");
 
             IEntity created = prototype.Clone();
-            entities[created.GetIdAsInt()] = created;
+            _entities[created.GetIdAsInt()] = created;
             return created;
+        }
+
+        /// <summary>
+        /// Da de alta una entidad que ya existe y no sale de ningun prototipo: un item que
+        /// pasa del inventario al mundo. <see cref="CreateEntity"/> no sirve para eso porque
+        /// fabrica una entidad nueva, y aqui la entidad ES el item.
+        /// </summary>
+        public void Register(IEntity entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            _entities[entity.GetIdAsInt()] = entity;
         }
 
         public void RemoveEntity(int id)
         {
-            entities.Remove(id);
+            _entities.Remove(id);
         }
 
         public IEntity GetEntity(int id)
         {
-            return entities.TryGetValue(id, out var entity) ? entity : null;
+            return _entities.TryGetValue(id, out var entity) ? entity : null;
         }
 
         public void AddComponentToEntity(int entityId, IComponent component)
         {
-            if (!entities.TryGetValue(entityId, out var entity))
+            if (!_entities.TryGetValue(entityId, out var entity))
                 throw new ArgumentException($"Entity with ID {entityId} not found.");
             entity.AddComponent(component);
         }
 
         public void RemoveComponentFromEntity(int entityId, Type target)
         {
-            if (!entities.TryGetValue(entityId, out var entity))
+            if (!_entities.TryGetValue(entityId, out var entity))
                 throw new ArgumentException($"Entity with ID {entityId} not found.");
             entity.RemoveComponent(target);
         }
@@ -63,7 +76,7 @@ namespace ECS.Systems
         public List<IEntity> GetEntitiesWithComponent(Type target)
         {
             List<IEntity> result = new();
-            foreach (var entity in entities.Values)
+            foreach (var entity in _entities.Values)
             {
                 if (entity.HasComponent(target))
                     result.Add(entity);
@@ -73,7 +86,7 @@ namespace ECS.Systems
 
         public List<IEntity> GetPrototypes()
         {
-            return new List<IEntity>(prototypes.Values);
+            return new List<IEntity>(_prototypes.Values);
         }
 
         public void Update()
@@ -83,13 +96,13 @@ namespace ECS.Systems
 
         public IEntity GetPlayer()
         {
-            if (_playerId >= 0 && entities.TryGetValue(_playerId, out var existing))
+            if (_playerId >= 0 && _entities.TryGetValue(_playerId, out var existing))
                 return existing;
 
-            IEntity playerPrototype = prototypes["playerEntity"];
+            IEntity playerPrototype = _prototypes[EntityType.Player];
             IEntity player = playerPrototype.Clone();
             _playerId = player.GetIdAsInt();
-            entities[_playerId] = player;
+            _entities[_playerId] = player;
             return player;
         }
     }

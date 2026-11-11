@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     public class EntityComponentException : Exception
     {

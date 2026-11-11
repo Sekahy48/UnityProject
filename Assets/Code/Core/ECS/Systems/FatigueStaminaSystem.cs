@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using ECS.Component;
-using ECS.Entity;
-using Observer;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Events; 
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
-    public class FatigueStaminaSystem : GenericSubject, IGameSystem
+    public class FatigueStaminaSystem : IPeriodicSystem
     {
         private const float STAMINA_REGEN_RATE = 5f;
         private const float FATIGUE_REGEN_RATE = 0.5f;
@@ -14,6 +14,8 @@ namespace ECS.Systems
         private const float STAMINA_DRAIN_PER_SECOND = 10f;
         private const float FATIGUE_DRAIN_PER_STAMINA = 0.01f;
         private const float FATIGUE_BURST_DRAIN = 5f;
+
+        private bool _staminaRestrictionActive = false;
 
         /// <summary>
         /// IGameSystem: processes all entities with EnergyComponent + MovementComponent.
@@ -34,7 +36,7 @@ namespace ECS.Systems
 
             if (energy == null) return;
 
-            bool drain = movement != null && movement.IsRunning();
+            bool drain = movement != null && movement.IsRunning;
             bool changed = false;
 
             if (!drain)
@@ -49,9 +51,10 @@ namespace ECS.Systems
                     RestoreStamina(deltaTime, energy);
                     changed = true;
                 }
-                if (energy.IsStaminaFull() && movement != null)
+                if (energy.IsStaminaFull() && movement != null && _staminaRestrictionActive)
                 {
-                    movement.SetCanRun(true);
+                    movement.RemoveRunRestriction();
+                    _staminaRestrictionActive = false;
                 }
             }
             else
@@ -60,33 +63,34 @@ namespace ECS.Systems
                 {
                     DrainStamina(deltaTime, energy);
                     changed = true;
-                    if (energy.IsStaminaEmpty())
+                    if (energy.IsStaminaEmpty() && !_staminaRestrictionActive)
                     {
-                        movement.SetCanRun(false);
+                        movement.AddRunRestriction();
+                        _staminaRestrictionActive = true;
                     }
                 }
             }
 
             if (changed)
             {
-                this.NotifyObservers();
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.EnergyChanged, entity, energy));
             }
         }
 
         public void RestoreFatigue(float deltaTime, EnergyComponent component)
         {
-            component.SetFatigue(component.GetFatigue() + FATIGUE_REGEN_RATE * deltaTime);
+            component.SetFatigue(component.Fatigue + FATIGUE_REGEN_RATE * deltaTime);
         }
 
         public void RestoreStamina(float deltaTime, EnergyComponent component)
         {
-            component.SetStamina(component.GetStamina() + STAMINA_REGEN_RATE * deltaTime);
+            component.SetStamina(component.Stamina + STAMINA_REGEN_RATE * deltaTime);
         }
 
         public void DrainStamina(float deltaTime, EnergyComponent component)
         {
-            component.SetStamina(component.GetStamina() - STAMINA_DRAIN_PER_SECOND * deltaTime);
-            bool burst = component.GetStamina() <= 0;
+            component.SetStamina(component.Stamina - STAMINA_DRAIN_PER_SECOND * deltaTime);
+            bool burst = component.Stamina <= 0;
             DrainFatigue(deltaTime, component, burst);
         }
 
@@ -97,7 +101,7 @@ namespace ECS.Systems
             {
                 fatigueDrain += FATIGUE_BURST_DRAIN;
             }
-            component.SetFatigue(component.GetFatigue() - fatigueDrain);
+            component.SetFatigue(component.Fatigue - fatigueDrain);
         }
     }
 }

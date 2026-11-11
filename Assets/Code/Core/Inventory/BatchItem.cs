@@ -1,0 +1,246 @@
+using System;
+using System.Collections.Generic;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using AC = Core.Utils.ArgumentChecker;
+
+namespace Core.Inventory
+{
+    /// <summary>
+    /// Groups items of the same typeId into sub-lots differentiated by state (durability, condition, etc.).
+    /// Each sub-lot is a pair (ItemEntity, amount). Items within the same sub-lot are Equivalent.
+    /// Total amount across all sub-lots cannot exceed maxStackSize.
+    ///
+    /// <para>
+    /// <b>Invariant — sub-lot entities are immutable while held here.</b>
+    /// A single <see cref="ItemEntity"/> instance may be shared by several sub-lots, by several
+    /// BatchItems, and by several ItemObjects placed at different grid positions: when a lot is
+    /// split (because it exceeds maxStackSize, or because part of it is moved) the reference is
+    /// copied, not the object. Mutating an entity obtained from <see cref="GetSubLots"/> would
+    /// therefore silently alter every stack sharing it.
+    /// </para>
+    /// <para>
+    /// To change the state of some units (wear, spoilage, enchantment...), follow copy-on-write:
+    /// clone the entity, subtract that amount from the original sub-lot, apply the change to the
+    /// clone, and add it back as a new sub-lot. Since the clone is no longer
+    /// <c>Equivalent</c> to the original it will land in its own sub-lot, which is exactly the
+    /// distinction sub-lots exist to represent.
+    /// </para>
+    /// </summary>
+    public class BatchItem
+    {
+        private Random _random;
+        private readonly List<SubLot> _items;
+        private readonly int _typeId;
+        private readonly int _maxStackSize;
+
+        public BatchItem(ItemEntity item, int amount)
+        {
+            _typeId = item.GetComponent<BaseItemComponent>().TypeId;
+            _maxStackSize = item.GetComponent<BaseItemComponent>().MaxStackSize;
+            AC.CheckPositive(_maxStackSize, "maxStackSize");
+
+            _items = new List<SubLot>
+            {
+                new SubLot(item, Math.Min(amount, _maxStackSize))
+            };
+ 
+            _random = new Random();
+        }
+
+        //#region Getters
+
+        /// <summary>
+        /// TypeId shared by all items in this batch.
+        /// </summary>
+        public int GetTypeId() => _typeId;
+
+        /// <summary>
+        /// Maximum total amount this batch can hold across all sub-lots.
+        /// </summary>
+        public int GetMaxStackSize() => _maxStackSize;
+
+        /// <summary>
+        /// Sum of amounts across all sub-lots.
+        /// </summary>
+        public int GetTotalAmount()
+        {
+            int total = 0;
+            foreach (SubLot lot in _items)
+            {
+                total += lot.Amount;
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// Sum of (weight * amount) across all sub-lots.
+        /// </summary>
+        public float GetTotalWeight()
+        {
+            float totalWeight = 0;
+            foreach (SubLot lot in _items)
+            {
+                totalWeight += lot.TotalWeight;
+            }
+            return totalWeight;
+        }
+
+        /// <summary>
+        /// Whether the batch has no sub-lots (all items consumed).
+        /// </summary>
+        public bool IsEmpty() => _items.Count == 0;
+
+        /// <summary>
+        /// Returns a copy of the sub-lot list for inspection.
+        /// </summary>
+        public List<SubLot> GetSubLots() => new List<SubLot>(_items);
+
+        //#endregion
+
+        //#region Add
+
+        /// <summary>
+        /// Adds a certain amount of an item if it matches the batch typeId.
+        /// If the item is Equivalent to an existing sub-lot, merges into it.
+        /// Otherwise creates a new sub-lot.
+        /// </summary>
+        /// <param name="item">Item to add (must share this batch's typeId).</param>
+        /// <param name="amount">Number of units to add.</param>
+        /// <returns>Amount that could not be added due to maxStackSize limit.</returns>
+        public int AddAmount(ItemEntity item, int amount)
+        {
+            if (item.GetComponent<BaseItemComponent>().TypeId != _typeId) return amount;
+
+            int toAdd = Math.Min(amount, _maxStackSize - GetTotalAmount());
+            int remaining = amount - toAdd;
+
+            if (toAdd > 0 && !SetAmount(item, toAdd + GetBatchAmount(item)))
+            {
+                _items.Add(new SubLot(item, toAdd));
+            }
+
+            return remaining;
+        }
+
+        //#endregion
+
+        //#region Consume
+
+        /// <summary>
+        /// Consumes 1 unit from a random sub-lot.
+        /// </summary>
+        /// <returns>The consumed ItemEntity, or null if the batch is empty.</returns>
+        public ItemEntity ConsumeRandom()
+        {
+            if (_items.Count == 0) return null;
+
+            int rndmIndex = _random.Next(0, _items.Count);
+            ItemEntity item = _items[rndmIndex].Item;
+            bool consumed = ConsumeAmount(item, 1) != 0;
+            return consumed ? item : null;
+        }
+
+        /// <summary>
+        /// Consumes N units randomly across sub-lots. Returns what was consumed grouped by sub-lot.
+        /// </summary>
+        /// <param name="amount">Number of units to consume.</param>
+        /// <returns>What was consumed from each sub-lot.</returns>
+        public List<SubLot> ConsumeRandom(int amount)
+        {
+            List<SubLot> consumed = new List<SubLot>();
+            int toConsume = Math.Min(amount, GetTotalAmount());
+
+            for (int i = 0; i < toConsume; i++)
+            {
+                if (_items.Count == 0) break;
+                int rndmIndex = _random.Next(0, _items.Count);
+                ItemEntity item = _items[rndmIndex].Item;
+                ConsumeAmount(item, 1);
+
+                bool found = false;
+                for (int j = 0; j < consumed.Count; j++)
+                {
+                    if (consumed[j].Item.Equivalent(item))
+                    {
+                        consumed[j] = new SubLot(consumed[j].Item, consumed[j].Amount + 1);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    consumed.Add(new SubLot(item, 1));
+            }
+
+            return consumed;
+        }
+
+        /// <summary>
+        /// Consumes up to the requested amount from the sub-lot matching the given item.
+        /// </summary>
+        /// <param name="item">Item identifying the sub-lot (matched by Equivalent).</param>
+        /// <param name="amount">Maximum units to consume.</param>
+        /// <returns>Actual amount consumed.</returns>
+        public int ConsumeAmount(ItemEntity item, int amount)
+        {
+            int consumed = Math.Min(amount, GetBatchAmount(item));
+            bool applied = SetAmount(item, GetBatchAmount(item) - consumed);
+            return applied ? consumed : 0;
+        }
+
+
+        public void ConsumeAll()
+        {
+            _items.Clear();
+        }
+        //#endregion
+
+        /// <summary>
+        /// Si la pila ya guarda una variante Equivalent a ese item. Sirve para apilar primero
+        /// donde ya estan sus iguales y no repartir una misma variante entre varias pilas.
+        /// </summary>
+        public bool HasVariant(ItemEntity item) => GetBatchAmount(item) > 0;
+
+        //#region Private helpers
+
+        /// <summary>
+        /// Returns the amount stored in the sub-lot whose item is Equivalent to the given one.
+        /// </summary>
+        private int GetBatchAmount(ItemEntity item)
+        {
+            foreach (SubLot lot in _items)
+            {
+                if (lot.Item.Equivalent(item)) return lot.Amount;
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Sets the amount of the sub-lot matching the given item.
+        /// If amount reaches 0, the sub-lot is removed.
+        /// </summary>
+        /// <returns>True if a matching sub-lot was found.</returns>
+        private bool SetAmount(ItemEntity item, int amount)
+        {
+            for (int i = 0; i < _items.Count; i++)
+            {
+                SubLot lot = _items[i];
+                if (item.Equivalent(lot.Item))
+                {
+                    if (amount <= 0)
+                    {
+                        _items.RemoveAt(i);
+                    }
+                    else
+                    {
+                        _items[i] = new SubLot(lot.Item, amount);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        //#endregion
+    }
+}

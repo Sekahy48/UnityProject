@@ -1,5 +1,5 @@
-using ECS.Systems;
-using MVC.Presenter;
+using Core.ECS.Systems;
+using Core.MVC.Presenter;
 
 namespace Core.Contexts
 {

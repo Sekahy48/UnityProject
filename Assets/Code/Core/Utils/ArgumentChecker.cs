@@ -1,6 +1,6 @@
 using System;
 
-namespace Utils
+namespace Core.Utils
 {
     public static class ArgumentChecker
     {
@@ -8,7 +8,7 @@ namespace Utils
         {
             if (arg == null)
             {
-                throw new ArgumentNullException("Argument Checker: " + argName + " no puede ser null");
+                throw new ArgumentNullException(argName, "Argument Checker: " + argName + " no puede ser null");
             }
         }
 
@@ -17,6 +17,14 @@ namespace Utils
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException("Argument Checker: " + argName + " debe ser positivo");
+            }
+        }
+
+        public static void CheckNotNegative(int number, string argName)
+        {
+            if (number < 0)
+            {
+                throw new ArgumentOutOfRangeException("Argument Checker: " + argName + " debe ser positivo o cero");
             }
         }
     }

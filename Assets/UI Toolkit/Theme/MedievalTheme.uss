@@ -1,0 +1,715 @@
+/* =====================================================================================
+   TEMA MEDIEVAL — capa de decoracion sobre los estilos base.
+
+   Solo cambia colores, bordes, radios y fuentes. NO toca tamanos, margenes ni flex: la
+   disposicion sigue siendo la de InventoryWindow.uss. Los anchos de borde son los de la
+   base salvo tres filos de 1 px que se anaden (bajo la barra de titulo, alrededor de la
+   marca de la E y de las barras del HUD); ocupan su pixel por dentro, no mueven nada.
+
+   Como revertir: quitar la linea <Style src=".../Theme/MedievalTheme.uss"/> de
+   InventoryWindow.uxml, InventoryGridPanel.uxml, WorldInteraction.uxml y PlayerHUD.uxml
+   (o vaciar este fichero). La base queda intacta.
+
+   Paleta, pensada como materiales y no como colores sueltos:
+     madera oscura   rgb(33, 24, 17)     fondo de ventanas
+     madera          rgb(52, 38, 26)     barras de titulo, pestanas
+     cuero           rgb(92, 64, 40)     items, fichas
+     hierro          rgb(18, 13, 9)      filos oscuros, carriles
+     laton           rgb(176, 138, 70)   bordes nobles, acentos
+     laton vivo      rgb(222, 184, 110)  realces, titulos
+     pergamino       rgb(232, 218, 188)  texto principal
+     pergamino viejo rgb(176, 156, 122)  texto secundario
+     lacre           rgb(128, 30, 24)    cerrar, peligro
+
+   El relieve se hace con los colores de cada lado del borde: arriba/izquierda claros y
+   abajo/derecha oscuros = sobresale (placas, botones); al reves = hundido (celdas,
+   huecos). USS no tiene degradados, y esto da volumen sin texturas.
+   ===================================================================================== */
+
+
+/* ---------- Paleta ----------
+   Cada material se declara una vez aqui y las reglas lo usan con var(--nombre). El
+   sufijo -NN es la opacidad (laton-60 = laton al 60%). Los colores de un solo uso se
+   quedan literales: USS no deja cambiar la opacidad de una variable, asi que cada
+   variante tendria que ser otra variable. Las --radial-* del menu radial tambien
+   quedan literales: las lee C# (CustomStyleProperty) y no esta comprobado que
+   resuelva var().
+   ---------- */
+
+:root {
+    --madera-oscura:      rgb(33, 24, 17);
+    --madera:             rgb(52, 38, 26);
+    --cuero:              rgb(92, 64, 40);
+    --hierro:             rgb(18, 13, 9);
+    --hierro-90:          rgba(18, 13, 9, 0.9);
+    --laton:              rgb(176, 138, 70);
+    --laton-90:           rgba(176, 138, 70, 0.9);
+    --laton-70:           rgba(176, 138, 70, 0.7);
+    --laton-60:           rgba(176, 138, 70, 0.6);
+    --laton-vivo:         rgb(222, 184, 110);
+    --laton-vivo-90:      rgba(222, 184, 110, 0.9);
+    --pergamino-claro:    rgb(240, 230, 206);
+    --pergamino:          rgb(232, 218, 188);
+    --pergamino-medio:    rgb(200, 184, 152);
+    --pergamino-viejo:    rgb(176, 156, 122);
+    --lacre:              rgb(128, 30, 24);
+    --hueco-fondo:        rgba(22, 16, 11, 0.92);
+    --hueco-filo:         rgba(10, 7, 4, 0.95);
+}
+
+
+/* ---------- Ventanas: tablones de madera oscura con marco de laton ---------- */
+
+.main-area,
+.side-panels__panel,
+.inspect-panel {
+    background-color: rgba(33, 24, 17, 0.96);
+    border-top-color: rgba(176, 138, 70, 0.95);
+    border-left-color: rgba(176, 138, 70, 0.80);
+    border-right-color: rgba(96, 72, 36, 0.95);
+    border-bottom-color: rgba(96, 72, 36, 0.95);
+    border-radius: 3px;
+}
+
+.title-bar {
+    background-color: var(--madera);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(176, 138, 70, 0.55);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.title-bar__label {
+    color: var(--laton-vivo);
+    letter-spacing: 1px;
+}
+
+.player-panels__left {
+    border-color: rgba(96, 72, 36, 0.8);
+}
+
+
+/* ---------- Pestanas laterales: lenguetas de madera ---------- */
+
+.left-tabs__tab {
+    background-color: var(--madera);
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-90);
+    border-bottom-color: var(--hierro-90);
+    border-right-color: rgba(33, 24, 17, 0.96);
+}
+
+.left-tabs__tab:hover {
+    background-color: rgb(70, 51, 33);
+}
+
+.panel-slot-tabs__label {
+    background-color: var(--madera);
+    color: var(--pergamino);
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-70);
+    border-right-color: var(--hierro-90);
+    border-bottom-color: var(--hierro-90);
+    -unity-text-align: middle-center;
+}
+
+.panel-slot-tabs__label:hover {
+    color: var(--laton-vivo);
+}
+
+
+/* ---------- Botones: lacre y hierro ---------- */
+
+.title-bar__close {
+    background-color: var(--lacre);
+    color: var(--pergamino);
+    border-radius: 10px;
+    -unity-font-style: bold;
+}
+
+.title-bar__close:hover {
+    background-color: rgb(158, 42, 32);
+}
+
+.title-bar__dev-button {
+    background-color: rgb(40, 30, 21);
+    color: var(--pergamino-viejo);
+}
+
+
+/* ---------- Rejilla: huecos tallados en la madera ---------- */
+
+.inventory-grid__cell {
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
+    border-bottom-color: rgba(78, 58, 38, 0.55);
+    border-right-color: rgba(78, 58, 38, 0.55);
+}
+
+
+/* ---------- Items: fichas de cuero con remate de laton ---------- */
+
+.item-block {
+    background-color: rgba(92, 64, 40, 0.92);
+    border-top-color: rgba(206, 166, 94, 0.95);
+    border-left-color: rgba(206, 166, 94, 0.85);
+    border-bottom-color: rgba(70, 48, 22, 0.95);
+    border-right-color: rgba(70, 48, 22, 0.95);
+    border-radius: 2px;
+}
+
+.amount-label {
+    color: var(--pergamino);
+    background-color: rgba(18, 13, 9, 0.82);
+    border-radius: 2px;
+}
+
+
+/* ---------- Barra de peso: carril de hierro, colores de tierra ---------- */
+
+.weight-rail {
+    background-color: var(--hierro);
+}
+
+.weight-rail__bar--normal   { background-color: rgba(86, 118, 58, 0.98); }   /* musgo */
+.weight-rail__bar--extra    { background-color: rgba(192, 150, 44, 0.98); }  /* ocre */
+.weight-rail__bar--over     { background-color: rgba(172, 88, 34, 0.98); }   /* oxido */
+.weight-rail__bar--immobile { background-color: rgba(128, 24, 18, 0.98); }   /* sangre */
+
+.weight-rail__label--normal   { color: var(--pergamino-claro); }
+.weight-rail__label--extra    { color: var(--madera-oscura); }
+.weight-rail__label--over     { color: var(--pergamino-claro); }
+.weight-rail__label--immobile { color: var(--pergamino-claro); }
+
+.weight-rail__label--note {
+    color: var(--laton-vivo);
+}
+
+
+/* ---------- Tira de inspeccion: una placa con el nombre grabado ---------- */
+
+.inspection-strip {
+    border-top-color: rgba(176, 138, 70, 0.55);
+    background-color: rgba(26, 19, 13, 0.6);
+}
+
+.inspection-strip__icon {
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
+    border-bottom-color: var(--laton-60);
+    border-right-color: var(--laton-60);
+    border-radius: 2px;
+}
+
+.inspection-strip__name {
+    color: var(--laton-vivo);
+}
+
+.inspection-strip__description {
+    color: var(--pergamino-medio);
+    -unity-font-style: italic;
+}
+
+.inspection-strip__stat {
+    color: var(--pergamino);
+    background-color: rgba(92, 64, 40, 0.45);
+    border-radius: 2px;
+}
+
+.section-label {
+    color: var(--pergamino-viejo);
+}
+
+
+/* ---------- Equipo: huecos con marco de hierro ---------- */
+
+.equip-slot {
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
+    border-bottom-color: rgba(120, 92, 48, 0.7);
+    border-right-color: rgba(120, 92, 48, 0.7);
+}
+
+.equip-slot:hover {
+    border-bottom-color: var(--laton-vivo-90);
+    border-right-color: var(--laton-vivo-90);
+}
+
+.layers-popup {
+    background-color: rgba(33, 24, 17, 0.98);
+    border-color: var(--laton-90);
+    border-radius: 2px;
+}
+
+
+/* ---------- Menus y desplegables: madera con filo de laton ---------- */
+
+.ctx-menu,
+.sublots-popup {
+    background-color: var(--madera-oscura);
+    border-color: var(--laton-90);
+    color: var(--pergamino);
+}
+
+.ctx-menu__label,
+.sublots-popup__label {
+    color: var(--pergamino);
+}
+
+.ctx-menu__option.ctx-menu__option--selected,
+.ctx-menu__option:hover {
+    border-color: rgba(222, 184, 110, 0.85);
+    background-color: rgba(176, 138, 70, 0.16);
+}
+
+.sublots-popup__row {
+    border-color: rgba(52, 38, 26, 0.9);
+}
+
+.sublots-popup__row:hover {
+    border-color: var(--laton-vivo-90);
+    background-color: rgba(176, 138, 70, 0.12);
+}
+
+.ctx-menu__widget .unity-base-text-field__input,
+.ctx-menu__widget #unity-text-input {
+    background-color: rgb(22, 16, 11);
+    border-color: var(--laton-70);
+    color: var(--pergamino);
+}
+
+.ctx-menu__widget .unity-text-element--inner-input-field {
+    color: var(--pergamino);
+}
+
+
+/* ---------- Tooltip: un trozo de pergamino con tinta ---------- */
+
+.tooltip {
+    background-color: rgb(226, 208, 170);
+    border-top-color: rgb(160, 128, 84);
+    border-left-color: rgb(160, 128, 84);
+    border-bottom-color: var(--cuero);
+    border-right-color: var(--cuero);
+    border-radius: 2px;
+}
+
+.tooltip__text {
+    color: rgb(52, 36, 22);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+
+/* ---------- Catalogo (herramienta de desarrollo) ---------- */
+
+.catalog__row {
+    background-color: rgba(92, 64, 40, 0.55);
+    border-color: var(--laton-60);
+}
+
+.catalog__row-label {
+    color: var(--pergamino);
+}
+
+
+/* ---------- Mano: los veredictos conservan su color, en tonos de tierra ----------
+   Verde, amarillo, azul y rojo SIGUEN siendo los cuatro veredictos: el color es la
+   respuesta y no se puede sacrificar a la estetica. Solo se apagan un poco para que no
+   chirrien contra la madera. */
+
+.hand-buffer--fits      { background-color: rgba(86, 118, 58, 0.28);  border-color: rgba(120, 168, 82, 0.98); }
+.hand-buffer--partial   { background-color: rgba(192, 150, 44, 0.28); border-color: rgba(222, 184, 70, 0.98); }
+.hand-buffer--swap      { background-color: rgba(64, 104, 150, 0.28); border-color: rgba(96, 146, 204, 0.98); }
+.hand-buffer--collision { background-color: rgba(128, 24, 18, 0.28);  border-color: rgba(186, 44, 32, 0.98); }
+
+
+/* ---------- Mundo: marca de la E en madera y laton ---------- */
+
+.wi-prompt {
+    background-color: rgba(33, 24, 17, 0.88);
+    border-width: 1px;
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-70);
+    border-right-color: var(--hierro-90);
+    border-bottom-color: var(--hierro-90);
+    border-radius: 3px;
+}
+
+.wi-prompt__key {
+    background-color: var(--laton-vivo);
+    color: var(--madera-oscura);
+    border-width: 1px;
+    border-color: rgb(96, 72, 36);
+}
+
+.wi-prompt__action {
+    color: var(--pergamino);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
+}
+
+.wi-prompt__target {
+    color: var(--pergamino-medio);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+.wi-prompt__more {
+    color: var(--pergamino-viejo);
+    -unity-font-definition: url('../Inventory/fonts/AlegreyaSansSC-Regular SDF.asset');
+}
+
+.wi-prompt__hint {
+    color: rgb(196, 120, 96);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Regular SDF.asset');
+}
+
+.wi-prompt--disabled .wi-prompt__action {
+    color: rgb(120, 110, 100);
+}
+
+
+/* ---------- HUD de barras: marco de hierro con filo de laton ----------
+   El color del relleno vive en PlayerHUDStyle.uss (.hud-bar--stamina .hud-bar__fill, .hud-bar--fatigue .hud-bar__fill);
+   aqui solo se decora el carril. */
+
+.hud-bar--stamina,
+.hud-bar--fatigue {
+    background-color: var(--hierro-90);
+    border-width: 1px;
+    border-top-color: var(--laton-90);
+    border-left-color: var(--laton-70);
+    border-right-color: var(--hueco-filo);
+    border-bottom-color: var(--hueco-filo);
+    border-radius: 2px;
+}
+
+
+/* =====================================================================================
+   TEXTURAS (Kenney, CC0: textures/kenney-rpg y textures/kenney-borders)
+
+   Esta seccion va aparte a proposito: borrandola entera se vuelve al tema solo de
+   colores de arriba, sin tocar nada mas. Va al final porque, a igual especificidad,
+   manda la regla que se escribe despues.
+
+   Todas se pintan con 9-slice: las esquinas (-unity-slice-*, en pixeles de la imagen)
+   se quedan a su tamano y el resto se estira, asi que valen para cualquier tamano de
+   elemento sin deformar los remates. -unity-slice-scale las amplia sin tocar la imagen.
+
+   Donde hay textura, el borde CSS se deja transparente: el marco ya es la imagen, y
+   dibujar los dos seria un filo sobre otro. El ANCHO del borde no se toca, para no
+   mover la disposicion.
+   ===================================================================================== */
+
+
+/* ---------- Ventanas: marco de hierro remachado, tenido de laton, sobre la madera ----
+   El marco es blanco con el centro transparente; el tinte lo vuelve laton y el color
+   de fondo (madera) se ve por dentro. */
+
+.main-area,
+.side-panels__panel,
+.inspect-panel {
+    background-image: url('textures/kenney-borders/Default/Border/panel-border-011.png');
+    -unity-background-image-tint-color: var(--laton);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 12;
+    -unity-slice-right: 12;
+    -unity-slice-top: 12;
+    -unity-slice-bottom: 12;
+    -unity-slice-scale: 2px;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+/* La barra de titulo y la tira de inspeccion dejan de ser opacas para que el marco se
+   vea por detras en las esquinas. */
+.title-bar {
+    background-color: rgba(52, 38, 26, 0.55);
+}
+
+.inspection-strip {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+
+/* ---------- Items: fichas de madera con canto ---------- */
+
+.item-block {
+    background-image: url('textures/kenney-rpg/buttonSquare_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 12;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+
+/* ---------- Pestanas: tablillas de madera ---------- */
+
+.left-tabs__tab,
+.panel-slot-tabs__label {
+    background-image: url('textures/kenney-rpg/buttonLong_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 10;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.left-tabs__tab:hover {
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(230, 210, 180);
+}
+
+
+/* ---------- Cerrar: una X de laton, sin boton detras ----------
+   La X es una imagen (iconCross del paquete RPG) tenida de laton, no el caracter del
+   UXML: el caracter depende de que la fuente tenga ese glifo y no se veia. El texto se
+   deja transparente. Con el raton encima el laton se aviva. */
+
+.title-bar__close {
+    background-image: url('textures/kenney-rpg/iconCross_grey.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(196, 152, 76);
+    border-radius: 0;
+    color: rgba(0, 0, 0, 0);
+    padding: 0;
+}
+
+.title-bar__close:hover {
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(250, 214, 140);
+}
+
+
+/* ---------- Menus y desplegables: tabla de madera oscurecida ----------
+   El tinte multiplica: oscurece la madera clara del paquete para que el texto en
+   pergamino se lea. */
+
+.ctx-menu,
+.sublots-popup,
+.layers-popup {
+    background-image: url('textures/kenney-rpg/panel_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(120, 110, 100);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 8;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+
+/* ---------- Tooltip: pergamino de verdad, con los bordes rasgados ---------- */
+
+.tooltip {
+    background-image: url('textures/kenney-rpg/panelInset_beigeLight.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 10;
+    -unity-slice-right: 10;
+    -unity-slice-top: 10;
+    -unity-slice-bottom: 10;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+
+/* ---------- Mundo: la marca de la E como una tablilla, la tecla como una ficha ---------- */
+
+.wi-prompt {
+    background-image: url('textures/kenney-rpg/panel_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(120, 110, 100);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 8;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.wi-prompt__key {
+    background-image: url('textures/kenney-rpg/buttonSquare_beige.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 6;
+    -unity-slice-right: 6;
+    -unity-slice-top: 6;
+    -unity-slice-bottom: 9;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+
+/* ---------- Holgura para los remates del marco ----------
+   El fondo de un elemento se pinta DEBAJO de sus hijos, asi que lo que llega hasta el
+   borde tapa el marco. Unos margenes interiores lo apartan. Es lo unico de esta hoja
+   que toca espacios, y solo por dentro: las ventanas no cambian de tamano ni de sitio,
+   lo de dentro encoge unos pixeles.
+
+   Las cifras salen del marco: esquina de 12 px de imagen x2 de escala = 24 px en
+   pantalla; linea de 2 px x2 = 4 px. */
+
+/* La linea del marco, que nada la pise. */
+.main-area,
+.side-panels__panel,
+.inspect-panel {
+    padding: 4px;
+}
+
+/* Titulo y boton de cerrar, fuera del remate de las esquinas de arriba
+   (24 px de esquina - 4 px de relleno de la ventana + 2 de aire). */
+.title-bar {
+    padding-left: 22px;
+    padding-right: 22px;
+}
+
+/* El icono de la tira, fuera del remate de abajo a la izquierda. */
+.inspection-strip {
+    padding-left: 22px;
+}
+
+/* En los paneles laterales la rejilla llega hasta las esquinas de abajo. Anidado a
+   proposito (excepcion BEM): la rejilla no sabe en que hueco esta montada. */
+.side-panels__panel .inventory-panel__grid-mount {
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-bottom: 22px;
+}
+
+
+/* ---------- Mano: el fantasma es la misma ficha de madera que en la rejilla ----------
+   La ficha es el propio fantasma y el icono va en un hijo (.hand-buffer__icon), igual que
+   en una ficha colocada. Lo que cambia es que esta translucida y TENIDA con el color del
+   veredicto: el tinte multiplica la madera, asi que se sigue viendo la ficha y a la vez
+   se lee verde/amarillo/azul/rojo. El borde conserva el color puro del veredicto.
+
+   Los veredictos van con dos clases (.hand-buffer.hand-buffer--fits) para ganar a la
+   regla de .hand-buffer sin depender del orden. */
+
+.hand-buffer {
+    background-image: url('textures/kenney-rpg/buttonSquare_brown.png');
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 12;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.8);
+    padding: 3px;
+    opacity: 0.85;
+}
+
+/* El icono, algo apagado: se lleva, no esta colocado. */
+.hand-buffer__icon {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.8);
+}
+
+.hand-buffer.hand-buffer--fits      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(170, 225, 140, 0.9); }
+.hand-buffer.hand-buffer--partial   { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 215, 120, 0.9); }
+.hand-buffer.hand-buffer--swap      { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(150, 185, 240, 0.9); }
+.hand-buffer.hand-buffer--collision { background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgba(240, 130, 115, 0.9); }
+
+
+/* ---------- Panel de inspeccion (Inspect/InspectPanel.uxml) ----------
+   El marco, la barra de titulo y el aspa le llegan por las mismas reglas que al
+   inventario (.inspect-panel esta en las listas de arriba). Aqui solo lo suyo. */
+
+.ip__icon {
+    background-color: var(--hueco-fondo);
+    border-top-color: var(--hueco-filo);
+    border-left-color: var(--hueco-filo);
+    border-bottom-color: var(--laton-60);
+    border-right-color: var(--laton-60);
+    border-radius: 2px;
+}
+
+.ip__name        { color: var(--laton-vivo); }
+.ip__type        { color: var(--pergamino-viejo); letter-spacing: 1px; }
+.ip__description { color: var(--pergamino-medio); -unity-font-style: italic; }
+
+/* Separador: una linea de laton que se desvanece a los lados (divider-fade del paquete
+   de marcos, tenido). */
+.ip__divider {
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url('textures/kenney-borders/Default/Divider Fade/divider-fade-000.png');
+    -unity-background-image-tint-color: var(--laton);
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.ip-stat:hover { background-color: rgba(176, 138, 70, 0.08); }
+.ip-stat__key       { color: var(--pergamino-viejo); }
+.ip-stat__value     { color: var(--pergamino); }
+
+.ip__section-label  { color: var(--laton-vivo); letter-spacing: 1px; }
+
+.ip-lot {
+    background-color: rgba(92, 64, 40, 0.35);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(176, 138, 70, 0.25);
+}
+
+.ip-lot__name                 { color: var(--pergamino); }
+.ip-lot__amount, .ip-lot__weight { color: var(--pergamino-medio); }
+
+.ip__footer { color: rgb(150, 128, 96); }
+
+/* Holgura: la barra de titulo ya la aparta el bloque de holgura de arriba (.title-bar);
+   el cuerpo, fuera de las esquinas de abajo. */
+.ip__body {
+    padding-bottom: 22px;
+}
+
+
+/* ---------- Menu radial: rueda de quesitos de madera con filo de laton ----------
+   Los quesitos los dibuja el control; aqui se le dan sus colores por propiedades propias.
+   El resaltado se aviva a madera clara con filo de laton vivo; la accion por defecto (la
+   de arriba) lleva el texto en laton aunque no este resaltada. */
+
+.radial-root {
+    --radial-fill: rgba(33, 24, 17, 0.9);
+    --radial-fill-highlight: rgba(104, 74, 40, 0.95);
+    --radial-stroke: rgba(176, 138, 70, 0.9);
+    --radial-stroke-highlight: rgb(240, 206, 130);
+    --radial-stroke-width: 2;
+}
+
+.radial-option {
+    color: var(--pergamino);
+    -unity-font-definition: url('../Inventory/fonts/Vollkorn-Bold SDF.asset');
+}
+
+.radial-option--default {
+    color: var(--laton-vivo);
+}
+
+.radial-option--highlighted {
+    color: rgb(250, 236, 200);
+}
+
+/* Aviso "[Mas opciones]" bajo una opcion con subopciones: laton apagado. */
+.radial-option__more {
+    color: var(--laton);
+}
+
+/* Opcion en gris (no se puede elegir ahora): hierro frio, tambien resaltada. */
+.radial-option.radial-option--disabled {
+    color: rgb(120, 110, 100);
+}
+
+/* El medallon del centro: aro de laton sobre madera oscura; se apaga cuando el puntero
+   esta en el (nada elegido). */
+.radial-hub {
+    background-color: rgba(22, 16, 11, 0.9);
+    border-color: rgba(176, 138, 70, 0.95);
+}
+
+.radial-hub--idle {
+    border-color: rgba(176, 138, 70, 0.45);
+}

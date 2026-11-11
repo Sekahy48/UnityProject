@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Observer; 
-namespace ECS.Systems
+using Core.Observer; 
+namespace Core.ECS.Systems
 {
     public class ClockSystem : ISubject
     {

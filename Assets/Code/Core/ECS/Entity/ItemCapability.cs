@@ -1,14 +1,14 @@
-namespace ECS.Entity
+namespace Core.ECS.Entity
 {
     public enum ItemCapability
     {
-        FILLABLE,
-        DRAINABLE,
-        DRINKABLE,
-        POISONOUS,
-        INTOXICATING,
-        FIGHTABLE,
-        PLACEABLE,
-        BROKEN,
+        Fillable,
+        Drainable,
+        Drinkable,
+        Poisonous,
+        Intoxicating,
+        Fightable,
+        Placeable,
+        Broken,
     }
 }

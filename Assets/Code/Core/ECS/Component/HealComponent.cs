@@ -1,12 +1,17 @@
-namespace ECS.Component
+using System;
+using System.Collections.Generic;
+
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Component representing an entity's healing capacity.
     /// </summary>
-    public class HealComponent : BasicComponent
+    public class HealComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         private int healingAmount;       // Base healing amount
         private float bonusMultiplier;   // Bonus multiplier
+
+        public HealComponent() {}
 
         public HealComponent(int healingAmount, float bonusMultiplier)
         {
@@ -26,6 +31,19 @@ namespace ECS.Component
         {
             get => bonusMultiplier;
             set => bonusMultiplier = value;
+        }
+
+        private static readonly NumericFields<HealComponent> Fields =
+            new NumericFields<HealComponent>()
+                .Add("healingAmount", c => c.healingAmount, (c, v) => c.HealingAmount = (int)v)
+                .Add("bonusMultiplier", c => c.bonusMultiplier, (c, v) => c.BonusMultiplier = v);
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            Fields.Apply(this, values);
         }
 
         public int CalculateHealing()

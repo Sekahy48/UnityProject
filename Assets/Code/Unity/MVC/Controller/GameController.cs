@@ -1,5 +1,6 @@
 using Core.Contexts;
-using ECS.Systems;
+using Core.ECS.Systems;
+using Core.MVC.View;
 using MVC.View;
 
 namespace MVC.Controller
@@ -10,28 +11,13 @@ namespace MVC.Controller
     /// </summary>
     public class GameController
     {
-        private readonly GameSystemContext systemCtx;
-        private readonly InputManager inputManager;
-        private readonly HUDManager hudManager;
+        private readonly GameSystemContext _systemCtx;
+        private readonly InputManager _inputManager;
 
-        public GameController(GameSystemContext systemCtx, InputManager inputManager, HUDManager hudManager)
+        public GameController(GameSystemContext systemCtx, InputManager inputManager)
         {
-            this.systemCtx = systemCtx;
-            this.inputManager = inputManager;
-            this.hudManager = hudManager;
-        }
-
-        /// <summary>
-        /// Connects observers on startup. Example: HUD observes FatigueStaminaSystem.
-        /// </summary>
-        public void SetUpOnStart()
-        {
-            FatigueStaminaSystem staminaSystem = systemCtx.SystemManager
-                .GetGameSystem<FatigueStaminaSystem>();
-            if (staminaSystem != null && hudManager != null)
-            {
-                staminaSystem.Attach(hudManager);
-            }
+            _systemCtx = systemCtx;
+            _inputManager = inputManager;
         }
 
         /// <summary>
@@ -40,10 +26,10 @@ namespace MVC.Controller
         public void Update(float deltaTime)
         {
             // 1. Input and camera (real time)
-            inputManager.Update(deltaTime);
+            _inputManager.Update(deltaTime);
 
             // 2. SystemManager: engine systems (every frame) + game systems (per tick)
-            systemCtx.SystemManager.Update(deltaTime);
+            _systemCtx.SystemManager.Update(deltaTime);
         }
     }
 }

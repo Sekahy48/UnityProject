@@ -1,9 +1,9 @@
     using System;
     using System.Collections.Generic;
-    using ECS.Component;
-    using Handler;
+    using Core.ECS.Component;
+    using Core.Handler; 
 
-    namespace ECS.Entity
+    namespace Core.ECS.Entity
     {
         /// <summary>
         /// Represents concrete instances of entities usable in-game.
@@ -13,25 +13,28 @@
         public class InGameEntity : IEntity
         {
             protected EntityId id;
-            protected readonly NameId type;
             protected readonly Dictionary<Type, IComponent> components = new();
 
-            // Constructor
-            public InGameEntity(int id, string type)
+            /// <summary>
+            /// La entidad no guarda su arquetipo.
+            ///
+            /// Lo guardaba como texto, y ese campo mezclaba dos preguntas distintas: los
+            /// arquetipos del mundo —jugador, monton, nodo de recurso— que son claves del
+            /// registro de prototipos, y el "ItemEntity" que pasaba
+            /// <see cref="ItemEntity"/>, que no es un arquetipo sino su propia clase de C#.
+            /// Quien necesita el arquetipo lo tiene en la mano al crear la entidad
+            /// (<see cref="EntityType"/>); quien necesita saber si algo es un item lo
+            /// pregunta con <c>is ItemEntity</c>, que no puede desincronizarse de la verdad.
+            /// </summary>
+            public InGameEntity(int id)
             {
                 this.id = new EntityId(id);
-                this.type = type == null ? new NameId("Generic Entity") : new NameId(type);
             }
 
             // ---- Getters ----
             public IHandler GetId()
             {
                 return id;
-            }
-
-            public IHandler GetEntityType()
-            {
-                return type;
             }
 
             public string GetName()
@@ -86,13 +89,36 @@
                 return components.Remove(target);
             }
 
+            public IEnumerable<IComponent> GetComponents()
+            {
+                return components.Values;
+            }
+
+            protected virtual InGameEntity CreateCloneInstance(int id)
+            {
+                return new InGameEntity(id);
+            }
+
+            /// <summary>
+            /// Copia la entidad con un id nuevo. El puente con el motor
+            /// (<see cref="IEngineBridge"/>) no se copia: el clon nace sin cuerpo en el motor,
+            /// y solo lo tendra si alguien lo enlaza.
+            /// </summary>
             public IEntity Clone()
             {
-                var clone = new InGameEntity(IdGenerator.GenerateNewId(), type.ToString());
-                foreach (var elem in components.Values)
+                InGameEntity clone = CreateCloneInstance(IdGenerator.GenerateNewId());
+                foreach (IComponent elem in components.Values)
                 {
+                    if (elem is IEngineBridge) continue;
                     clone.AddComponent(elem.Clone());
                 }
+
+                // El inventario clonado sigue teniendo como dueno a ESTA entidad: se reapunta al
+                // clon. Sin esto, un jugador sacado de su prototipo publicaria su banda de carga a
+                // nombre del prototipo, y el movimiento y el HUD, que filtran por el jugador, no
+                // se enterarian. Vale tambien para los items (ItemEntity.Clone pasa por aqui).
+                clone.GetComponent<InventoryComponent>()?.Inventory.Rebind(clone);
+
                 return clone;
             }
 
@@ -101,9 +127,22 @@
             /// </summary>
             /// <param name="other"></param>
             /// <returns></returns>
+            /// <summary>
+            /// Dos entidades son equivalentes si llevan exactamente los mismos componentes
+            /// con los mismos valores.
+            ///
+            /// <para>Antes empezaba comparando el arquetipo, que era una cadena. Al quitar
+            /// ese campo hacia falta otra guarda, y la buena resulto ser la que faltaba:
+            /// <b>comparar cuantos componentes tiene cada una</b>. Sin eso el recorrido es
+            /// de un solo sentido —comprueba que los mios estan en el otro, no al reves—,
+            /// asi que una entidad con componentes de mas pasaba por equivalente y la
+            /// respuesta cambiaba segun cual de las dos preguntara. Eso era un defecto
+            /// aparte del arquetipo, y comparar clases en su lugar no lo habria tapado: el
+            /// jugador y un monton son los dos <c>InGameEntity</c>.</para>
+            /// </summary>
             public bool Equivalent(IEntity other)
             {
-                if (other == null || this.GetEntityType().ToString() != other.GetEntityType().ToString())
+                if (other == null || components.Count != CountComponentsOf(other))
                     return false;
                 foreach (IComponent component in components.Values)
                 {
@@ -116,13 +155,11 @@
                 return true;
             }
 
-            public override bool Equals(object obj)
+            private static int CountComponentsOf(IEntity entity)
             {
-                return 
-                    obj is InGameEntity other &&
-                    this.id.Equals(other.id) &&
-                    this.type.Equals(other.type) &&
-                    this.Equivalent(other);
+                int count = 0;
+                foreach (IComponent unused in entity.GetComponents()) count++;
+                return count;
             }
         }
     

@@ -1,6 +1,6 @@
-using ECS.Component;
-using ECS.Entity;
-using ECS.Systems;
+using Core.ECS.Component; 
+using Core.ECS.Systems; 
+using Unity.ECS.Component;
 using UnityEngine;
 
 namespace Unity
@@ -14,7 +14,7 @@ namespace Unity
     /// - If not dirty → reads Transform and updates PositionComponent
     ///   (to reflect movements done by cameras, physics, animation, etc.)
     /// </summary>
-    public class TransformSyncSystem : IGameSystem
+    public class TransformSyncSystem : IPeriodicSystem
     {
         public void Process(float deltaTime, EntityManager entityManager)
         {
@@ -29,11 +29,11 @@ namespace Unity
                 var unity = entity.GetComponent<UnityEntityComponent>();
                 Transform t = unity.GetGameObject().transform;
 
-                if (pos.IsDirty())
+                if (pos.IsDirty)
                 {
                     // Core modified the position → apply to Transform
-                    t.position = new Vector3(pos.GetX(), pos.GetY(), pos.GetZ());
-                    t.rotation = new Quaternion(pos.GetRotX(), pos.GetRotY(), pos.GetRotZ(), pos.GetRotW());
+                    t.position = new Vector3(pos.X, pos.Y, pos.Z);
+                    t.rotation = new Quaternion(pos.RotX, pos.RotY, pos.RotZ, pos.RotW);
                     pos.ClearDirty();
                 }
                 else

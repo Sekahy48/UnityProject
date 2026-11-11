@@ -6,34 +6,36 @@ namespace MVC.View
 {
     public class UIRegistry : MonoBehaviour
     {
-        [SerializeField] private UIDocument _inventoryDocument;
-        [SerializeField] private VisualTreeAsset _inventoryTabTemplate;
-        [SerializeField] private VisualTreeAsset _inventoryItemTemplate;
-
-        [SerializeField] private VisualTreeAsset _equipmentPanelTemplate;
-        // en el futuro: crafting, equipment, hud...
+        [SerializeField] private UIDocument _inventoryDocument; 
+        [SerializeField] private VisualTreeAsset _inventoryPanelTemplate; 
+        [SerializeField] private UIDocument _worldInteractionDocument;
+        [SerializeField] private VisualTreeAsset _inspectPanelTemplate;
+        [SerializeField] private UIDocument _hudDocument;
 
         public UIDocument GetDocument(UIDocumentType type)
         {
             return type switch
             {
                 UIDocumentType.Inventory => _inventoryDocument,
+                UIDocumentType.WorldInteraction => _worldInteractionDocument,
+                UIDocumentType.HUD => _hudDocument,
                 _ => throw new ArgumentException($"Unknown document type: {type}")
             };
-        }
+        } 
 
         public VisualTreeAsset GetTemplate(UITemplateType type)
         {
             return type switch
             {
-                UITemplateType.InventoryTab  => _inventoryTabTemplate,
-                UITemplateType.InventoryItem => _inventoryItemTemplate,
-                UITemplateType.EquipmentPanel => _equipmentPanelTemplate,
+                UITemplateType.InventoryPanel => _inventoryPanelTemplate,
+                UITemplateType.InspectPanel => _inspectPanelTemplate,
                 _ => throw new ArgumentException($"Unknown template type: {type}")
             };
         }
     }
 
-    public enum UIDocumentType  { Inventory }
-    public enum UITemplateType  { InventoryTab, InventoryItem, EquipmentPanel }
+    public enum UIDocumentType  { Inventory, WorldInteraction, HUD } 
+
+    public enum UITemplateType { InventoryPanel, InspectPanel }
+
 }

@@ -1,0 +1,884 @@
+fileFormatVersion: 2
+guid: da7b52d8da6d56442a57f2a15f3aeec5
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2584832927358546872
+    second: EmptyOrb2_0
+  - first:
+      213: -5041813358836419025
+    second: EmptyOrb2_1
+  - first:
+      213: 1794607040529440184
+    second: EmptyOrb2_2
+  - first:
+      213: -4277340051672154151
+    second: EmptyOrb2_3
+  - first:
+      213: -2314905937773761764
+    second: EmptyOrb2_4
+  - first:
+      213: 588404750077079070
+    second: EmptyOrb2_5
+  - first:
+      213: -1259384032478711338
+    second: EmptyOrb2_6
+  - first:
+      213: -889020939296916884
+    second: EmptyOrb2_7
+  - first:
+      213: 6337761786578906535
+    second: EmptyOrb2_8
+  - first:
+      213: 2811194982334070791
+    second: EmptyOrb2_9
+  - first:
+      213: 3147942238551928859
+    second: EmptyOrb2_10
+  - first:
+      213: 5828633339909364385
+    second: EmptyOrb2_11
+  - first:
+      213: 293156932644209525
+    second: EmptyOrb2_12
+  - first:
+      213: 6071533164226304571
+    second: EmptyOrb2_13
+  - first:
+      213: -70682384739284174
+    second: EmptyOrb2_14
+  - first:
+      213: -8050875183661844081
+    second: EmptyOrb2_15
+  - first:
+      213: 8520458107414735406
+    second: EmptyOrb2_16
+  - first:
+      213: -4824676829068020453
+    second: EmptyOrb2_17
+  - first:
+      213: -8407337325328359582
+    second: EmptyOrb2_18
+  - first:
+      213: -5344002741857980809
+    second: EmptyOrb2_19
+  - first:
+      213: 4343637931963758324
+    second: EmptyOrb2_20
+  - first:
+      213: -5141201375424355824
+    second: EmptyOrb2_21
+  - first:
+      213: -4454016913157206949
+    second: EmptyOrb2_22
+  - first:
+      213: -8203061598138528066
+    second: EmptyOrb2_23
+  - first:
+      213: -8367323669283634205
+    second: EmptyOrb2_24
+  - first:
+      213: 5065907878646318409
+    second: EmptyOrb2_25
+  - first:
+      213: -4366463579875389775
+    second: EmptyOrb2_26
+  - first:
+      213: -8644634028049511033
+    second: EmptyOrb2_27
+  - first:
+      213: 8899947598976440778
+    second: EmptyOrb2_28
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: EmptyOrb2_0
+      rect:
+        serializedVersion: 2
+        x: 789
+        y: 754
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b370f63adb2fd320800000000000000
+      internalID: 2584832927358546872
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_1
+      rect:
+        serializedVersion: 2
+        x: 794
+        y: 742
+        width: 306
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f267cba7671e70ab0800000000000000
+      internalID: -5041813358836419025
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_2
+      rect:
+        serializedVersion: 2
+        x: 1087
+        y: 760
+        width: 18
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8bd1c2a5899b7e810800000000000000
+      internalID: 1794607040529440184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_3
+      rect:
+        serializedVersion: 2
+        x: 1097
+        y: 764
+        width: 11
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9dfb784a2e5d3a4c0800000000000000
+      internalID: -4277340051672154151
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_4
+      rect:
+        serializedVersion: 2
+        x: 1105
+        y: 754
+        width: 20
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1b6d82805dcfdfd0800000000000000
+      internalID: -2314905937773761764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_5
+      rect:
+        serializedVersion: 2
+        x: 1107
+        y: 762
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1e2f70b00f6a2800800000000000000
+      internalID: 588404750077079070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_6
+      rect:
+        serializedVersion: 2
+        x: 679
+        y: 573
+        width: 116
+        height: 185
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d1be4c15e4c58ee0800000000000000
+      internalID: -1259384032478711338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_7
+      rect:
+        serializedVersion: 2
+        x: 782
+        y: 753
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6ab25b7a2099a3f0800000000000000
+      internalID: -889020939296916884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_8
+      rect:
+        serializedVersion: 2
+        x: 1100
+        y: 753
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ada41814c044f750800000000000000
+      internalID: 6337761786578906535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_9
+      rect:
+        serializedVersion: 2
+        x: 1111
+        y: 623
+        width: 99
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 700026c21fe530720800000000000000
+      internalID: 2811194982334070791
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_10
+      rect:
+        serializedVersion: 2
+        x: 1007
+        y: 577
+        width: 146
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b10f55699ccbfab20800000000000000
+      internalID: 3147942238551928859
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_11
+      rect:
+        serializedVersion: 2
+        x: 1203
+        y: 637
+        width: 12
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1aadb47242773e050800000000000000
+      internalID: 5828633339909364385
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_12
+      rect:
+        serializedVersion: 2
+        x: 1207
+        y: 608
+        width: 18
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57383b15da0811400800000000000000
+      internalID: 293156932644209525
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_13
+      rect:
+        serializedVersion: 2
+        x: 676
+        y: 494
+        width: 10
+        height: 75
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3a56b79e3b624450800000000000000
+      internalID: 6071533164226304571
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_14
+      rect:
+        serializedVersion: 2
+        x: 679
+        y: 325
+        width: 101
+        height: 163
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23bccbddeb2e40ff0800000000000000
+      internalID: -70682384739284174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_15
+      rect:
+        serializedVersion: 2
+        x: 1210
+        y: 487
+        width: 22
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f89f3d20dab854090800000000000000
+      internalID: -8050875183661844081
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_16
+      rect:
+        serializedVersion: 2
+        x: 1202
+        y: 438
+        width: 27
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2a6d00618fbe3670800000000000000
+      internalID: 8520458107414735406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_17
+      rect:
+        serializedVersion: 2
+        x: 1208
+        y: 419
+        width: 10
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b15b7577cfd4b0db0800000000000000
+      internalID: -4824676829068020453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_18
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 424
+        width: 6
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26f9be02f33235b80800000000000000
+      internalID: -8407337325328359582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_19
+      rect:
+        serializedVersion: 2
+        x: 1110
+        y: 306
+        width: 93
+        height: 117
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77e67dce1d946d5b0800000000000000
+      internalID: -5344002741857980809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_20
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 403
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f6bc9f7fa3b74c30800000000000000
+      internalID: 4343637931963758324
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_21
+      rect:
+        serializedVersion: 2
+        x: 770
+        y: 321
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 012e41b9698c6a8b0800000000000000
+      internalID: -5141201375424355824
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_22
+      rect:
+        serializedVersion: 2
+        x: 775
+        y: 317
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5ccea347372032c0800000000000000
+      internalID: -4454016913157206949
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_23
+      rect:
+        serializedVersion: 2
+        x: 777
+        y: 312
+        width: 17
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ebe0e4c20fed82e80800000000000000
+      internalID: -8203061598138528066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_24
+      rect:
+        serializedVersion: 2
+        x: 797
+        y: 256
+        width: 292
+        height: 123
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e381ab647b41eb80800000000000000
+      internalID: -8367323669283634205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_25
+      rect:
+        serializedVersion: 2
+        x: 786
+        y: 305
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94501931068bd4640800000000000000
+      internalID: 5065907878646318409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_26
+      rect:
+        serializedVersion: 2
+        x: 794
+        y: 310
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1bec8d432843763c0800000000000000
+      internalID: -4366463579875389775
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_27
+      rect:
+        serializedVersion: 2
+        x: 1087
+        y: 291
+        width: 26
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78dcad81727180880800000000000000
+      internalID: -8644634028049511033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EmptyOrb2_28
+      rect:
+        serializedVersion: 2
+        x: 1104
+        y: 309
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac9d494ff27f28b70800000000000000
+      internalID: 8899947598976440778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      EmptyOrb2_0: 2584832927358546872
+      EmptyOrb2_1: -5041813358836419025
+      EmptyOrb2_10: 3147942238551928859
+      EmptyOrb2_11: 5828633339909364385
+      EmptyOrb2_12: 293156932644209525
+      EmptyOrb2_13: 6071533164226304571
+      EmptyOrb2_14: -70682384739284174
+      EmptyOrb2_15: -8050875183661844081
+      EmptyOrb2_16: 8520458107414735406
+      EmptyOrb2_17: -4824676829068020453
+      EmptyOrb2_18: -8407337325328359582
+      EmptyOrb2_19: -5344002741857980809
+      EmptyOrb2_2: 1794607040529440184
+      EmptyOrb2_20: 4343637931963758324
+      EmptyOrb2_21: -5141201375424355824
+      EmptyOrb2_22: -4454016913157206949
+      EmptyOrb2_23: -8203061598138528066
+      EmptyOrb2_24: -8367323669283634205
+      EmptyOrb2_25: 5065907878646318409
+      EmptyOrb2_26: -4366463579875389775
+      EmptyOrb2_27: -8644634028049511033
+      EmptyOrb2_28: 8899947598976440778
+      EmptyOrb2_3: -4277340051672154151
+      EmptyOrb2_4: -2314905937773761764
+      EmptyOrb2_5: 588404750077079070
+      EmptyOrb2_6: -1259384032478711338
+      EmptyOrb2_7: -889020939296916884
+      EmptyOrb2_8: 6337761786578906535
+      EmptyOrb2_9: 2811194982334070791
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

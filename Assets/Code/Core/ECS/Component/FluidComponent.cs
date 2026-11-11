@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
-    public class FluidComponent : BasicComponent
+    public class FluidComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         private Dictionary<ResourceType, float> fluids;
         private float maxCapacity;
+
+        public FluidComponent()
+        {
+            this.fluids = new Dictionary<ResourceType, float>();
+        }
 
         public FluidComponent(float maxCapacity)
         {
@@ -23,7 +28,7 @@ namespace ECS.Component
             if (left <= 0)
                 return -1;
 
-            float toAdd = System.Math.Min(amount, left);
+            float toAdd = Math.Min(amount, left);
 
             if (fluids.ContainsKey(fluid))
                 fluids[fluid] += toAdd;
@@ -70,6 +75,25 @@ namespace ECS.Component
             }
 
             return this.maxCapacity - content;
+        }
+
+        public void SetMaxCapacity(float value) { maxCapacity = value; }
+
+        /// <summary>
+        /// El contenido actual no se declara porque es un diccionario por tipo de fluido y
+        /// no un numero suelto; si algun dia hace falta preguntarlo sera con un nombre
+        /// propio, como <c>fill</c>, y decidiendo que significa.
+        /// </summary>
+        private static readonly NumericFields<FluidComponent> Fields =
+            new NumericFields<FluidComponent>()
+                .Add("maxCapacity", c => c.maxCapacity, (c, v) => c.SetMaxCapacity(v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            Fields.Apply(this, values);
         }
 
         public override IComponent Clone()

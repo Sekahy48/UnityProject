@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using ECS.Component.Task;
+using Core.ECS.Component.Task;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     public class TaskComponent : BasicComponent
     {
@@ -40,10 +40,7 @@ namespace ECS.Component
             return tasks.Count > 0 || currentTask != null;
         }
 
-        public ITask GetCurrentTask()
-        {
-            return currentTask;
-        }
+        public ITask CurrentTask => currentTask;
 
         public void SetCurrentTask(ITask task)
         {

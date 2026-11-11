@@ -1,4 +1,4 @@
-namespace MVC.View.UI.Inventory
+namespace Core.MVC.View.UI.Inventory
 {
     public class TabDisplayData
     {

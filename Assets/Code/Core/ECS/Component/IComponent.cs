@@ -1,4 +1,4 @@
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Interface for entity components

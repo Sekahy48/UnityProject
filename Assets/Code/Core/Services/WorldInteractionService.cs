@@ -1,0 +1,263 @@
+using System;
+using System.Collections.Generic;
+using Core.Contexts;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
+using Core.Events;
+using Core.Inventory;
+using AC = Core.Utils.ArgumentChecker;
+
+namespace Core.Services
+{
+    /// <summary>
+    /// Coreografo de las acciones entre el mundo y un inventario.
+    ///
+    /// <para>Existe por la misma razon que <see cref="InventoryService"/>: recoger necesita a
+    /// <see cref="WorldInteractionSystem"/> (que hay en el suelo y cuando desaparece) y a
+    /// <see cref="InventorySystem"/> (que cabe y donde), y los sistemas no se conocen entre si.
+    /// Se descarto que <c>WorldInteractionSystem</c> tirara del <c>SystemManager</c> para
+    /// llegar al inventario: seria un sistema componiendo a otro, que es justo lo que los
+    /// servicios vienen a evitar.</para>
+    ///
+    /// <para>No se fundio con <c>InventoryService</c> porque aquel ya es grande y todo lo suyo
+    /// gira alrededor de la mano y de <c>RunTransfer</c>; aqui no hay mano ni rollback.</para>
+    /// </summary>
+    public class WorldInteractionService
+    {
+        private readonly GameSystemContext _systemContext;
+
+        public WorldInteractionService(GameSystemContext systemContext)
+        {
+            AC.CheckNotNull(systemContext, nameof(systemContext));
+            _systemContext = systemContext;
+        }
+
+        private WorldInteractionSystem World =>
+            _systemContext.SystemManager.GetReactiveSystem<WorldInteractionSystem>();
+
+        private InventorySystem Inventories =>
+            _systemContext.SystemManager.GetReactiveSystem<InventorySystem>();
+
+        /// <summary>
+        /// Por que no entro todo. Un solo motivo por gesto: si se dan los dos, gana
+        /// <see cref="Weight"/>, porque el peso lleno bloquea todo lo que venga detras y la
+        /// rejilla solo bloquea tipo a tipo —una piedra puede no caber y una aguja si—.
+        /// </summary>
+        private enum PickUpLimit
+        {
+            None,
+            Volume,
+            Weight
+        }
+
+        #region Consultas para la interfaz
+
+        /// <summary>Que tiene delante el actor. Ver <see cref="WorldInteractionSystem.FindTarget"/>.</summary>
+        public IEntity FindTarget(IEntity actor) => World.FindTarget(actor);
+
+        /// <summary>Que puede hacer con ello, en orden de prioridad: la primera es la de la
+        /// pulsacion corta.</summary>
+        public List<WorldAction> GetAvailableActions(IEntity actor, IEntity target)
+            => World.GetAvailableActions(actor, target);
+
+        /// <summary>Si el actor sigue alcanzando un objetivo concreto. Ver
+        /// <see cref="WorldInteractionSystem.CanReach"/>.</summary>
+        public bool CanReach(IEntity actor, IEntity target) => World.CanReach(actor, target);
+
+        public bool IsInRange(IEntity actor, IEntity target) => World.IsInRange(actor, target);
+        #endregion
+
+        #region Evaluar
+
+        /// <summary>
+        /// Evalua si una accion se puede ejecutar para un objetivo dado un actor.
+        /// Comprueba tanto que el objetivo este en el rango de actuacion del jugador, como
+        /// que la accion sea valida para el par actor-objetivo (para prevenir intentos de ejecucion
+        /// en estados intermedios).
+        /// </summary>
+        /// <param name="actor"></param>
+        /// <param name="target"></param>
+        /// <param name="action"></param>
+        /// <returns>Si es posible ejecutar</returns>
+        public bool CanPerform(IEntity actor, IEntity target, WorldAction action)
+        {
+            WorldInteractionSystem world = World;
+            if (!world.CanReach(actor, target)) return false;
+            if (!world.GetAvailableActions(actor, target).Contains(action)) return false;
+
+            return true;
+        }
+        #endregion
+
+        #region Recoger  
+        /// <summary>
+        /// Lleva al inventario del actor todo lo que quepa del monton.
+        ///
+        /// <para>Se da por hecho que su uso es exclusivo por parte de metodos que ya han comprobado
+        /// alcance y acciones.</para>
+        ///
+        /// <para><b>Mover cero es un resultado valido.</b> Recoger se ofrece aunque no quepa
+        /// nada, porque una tecla que no aparece no le explica al jugador por que: el presenter
+        /// la muestra en gris con el motivo (ver <see cref="CountPickable"/>) y no la ejecuta.
+        /// Si aun asi llega aqui, no se mueve nada y el motivo va al log.</para>
+        ///
+        /// <para>Destino: el inventario raiz del actor, sin entrar en contenedores equipados,
+        /// igual que la transferencia rapida. Meter en la mochila es abrirla y colocar.</para>
+        /// </summary>
+        /// <returns>Unidades que se quedan en el suelo.</returns>
+        /// <param name="target">Un monton, o un item suelto.</param>
+        public int PickUp(IEntity actor, IEntity target)
+        {
+            WorldInteractionSystem world = World;
+
+            InventoryComponent inventory = actor.GetComponent<InventoryComponent>();
+            if (inventory == null) return UnitsOn(target);
+
+            PickUpLimit limit = PickUpLimit.None;
+            int left = 0;
+
+            GroundLotComponent pile = target.GetComponent<GroundLotComponent>();
+            if (pile != null)
+            {
+                // Copia: TakeFromLot quita lotes del monton, y al ultimo lo destruye.
+                List<SubLot> lots = new List<SubLot>(pile.Lots);
+
+                foreach ((ItemEntity variant, int amount) in lots)
+                {
+                    int placed = MoveInto(actor, inventory, variant, amount, ref limit);
+                    left += amount - placed;
+
+                    if (placed > 0) world.TakeFromLot(target, variant, placed);
+                }
+            }
+            else if (target is ItemEntity worldItem)
+            {
+                // Un item suelto es un lote de una unidad, con una diferencia: lo que entra
+                // es una copia sin nada del mundo. Intentarlo con la copia ES la pregunta de
+                // si cabe; si no cabe, el del suelo no se ha tocado y no hay nada que
+                // deshacer. Si cabe, el del suelo se destruye.
+                ItemEntity clean = WorldPresence.CleanCopyOf(worldItem);
+
+                int placed = MoveInto(actor, inventory, clean, 1, ref limit);
+                left += 1 - placed;
+
+                if (placed > 0) world.TakeItem(worldItem);
+            }
+
+            // Una ronda de eventos por gesto, no una por lote. fullGrid va a false a
+            // proposito: el aviso de "no cabe" sale de Announce, con el motivo ya resuelto.
+            Inventories.EvaluateAndFireEvents(actor, false);
+            Announce(actor, inventory, limit);
+
+            return left;
+        }
+
+        /// <summary>
+        /// Mete en el inventario del actor lo que quepa de un lote y acumula el motivo si no
+        /// entra entero. Devuelve las unidades que entraron.
+        ///
+        /// Se pregunta el peso por lote y justo antes de mover: cada respuesta tiene que ver
+        /// el peso que dejaron los lotes anteriores. source null porque lo recogido viene de
+        /// fuera del arbol y no hay techo del que eximirlo.
+        /// </summary>
+        private int MoveInto(IEntity actor, InventoryComponent inventory, ItemEntity item, int amount,
+                             ref PickUpLimit limit)
+        {
+            int fitByWeight = inventory.Inventory.FitByWeight(item, amount, null);
+
+            int notPlaced = Inventories.TryStackOntoHere(actor, item, amount, announce: false);
+            int placed = amount - notPlaced;
+
+            limit = Worst(limit, LimitOf(amount, fitByWeight, placed));
+            return placed;
+        }
+
+        /// <summary>
+        /// Por que un lote no entro entero, deducido sin tocar <c>TryStackOntoHere</c>.
+        ///
+        /// Ese metodo pregunta primero el peso y luego coloca en la rejilla, y devuelve un
+        /// solo numero. Si se coloco menos de lo que el peso permitia, lo que freno fue la
+        /// rejilla; si no, fue el peso. Se deduce aqui en vez de cambiar su firma porque ese
+        /// metodo tiene mas llamadas, y porque el motivo del rechazo se dejo fuera del
+        /// inventario a proposito (ver <c>TransferResult</c> en FASE1_HITOS, M6).
+        /// </summary>
+        private static PickUpLimit LimitOf(int amount, int fitByWeight, int placed)
+        {
+            if (placed < fitByWeight) return PickUpLimit.Volume;
+            if (fitByWeight < amount) return PickUpLimit.Weight;
+            return PickUpLimit.None;
+        }
+
+        private static PickUpLimit Worst(PickUpLimit a, PickUpLimit b) => a >= b ? a : b;
+
+        /// <summary>
+        /// Unico punto que publica por que algo se quedo en el suelo. Con el motivo ya
+        /// resuelto aqui, quien escuche recibe uno solo y no tiene que saber que el peso
+        /// manda sobre la rejilla.
+        ///
+        /// Hoy nadie escucha estos eventos; el log es el aviso hasta que exista el HUD.
+        ///
+        /// Con un actor con cuerpo, Weight ya no sale: el cuerpo no frena por peso
+        /// (CarryCapacity.GetTransferLimit), se sobrecarga. Queda para un actor sin cuerpo.
+        /// </summary>
+        private static void Announce(IEntity actor, InventoryComponent inventory, PickUpLimit limit)
+        {
+            switch (limit)
+            {
+                case PickUpLimit.Weight:
+                    EventBus.GetInstance().Post(new GameEvent(GameEventType.WeightLimitReached, actor, inventory));
+                    CoreLogger.Instance.Log("Peso completo: parte del monton se queda en el suelo.");
+                    break;
+                case PickUpLimit.Volume:
+                    EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryFull, actor, inventory));
+                    CoreLogger.Instance.Log("Demasiado volumen: parte del monton se queda en el suelo.");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Cuantas unidades de ese objetivo entrarian si se recogiese ahora, sin mover nada.
+        ///
+        /// Hermana de PickUp: mismos lotes, mismo orden y mismo paso por lote
+        /// (InventoryObject.TryStackOntoHere), pero sobre un clon del inventario. Hace falta el
+        /// clon porque los lotes compiten por el mismo hueco: sumar cada uno por separado
+        /// contaria dos veces las mismas celdas. El clon gasta ids de nodo y de entidad pero no
+        /// se registra en nada (ver FASE1_HITOS, M7 T7).
+        ///
+        /// La paridad del recorrido de lotes con PickUp no esta forzada por el codigo: la cubre
+        /// un test (WorldTests).
+        /// </summary>
+        public int CountPickable(IEntity actor, IEntity target)
+        {
+            InventoryComponent inventory = actor.GetComponent<InventoryComponent>();
+            if (inventory == null) return 0;
+
+            InventoryObject sim = (InventoryObject)inventory.Inventory.Clone();
+            int fits = 0;
+
+            GroundLotComponent pile = target.GetComponent<GroundLotComponent>();
+            if (pile != null)
+            {
+                foreach ((ItemEntity variant, int amount) in pile.Lots)
+                    fits += amount - sim.TryStackOntoHere(variant, amount, null, out _);
+            }
+            else if (target is ItemEntity worldItem)
+            {
+                // La misma copia limpia que PickUp.
+                fits = 1 - sim.TryStackOntoHere(WorldPresence.CleanCopyOf(worldItem), 1, null, out _);
+            }
+
+            return fits;
+        }
+
+        /// <summary>Unidades que hay en el objetivo: 1 si es un item suelto, el total si es un monton.</summary>
+        public static int UnitsOn(IEntity target)
+        {
+            if (target is ItemEntity) return 1;
+            return target?.GetComponent<GroundLotComponent>()?.TotalUnits ?? 0;
+        }
+
+        #endregion
+    }
+}

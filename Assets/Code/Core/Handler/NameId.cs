@@ -1,4 +1,4 @@
-namespace Handler
+namespace Core.Handler
 {
     public class NameId : IHandler {
         private string id;

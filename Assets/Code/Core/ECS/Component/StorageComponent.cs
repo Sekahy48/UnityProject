@@ -1,36 +1,52 @@
-namespace ECS.Component
+using System.Collections.Generic;
+
+namespace Core.ECS.Component
 {
-    public class StorageComponent : IComponent
+    public class StorageComponent : IComponent, IJsonLoadable, INumericFields
     {
-        private float maxVolume;
-        private float maxWeight;
-        private float weightRatio;
+        private int _gridH, _gridW;
+        private float _maxWeight; 
 
-        public StorageComponent(float maxVolume, float maxWeight, float weightRatio)
+        public StorageComponent() {}
+
+        public StorageComponent(int gridH, int gridW, float maxWeight)
         {
-            this.maxVolume = maxVolume;
-            this.maxWeight = maxWeight;
-            this.weightRatio = weightRatio;
+            _gridH = gridH;
+            _gridW = gridW;
+            _maxWeight = maxWeight;
+        }  
+
+        public int GridH => _gridH;
+        public int GridW => _gridW;
+        public float MaxWeight => _maxWeight;
+        public void SetMaxWeight(float value) { _maxWeight = value; }  
+
+        private static readonly NumericFields<StorageComponent> Fields =
+            new NumericFields<StorageComponent>()
+                .Add("gridH", c => c._gridH, (c, v) => c._gridH = (int)v)
+                .Add("gridW", c => c._gridW, (c, v) => c._gridW = (int)v)
+                .Add("maxWeight", c => c._maxWeight, (c, v) => c.SetMaxWeight(v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            Fields.Apply(this, values);
         }
-
-        public float MaxVolume => maxVolume;
-
-        public float MaxWeight => maxWeight;
-
-        public float WeightRatio => weightRatio;
 
         public IComponent Clone()
         {
-            return new StorageComponent(this.maxVolume, this.maxWeight, this.weightRatio);
+            return new StorageComponent(_gridH, _gridW, _maxWeight);
         }
 
         public bool Equivalent(IComponent other)
         {
             return 
                 other is StorageComponent otherStorage &&
-                this.maxVolume == otherStorage.maxVolume &&
-                this.maxWeight == otherStorage.maxWeight &&
-                this.weightRatio == otherStorage.weightRatio;
+                _gridH == otherStorage._gridH &&
+                _gridW == otherStorage._gridW &&
+                _maxWeight == otherStorage._maxWeight;
         }
     }
 }

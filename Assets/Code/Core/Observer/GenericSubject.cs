@@ -1,7 +1,7 @@
 
 using System.Collections.Generic;
 
-namespace Observer
+namespace Core.Observer
 {
     public abstract class GenericSubject : ISubject
     {

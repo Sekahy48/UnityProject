@@ -1,8 +1,9 @@
 using Core.Contexts;
-using ECS.Entity;
-using ECS.Systems;
-using MVC.Model;
-using MVC.Presenter;
+using Core.ECS.Entity;
+using Core.ECS.Systems;
+using Core.MVC.Model;
+using Core.MVC.Presenter;
+using Core.MVC.View;
 using MVC.View;
 using Strategy;
 
@@ -15,18 +16,16 @@ namespace MVC.Controller
     /// GameMain uses this object to build everything and then inject
     /// the individual sub-contexts wherever needed.
     /// </summary>
-    public class GameContext
+    public class    GameContext
     {
         // ---- Core sub-contexts ----
         public GameDataContext Data { get; private set; }
         public GameSessionContext Session { get; private set; }
         public GameSystemContext System { get; private set; }
+        public GameInteractionContext Interaction { get; private set; }
 
-        // ---- Unity pieces (do not go in Core) ----
-        public CameraRegister CameraRegister { get; } = new();
+        // ---- Unity pieces (do not go in Core) ---- 
         public InputManager InputManager { get; private set; }
-        public HUDManager HUDManager { get; private set; }
-        public ViewManager ViewManager { get; } = new();
 
         // ---- Builders ----
 
@@ -48,15 +47,15 @@ namespace MVC.Controller
             return this;
         }
 
-        public GameContext SetInputManager(InputManager inputManager)
+        public GameContext SetInteraction(GameInteractionContext interaction)
         {
-            InputManager = inputManager;
+            Interaction = interaction;
             return this;
         }
 
-        public GameContext SetHUDManager(HUDManager hudManager)
+        public GameContext SetInputManager(InputManager inputManager)
         {
-            HUDManager = hudManager;
+            InputManager = inputManager;
             return this;
         }
     }

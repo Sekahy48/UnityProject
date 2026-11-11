@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Represents a specific attribute referring to an entity's health points.

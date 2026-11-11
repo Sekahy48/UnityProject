@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
-    public class ResourceComponent : BasicComponent
+    public class ResourceComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         private ResourceType type;
         private int amount;
         private int maxAmount; // Max amount of resources
         private bool renewable;
+
+        public ResourceComponent() {}
 
         public ResourceComponent(ResourceType type, int amount, bool renewable)
         {
@@ -18,15 +21,9 @@ namespace ECS.Component
             this._name = "ResourceComponent"; // Initializes the component name
         }
 
-        public ResourceType GetResourceType()
-        {
-            return type;
-        }
+        public ResourceType ResourceType => type;
 
-        public int GetAmount()
-        {
-            return amount;
-        }
+        public int Amount => amount;
 
         public void DecreaseAmount(int value)
         {
@@ -45,10 +42,7 @@ namespace ECS.Component
             }
         }
 
-        public bool IsRenewable()
-        {
-            return renewable;
-        }
+        public bool IsRenewable => renewable;
 
         public void Regenerate(double percentage, double time)
         {
@@ -63,6 +57,28 @@ namespace ECS.Component
             {
                 throw new NotSupportedException("Resource is not renewable");
             }
+        }
+
+        public void SetResourceType(ResourceType value) { type = value; }
+        public void SetAmount(int value) { amount = value; maxAmount = value; }
+        public void SetRenewable(bool value) { renewable = value; }
+
+        /// <summary>
+        /// El tipo y el indicador de renovable quedan fuera por no ser numericos.
+        /// </summary>
+        private static readonly NumericFields<ResourceComponent> Fields =
+            new NumericFields<ResourceComponent>()
+                .Add("amount", c => c.amount, (c, v) => c.SetAmount((int)v));
+
+        public bool TryGetNumericValue(string field, out float value)
+            => Fields.TryGet(this, field, out value);
+
+        public void SetFromValues(Dictionary<string, object> values)
+        {
+            Fields.Apply(this, values);
+
+            if (values.ContainsKey("resourceType")) SetResourceType(Enum.Parse<ResourceType>(values["resourceType"].ToString(), true));
+            if (values.ContainsKey("renewable")) SetRenewable(Convert.ToBoolean(values["renewable"]));
         }
 
         public override IComponent Clone()

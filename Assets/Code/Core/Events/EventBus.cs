@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Observer;
+using Core.Observer;
 
-namespace Events
+namespace Core.Events
 {
     /// <summary>
     /// Centralized event bus. Publish/Subscribe for discrete game events.
@@ -39,10 +39,22 @@ namespace Events
 
         public void Post(GameEvent gameEvent)
         {
-            if (subscribers.TryGetValue(gameEvent.GetEventType(), out var list))
+            if (!subscribers.TryGetValue(gameEvent.GetEventType(), out var list)) return;
+
+            // Copia: un observador puede suscribirse o darse de baja al reaccionar,
+            // y modificar la lista mientras se recorre lanza InvalidOperationException.
+            foreach (var observer in new List<IEventObserver>(list))
             {
-                foreach (var observer in list)
+                try
+                {
                     observer.UpdateOnEvent(gameEvent);
+                }
+                catch (Exception e)
+                {
+                    CoreLogger.Instance.LogError(
+                        $"EventBus: el observador {observer.GetType().Name} fallo al procesar " +
+                        $"{gameEvent.GetEventType()}: {e}");
+                }
             }
         }
 

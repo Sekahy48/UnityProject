@@ -1,6 +1,6 @@
 using System;
 
-namespace ECS.Component
+namespace Core.ECS.Component
 {
     /// <summary>
     /// Pure C# position component. No UnityEngine dependencies.
@@ -29,9 +29,9 @@ namespace ECS.Component
 
         // ---- Position ----
 
-        public float GetX() => _posX;
-        public float GetY() => _posY;
-        public float GetZ() => _posZ;
+        public float X => _posX;
+        public float Y => _posY;
+        public float Z => _posZ;
 
         public void SetPosition(float x, float y, float z)
         {
@@ -52,10 +52,10 @@ namespace ECS.Component
 
         // ---- Rotation (quaternion) ----
 
-        public float GetRotX() => _rotX;
-        public float GetRotY() => _rotY;
-        public float GetRotZ() => _rotZ;
-        public float GetRotW() => _rotW;
+        public float RotX => _rotX;
+        public float RotY => _rotY;
+        public float RotZ => _rotZ;
+        public float RotW => _rotW;
 
         public void SetRotation(float x, float y, float z, float w)
         {
@@ -91,9 +91,63 @@ namespace ECS.Component
             );
         }
 
+        /// <summary>
+        /// Lleva un punto del mundo al espacio local de esta entidad: lo que quedaria si la
+        /// entidad estuviera en el origen y sin girar.
+        ///
+        /// <para>Lo necesita cualquiera que describa algo en coordenadas propias del objeto
+        /// —un volumen de interaccion, un punto de anclaje— y tenga que compararlo con algo
+        /// que vive en el mundo. En vez de rotar la forma, se rota el punto, que es uno solo
+        /// y siempre cuesta lo mismo sea cual sea la forma.</para>
+        ///
+        /// <para>Deshacer una rotacion es aplicar su conjugado: el mismo eje con el giro al
+        /// reves, que en un cuaternion unitario es negar la parte vectorial. La formula es
+        /// la de rotar un vector por un cuaternion, escrita sin construir vectores
+        /// intermedios.</para>
+        /// </summary>
+        public (float x, float y, float z) WorldToLocal(float x, float y, float z)
+        {
+            float dx = x - _posX, dy = y - _posY, dz = z - _posZ;
+
+            // Conjugado del cuaternion: la rotacion inversa.
+            float qx = -_rotX, qy = -_rotY, qz = -_rotZ, qw = _rotW;
+
+            // t = 2 * (q.xyz x v)
+            float tx = 2f * (qy * dz - qz * dy);
+            float ty = 2f * (qz * dx - qx * dz);
+            float tz = 2f * (qx * dy - qy * dx);
+
+            // v' = v + w * t + (q.xyz x t)
+            return (
+                dx + qw * tx + (qy * tz - qz * ty),
+                dy + qw * ty + (qz * tx - qx * tz),
+                dz + qw * tz + (qx * ty - qy * tx)
+            );
+        }
+
+        /// <summary>
+        /// Inversa de <see cref="WorldToLocal"/>: un punto dado respecto a la entidad, llevado
+        /// al mundo. Se rota por el cuaternion tal cual (no por su conjugado) y despues se
+        /// traslada, justo al reves que la ida.
+        /// </summary>
+        public (float x, float y, float z) LocalToWorld(float x, float y, float z)
+        {
+            float qx = _rotX, qy = _rotY, qz = _rotZ, qw = _rotW;
+
+            float tx = 2f * (qy * z - qz * y);
+            float ty = 2f * (qz * x - qx * z);
+            float tz = 2f * (qx * y - qy * x);
+
+            return (
+                _posX + x + qw * tx + (qy * tz - qz * ty),
+                _posY + y + qw * ty + (qz * tx - qx * tz),
+                _posZ + z + qw * tz + (qx * ty - qy * tx)
+            );
+        }
+
         // ---- Dirty tracking for TransformSyncSystem ----
 
-        public bool IsDirty() => _dirty;
+        public bool IsDirty => _dirty;
         public void ClearDirty() => _dirty = false;
 
         // ---- IComponent ----

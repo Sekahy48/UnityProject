@@ -1,10 +1,10 @@
-namespace ECS.Component.Task
+namespace Core.ECS.Component.Task
 {
     public enum TaskState
     {
-        RUNNING,
-        WAITING,
-        COMPLETED,
-        CANCELLED
+        Running,
+        Waiting,
+        Completed,
+        Cancelled
     }
 }

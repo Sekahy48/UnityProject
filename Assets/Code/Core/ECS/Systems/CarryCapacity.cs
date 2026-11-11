@@ -1,15 +1,80 @@
 using System;
-using ECS.Component;
-using ECS.Entity;
+using Core.ECS.Component;
+using Core.ECS.Entity;
+using Core.Events;
+using Core.Inventory;
 
-namespace ECS.Systems
+namespace Core.ECS.Systems
 {
     /// <summary>
-    /// Calculates carry capacity from BodyComponent, EnergyComponent and NutritionComponent.
+    /// Calculates carry capacity from BodyComponent, EnergyComponent and NutritionComponent,
+    /// and owns the load thresholds that turn a weight ratio into an encumbrance band.
     /// When the real system loop is implemented, this will become a system with its own component.
     /// </summary>
     public static class CarryCapacity
     {
+        /// <summary>Ratio above which the entity is slowed down.</summary>
+        public const float EXTRA_WEIGHT = 0.70f;
+        /// <summary>Ratio above which the entity is heavily slowed and cannot run.</summary>
+        public const float OVERWEIGHT = 0.85f;
+        /// <summary>Ratio at which the entity cannot move at all.</summary>
+        public const float IMMOBILE = 1f;
+
+        /// <summary>
+        /// Pure classification of a weight ratio into its encumbrance band.
+        /// Returns the matching GameEventType because those values already are the
+        /// vocabulary for these bands — a parallel enum would only need keeping in sync.
+        ///
+        /// Single source of truth: InventorySystem uses it to decide which event to post,
+        /// and the UI uses it to decide which colour to paint, without duplicating thresholds.
+        /// Being pure, it can be called on demand (e.g. when opening the inventory, where no
+        /// event has fired) with no side effects.
+        ///
+        /// Checks run high-to-low so each band needs a single bound: reaching the second test
+        /// already implies not being Immobile. Two-sided ranges are where off-by-one gaps hide.
+        /// </summary>
+        public static GameEventType ClassifyLoad(float weightRatio)
+        {
+            if (weightRatio >= IMMOBILE) return GameEventType.Immobile;
+            if (weightRatio > OVERWEIGHT) return GameEventType.Overweight;
+            if (weightRatio > EXTRA_WEIGHT) return GameEventType.ExtraWeight;
+            return GameEventType.NormalWeight;
+        }
+
+        /// <summary>
+        /// Banda de carga a partir del peso y del techo. Unico sitio con la guarda del ratio
+        /// (sin techo cuenta como ratio 1): InventorySystem, HUD y panel la usan para no divergir.
+        /// </summary>
+        public static GameEventType ClassifyLoad(float weight, float maxLoad)
+            => ClassifyLoad(maxLoad > 0 ? weight / maxLoad : 1f);
+
+        /// <summary>
+        /// Techo de carga de quien lleva un inventario: un cuerpo, lo que aguantan sus musculos;
+        /// cualquier otra cosa (cofre, carro, mochila), el maxWeight de su StorageComponent.
+        /// Es la referencia de la barra y de la banda de carga (ClassifyLoad). Lo que frena una
+        /// transferencia es <see cref="GetTransferLimit"/>, que parte de aqui.
+        /// </summary>
+        public static float GetMaxLoad(IEntity entity)
+        {
+            if (entity.HasComponent(typeof(BodyComponent)))
+                return GetMaxCarryWeight(entity);
+
+            StorageComponent storage = entity.GetComponent<StorageComponent>();
+            return storage != null ? storage.MaxWeight : float.MaxValue;
+        }
+
+        /// <summary>
+        /// Techo que FRENA meter cosas, distinto del que se pinta.
+        ///
+        /// Un cuerpo no tiene: puede cargar por encima de lo que aguanta, y la consecuencia es
+        /// moverse peor hasta quedarse Inmovil (ClassifyLoad). Eso ya pasaba al equiparse una
+        /// mochila cargada; ahora es la regla para todo, y el limite de peso del jugador deja
+        /// de ser un muro y pasa a ser un estado. Un contenedor si lo tiene: el saco se rompe y
+        /// el eje del carro no aguanta, asi que su maxWeight sigue siendo duro.
+        /// </summary>
+        public static float GetTransferLimit(IEntity entity)
+            => entity.HasComponent(typeof(BodyComponent)) ? float.MaxValue : GetMaxLoad(entity);
+
         public static float GetMaxCarryWeight(IEntity entity)
         {
             BodyComponent body = entity.GetComponent<BodyComponent>();
@@ -20,9 +85,9 @@ namespace ECS.Systems
 
             float muscleMass = body.GetMuscleMass();
             float carryBase = muscleMass * 0.5f;
-            float factorSex = (body.GetSex() == 0) ? 1.0f : 0.85f;
+            float factorSex = (body.Sex == 0) ? 1.0f : 0.85f;
 
-            float age = body.GetAge();
+            float age = body.Age;
             float factorAge;
             if      (age < 18f)  factorAge = 0.6f  + (age - 10f) * 0.05f;
             else if (age <= 35f) factorAge = 1.0f;
@@ -36,52 +101,19 @@ namespace ECS.Systems
 
             if (nutrition != null)
             {
-                float maxHunger = nutrition.GetMaxHunger();
-                float maxThirst = nutrition.GetMaxThirst();
-                if (maxHunger > 0) factorHunger  = 1.0f - (nutrition.GetHunger() / maxHunger) * 0.30f;
-                if (maxThirst > 0) factorThirst  = 1.0f - (nutrition.GetThirst() / maxThirst) * 0.40f;
+                float maxHunger = nutrition.MaxHunger;
+                float maxThirst = nutrition.MaxThirst;
+                if (maxHunger > 0) factorHunger  = 1.0f - (nutrition.Hunger / maxHunger) * 0.30f;
+                if (maxThirst > 0) factorThirst  = 1.0f - (nutrition.Thirst / maxThirst) * 0.40f;
             }
 
             if (energy != null)
             {
-                float maxFatigue = energy.GetMaxFatigue();
-                if (maxFatigue > 0) factorFatigue = 1.0f - (energy.GetFatigue() / maxFatigue) * 0.35f;
+                float maxFatigue = energy.MaxFatigue;
+                if (maxFatigue > 0) factorFatigue = 1.0f - (energy.Fatigue / maxFatigue) * 0.35f;
             }
 
             return carryBase * factorSex * factorAge * factorHunger * factorThirst * factorFatigue;
-        }
-
-        public static float GetMaxCarryVolume(IEntity entity)
-        {
-            BodyComponent body = entity.GetComponent<BodyComponent>();
-            EnergyComponent energy = entity.GetComponent<EnergyComponent>();
-            NutritionComponent nutrition = entity.GetComponent<NutritionComponent>();
-
-            if (body == null) return 0f;
-
-            float muscleMass = body.GetMuscleMass();
-            float heightCm = body.GetHeight() * 100f;
-            float volumeBase = 8.0f + (heightCm - 170f) * 0.05f + muscleMass * 0.1f;
-
-            float factorHunger = 1.0f;
-            float factorThirst = 1.0f;
-            float factorFatigue = 1.0f;
-
-            if (nutrition != null)
-            {
-                float maxHunger = nutrition.GetMaxHunger();
-                float maxThirst = nutrition.GetMaxThirst();
-                if (maxHunger > 0) factorHunger  = 1.0f - (nutrition.GetHunger() / maxHunger) * 0.30f;
-                if (maxThirst > 0) factorThirst  = 1.0f - (nutrition.GetThirst() / maxThirst) * 0.40f;
-            }
-
-            if (energy != null)
-            {
-                float maxFatigue = energy.GetMaxFatigue();
-                if (maxFatigue > 0) factorFatigue = 1.0f - (energy.GetFatigue() / maxFatigue) * 0.35f;
-            }
-
-            return volumeBase * factorHunger * factorThirst * factorFatigue;
-        }
+        } 
     }
 }

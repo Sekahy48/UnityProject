@@ -1,12 +1,12 @@
-namespace ECS.Component.Task
+namespace Core.ECS.Component.Task
 {
     public enum Priorities
     {
-        OMNIP = 0,
-        HIGH = 1,
-        MEDIUM = 2,
-        LOW = 3,
-        MINIMAL = 4
+        Omnip = 0,
+        High = 1,
+        Medium = 2,
+        Low = 3,
+        Minimal = 4
     }
 
     public static class PrioritiesExtensions

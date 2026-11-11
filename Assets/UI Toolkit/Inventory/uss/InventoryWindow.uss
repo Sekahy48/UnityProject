@@ -1,16 +1,84 @@
-.inventory-root {
+/* Ocupa la pantalla entera: los porcentajes de las ventanas hijas se resuelven
+   contra este contenedor, asi que si no llenara el panel se descuadrarian.
+   space-evenly reparte lo que sobre en cuatro huecos iguales: margen izquierdo,
+   dos separaciones y margen derecho. La ventana de inventario mide lo que mida
+   su grid, asi que el sobrante varia segun el tamano del inventario. */
+.ui-root {
     position: absolute;
-    right: 50px;
-    top: 50px;
-    width: 30%;
-    min-height: 400px;
-    height: 85%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+/* Ancho derivado del contenido, no un porcentaje: la grid mide gridW x 60px
+   fijos, asi que la ventana debe medir lo que mida su grid. Con un porcentaje
+   solo encajaba a una resolucion concreta, y volvia a desbordar en pantallas
+   estrechas o con inventarios de mas columnas (mochilas de M6). */
+/* Ancho FIJO, no derivado del contenido. Antes lo marcaba la rejilla de dentro, pero
+   desde que la rejilla se ajusta a su hueco eso es una dependencia circular: la rejilla
+   mide segun el hueco y el hueco medía segun la rejilla, y el layout no cerraba nunca
+   ("recursive layout"). Con la ventana fija, un inventario mas grande encoge la celda en
+   vez de estirar la ventana, que es la regla que ya seguia el resto del panel. */
+.inventory-root {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 46%;
+    min-width: 900px;
+    height: 66%;
+    min-height: 360px;
+    flex-direction: row;
+}
+
+/* Columna de bandas a la derecha del inventario. Desde 1b no se oculta nunca: reserva su
+   ancho para que principal y paneles esten siempre en el mismo sitio. */
+.side-panels {
+    flex-direction: column;
+    flex-basis: 34%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 80%;
+    justify-content: center;
+}
+
+.side-panels__panel {
+    /* Reparto del alto entre las bandas abiertas. La proporcion importa: para que la
+       anchura no sea el cuello de botella de la celda, ancho/alto debe ser >= cols/filas
+       (1.5 con una rejilla 6x4). */
+    /* Mitad fija, no reparto elastico: con flex-grow la banda abierta ocuparia todo el
+       alto y encogeria al abrirse la otra, moviendo los items bajo el cursor en mitad de
+       un arrastre. La previsibilidad del layout vale mas que aprovechar el hueco. */
+    flex-grow: 0;
+    flex-basis: 50%;
+    flex-shrink: 1;
+    min-height: 200px;
+    margin-bottom: 12px;
+    flex-direction: column;
+
     background-color: rgba(20, 20, 20, 0.95);
     border-radius: 6px;
     border-width: 1px;
     border-color: rgba(80, 80, 80, 0.8);
+}   
+
+/* ===== Items Catalog ===== */
+/* Contenido de un hueco lateral. Llena el hueco sin asumir su tamano, para que
+   pueda trasplantarse a otro o convivir alternandose con otro contenido. */
+.side-panels__content {
+    flex-grow: 1;
     flex-direction: column;
-    align-self: flex-start;
+}
+
+.catalog__search {
+    margin: 6px;
+    flex-shrink: 0;
+}
+
+.catalog__scroll {
+    flex-grow: 1;
 }
 
 .title-bar {
@@ -25,14 +93,58 @@
     cursor: move;
 }
 
-.title-label {
+.title-bar__label {
     flex-grow: 1;
     color: rgba(200, 200, 200, 1);
-    font-size: 13px;
-    -unity-font-style: bold;
+    font-size: 18px; 
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
 }
 
-.close-button {
+.catalog__row {
+    flex-direction: row;
+    height: 60px;
+    margin: 2px;
+
+    background-color: rgb(207, 185, 151);  
+    border-width: 2px; 
+    border-color: rgba(90, 46, 5, 0.75); 
+}
+
+.catalog__row-label {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.catalog__amount {
+    width: 50px;
+    flex-shrink: 0;
+}
+
+.catalog__add-button {
+    margin: 10px;
+}
+ 
+
+/* Herramienta de desarrollo: abre/cierra el catalogo de items.
+   Quitar (o esconder tras un flag de build) antes de publicar. */
+.title-bar__dev-button {
+    height: 20px;
+    margin-right: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: rgba(70, 70, 70, 0.9);
+    border-radius: 3px;
+    border-width: 0;
+    color: rgba(200, 200, 200, 1);
+    font-size: 13px;
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
+}
+
+
+/* -------------------- */
+.title-bar__close {
     width: 20px;
     height: 20px;
     background-color: rgba(180, 50, 50, 0.8);
@@ -43,130 +155,553 @@
     cursor: pointer;
 }
 
-.inventory-body {
+/* ===== Wrappers ===== */
+.main-area {
+    flex-direction: column;
+    flex-grow: 1; 
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.8);
+}
+
+.main-area__content {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* ===== Split view: personal + inventario ===== */
+
+.player-panels {
     flex-direction: row;
     flex-grow: 1;
 }
 
-.tab-panel {
-    width: 56px;
-    background-color: rgba(15, 15, 15, 0.9);
+/* Ancho fijo, no derivado del contenido: al cambiar de pestana, el panel de salud
+   solo tiene una imagen de fondo (que no aporta tamano intrinseco) y el panel
+   colapsaria, haciendo saltar el ancho de toda la ventana. */
+.player-panels__left {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 300px;
+    flex-direction: column;
     border-right-width: 1px;
     border-color: rgba(60, 60, 60, 0.8);
-    padding-top: 6px;
-    padding-bottom: 6px;
 }
 
-.tab-list {
-    flex-direction: column;
-    align-items: center;
-}
-
-.tab-item {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 6px;
-    background-color: rgba(50, 50, 50, 0.8);
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: rgba(80, 80, 80, 0.6);
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.tab-item:hover {
-    background-color: rgba(70, 70, 70, 0.9);
-    border-color: rgba(150, 150, 150, 0.8);
-}
-
-.tab-item--active {
-    background-color: rgba(60, 80, 60, 0.9);
-    border-color: rgba(100, 160, 100, 0.8);
-}
-
-.tab-icon {
-    width: 28px;
-    height: 28px;
-}
-
-.tab-label {
-    font-size: 8px;
-    color: rgba(160, 160, 160, 1);
-    -unity-text-align: middle-center;
-}
-
-.content-panel {
+/* Ocupa lo que quede tras el panel personal, en vez de medir segun la rejilla: la
+   direccion de la dependencia va de la ventana al contenido, nunca al reves. */
+.inventory-panel {
     flex-grow: 1;
+    flex-shrink: 1;
     flex-direction: column;
+
+    margin: 2px;
 }
 
-.stats-bar {
-    height: 28px;
-    background-color: rgba(30, 30, 30, 0.9);
-    flex-direction: row;
-    align-items: center;
-    padding-left: 10px;
-    padding-right: 10px;
+/* ===== Left tabs ===== */
+
+.left-tabs{
+    flex-direction: column; 
+    width: 48px;
+    padding-top: 32px;
+}
+
+.left-tabs__tab {
+    width: 48px;
+    height: 40px;
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.8);
+
+    margin-top: 4px;
+    margin-bottom: 4px;
+
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
+/* ===== Personal panel ===== */
+
+.health-placeholder { 
+    flex-grow: 1;
+    padding: 8px;
     border-bottom-width: 1px;
     border-color: rgba(60, 60, 60, 0.8);
-}
+    background-image: url('../images/health_placeholder.png');
+    -unity-background-scale-mode: scale-to-fit;
+} 
 
-.stat-label {
-    color: rgba(180, 180, 180, 1);
+.section-label {
+    color: rgba(160, 160, 160, 1);
     font-size: 11px;
-    margin-right: 16px;
 }
 
-.item-scroll {
+.player-panels__section {
     flex-grow: 1;
 }
+ 
+ 
 
-.item-grid {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 8px;
-}
-
-.item-card {
-    width: 72px;
-    height: 88px;
-    margin: 4px;
-    background-color: rgba(40, 40, 40, 0.8);
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: rgba(70, 70, 70, 0.6);
+/* Ocupa el hueco bajo la stats-bar y centra la grid en horizontal
+   (align-items actua sobre el eje cruzado: flex-direction es column por defecto). */
+.inventory-panel__grid-mount {
+    flex-grow: 1;
+    width: 100%;    
     align-items: center;
-    justify-content: flex-end;
-    cursor: pointer;
-    overflow: hidden;
+    padding: 8px;
+    justify-content: center; 
 }
 
-.item-card:hover {
-    border-color: rgba(140, 140, 140, 0.8);
-    background-color: rgba(55, 55, 55, 0.9);
+/* ===== Inspection strip ===== */
+
+.inspection-strip {
+    height: 130px;
+    flex-direction: row;
+    border-top-width: 1px;
+    border-color: rgba(60, 60, 60, 0.8);
+    padding: 8px;
+    
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
+}
+
+.inspection-strip__icon { 
+    width: 70px;
+    height: 100%;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.6);
+    border-radius: 4px;
+    background-color: rgba(40, 40, 40, 0.8);
+    flex-shrink: 0;
+}
+
+.inspection-strip__info {
+    flex-grow: 1;
+    padding-left: 10px;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.inspection-strip__name {
+    font-size: 18px;
+    color: rgba(220, 220, 220, 1);
+    -unity-font-style: bold; 
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
+}
+
+.inspection-strip__description {
+    font-size: 16px;
+    color: rgba(160, 160, 160, 1);
+    margin-top: 4px;
+    white-space: normal;
+}
+
+.inspection-strip__stats {
+    width: 25%;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: 8px;
+}
+
+.inspection-strip__stat { 
+    font-size: 14px;
+    color: rgba(180, 180, 180, 1);
+    margin-bottom: 2px;  
+    background-color: rgba(70, 70, 70, 0.6);
+}
+
+/* ===== Inventory Grid ===== */
+
+/* El tamano exterior lo escribe InventoryPanelView.FitGridToMount para que la rejilla
+   quepa en su hueco; filas y celdas se reparten ese espacio, asi que el lado de celda
+   depende del inventario y no de un valor fijo aqui. */
+.inventory-grid {
+    flex-direction: column;
+}
+
+.inventory-grid__row {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 0;
+}
+
+.inventory-grid__cell {
+    flex-grow: 1;
+    flex-basis: 0;
+    border-width: 2px;
+    border-color: rgba(70, 70, 70, 0.6);
+    background-color: rgba(40, 40, 40, 0.8);
+}
+
+/* ===== Weight Bar ===== */
+
+.weight-rail {
+    height: 22px;
+    flex-shrink: 0;
+    background-color: rgba(0, 0, 0, 0.98);
+    justify-content: center;   
+    
+    align-items: center;
+}
+
+.weight-rail__bar{
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.weight-rail__bar--normal{
+    background-color: rgba(62, 141, 75, 0.98);
+}
+
+.weight-rail__bar--extra{
+    background-color: rgba(204, 207, 14, 0.98); 
+}
+
+.weight-rail__bar--over{
+    background-color: rgba(214, 117, 37, 0.98); 
+}
+
+.weight-rail__bar--immobile{
+    background-color: rgba(163, 8, 8, 0.98);
+}
+
+.weight-rail__label--normal{
+    color: rgb(255, 255, 255);
+}
+
+.weight-rail__label--extra{
+    color: rgb(12, 11, 11);
+}
+
+.weight-rail__label--over{
+    color: rgb(7, 21, 85);
+}
+
+.weight-rail__label--immobile{
+    color: rgb(124, 231, 124);
+}
+
+/* La etiqueta esta explicando por que no cabe, no reportando carga. Ambar para que se
+   distinga de las bandas de peso, que ocupan la misma etiqueta. */
+.weight-rail__label--note {
+    color: rgba(204, 207, 14, 0.95);
+} 
+
+.weight-rail__label {
+    font-size: 15px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
+}
+
+/* ===== Items Layer ===== */
+.items-layer {
+    position: absolute;
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset'); 
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.item-block {
+    position: absolute; 
+    
+    border-width: 2px;  
+    border-color: rgba(29, 114, 7, 0.75); 
+    background-color: rgba(85, 11, 11, 0.93);
+
+    flex-direction: column;
+    padding: 3px;
 }
 
 .item-icon {
+    flex-grow: 1;                     
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.amount-label {
+    -unity-font-definition: url('../fonts/Vollkorn-Bold SDF.asset');  
     position: absolute;
+    bottom: 2px;
+    right: 2px;
+    padding-left: 3px;
+    padding-right: 3px;
+    font-size: 17px; 
+    color: rgba(255, 255, 255, 0.59);
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 3px;
+}
+
+
+/* ===== Equipment Panel ===== */
+.equipment-panel {
+    flex-direction: row;
+    flex-grow: 1;
+    padding: 8px;
+}
+
+.equipment-panel__cross {
+    flex-direction: column;
+    padding: 8px;
+}
+
+.equipment-panel__side {
+    flex-direction: column;
+    padding: 8px;
+}
+.equipment-panel__row {
+    flex-direction: row;   
+}
+
+.equip-slot {
     width: 60px;
     height: 60px;
-    top: 6px;
+    border-width: 2px; 
+    margin: 1px;
+    border-color: rgba(70, 70, 70, 0.6); 
+    background-color: rgba(40, 40, 40, 0.8);
 }
 
-.item-amount {
-    font-size: 10px;
-    color: rgba(220, 220, 220, 1);
-    -unity-text-align: middle-right;
-    padding-right: 4px;
-    width: 100%;
+.equipment-panel__spacer {
+    width: 60px;
+    height: 60px; 
+    margin: 1px;
 }
 
-.item-name {
-    font-size: 9px;
-    color: rgba(160, 160, 160, 1);
+.layers-popup {
+    position: absolute;
+    display: none;
+    flex-direction: row;
+    padding: 4px;
+    background-color: rgba(30, 30, 30, 0.98);
+    border-width: 1px;
+    border-color: rgba(120, 120, 120, 0.8);
+    border-radius: 4px;
+}
+
+.equip-slot__layers-button {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    background-image: url('../images/subslots-inspect.png');
+    -unity-background-scale-mode: scale-to-fit;
+    display: none;
+}
+
+/* ===== Fonts ===== */
+.u-font-alegreya {
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
+}
+
+/* ===== Colors =====*/
+.u-color-beige {
+    color: rgb(207, 185, 151);
+}
+/* ===== Independient ===== */
+.tooltip {
+    position: absolute;
+    background-color: rgba(30, 30, 30, 0.98);
+    border-color: rgba(120, 120, 120, 0.8);
+    border-width: 2px;
+    display: none;  
+}
+
+.tooltip__text {
+    max-width: 280px;
+    white-space: normal;
+}
+
+.hand-buffer {
+    /* Sigue al cursor: el presenter escribe left/top en cada PointerMove.
+       PickingMode.Ignore se pone desde C#: si captura el puntero, se come
+       los clics de la grid que hay debajo. */
+    position: absolute;
+    /* El tamaño lo fija el presenter segun dimensions del item (w x h en celdas),
+       igual que los bloques de items-layer. Aqui solo el aspecto. */
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.75);   /* icono atenuado: se lleva, no esta colocado */ 
+    border-color: rgba(54, 56, 54, 0.75);                            /* neutro: sobre nada colocable */
+
+    transition-property: left, top, width, height;
+    transition-duration: 60ms, 60ms, 60ms, 60ms;
+}
+
+.hand-buffer--instant {
+    transition-duration: 0s;
+}
+
+
+/* Sobre celda ocupada: no cabe. Mismo rojo que .weight-rail__bar--immobile. */
+.hand-buffer--collision {
+    background-color: rgba(163, 8, 8, 0.25);
+    border-color: rgba(163, 8, 8, 0.98);
+}
+
+/* Hueco valido, o stack compatible con sitio. Mismo verde que .weight-rail__bar--normal. */
+.hand-buffer--fits {
+    background-color: rgba(62, 141, 75, 0.25);
+    border-color: rgba(62, 141, 75, 0.98);
+}
+
+/* Entra parte de lo que se lleva; el resto se queda en la mano. Mismo amarillo que .weight-rail__bar--extra. */
+.hand-buffer--partial {
+    background-color: rgba(204, 207, 14, 0.25);
+    border-color: rgba(204, 207, 14, 0.98);
+}
+
+/* No cabe, pero se pueden intercambiar las celdas: lo que llevas aqui y lo de aqui a tu hueco. */
+.hand-buffer--swap {
+    background-color: rgba(37, 116, 214, 0.25);
+    border-color: rgba(37, 116, 214, 0.98);
+}
+
+
+.u-icon-fit {
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.item-block--grabbed {
+    opacity: 0.35;
+}
+
+.player-panels__right {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* Hueco donde se clona la plantilla de un panel de rejilla. Vacio en el UXML:
+   la sub-vista lo limpia antes de montar, asi que nada mas puede vivir aqui. */
+.panel-slot {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.panel-slot-tabs {
+    flex-direction: row;
+}
+
+.panel-slot-tabs__label {
+    height: 20px;
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset'); 
+    
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);  
+    background-color: rgb(63, 7, 7); 
+    color: rgb(255, 255, 255);
+}
+
+.ctx-menu {
+    flex-direction: column; 
+    position: absolute;
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);  
+    background-color: rgb(22, 21, 21); 
+    color: rgb(255, 255, 255);
+}
+
+.ctx-menu__option{
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.ctx-menu__option.ctx-menu__option--selected, .ctx-menu__option:hover{
+    border-color: rgba(141, 122, 75, 0.85);
+    background-color: rgba(255, 245, 220, 0.08);
+}
+
+
+.ctx-menu__label{
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');  
+    text-decoration: underline;
+}
+
+
+.ctx-menu--submenu {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    translate: 0 -50%;
+}
+
+.ctx-menu--flipped {
+    left: auto;
+    right: 100%;
+}
+
+.ctx-menu__widget {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 45px;
+    height: 28px;
+    margin: 0;
+}
+ 
+
+.ctx-menu__widget .unity-base-text-field__input {
+    background-color: rgb(22, 21, 21);
+    border-color: rgba(54, 56, 54, 0.75);
+    border-width: 1px;
+    color: rgb(255, 255, 255);
     -unity-text-align: middle-center;
-    padding-bottom: 4px;
-    width: 100%;
-    overflow: hidden;
+    
+    margin: 0;
+}
+
+.ctx-menu__widget #unity-text-input {
+    flex-grow: 1;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0 2px;
+    background-color: rgb(22, 21, 21);
+    border-width: 1px;
+    border-color: rgba(54, 56, 54, 0.75);
+    color: rgb(255, 255, 255);
+    
+    -unity-font-definition: url('../fonts/Vollkorn-Regular SDF.asset');
+}
+
+.ctx-menu__widget .unity-text-element--inner-input-field {
+    margin: 0;
+    padding: 0;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center; 
+}
+
+/* Sublots Popup */
+
+.sublots-popup {
+    flex-direction: column;
+    position: absolute;
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75);  
+    background-color: rgb(22, 21, 21); 
+    color: rgb(255, 255, 255);
+}
+
+.sublots-popup__row {
+    flex-direction: row;
+    height: 30px;
+    justify-content: space-between;
+    border-width: 2px;
+    border-color: rgba(54, 56, 54, 0.75); 
+}
+
+.sublots-popup__row:hover {
+    border-color: rgb(250, 255, 250); 
+    
+}
+
+.sublots-popup__label {
+    -unity-font-definition: url('../fonts/AlegreyaSansSC-Regular SDF.asset');
+}
+
+.sublot-icon {
+    height: 100%;
 }

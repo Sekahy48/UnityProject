@@ -1,4 +1,4 @@
-namespace Handler
+namespace Core.Handler
 {
 
     using System;

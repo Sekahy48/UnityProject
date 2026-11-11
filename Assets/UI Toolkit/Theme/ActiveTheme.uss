@@ -1,0 +1,8 @@
+/* Tema activo de la interfaz. Los UXML cargan ESTE fichero y no un tema concreto, asi
+   que cambiar de tema es cambiar esta unica linea. Para quitar todo tema, dejar el
+   fichero vacio (o comentar la linea).
+
+     MedievalTheme.uss  - madera oscura, laton, hierro remachado, pergamino
+     PeasantTheme.uss   - arpillera, madera clara, paja, hierro forjado */
+
+@import url("MedievalTheme.uss");

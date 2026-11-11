@@ -1,4 +1,4 @@
-using ECS.Entity;
+using Core.ECS.Entity;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -132,6 +132,5 @@ namespace Strategy
         }
 
         public Camera GetCamera() => Camera;
-        public IEntity GetPlayer() => null; // No player associated in RTS
     }
 }
