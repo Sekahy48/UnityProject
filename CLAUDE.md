@@ -2,10 +2,16 @@
 
 Juego de supervivencia y logística en Unity 6 (6000.1.17f1), URP. Es además el TFG de Sergio.
 
-Antes de proponer nada, lee **`Assets/Code/FASE1_HITOS.md`**. Es la memoria de diseño del
-proyecto: qué está hecho, qué falta, y —sobre todo— **por qué** cada decisión se tomó así y
-qué alternativas se descartaron. Su sección «Where we are right now» dice en qué punto está
-el trabajo; está escrita para el relevo entre conversaciones.
+Antes de proponer nada, lee **`Docs/ROADMAP.md`** para saber qué fase está en curso, y el
+**documento de hitos de esa fase** (`Assets/Code/FASE<n>_HITOS.md`). Los documentos de hitos
+son la memoria de diseño del proyecto: qué está hecho, qué falta, y —sobre todo— **por qué**
+cada decisión se tomó así y qué alternativas se descartaron. Su sección «Dónde estamos» (o
+«Where we are right now» en el de la Fase 1) dice en qué punto está el trabajo; está escrita
+para el relevo entre conversaciones. Las fases cerradas conservan su documento: el
+razonamiento de lo que ya existe (el inventario, por ejemplo) está en `FASE1_HITOS.md`.
+
+**Los hitos de cada fase se construyen en modo socrático:** Claude pregunta y Sergio decide;
+el documento se escribe a partir de sus respuestas.
 
 ---
 
@@ -113,6 +119,10 @@ usa; está apuntado como limpieza pendiente.
 - **Comentarios `// CLAUDE` en el código:** si encuentras un comentario que empieza por
   `// CLAUDE` con una duda o pregunta en un archivo que Sergio ha editado, responde a la cuestión
   por el chat y borra ese comentario del archivo.
+- **Bitácora:** al cerrar cada sesión de trabajo, añade su entrada al final de
+  `Docs/BITACORA.md` (formato en su cabecera). Las horas las da Sergio: dedúcelas del ritmo de
+  la conversación solo como «estimación, confirmar» y pregúntale si dudas; nunca las inventes.
+  Si Sergio cuenta trabajo que hizo por su cuenta, también va ahí.
 
 **Sergio conduce.** Los comandos de git los lanza él: no ejecutes `git commit`, `git push` ni
 nada que modifique el repositorio; si hace falta un mensaje de commit, escríbelo para que lo
@@ -164,7 +174,7 @@ haz grep del nombre: ya ha pasado duplicar un `Forward()` que existía cincuenta
 abajo.
 
 **Cuando tomes una decisión de diseño con su razonamiento, apúntala en
-`Assets/Code/FASE1_HITOS.md`.** Ese documento es lo que permite que una conversación nueva
+el documento de hitos de la fase en curso** (`Assets/Code/FASE<n>_HITOS.md`). Ese documento es lo que permite que una conversación nueva
 empiece sabiendo por qué las cosas son como son.
 
 ---
@@ -184,10 +194,18 @@ Assets/Code/
     MVC/          Vistas de UI Toolkit, GameMain
     Services/     TextureCache, ModelCache
     UnityEntityLinker, TransformSyncSystem
-  FASE1_HITOS.md            ← memoria de diseño. Empieza por aquí.
+  FASE1_HITOS.md            ← memoria de diseño de la Fase 1 (inventario), cerrada.
+  FASE<n>_HITOS.md          ← la de cada fase siguiente. La fase en curso, en Docs/ROADMAP.md.
 
 Assets/StreamingAssets/
   data.json, images/, models/   ← exportado desde Stack&Go, se lee en ejecución
+
+Docs/
+  BITACORA.md        ← registro de sesiones (fecha, horas, qué se hizo). Al cerrar sesión, entrada nueva.
+  NOTAS_MEMORIA.md   ← lo que la memoria del TFG tiene que cubrir (recomendaciones de David…)
+  CREDITOS.md        ← recursos de terceros con origen y licencia
+  MECANICAS.md       ← catálogo de mecánicas (lo que se quiere en el juego)
+  ROADMAP.md         ← fases: qué se hace y en qué orden
 ```
 
 ---

@@ -29,7 +29,7 @@ Lo último de M7:
 **Síntoma abierto:** tirón la primera vez que se abre el inventario, en los dos ordenadores.
 Ver Future → «Rendimiento».
 
-**Siguiente:** sin decidir (Fase 2 o lo que salga de la reunión con David del 2026-10-29).
+**Fase terminada.** Lo siguiente está en `Docs/ROADMAP.md`.
 
 **Forma de trabajo (CLAUDE.md):** el nucleo lo escribe Sergio (Claude valora y revisa; solo
 lo toca si Sergio lo pide como excepcion o es un retoque trivial pedido). En dos fases: primero
