@@ -82,7 +82,8 @@ estimación por bloque si la recuerda.
 - **Pendiente que deja:** identificar mecánicas con el método acordado; roadmap mk1.
 
 ### 2026-11-11 — Catálogo de mecánicas, revisión 2
-- **Horas:** ~1 h hasta la revisión 2 (estimación de Sergio); la sesión sigue
+- **Horas:** ~3 h 30 min (estimación de Sergio): ~2 h 30 min hasta el cierre de la Fase 1 en
+  `main` y ~1 h más definiendo la Fase 1.5 (ya entrada la madrugada del 12)
 - **Con:** Sergio + Claude
 - **Fase / hito:** planificación (entre la Fase 1 y la siguiente)
 - **Hecho:** Sergio revisa el borrador del catálogo y responde a sus preguntas; Claude rehace
@@ -98,6 +99,11 @@ estimación por bloque si la recuerda.
   la plantilla de documento de diseño que pasó David: útiles para la memoria y para presentar,
   en espera para el desarrollo. `CLAUDE.md` apunta ya a los hitos de la fase en curso y recoge
   el modo socrático. `FASE1_HITOS.md`: fase terminada.
-- **Pendiente que deja:** reunión del jueves 12; hitos de la Fase 1.5 en modo socrático;
+- **Fase 1.5:** PR #2 fusiona la Fase 1 en `main`; rama `fase1.5`. Definida en modo
+  socrático en `Assets/Code/FASE1_5_HITOS.md`: soltar con física (todo cae y rueda, masa =
+  peso, el jugador se mueve por física y lleva su carga), guardado por entidades con ids y
+  contrato `ISaveComponent` al estilo del catálogo, JSON, autoguardado rotativo, sin migración
+  de versiones hasta tener una estable. Lanzar objetos, aplazado.
+- **Pendiente que deja:** reunión del jueves 12; propuesta cerrada de hitos de la Fase 1.5;
   investigación del agua antes de la Fase 2. Decidido: el desgarro es un corte con la marca «irregular» (en la interfaz se
   ve como desgarro); guardar y cargar partida entra como N.

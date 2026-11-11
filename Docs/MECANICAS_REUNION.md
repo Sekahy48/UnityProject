@@ -130,6 +130,7 @@ equilibrarlas para que no rompan la inmersión ni sean un incordio, sin renuncia
 | Cargar con peso y sufrir sobrecarga | el peso frena e inmoviliza | Project Zomboid | N | Implementado |
 | Usar contenedores (mochila, zurrón, arcón) | más capacidad a cambio de equiparlos | Escape from Tarkov | N | Implementado |
 | Soltar objetos: caen y ruedan con física y se quedan donde se paran | que el mundo responda como un mundo real | Valheim, Skyrim | N | Parcial |
+| Lanzar objetos (una mano o dos, según el objeto), que pueden romperse al impactar | útil e interesante; exige llevarlos antes en las manos | Half-Life 2, Kingdom Come | F | No implementado |
 | Colocar objetos con precisión en vez de soltarlos (previsualizar, girar) | dejar las cosas donde uno quiere; la misma mecánica sirve para estructuras | Medieval Dynasty, Valheim | N | No implementado |
 | Que la ropa puesta pese | decidido «el equipo pesa, con coeficiente» | — | D | No implementado |
 
@@ -215,7 +216,8 @@ equilibrarlas para que no rompan la inmersión ni sean un incordio, sin renuncia
 | Hace | Motivación | Referente | Et. | Estado |
 |---|---|---|---|---|
 | Empezar en un mundo vacío con mapa fijo | aún no hay pueblos | Minecraft | N | No implementado |
-| Guardar y cargar la partida | sesiones de juego reales; sin esto no se puede jugar más de una vez seguida | — | N | No implementado |
+| Guardar y cargar la partida: autoguardado periódico configurable, guardado manual (sobrescribir o archivo nuevo) y al dormir | sesiones de juego reales; sin esto no se puede jugar más de una vez seguida | — | N | No implementado |
+| Guardar solo en ciertos momentos, por realismo | inmersión | Kingdom Come, The Long Dark | F | No implementado |
 | Mundo procedural | rejugabilidad | — | F | No implementado |
 | Muerte permanente con legado | consecuencias reales | — | F | No implementado |
 | Cooperativo de 4 a 8 jugadores y más allá | jugar con otros | — | F | No implementado |
