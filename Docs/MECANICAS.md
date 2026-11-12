@@ -219,7 +219,8 @@ equilibrarlas para que no rompan la inmersión ni sean un incordio, sin renuncia
 | Hace | Motivación | Referente | Et. | Origen |
 |---|---|---|---|---|
 | Empezar en un mundo vacío con mapa fijo | aún no hay pueblos | Minecraft | N | 📖 |
-| Guardar y cargar la partida: autoguardado periódico configurable, guardado manual (sobrescribir o archivo nuevo) y al dormir | sesiones de juego reales; sin esto no se puede jugar más de una vez seguida | — | N | 🗣️ |
+| Guardar y cargar la partida: autoguardado periódico configurable, guardado manual (sobrescribir o archivo nuevo) y al dormir | sesiones de juego reales | — | F (diseño hecho; aplazado tras el TFG) | 🗣️ |
+| Escenarios preparados (posición, inventario, objetos cercanos) | enseñar la demo y probar sin guardar partida | — | N | 🗣️ |
 | Guardar solo en ciertos momentos, por realismo | inmersión | Kingdom Come, The Long Dark | F | 🗣️ |
 | Mundo procedural | rejugabilidad | — | F | 📄 |
 | Muerte permanente con legado | consecuencias reales | — | F | 📄 |

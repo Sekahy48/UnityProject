@@ -107,3 +107,21 @@ estimación por bloque si la recuerda.
 - **Pendiente que deja:** reunión del jueves 12; propuesta cerrada de hitos de la Fase 1.5;
   investigación del agua antes de la Fase 2. Decidido: el desgarro es un corte con la marca «irregular» (en la interfaz se
   ve como desgarro); guardar y cargar partida entra como N.
+
+### 2026-11-12 — Segunda reunión con David y replanificación
+- **Horas:** reunión ~45 min (10:00–10:45); replanificación con Claude sin dato (sesión en
+  curso, sigue con la Fase 1.5)
+- **Con:** Sergio y David; después Sergio + Claude
+- **Fase / hito:** planificación
+- **Hecho (reunión):** Stack&Go y Fuero le parecen bien. Stack&Go: herramienta común; como la
+  base fue de Ingeniería del Software, quizá no proceda en la solución (Sergio quiere
+  delimitar lo hecho para Artisan; a acordar). Fuero: se puede presentar como módulo aunque no
+  se conecte, con el visor de BISI. Viendo solo la fisiología, David vuelve a temer por el
+  alcance: pide identificar el tronco y centrarse en él, y tener la fisiología antes que el
+  resto. Soltar con física: bien, es poco trabajo. Guardar partida: no perder tiempo; una
+  vertical slice se enseña con un escenario preparado.
+- **Hecho (replanificación):** `ROADMAP.md` mk2: fisiología entera en la Fase 2, ordenada por
+  capas (tronco, capa 1, capa 2) y probada con menú de depuración y escenarios; Fase 1.5 solo
+  mundo físico; guardado aplazado a después del TFG (diseño conservado en `FASE1_5_HITOS.md`);
+  líneas de corte defensivas (mínimo: 1.5 + Fase 2 hasta la capa 1).
+- **Pendiente que deja:** propuesta cerrada de hitos de la Fase 1.5; investigación del agua.

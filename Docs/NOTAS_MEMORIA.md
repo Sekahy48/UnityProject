@@ -32,7 +32,14 @@ lo que no se puede olvidar, con de dónde sale cada punto. Se va ampliando segú
   reparto. La regla del reparto está en `CLAUDE.md` («El código del núcleo lo escribe
   Sergio»).
 - **Herramienta propia: Stack&Go.** Aplicación JavaFX de Sergio para definir ítems y
-  exportarlos a Artisan (JSON, iconos, modelos 3D). Es parte del trabajo y merece su apartado.
+  exportarlos a Artisan (JSON, iconos, modelos 3D). **David (2026-11-12):** es una herramienta
+  común en proyectos así; como la base se hizo para Ingeniería del Software, quizá no proceda
+  en la solución. **Postura de Sergio, a acordar con David:** delimitar con fechas (historial
+  de git) qué es la base de Ingeniería del Software y qué se hizo para Artisan (refactor de
+  arquitectura, componentes de ítem, exportación, módulo de modelos 3D), en un apartado de
+  «herramientas de soporte desarrolladas».
+- **Fuero (sistema social de NPC, asignatura BISI).** David (2026-11-12): se conecte o no al
+  juego, se puede presentar como módulo desarrollado, enseñándolo con el visor de BISI.
 - **Arquitectura.** ECS propio, separación Core/Unity, MVP con bus de eventos. El
   razonamiento está en `Assets/Code/FASE1_HITOS.md` y `PR_FASE_0.md`.
 - **Pruebas.** Tests EditMode del Core (56 a 2026-11-07), ejecutables también fuera de Unity

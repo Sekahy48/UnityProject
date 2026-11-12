@@ -216,7 +216,8 @@ equilibrarlas para que no rompan la inmersión ni sean un incordio, sin renuncia
 | Hace | Motivación | Referente | Et. | Estado |
 |---|---|---|---|---|
 | Empezar en un mundo vacío con mapa fijo | aún no hay pueblos | Minecraft | N | No implementado |
-| Guardar y cargar la partida: autoguardado periódico configurable, guardado manual (sobrescribir o archivo nuevo) y al dormir | sesiones de juego reales; sin esto no se puede jugar más de una vez seguida | — | N | No implementado |
+| Guardar y cargar la partida: autoguardado periódico configurable, guardado manual (sobrescribir o archivo nuevo) y al dormir | sesiones de juego reales | — | F (diseño hecho; aplazado tras el TFG) | No implementado |
+| Escenarios preparados (posición, inventario, objetos cercanos) | enseñar la demo y probar sin guardar partida | — | N | No implementado |
 | Guardar solo en ciertos momentos, por realismo | inmersión | Kingdom Come, The Long Dark | F | No implementado |
 | Mundo procedural | rejugabilidad | — | F | No implementado |
 | Muerte permanente con legado | consecuencias reales | — | F | No implementado |

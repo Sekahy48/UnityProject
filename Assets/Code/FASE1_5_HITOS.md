@@ -1,4 +1,4 @@
-# Fase 1.5 — Mundo físico y guardado base
+# Fase 1.5 — Mundo físico
 
 Documento de hitos de la Fase 1.5. Se construye en modo socrático: Claude pregunta, Sergio
 decide, y aquí queda lo decidido con su porqué. Las mecánicas salen de `Docs/MECANICAS.md` y
@@ -9,15 +9,15 @@ el encaje en el plan, de `Docs/ROADMAP.md`.
 > Esta sección existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
 **Definida la fase, sin hitos todavía (2026-11-12).** Rama `fase1.5`, creada desde `main`
-tras fusionar la Fase 1 (PR #2). Decididas las preguntas de experiencia de juego (1–8) y de
-sistema (9–24). Siguiente: que Sergio pida la propuesta cerrada de hitos (tareas en orden, cada
-una con su criterio de cierre); incluirá pasar el movimiento del jugador a física (decisión 9).
+tras fusionar la Fase 1 (PR #2). Tras la reunión con David del 2026-11-12 la fase se queda
+**solo en el mundo físico** (soltar con física y movimiento del jugador por física); el
+guardado de partida se aplaza a después del TFG, con su diseño conservado abajo. Siguiente:
+que Sergio pida la propuesta cerrada de hitos.
 
 ## Objetivo
 
-Lo que se suelta cae y rueda como un objeto real, y la partida se puede guardar y retomar.
-Base del guardado progresivo: a partir de aquí, cada fase cierra con «su estado se guarda y
-se carga».
+Lo que se suelta cae y rueda como un objeto real; el jugador y los objetos se empujan según
+su peso.
 
 ---
 
@@ -42,7 +42,13 @@ arcón), y qué pasa al impactar (un arcón lanzado contra una pared debería ro
 toca la durabilidad). «Llevar en las manos» encaja con colocar objetos (Fase 5), así que se
 revisa entonces. Apuntado en `Docs/MECANICAS.md`.
 
-### Guardar y cargar
+### Guardar y cargar — APLAZADO A DESPUÉS DEL TFG
+
+**Decidido el 2026-11-12, tras la reunión con David:** el guardado no entra en el TFG. Una
+vertical slice se enseña con un escenario preparado, no con partidas guardadas, y mantener el
+guardado al día con cada sistema nuevo cuesta sin aportar al objetivo. Lo de esta sección y las
+decisiones 14–24 quedan como **diseño hecho, para retomar después del TFG**. Mientras tanto,
+disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
 
 6. **Mezcla de tres formas de guardar:**
    - **Autoguardado periódico,** con el intervalo configurable en ajustes (10 minutos por
@@ -80,7 +86,7 @@ revisa entonces. Apuntado en `Docs/MECANICAS.md`.
     punto válido más cercano.** Ni vuelve a donde se soltó ni se pierde (perderlo tiene riesgo
     de «efecto portal»: tirar cosas a propósito para hacerlas desaparecer).
 
-### Guardado
+### Guardado (aplazado a después del TFG; ver arriba)
 
 14. **Formato JSON legible,** con Newtonsoft (ya está en el proyecto). Binario, más adelante si
     hace falta.
