@@ -21,18 +21,18 @@ namespace Core.ECS.Component
         public float MaxWeight => _maxWeight;
         public void SetMaxWeight(float value) { _maxWeight = value; }  
 
-        private static readonly NumericFields<StorageComponent> Fields =
+        private static readonly NumericFields<StorageComponent> _fields =
             new NumericFields<StorageComponent>()
                 .Add("gridH", c => c._gridH, (c, v) => c._gridH = (int)v)
                 .Add("gridW", c => c._gridW, (c, v) => c._gridW = (int)v)
                 .Add("maxWeight", c => c._maxWeight, (c, v) => c.SetMaxWeight(v));
 
         public bool TryGetNumericValue(string field, out float value)
-            => Fields.TryGet(this, field, out value);
+            => _fields.TryGet(this, field, out value);
 
         public void SetFromValues(Dictionary<string, object> values)
         {
-            Fields.Apply(this, values);
+            _fields.Apply(this, values);
         }
 
         public IComponent Clone()

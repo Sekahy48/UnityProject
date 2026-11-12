@@ -1,26 +1,26 @@
 namespace Core.Handler
 {
     public class EntityId : IHandler {
-    private int id;
+    private int _id;
 
-    public EntityId(int id) {
-        this.id = id;
+    public EntityId(int _id) {
+        _id = _id;
     }
 
     public EntityId(IHandler other) {
-        this.id = int.Parse(other.ToString());
+        _id = int.Parse(other.ToString());
     }
 
     public int CompareTo(IHandler another) {
-        return id.ToString().CompareTo(another.ToString());
+        return _id.ToString().CompareTo(another.ToString());
     }
 
     public override string ToString() {
-        return id.ToString();
+        return _id.ToString();
     }
 
     public int ToInt() {
-        return id;
+        return _id;
     }
 
     public bool EqualsIgnoreCase(IHandler anotherName) {
@@ -28,7 +28,7 @@ namespace Core.Handler
     }
 
     public bool Equals(IHandler another) {
-        return id.ToString() == another.ToString();
+        return _id.ToString() == another.ToString();
     }
 
     public override bool Equals(object obj) {
@@ -38,7 +38,7 @@ namespace Core.Handler
     }
 
     public override int GetHashCode() {
-        return id.GetHashCode();
+        return _id.GetHashCode();
     }
 
     public static bool operator ==(EntityId left, IHandler right) {

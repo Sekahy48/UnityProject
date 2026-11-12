@@ -4,7 +4,7 @@ namespace Core.ECS.Entity
 {
     public static class IdGenerator
     {
-        private static int currentId = 0;
+        private static int _currentId = 0;
 
         /// <summary>
         /// Generates a new unique ID. Thread-safe.
@@ -12,7 +12,7 @@ namespace Core.ECS.Entity
         /// <returns>A unique integer ID.</returns>
         public static int GenerateNewId()
         {
-            return Interlocked.Increment(ref currentId) - 1;
+            return Interlocked.Increment(ref _currentId) - 1;
         }
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace Core.ECS.Entity
         /// </summary>
         public static void SetCurrentId(int id)
         {
-            Interlocked.Exchange(ref currentId, id);
+            Interlocked.Exchange(ref _currentId, id);
         }
     }
 }

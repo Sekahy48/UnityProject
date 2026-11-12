@@ -8,15 +8,17 @@ namespace Strategy
 {
     public class ThirdPersonCamera : BaseCameraStrategy
     {
-        private float distance = 3.0f;
-        private float height = 1.8f;
-        private float rotationSmoothness = 10f;
+        private float _distance = 3.0f;
+        private float _height = 1.8f;
+        private float _rotationSmoothness = 10f;
+        private Vector3 _offset;
 
         public ThirdPersonCamera(IEntity player)
             : base(player, "TPCamera")
         {
-            Camera.transform.position = PlayerObject.transform.position + new Vector3(0f, height, -distance);
-            Camera.transform.LookAt(PlayerObject.transform.position + Vector3.up * height);
+            Camera.transform.position = PlayerObject.transform.position + new Vector3(0f, _height, -_distance);
+            Camera.transform.LookAt(PlayerObject.transform.position + Vector3.up * _height);
+            _offset = Camera.transform.position - PlayerObject.transform.position;
         }
 
         public override void Update() { }
@@ -29,23 +31,19 @@ namespace Strategy
             float mouseX = delta.x * movComp.MouseSensitivity;
             float mouseY = delta.y * movComp.MouseSensitivity;
 
-            rotation.x += mouseX;
-            rotation.y -= mouseY;
-            rotation.y = Mathf.Clamp(rotation.y, -45f, 75f);
+            Rotation.x += mouseX;
+            Rotation.y -= mouseY;
+            Rotation.y = Mathf.Clamp(Rotation.y, -45f, 75f);
 
-            Quaternion cameraRotation = Quaternion.Euler(rotation.y, rotation.x, 0f);
+            Quaternion cameraRotation = Quaternion.Euler(Rotation.y, Rotation.x, 0f);
 
-            Vector3 targetPosition = PlayerObject.transform.position
-                - cameraRotation * Vector3.forward * distance
-                + Vector3.up * height;
-
-            Camera.transform.position = Vector3.Lerp(Camera.transform.position, targetPosition, deltaTime * rotationSmoothness);
-            Camera.transform.LookAt(PlayerObject.transform.position + Vector3.up * height);
-
-            // Rotate the player directly via Transform (not via PositionComponent)
-            PlayerObject.transform.rotation = Quaternion.Euler(0f, rotation.x, 0f);
+            Vector3 targetOffset = -(cameraRotation * Vector3.forward) * _distance + Vector3.up * _height;
+            _offset = Vector3.Lerp(_offset, targetOffset, deltaTime * _rotationSmoothness);
+            Camera.transform.position = PlayerObject.transform.position + _offset;
+            Camera.transform.LookAt(PlayerObject.transform.position + Vector3.up * _height);
+ 
+            PlayerBody.MoveRotation(Quaternion.Euler(0f, Rotation.x, 0f));
         }
-
-        // HandleMovement inherited from BaseCameraStrategy
+ 
     }
 }

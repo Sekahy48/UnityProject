@@ -7,12 +7,10 @@ namespace Strategy
 {
     public class FirstPersonCamera : BaseCameraStrategy
     {
+        private const float EYE_HEIGHT = 1.7f;
         public FirstPersonCamera(IEntity player)
             : base(player, "FPCamera")
-        {
-            Camera.transform.SetParent(PlayerObject.transform);
-            Camera.transform.localPosition = new Vector3(0f, 1.7f, 0f);
-            Camera.transform.localRotation = Quaternion.identity;
+        { 
         }
 
         public override void Update() { }
@@ -25,14 +23,13 @@ namespace Strategy
             float mouseX = delta.x * movComp.MouseSensitivity;
             float mouseY = delta.y * movComp.MouseSensitivity;
 
-            rotation.x += mouseX;
-            rotation.y -= mouseY;
-            rotation.y = Mathf.Clamp(rotation.y, -90f, 90f);
+            Rotation.x += mouseX;
+            Rotation.y -= mouseY;
+            Rotation.y = Mathf.Clamp(Rotation.y, -90f, 90f);
 
-            PlayerObject.transform.rotation = Quaternion.Euler(0f, rotation.x, 0f);
-            Camera.transform.localRotation = Quaternion.Euler(rotation.y, 0f, 0f);
-        }
-
-        // HandleMovement inherited from BaseCameraStrategy
+            PlayerBody.MoveRotation(Quaternion.Euler(0f, Rotation.x, 0f)); 
+            Camera.transform.position = PlayerObject.transform.position + Vector3.up * EYE_HEIGHT;
+            Camera.transform.rotation = Quaternion.Euler(Rotation.y, Rotation.x, 0f);
+        } 
     }
 }

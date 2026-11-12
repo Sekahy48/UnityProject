@@ -135,7 +135,7 @@ namespace Core.MVC.Presenter.HUD
         #region Estados
 
         /* Franja de carga -> nivel de peso. Una sola traduccion, la usan el evento y Refresh. */
-        private static readonly Dictionary<GameEventType, WeightLevel> LoadLevels = new()
+        private static readonly Dictionary<GameEventType, WeightLevel> _loadLevels = new()
         {
             { GameEventType.NormalWeight, WeightLevel.None     },
             { GameEventType.ExtraWeight,  WeightLevel.Extra    },
@@ -149,7 +149,7 @@ namespace Core.MVC.Presenter.HUD
         /// </summary>
         private void ShowLoad(GameEventType band)
         {
-            if (!LoadLevels.TryGetValue(band, out WeightLevel level)) return;
+            if (!_loadLevels.TryGetValue(band, out WeightLevel level)) return;
             _view.AddState(Weight(level), level.GetDescription());
         }
 

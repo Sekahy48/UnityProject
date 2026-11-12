@@ -1,71 +1,71 @@
 using System;
-using Core.ECS.Component.Task; // Assuming Priorities is here
-using Core.ECS.Entity; // For the IEntity class (or interface)
+using Core.ECS.Component.Task; // Se supone que Priorities esta aqui
+using Core.ECS.Entity; // Para IEntity
 
 namespace Core.ECS.Entity
 {
     public class MemoryEntity
     {
-        private IEntity memory;
-        private Priorities basePrio;
-        private readonly DateTime creationTime;
+        private IEntity _memory;
+        private Priorities _basePrio;
+        private readonly DateTime _creationTime;
 
-        // Constructor with IEntity and Priority
+        // Constructor con IEntity y prioridad
         public MemoryEntity(IEntity entity, Priorities prio)
         {
-            memory = entity;
-            basePrio = prio;
-            creationTime = DateTime.Now;
+            _memory = entity;
+            _basePrio = prio;
+            _creationTime = DateTime.Now;
         }
 
-        // Default constructor (no parameters)
+        // Constructor por defecto (sin parametros)
         public MemoryEntity()
         {
-            basePrio = Priorities.Omnip;
-            creationTime = DateTime.Now;
+            _basePrio = Priorities.Omnip;
+            _creationTime = DateTime.Now;
         }
 
-        // Getters
+        // Lecturas
         public IEntity GetMemory()
         {
-            return memory;
+            return _memory;
         }
 
         public Priorities GetPrio()
         {
-            return basePrio;
+            return _basePrio;
         }
 
         public DateTime GetCreationDate()
         {
-            return creationTime;
+            return _creationTime;
         }
 
-        // Setters that return the previous value
+        // Escrituras que devuelven el valor anterior
         public IEntity SetMemory(IEntity newMemo)
         {
-            var old = memory;
-            memory = newMemo;
+            var old = _memory;
+            _memory = newMemo;
             return old;
         }
 
         public Priorities SetPrio(Priorities newPrio)
         {
-            var old = basePrio;
-            basePrio = newPrio;
+            var old = _basePrio;
+            _basePrio = newPrio;
             return old;
         }
 
-        // Method that compares memorability with another MemoryEntity
+        // Compara lo memorable que es con otro MemoryEntity
         public bool IsMoreMemorable(MemoryEntity incoming)
         {
-            if (this.GetPrio().Equals(incoming.GetPrio()))
+            if (GetPrio().Equals(incoming.GetPrio()))
             {
-                return incoming.GetCreationDate() > this.GetCreationDate();
+                return incoming.GetCreationDate() > GetCreationDate();
             }
             else
             {
-                return incoming.GetPrio().GetValue() > this.GetPrio().GetValue();
+                return incoming.GetPrio().GetValue() > GetPrio().GetValue();
             }
         }
     }

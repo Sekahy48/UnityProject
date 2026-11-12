@@ -1,21 +1,21 @@
 namespace Core.MVC.View.UI.Inventory
 {
     /// <summary>
-    /// An item together with its placement in the tetris grid.
-    /// Composes ItemDisplayData instead of extending it, so grid coordinates
-    /// don't leak into the contexts where items have no position
-    /// (inspection strip, equipment sub-slots).
+    /// Un item junto con su sitio en la rejilla tetris.
+    /// Compone ItemDisplayData en vez de heredar de el, para que las coordenadas de la
+    /// rejilla no se cuelen en los contextos donde los items no tienen posicion
+    /// (tira de inspeccion, subslots de equipo).
     /// </summary>
     public class GridItemDisplayData
     {
-        public ItemDisplayData Item;
-        public int Row;
-        public int Col;
+        public ItemDisplayData Item { get; set; }
+        public int Row { get; set; }
+        public int Col { get; set; }
 
         /// <summary>
-        /// This node is the source of what the hand is holding. Nothing has left the grid
-        /// yet, so it is still drawn — dimmed, to show where the units came from.
+        /// Este nodo es el origen de lo que lleva la mano. Todavia no ha salido nada de la
+        /// rejilla, asi que se sigue dibujando, atenuado, para mostrar de donde salieron las unidades.
         /// </summary>
-        public bool IsGrabbed;
+        public bool IsGrabbed { get; set; }
     }
 }

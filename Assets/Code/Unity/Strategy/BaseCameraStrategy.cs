@@ -17,12 +17,15 @@ namespace Strategy
     public abstract class BaseCameraStrategy : ICameraStrategy, IObserver, IInventoryInputSource,
                                                IWorldInteractionInputSource
     {
-        protected Camera Camera;
-        protected GameObject PlayerObject;
-        protected IEntity player;
-        protected Animator animator;
+        protected Camera Camera { get; }
+        protected GameObject PlayerObject { get; }
+        protected Rigidbody PlayerBody { get; }
+        protected IEntity Player { get; }
+        protected Animator Animator { get; }
 
-        protected Vector2 rotation = Vector2.zero;
+        /* Campo y no propiedad a proposito: es un struct que las subclases modifican por partes
+           (Rotation.x += ...), y eso no compila sobre una propiedad. */
+        protected Vector2 Rotation = Vector2.zero;
 
         public event Action OnInventoryToggleRequested;
         public event Action OnInventoryCancelRequested; 
@@ -49,13 +52,32 @@ namespace Strategy
         private bool _interactPressed;
         private bool _interactHoldFired;
         private float _interactHeldFor;
+        
+        // Materiales de fisicas
+        private readonly CapsuleCollider _playerCollider;
+        private readonly PhysicsMaterial _movingMaterial;   // PlayerSinFriccion (el del Inspector)
+        private readonly PhysicsMaterial _idleMaterial;     // agarre total, creado aqui
 
         protected BaseCameraStrategy(IEntity player, string cameraName)
         {
-            this.player = player;
-            this.PlayerObject = GameObject.FindWithTag("MainPlayer");
-            this.Camera = new GameObject(cameraName).AddComponent<Camera>();
-            this.animator = PlayerObject.GetComponent<Animator>();
+            Player = player;
+            PlayerObject = GameObject.FindWithTag("MainPlayer");
+            Rigidbody rigidbody = PlayerObject.GetComponent<Rigidbody>();
+            if (rigidbody == null)  
+                throw new InvalidOperationException("No se puede inicializar la estrategia de camara: el jugador no tiene Rigidbody en Unity.");
+            PlayerBody = rigidbody;
+
+            _playerCollider = PlayerObject.GetComponent<CapsuleCollider>();
+            _movingMaterial = _playerCollider.sharedMaterial;
+            _idleMaterial = new PhysicsMaterial("PlayerQuieto")
+            {
+                staticFriction = 1f,
+                dynamicFriction = 1f,
+                frictionCombine = PhysicsMaterialCombine.Maximum
+            };
+
+            Camera = new GameObject(cameraName).AddComponent<Camera>();
+            Animator = PlayerObject.GetComponent<Animator>();
         }
 
         // Common methods
@@ -69,9 +91,11 @@ namespace Strategy
             Camera.enabled = false;
             _interactPressed = false;
             _interactHoldFired = false;
+            PlayerBody.linearVelocity = new Vector3(0f, PlayerBody.linearVelocity.y, 0f);
+            HandleAnimation(0f, 0f, 1f);   
         }
 
-        protected internal MovementComponent GetMov() => player.GetComponent<MovementComponent>();
+        protected internal MovementComponent GetMov() => Player.GetComponent<MovementComponent>();
          
 
         public void Execute(float deltaTime)
@@ -87,18 +111,18 @@ namespace Strategy
 
         protected virtual void HandleAnimation(float horizontal, float vertical, float deltaTime)
         {
-            if (animator == null)
+            if (Animator == null)
                 return;
 
             var mov = GetMov();
-            animator.SetBool("IsRunning", mov.IsRunning);
-            animator.SetBool("IsJumping", mov.IsJumping);
+            Animator.SetBool("IsRunning", mov.IsRunning);
+            Animator.SetBool("IsJumping", mov.IsJumping);
 
-            float smoothHorizontal = Mathf.Lerp(animator.GetFloat("VelX"), horizontal, deltaTime * 10f);
-            float smoothVertical = Mathf.Lerp(animator.GetFloat("VelY"), vertical, deltaTime * 10f);
+            float smoothHorizontal = Mathf.Lerp(Animator.GetFloat("VelX"), horizontal, deltaTime * 10f);
+            float smoothVertical = Mathf.Lerp(Animator.GetFloat("VelY"), vertical, deltaTime * 10f);
 
-            animator.SetFloat("VelX", smoothHorizontal);
-            animator.SetFloat("VelY", smoothVertical);
+            Animator.SetFloat("VelX", smoothHorizontal);
+            Animator.SetFloat("VelY", smoothVertical);
         }
 
         protected void HandleInventoryInput()
@@ -146,7 +170,7 @@ namespace Strategy
         private void WriteGaze()
         {
             Vector3 forward = Camera.transform.forward;
-            player.GetComponent<GazeComponent>()?.SetDirection(forward.x, forward.y, forward.z);
+            Player.GetComponent<GazeComponent>()?.SetDirection(forward.x, forward.y, forward.z);
         }
 
         /// <summary>
@@ -186,8 +210,16 @@ namespace Strategy
         protected abstract void HandleMouseLook(float deltaTime);
 
         /// <summary>
-        /// Unified FPS/TPS movement. Works directly with Transform
-        /// (not with PositionComponent). TransformSyncSystem syncs it to Core.
+        /// Movimiento comun de FPS y TPS, por fisica: no escribe la posicion, le da velocidad
+        /// al Rigidbody del jugador y el motor fisico lo mueve y resuelve los choques.
+        /// TransformSyncSystem copia despues la posicion al Core.
+        ///
+        /// <para>La velocidad horizontal real se acerca cada fotograma a la objetivo
+        /// (<see cref="MovementComponent.GetSpeed"/> en la direccion de las teclas, o cero sin
+        /// teclas) al ritmo de <see cref="MovementComponent.Acceleration"/> o, al frenar,
+        /// <see cref="MovementComponent.Deceleration"/>. Se parte de la velocidad REAL del cuerpo:
+        /// si un choque la ha cortado, vuelve a acelerar desde ahi. La vertical no se toca, para
+        /// no anular la gravedad.</para>
         /// </summary>
         protected virtual void HandleMovement(float deltaTime)
         {
@@ -198,29 +230,52 @@ namespace Strategy
             float horizontal = 0f;
             float vertical = 0f;
 
-            if (Keyboard.current.wKey.isPressed) { move += tr.forward; vertical += 1f; }
-            if (Keyboard.current.sKey.isPressed) { move -= tr.forward; vertical -= 1f; }
-            if (Keyboard.current.aKey.isPressed) { move -= tr.right; horizontal -= 1f; }
-            if (Keyboard.current.dKey.isPressed) { move += tr.right; horizontal += 1f; }
+            Quaternion yaw = Quaternion.Euler(0f, Rotation.x, 0f);
+            Vector3 forward = yaw * Vector3.forward;
+            Vector3 right = yaw * Vector3.right;
+
+            if (Keyboard.current.wKey.isPressed) { move += forward; vertical += 1f; }
+            if (Keyboard.current.sKey.isPressed) { move -= forward; vertical -= 1f; }
+            if (Keyboard.current.aKey.isPressed) { move -= right; horizontal -= 1f; }
+            if (Keyboard.current.dKey.isPressed) { move += right; horizontal += 1f; }
 
             HandleAnimation(horizontal, vertical, deltaTime);
-
+            Vector3 targetVelocity = Vector3.zero;
             if (move != Vector3.zero)
             {
                 move.Normalize();
                 movComp.SetIsJumping(Keyboard.current.spaceKey.isPressed);
                 movComp.SetIsRunning(Keyboard.current.leftShiftKey.isPressed);
-                float speed = movComp.IsRunning && movComp.CanRun()
-                    ? movComp.GetSpeed() * movComp.RunMultiplier
-                    : movComp.GetSpeed();
-
-                tr.position += move * speed * deltaTime;
+                targetVelocity = move * movComp.GetSpeed(); 
             }
             else
             {
                 movComp.SetIsRunning(false);
                 movComp.SetIsJumping(false);
             }
+        
+
+            Vector3 current = Vector3.ProjectOnPlane(PlayerBody.linearVelocity, Vector3.up);
+            float currentSpeed = current.magnitude;
+            float targetSpeed = targetVelocity.magnitude;
+
+            // Rapidez: sube con Acceleration, baja con Deceleration (soltar teclas o dejar de correr)
+            float rate = targetSpeed > currentSpeed ? movComp.Acceleration : movComp.Deceleration;
+            float nextSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, rate * deltaTime);
+
+            // Direccion: gira hacia la de las teclas sin gastar rapidez
+            Vector3 nextDir;
+            if (targetSpeed == 0f)
+                nextDir = currentSpeed > 0.01f ? current / currentSpeed : Vector3.zero; // frenando: mantiene direccion
+            else if (currentSpeed < 0.01f)
+                nextDir = move;                                                          // parado: arranca ya hacia donde pide
+            else
+                nextDir = Vector3.RotateTowards(current / currentSpeed, move,
+                                                movComp.TurnSpeed * Mathf.Deg2Rad * deltaTime, 0f);
+
+            Vector3 next = nextDir * nextSpeed;
+            _playerCollider.sharedMaterial = targetSpeed == 0f ? _idleMaterial : _movingMaterial;
+            PlayerBody.linearVelocity = new Vector3(next.x, PlayerBody.linearVelocity.y, next.z);
         }
     }
 }

@@ -1,28 +1,28 @@
 namespace Core.Handler
 {
     public class NameId : IHandler {
-        private string id;
+        private string _id;
 
         public NameId(string id) {
-            this.id = id;
+            _id = id;
         }
 
         public NameId(IHandler id) : this(id.ToString()) { }
 
         public int CompareTo(IHandler another) {
-            return id.CompareTo(another.ToString());
+            return _id.CompareTo(another.ToString());
         }
 
         public override string ToString() {
-            return id;
+            return _id;
         }
 
         public bool EqualsIgnoreCase(IHandler anotherName) {
-            return id.ToLower().Equals(anotherName.ToString().ToLower());
+            return _id.ToLower().Equals(anotherName.ToString().ToLower());
         }
 
         public bool Equals(IHandler another) {
-            return id.Equals(another.ToString());
+            return _id.Equals(another.ToString());
         }
 
         public override bool Equals(object obj) {
@@ -32,7 +32,7 @@ namespace Core.Handler
         }
 
         public override int GetHashCode() {
-            return id.GetHashCode();
+            return _id.GetHashCode();
         }
     }
 

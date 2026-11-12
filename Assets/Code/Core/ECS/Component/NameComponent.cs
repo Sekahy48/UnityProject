@@ -9,18 +9,18 @@ namespace Core.ECS.Component
     /// </summary>
     public class NameComponent : BasicComponent, IJsonLoadable
     {
-        private string displayName;
+        private string _displayName;
 
         public NameComponent() {}
 
         public NameComponent(string displayName)
         {
-            this.displayName = displayName;
-            this._name = "NameComponent";
+            _displayName = displayName;
+            Name = "NameComponent";
         }
 
-        public string DisplayName => displayName;
-        public void SetDisplayName(string value) { displayName = value; }
+        public string DisplayName => _displayName;
+        public void SetDisplayName(string value) { _displayName = value; }
 
         public void SetFromValues(Dictionary<string, object> values)
         {
@@ -29,14 +29,14 @@ namespace Core.ECS.Component
 
         public override IComponent Clone()
         {
-            return new NameComponent(displayName);
+            return new NameComponent(_displayName);
         }
 
         public override bool Equivalent(IComponent other)
         {
             return 
                 other is NameComponent otherName &&
-                this.displayName == otherName.displayName;
+                _displayName == otherName._displayName;
         }
     }
 }

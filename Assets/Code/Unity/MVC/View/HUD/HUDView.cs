@@ -19,7 +19,7 @@ namespace MVC.View.HUD
         private VisualElement _fatigueFill;
         private VisualElement _statesBar;
         private VisualElement _statesTooltip;
-        private readonly string DEFAULT_STATUS_CLASS = "status";
+        private const string DEFAULT_STATUS_CLASS = "status";
 
         private Dictionary<StatusCategory, string> _stateClasses= new Dictionary<StatusCategory, string> {
             { StatusCategory.Weight, "status--weight"}

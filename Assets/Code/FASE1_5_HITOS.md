@@ -8,11 +8,13 @@ el encaje en el plan, de `Docs/ROADMAP.md`.
 
 > Esta sección existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**Definida la fase, sin hitos todavía (2026-11-12).** Rama `fase1.5`, creada desde `main`
-tras fusionar la Fase 1 (PR #2). Tras la reunión con David del 2026-11-12 la fase se queda
-**solo en el mundo físico** (soltar con física y movimiento del jugador por física); el
-guardado de partida se aplaza a después del TFG, con su diseño conservado abajo. Siguiente:
-que Sergio pida la propuesta cerrada de hitos.
+**M1 cerrado (2026-11-12).** Rama `fase1.5`. La fase se queda solo en el mundo físico (soltar
+con física y jugador por física); el guardado se aplaza a después del TFG, con su diseño
+conservado abajo. El jugador ya se mueve por física (Sergio lo escribió, con guía): rapidez y
+dirección separadas (33), sin rozamiento al moverse y agarre al estar quieto (34, 37), sin
+Apply Root Motion (35) y cámaras FPS/TPS descolgadas del cuerpo (36). Probado en juego: paredes,
+FPS, TPS, caídas, cambio a RTS, rampas y paredes en el aire. Siguiente: **M2, lo soltado cae y
+rueda, con el sistema de masa** (quién escribe cada parte, se decide al empezarlo).
 
 ## Objetivo
 
@@ -130,7 +132,108 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
 24. **Los guardados van a `Application.persistentDataPath`** (en Windows, dentro de `AppData`),
     fuera del proyecto y del repositorio.
 
-## Preguntas pendientes
+### Implementación (2026-11-12)
 
-Ninguna de experiencia ni de diseño. Siguiente paso: propuesta cerrada de hitos (cuando
-Sergio la pida).
+25. **No atravesar paredes al soltar: el Core pregunta a Unity por una interfaz,** igual que
+    con `IReachFilter` / `LineOfSightFilter`. El Core decide dónde aparece lo soltado; Unity
+    solo responde si el camino está libre.
+26. **Masa del jugador con su carga: Unity la actualiza al recibir el aviso de que el inventario
+    ha cambiado** (ya existe), no en cada fotograma.
+27. **Mientras el modelo 3D carga, el objeto cae ya con la esfera provisional** y la cambia por
+    la envoltura convexa cuando llega el modelo.
+28. **Objetos pequeños bajo los pies: el umbral se decide al probar** (por masa o tamaño, por
+    debajo del cual el objeto no choca con el jugador).
+29. **Salirse del mundo: se busca suelo en vertical en esa misma posición horizontal; si no
+    hay, vuelve al último sitio donde estuvo quieto.**
+30. **Quién escribe cada cosa se decide al llegar a cada hito.** Lo de Core, por la regla de
+    `CLAUDE.md`, es de Sergio.
+31. **La masa de los Rigidbody la pone un sistema propio de Unity** suscrito al aviso de
+    inventario cambiado (`InventoryChanged`; más adelante también al de equipo cambiado). No
+    es «cada entidad comprueba si el aviso es suyo»: un solo sistema atiende a todas, toma la
+    entidad que viene en el aviso y, si tiene cuerpo físico en Unity, le pone `masa = peso`.
+    Vale igual para el jugador y para los objetos (un arcón del suelo al que le metes cosas).
+    Como el aviso no llega cuando algo aparece en el mundo, la masa inicial se pone también
+    al enlazar la entidad con su GameObject. Las estrategias de cámara siguen guardando el
+    GameObject del jugador y sacan de él el Rigidbody una vez; no saben nada de pesos.
+32. **El peso de cualquier entidad sale de una sola función del Core:** un ítem, `ItemWeight.Of`
+    (con su contenido); un cuerpo, su peso más el total de su inventario (que ya incluye la
+    mochila puesta). La ropa puesta aún no pesa (decidido, sin aplicar). Es Core: la escribe
+    Sergio.
+33. **El movimiento separa rapidez y dirección** (M1, 2026-11-12). La rapidez sube con
+    `Acceleration` (8 m/s²) y baja con `Deceleration` (16 m/s²); la dirección gira hacia la de
+    las teclas a `TurnSpeed` (720 °/s) sin gastar rapidez. Motivo: con piernas se cambia de
+    dirección casi sin frenar; acercar el vector entero (`MoveTowards`) hacía perder mucha
+    velocidad en cada giro. Media vuelta sin frenar: aceptado tras probarlo; si resultara raro,
+    se añadiría un freno según lo cerrado del giro.
+34. **El jugador no tiene rozamiento con el suelo:** material físico `PlayerSinFriccion`
+    (fricción 0, combinación Minimum) en `Assets/Settings/Physics/`. El frenado lo hace el
+    código (33); con el rozamiento por defecto el suelo se comía la aceleración. Evita también
+    quedarse pegado a las paredes en el aire.
+35. **Animator del jugador sin Apply Root Motion:** con él activo, el Animator pisaba cada paso
+    de física la velocidad del Rigidbody con la de la animación (0, van en el sitio) y el
+    jugador temblaba sin avanzar.
+36. **Las cámaras de primera y tercera persona no cuelgan del cuerpo** (M1, 2026-11-12). El
+    cuerpo gira con `MoveRotation`, al ritmo de la física; si la cámara colgara de él, el ratón
+    iría a tirones. FPS: la cámara se coloca cada fotograma en la posición del jugador más la
+    altura de los ojos y aplica los dos giros directamente. TPS: sigue al jugador sin retraso y
+    solo suaviza su desplazamiento alrededor de él (la órbita del ratón); antes suavizaba
+    también el seguimiento y al caer se quedaba atrás. La dirección de W/A/S/D sale del giro
+    del ratón, no del cuerpo, que va un paso de física por detrás.
+37. **Quieto, el jugador se agarra al suelo** (M1, 2026-11-12). Sin rozamiento (34) se
+    deslizaba despacio por las rampas al pararse, y el rozamiento estático del material no
+    bastó. `HandleMovement` cambia el material del collider: sin teclas, uno de agarre total
+    (`PlayerQuieto`, creado por código, combinación Maximum); con teclas, `PlayerSinFriccion`.
+    **Límite conocido, para Fase 2:** el agarre representa estar de pie y consciente, y hoy lo
+    decide «no hay teclas». Un cuerpo desmayado o muerto en una cuesta debe poder resbalar
+    (solo en las empinadas: un cuerpo inerte sobre hierba aguanta las suaves). Cuando exista
+    el desmayo, el material saldrá del estado del cuerpo (moviéndose / de pie / inerte), no
+    de las teclas, y el movimiento por teclas quedará bloqueado mientras no pueda moverse.
+
+---
+
+## Hitos
+
+Orden pensado para que cada hito se pruebe solo y no estropee lo anterior. El jugador va
+primero: si los objetos tuvieran física mientras el jugador sigue moviéndose a base de
+escribir su posición, al tocarlos los «teletransportaría» dentro de ellos y saldrían
+disparados.
+
+### M1 — El jugador se mueve por física ✅ (2026-11-12)
+- El movimiento deja de escribir `transform.position` (`BaseCameraStrategy`) y pasa a darle
+  velocidad al Rigidbody dinámico, con interpolación para que la cámara no tiemble.
+- Revisar las pendientes y los escalones. La voltereta y el mortal son solo animaciones (no
+  hay código que mueva al jugador); sin Apply Root Motion (35) ya no desplazan el cuerpo.
+- La masa del jugador (cuerpo + carga) pasa a M2, con el sistema de masa (31, 32).
+- **Cierre:** se mueve igual que antes al jugar, sin el tirón contra las paredes; la cámara
+  no tiembla.
+
+### M2 — Lo soltado cae y rueda
+- Sistema de masa (31, 32): la del jugador = cuerpo + carga, actualizada con el aviso de
+  inventario cambiado (26); la de lo suelto, la de abajo.
+- Lo que está en el mundo (ítems sueltos, montones, arcones) tiene Rigidbody dinámico con masa
+  = peso del ítem con su contenido (`ItemWeight.Of`) y colisión convexa del modelo (11), con la
+  esfera provisional mientras carga (27).
+- La posición: el Core la marca al soltar; desde ahí manda la física y `TransformSyncSystem`
+  ya la copia al Core. Al pararse, deja de simularse (12).
+- Se puede coger mientras rueda (5).
+- **Cierre:** soltar una manzana y un arcón: caen, ruedan o vuelcan según su forma, se paran y
+  se pueden coger, también en movimiento. Empujar la manzana y empujar el arcón se nota
+  distinto.
+
+### M3 — No se tira nada a través de una pared
+- Interfaz del Core para preguntar a Unity si el camino del jugador al punto de soltar está
+  libre; si no, aparece pegado al jugador (2, 25).
+- **Cierre:** soltar mirando a una pared deja el objeto en el lado del jugador. Test del Core
+  con un filtro de prueba.
+
+### M4 — Objetos pequeños bajo los pies
+- Probar a pisar objetos pequeños y fijar el umbral (28).
+- **Cierre:** andar sobre manzanas no hace botar al jugador.
+
+### M5 — Lo que se sale del mundo vuelve
+- Detección por debajo de un límite y recolocación (29).
+- **Cierre:** un objeto que atraviesa el suelo o cae por un borde vuelve a un sitio válido.
+
+### M6 — Cierre de la fase
+- Repaso de los criterios de `Docs/ROADMAP.md` (Fase 1.5), tests del Core en verde y «Dónde
+  estamos» reescrito.

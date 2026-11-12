@@ -6,16 +6,16 @@ using Core.Utils;
 namespace Core.ECS.Component
 {
     /// <summary>
-    /// Core component for any ItemEntity. Holds the typeId referencing the
-    /// item concept in the catalog, plus instance-specific mutable state
-    /// (durability, condition). Shared/immutable data (name, description,
-    /// weight, icon, dimensions, maxStackSize) will live in the catalog
-    /// prototype once M1 is complete.
+    /// Componente basico de cualquier ItemEntity. Guarda el typeId que apunta al
+    /// concepto de item del catalogo y el estado mutable propio de cada instancia
+    /// (durabilidad, condicion). Los datos compartidos e inmutables (nombre, descripcion,
+    /// peso, icono, dimensiones, maxStackSize) iran en el prototipo del catalogo
+    /// cuando M1 este terminado.
     /// </summary>
 
     /// <summary>
-    /// UI metadata enum for filtering/display purposes.
-    /// Mechanical logic should use component presence (HasComponent) instead.
+    /// Metadatos para filtrar o mostrar en la interfaz.
+    /// La logica de juego debe mirar si hay componentes (HasComponent), no esto.
     /// </summary>
     public enum ItemType
     {
@@ -34,58 +34,58 @@ namespace Core.ECS.Component
     public class BaseItemComponent : BasicComponent, IJsonLoadable, INumericFields
     {
         /// <summary>
-        /// References the item concept this instance belongs to (catalog key).
+        /// Concepto de item al que pertenece esta instancia (clave del catalogo).
         /// </summary>
         private int _typeId;
         
         /// <summary>
-        /// Generic name of the item/concept name. Ex: Sword (not "Tizona" or "Excalibur").
+        /// Nombre generico del item o concepto. P. ej.: Espada (no "Tizona" ni "Excalibur").
         /// </summary>
         private string _genericName;
 
         /// <summary>
-        /// Weight of the entity.
+        /// Peso de la entidad.
         /// </summary>
         private float _weight;
 
         /// <summary>
-        /// Max stack of the entity in the grid-like inventory.
+        /// Pila maxima de la entidad en la rejilla del inventario.
         /// </summary>
         private int _maxStackSize;
 
         /// <summary>
-        /// Durability of the entity.
+        /// Durabilidad de la entidad.
         /// </summary>
         private float _durability;
 
         /// <summary>
-        /// Max durability of the entity. (points until it breaks)
+        /// Durabilidad maxima de la entidad (puntos hasta que se rompe).
         /// </summary>
-        private const float _maxDurability = 100;
+        private const float MAX_DURABILITY = 100;
 
         /// <summary>
-        /// Condition of the entity. (points until it works very poorly)
+        /// Condicion de la entidad (puntos hasta que funciona muy mal).
         /// </summary>
         private float _condition;
 
         /// <summary>
-        /// Max condition of the entity.
+        /// Condicion maxima de la entidad.
         /// </summary>
-        private const float _maxCondition = 100;
+        private const float MAX_CONDITION = 100;
 
         /// <summary>
-        /// Description of the component.
+        /// Descripcion del componente.
         /// </summary>
         private String _description;
 
         /// <summary>
-        /// Icon path of the component.
+        /// Ruta del icono del componente.
         /// </summary>
         private String _iconPath;
 
         /// <summary>
-        /// Item dimensions in inventory grid (w×h cells). Mechanically
-        /// relevant — determines grid footprint.
+        /// Dimensiones del item en la rejilla del inventario (ancho x alto en celdas).
+        /// Importan para el juego: deciden cuanto ocupa en la rejilla.
         /// </summary>
         private int _dimensionW;
         private int _dimensionH;
@@ -98,8 +98,8 @@ namespace Core.ECS.Component
 
         public BaseItemComponent(int typeId, string genericName, float weight, int maxStackSize,
                                 int dimensionW, int dimensionH,
-                                float durability = _maxDurability,
-                                float condition = _maxCondition,
+                                float durability = MAX_DURABILITY,
+                                float condition = MAX_CONDITION,
                                 String description = "", String iconPath = "")
         {
             _typeId = typeId;
@@ -116,13 +116,13 @@ namespace Core.ECS.Component
  
 
         /// <summary>
-        /// Gets the weight of the component.
+        /// Peso del componente.
         /// </summary>
-        /// <returns>the weight</returns>
+        /// <returns>el peso</returns>
         public float Weight => _weight;
 
         /// <summary>
-        /// Sets the weight of the component.
+        /// Fija el peso del componente.
         /// </summary>
         public void SetWeight(float weight)
         {
@@ -130,13 +130,13 @@ namespace Core.ECS.Component
         }
 
         /// <summary>
-        /// Gets the maximun stack size.
+        /// Pila maxima.
         /// </summary>
-        /// <returns>the maximun stack size</returns>
+        /// <returns>la pila maxima</returns>
         public int MaxStackSize => _maxStackSize;
 
         /// <summary>
-        /// Sets the maximun stack size.
+        /// Fija la pila maxima.
         /// </summary>
         public void SetMaxStackSize(int maxStackSize)
         {
@@ -144,41 +144,41 @@ namespace Core.ECS.Component
         }
 
         /// <summary>
-        /// Gets the durability of the component.
+        /// Durabilidad del componente.
         /// </summary>
-        /// <returns>the durability</returns>
+        /// <returns>la durabilidad</returns>
         public float Durability => _durability;
 
         /// <summary>
-        /// Sets the durability of the component.
+        /// Fija la durabilidad del componente.
         /// </summary>
         public void SetDurability(int durability)
         {
-            _durability = Math.Clamp(durability, 0, _maxDurability);
+            _durability = Math.Clamp(durability, 0, MAX_DURABILITY);
         }
 
         /// <summary>
-        /// Gets the condition of the component.
+        /// Condicion del componente.
         /// </summary>
-        /// <returns>the condition</returns>
+        /// <returns>la condicion</returns>
         public float Condition => _condition;
 
         /// <summary>
-        /// Sets the condition of the component.
+        /// Fija la condicion del componente.
         /// </summary>
         public void SetCondition(float condition)
         {
-            this._condition = Math.Clamp(condition, 0, _maxCondition);
+            _condition = Math.Clamp(condition, 0, MAX_CONDITION);
         }
 
         /// <summary>
-        /// Gets the description of the component.
+        /// Descripcion del componente.
         /// </summary>
-        /// <returns>the description</returns>
+        /// <returns>la descripcion</returns>
         public String Description => _description;
 
         /// <summary>
-        /// Sets the description of the component.
+        /// Fija la descripcion del componente.
         /// </summary>
         public void SetDescription(String description)
         {
@@ -186,13 +186,13 @@ namespace Core.ECS.Component
         }
 
         /// <summary>
-        /// Gets the icon path of the component.
+        /// Ruta del icono del componente.
         /// </summary>
-        /// <returns>the icon path</returns>
+        /// <returns>la ruta del icono</returns>
         public String IconPath => _iconPath;
 
         /// <summary>
-        /// Sets the icon path of the component.
+        /// Fija la ruta del icono del componente.
         /// </summary>
         public void SetIconPath(String iconPath)
         {
@@ -200,7 +200,7 @@ namespace Core.ECS.Component
         }
 
         /// <summary>
-        /// Gets the catalog typeId this item instance belongs to.
+        /// typeId del catalogo al que pertenece esta instancia.
         /// </summary>
         public int TypeId => _typeId;
 
@@ -232,7 +232,7 @@ namespace Core.ECS.Component
         /// medidas del mundo. Son numeros del item y alguien podria querer compararlos; lo
         /// que no deben hacer es acabar usandose como tamano fisico.
         /// </summary>
-        private static readonly NumericFields<BaseItemComponent> Fields =
+        private static readonly NumericFields<BaseItemComponent> _fields =
             new NumericFields<BaseItemComponent>()
                 .Add("weight", c => c._weight, (c, v) => c.SetWeight(v))
                 .Add("maxStackSize", c => c._maxStackSize, (c, v) => c.SetMaxStackSize((int)v))
@@ -242,11 +242,11 @@ namespace Core.ECS.Component
                 .Add("dimensionH", c => c._dimensionH, (c, v) => c._dimensionH = (int)v);
 
         public bool TryGetNumericValue(string field, out float value)
-            => Fields.TryGet(this, field, out value);
+            => _fields.TryGet(this, field, out value);
 
         public void SetFromValues(Dictionary<string, object> values)
         {
-            Fields.Apply(this, values);
+            _fields.Apply(this, values);
 
             if (values.ContainsKey("description")) SetDescription(values["description"].ToString());
             if (values.ContainsKey("iconPath")) SetIconPath(values["iconPath"].ToString());
@@ -266,13 +266,13 @@ namespace Core.ECS.Component
         {
             return
                 other is BaseItemComponent otherBase &&
-                this._typeId == otherBase._typeId &&
-                this._weight == otherBase._weight &&
-                this._maxStackSize == otherBase._maxStackSize &&
-                this._durability == otherBase._durability &&
-                this._condition == otherBase._condition &&
-                this._description == otherBase._description &&
-                this._iconPath == otherBase._iconPath;
+                _typeId == otherBase._typeId &&
+                _weight == otherBase._weight &&
+                _maxStackSize == otherBase._maxStackSize &&
+                _durability == otherBase._durability &&
+                _condition == otherBase._condition &&
+                _description == otherBase._description &&
+                _iconPath == otherBase._iconPath;
         }
     }
 }

@@ -6,14 +6,14 @@ using Core.ECS.Entity;
 namespace Core.Inventory
 {
     /// <summary>
-    /// Tracks which cells are occupied in a grid-based inventory.
-    /// Dual representation: list of placed elements + 2D matrix for O(1) cell queries.
+    /// Lleva la cuenta de que celdas estan ocupadas en un inventario de rejilla.
+    /// Doble representacion: lista de elementos colocados + matriz 2D para consultar una celda en O(1).
     /// </summary>
     public class TetrisGridState
     {
         private readonly int _gridH;
         private readonly int _gridW;
-        private readonly int[,] _cells; // nodeId or -1 if free
+        private readonly int[,] _cells; // nodeId, o -1 si esta libre
         private readonly List<GridElement> _elements;
 
         public TetrisGridState(int gridH, int gridW)
@@ -28,26 +28,26 @@ namespace Core.Inventory
                     _cells[r, c] = -1;
         }
 
-        //#region Getters
+        // #region Lecturas
 
         public int GetGridH() => _gridH;
         public int GetGridW() => _gridW;
         public List<GridElement> GetElements() => new List<GridElement>(_elements);
 
         /// <summary>
-        /// Whether the given cell exists in this grid.
+        /// Si la celda existe en esta rejilla.
         /// </summary>
         public bool IsInside(GridPos pos) =>
             pos.Row >= 0 && pos.Col >= 0 && pos.Row < _gridH && pos.Col < _gridW;
 
         /// <summary>
-        /// Returns the nodeId at the given cell, or -1 if free or outside the grid.
+        /// El nodeId de la celda, o -1 si esta libre o fuera de la rejilla.
         /// </summary>
         public int GetCellAt(GridPos pos) => IsInside(pos) ? _cells[pos.Row, pos.Col] : -1;
 
         /// <summary>
-        /// Returns the GridElement placed at the given cell, or null if free or outside
-        /// the grid.
+        /// El GridElement colocado en la celda, o null si esta libre o fuera de
+        /// la rejilla.
         /// </summary>
         public GridElement GetElementAt(GridPos pos)
         {
@@ -58,9 +58,9 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Returns the GridElement of a node by its id, or null if the node is not on this
-        /// grid. Useful when the node is already known and what is missing is where it sits —
-        /// the opposite direction of GetElementAt.
+        /// El GridElement de un nodo por su id, o null si el nodo no esta en esta
+        /// rejilla. Util cuando ya se conoce el nodo y lo que falta es donde esta:
+        /// el sentido contrario de GetElementAt.
         /// </summary>
         public GridElement GetElementOf(int nodeId)
         {
@@ -70,27 +70,27 @@ namespace Core.Inventory
             return null;
         }
 
-        //#endregion
+        // #endregion
 
-        //#region Placement
+        // #region Colocacion
 
         /// <summary>
-        /// Checks if an item with the given dimensions can be placed at the specified position.
+        /// Si un item de esas dimensiones se puede colocar en la posicion indicada.
         /// </summary>
         /// <param name="ignoreNodeId">
-        /// Node whose cells count as free. Needed to move a node onto a position overlapping
-        /// its own: the hand holds a reference and nothing leaves the grid until it is placed,
-        /// so the node's cells still hold its id and would block it against itself. Nudging a
-        /// 1x3 blade one row down is the common case.
-        /// -1 blocks nothing extra, since NodeIdGenerator starts at 1.
+        /// Nodo cuyas celdas cuentan como libres. Hace falta para mover un nodo a una posicion que
+        /// se solapa con la suya: la mano guarda una referencia y nada sale de la rejilla hasta
+        /// colocarlo, asi que sus celdas siguen con su id y se bloquearia contra si mismo. Bajar
+        /// una fila una hoja de 1x3 es el caso tipico.
+        /// -1 no bloquea nada de mas, porque NodeIdGenerator empieza en 1.
         /// </param>
         public bool CanPlace(GridPos pos, int itemH, int itemW, int ignoreNodeId = -1)
             => CanPlace(pos, itemH, itemW, ignoreNodeId, -1);
 
         /// <param name="alsoIgnoreNodeId">
-        /// Second node whose cells count as free. An exchange takes BOTH nodes off the grid
-        /// before putting them back, so neither may block the other — and a single ignored id
-        /// cannot express that.
+        /// Segundo nodo cuyas celdas cuentan como libres. Un intercambio saca de la rejilla LOS DOS
+        /// nodos antes de volver a ponerlos, asi que ninguno puede estorbar al otro, y un solo
+        /// id ignorado no puede expresarlo.
         /// </param>
         public bool CanPlace(GridPos pos, int itemH, int itemW, int ignoreNodeId, int alsoIgnoreNodeId)
         {
@@ -151,16 +151,16 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Places a node at the specified position. Returns false if the space is not available.
-        /// A node may overlap its own previous cells, so this doubles as "move here": the old
-        /// cells are released first, otherwise they would stay marked with its id and the node
-        /// would hold more space than it occupies.
+        /// Coloca un nodo en la posicion indicada. Devuelve false si el sitio no esta libre.
+        /// Un nodo puede solaparse con sus propias celdas anteriores, asi que esto sirve tambien de
+        /// "mover aqui": primero se liberan las celdas viejas; si no, seguirian marcadas con su id y
+        /// el nodo ocuparia mas de lo que ocupa.
         /// </summary>
         /// <param name="ignoreNodeId">
-        /// Extra node whose cells count as free, on top of this node's own — see CanPlace.
-        /// Needed when the move is done by building a NEW node and dropping the old one: the
-        /// new id owns no cell yet, so without this the placement collides with the node it
-        /// is replacing.
+        /// Nodo extra cuyas celdas cuentan como libres, ademas de las del propio nodo (ver CanPlace).
+        /// Hace falta cuando el movimiento se hace creando un nodo NUEVO y quitando el viejo: el
+        /// id nuevo aun no tiene celdas, asi que sin esto la colocacion choca con el nodo al
+        /// que sustituye.
         /// </param>
         public bool Place(IInventoryElement node, GridPos pos, int ignoreNodeId = -1)
         {
@@ -172,7 +172,7 @@ namespace Core.Inventory
              && !CanPlace(pos, itemH, itemW, ignoreNodeId)) return false;
 
             int nodeId = node.GetNodeId();
-            Remove(nodeId);   // no-op if it wasn't placed yet
+            Remove(nodeId);   // no hace nada si aun no estaba colocado
 
             for (int r = pos.Row; r < pos.Row + itemH; r++)
                 for (int c = pos.Col; c < pos.Col + itemW; c++)
@@ -190,7 +190,7 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Removes a node from the grid by its nodeId.
+        /// Quita un nodo de la rejilla por su nodeId.
         /// </summary>
         public bool Remove(int nodeId)
         {
@@ -214,16 +214,16 @@ namespace Core.Inventory
             return true;
         }
 
-        //#endregion
+        // #endregion
 
-        //#region Queries
+        // #region Consultas
 
         /// <summary>
-        /// Finds the first position where an item with the given dimensions fits.
-        /// Scans left-to-right, top-to-bottom.
-        /// Returns the cell, or GridPos.None if no space.
+        /// Primera posicion donde cabe un item de esas dimensiones.
+        /// Recorre de izquierda a derecha y de arriba abajo.
+        /// Devuelve la celda, o GridPos.None si no hay sitio.
         /// </summary>
-        /// <param name="ignoreNodeId">Node whose cells count as free — see CanPlace.</param>
+        /// <param name="ignoreNodeId">Nodo cuyas celdas cuentan como libres (ver CanPlace).</param>
         public GridPos FindFirstFit(int itemH, int itemW, int ignoreNodeId = -1)
         {
             for (int r = 0; r <= _gridH - itemH; r++)
@@ -237,7 +237,7 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Returns the number of free cells in the grid.
+        /// Numero de celdas libres de la rejilla.
         /// </summary>
         public int GetFreeCellCount()
         {
@@ -248,6 +248,6 @@ namespace Core.Inventory
             return free;
         }
 
-        //#endregion
+        // #endregion
     }
 }

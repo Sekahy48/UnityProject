@@ -3,16 +3,16 @@ using System;
 namespace Core.ECS.Systems
 {
     /// <summary>
-    /// Interface for game loop systems.
-    /// Each system processes entities that have the components it's interested in.
+    /// Interfaz de los sistemas del bucle de juego.
+    /// Cada sistema procesa las entidades que tienen los componentes que le interesan.
     /// </summary>
     public interface IPeriodicSystem
     {
         /// <summary>
-        /// Processes a tick. The system queries EntityManager to get the relevant entities.
+        /// Procesa un tick. El sistema pide a EntityManager las entidades que le interesan.
         /// </summary>
-        /// <param name="deltaTime">Tick time (ClockSystem's tickTime for game systems, real deltaTime for engine systems)</param>
-        /// <param name="entityManager">Access to the game's entities</param>
+        /// <param name="deltaTime">Duracion del tick (el tickTime de ClockSystem para los sistemas de juego, el deltaTime real para los del motor)</param>
+        /// <param name="entityManager">Acceso a las entidades del juego</param>
         void Process(float deltaTime, EntityManager entityManager);
     }
 }

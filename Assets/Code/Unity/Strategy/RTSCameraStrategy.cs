@@ -6,111 +6,111 @@ namespace Strategy
 {
     public class RTSCameraStrategy : ICameraStrategy
     {
-        private readonly Camera Camera;
-        private float cameraSpeed = 10f;
-        private float rotationSpeed = 45f;
+        private readonly Camera _camera;
+        private float _cameraSpeed = 10f;
+        private float _rotationSpeed = 45f;
 
-        // Point we orbit around
-        private Vector3 pivot;
+        // Punto alrededor del cual se orbita
+        private Vector3 _pivot;
 
         public RTSCameraStrategy()
         {
             GameObject camGO = new GameObject("RTSCamera");
             camGO.transform.position = new Vector3(0f, 20f, -20f);
             camGO.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
-            this.Camera = camGO.AddComponent<Camera>();
+            _camera = camGO.AddComponent<Camera>();
 
-            pivot = new Vector3(0f, 0f, 0f); // initially, look at the origin
+            _pivot = new Vector3(0f, 0f, 0f); // al principio, mira al origen
         }
 
-        public void Activate() => Camera.enabled = true;
-        public void Deactivate() => Camera.enabled = false;
+        public void Activate() => _camera.enabled = true;
+        public void Deactivate() => _camera.enabled = false;
 
         public void Execute(float deltaTime)
         {
-            Transform camTransform = Camera.transform;
+            Transform camTransform = _camera.transform;
 
-            // Dynamically update pivot: what the camera "looks at" from a certain distance
-            pivot = camTransform.position + camTransform.forward * 10f;
+            // Pivote dinamico: lo que la camara "mira" a cierta distancia
+            _pivot = camTransform.position + camTransform.forward * 10f;
 
-            // -------- MOUSE WHEEL SCROLL --------
+            // -------- RUEDA DEL RATON --------
             float scroll = Mouse.current.scroll.ReadValue().y;
 
             if (scroll != 0f)
             {
                 if (Keyboard.current.leftShiftKey.isPressed)
                 {
-                    // Raise/lower height FASTER (3x) and inverted direction
-                    float verticalSpeed = 10f * 3f; // 3 times faster
+                    // Subir o bajar la altura MAS RAPIDO (x3) y con la direccion invertida
+                    float verticalSpeed = 10f * 3f; // 3 veces mas rapido
                     camTransform.Translate(Vector3.up * -scroll * deltaTime * verticalSpeed, Space.World);
-                    pivot += Vector3.up * -scroll * deltaTime * verticalSpeed; // adjust pivot
+                    _pivot += Vector3.up * -scroll * deltaTime * verticalSpeed; // ajusta el pivote
                 }
                 else
                 {
-                    // Zoom (adjust FOV)
-                    Camera.fieldOfView -= scroll * deltaTime * 10f;
+                    // Zoom (ajusta el FOV)
+                    _camera.fieldOfView -= scroll * deltaTime * 10f;
                 }
             }
             // -----------------------------------
 
-            // Normal speed / boost
+            // Velocidad normal / acelerada
             if (Keyboard.current.leftShiftKey.isPressed)
             {
-                cameraSpeed = 30f;
-                rotationSpeed = 135f;
+                _cameraSpeed = 30f;
+                _rotationSpeed = 135f;
             }
             else
             {
-                cameraSpeed = 10f;
-                rotationSpeed = 45f;
+                _cameraSpeed = 10f;
+                _rotationSpeed = 45f;
             }
 
             Vector3 forward = new Vector3(camTransform.forward.x, 0, camTransform.forward.z).normalized;
             Vector3 right   = new Vector3(camTransform.right.x, 0, camTransform.right.z).normalized;
 
-            // Basic movement
-            if (Keyboard.current.wKey.isPressed) camTransform.position += forward * cameraSpeed * deltaTime;
-            if (Keyboard.current.sKey.isPressed) camTransform.position -= forward * cameraSpeed * deltaTime;
-            if (Keyboard.current.aKey.isPressed) camTransform.position -= right * cameraSpeed * deltaTime;
-            if (Keyboard.current.dKey.isPressed) camTransform.position += right * cameraSpeed * deltaTime;
+            // Movimiento basico
+            if (Keyboard.current.wKey.isPressed) camTransform.position += forward * _cameraSpeed * deltaTime;
+            if (Keyboard.current.sKey.isPressed) camTransform.position -= forward * _cameraSpeed * deltaTime;
+            if (Keyboard.current.aKey.isPressed) camTransform.position -= right * _cameraSpeed * deltaTime;
+            if (Keyboard.current.dKey.isPressed) camTransform.position += right * _cameraSpeed * deltaTime;
 
-            // Drag movement (middle button)
+            // Movimiento arrastrando (boton central)
             if (Mouse.current.middleButton.isPressed)
             {
                 float deltaX = Mouse.current.delta.x.ReadValue();
                 float deltaY = Mouse.current.delta.y.ReadValue();
 
-                Vector3 lateral = right   * -deltaX * cameraSpeed * deltaTime / 20f;
-                Vector3 frontal = forward * -deltaY * cameraSpeed * deltaTime / 20f;
+                Vector3 lateral = right   * -deltaX * _cameraSpeed * deltaTime / 20f;
+                Vector3 frontal = forward * -deltaY * _cameraSpeed * deltaTime / 20f;
 
                 camTransform.position += lateral + frontal;
-                pivot += lateral + frontal; // also move the pivot
+                _pivot += lateral + frontal; // mueve tambien el pivote
             }
 
-            // Orbit with Q/E
+            // Orbitar con Q/E
             if (Keyboard.current.qKey.isPressed)
-                OrbitAroundPivot(Vector3.up, rotationSpeed * deltaTime);
+                OrbitAroundPivot(Vector3.up, _rotationSpeed * deltaTime);
             if (Keyboard.current.eKey.isPressed)
-                OrbitAroundPivot(Vector3.up, -rotationSpeed * deltaTime);
+                OrbitAroundPivot(Vector3.up, -_rotationSpeed * deltaTime);
 
-            // Left/right arrows
+            // Flechas izquierda/derecha
             if (Keyboard.current.leftArrowKey.isPressed)
-                OrbitAroundPivot(Vector3.up, -rotationSpeed * deltaTime);
+                OrbitAroundPivot(Vector3.up, -_rotationSpeed * deltaTime);
             if (Keyboard.current.rightArrowKey.isPressed)
-                OrbitAroundPivot(Vector3.up, rotationSpeed * deltaTime);
+                OrbitAroundPivot(Vector3.up, _rotationSpeed * deltaTime);
 
             if (Keyboard.current.upArrowKey.isPressed)
-                OrbitAroundPivot(camTransform.right, -rotationSpeed * deltaTime);
+                OrbitAroundPivot(camTransform.right, -_rotationSpeed * deltaTime);
             if (Keyboard.current.downArrowKey.isPressed)
-                OrbitAroundPivot(camTransform.right, rotationSpeed * deltaTime);
+                OrbitAroundPivot(camTransform.right, _rotationSpeed * deltaTime);
 
-            // Orbit with right click + drag
+            // Orbitar con clic derecho + arrastrar
             if (Mouse.current.rightButton.isPressed)
             {
                 float deltaX = Mouse.current.delta.x.ReadValue();
                 float deltaY = Mouse.current.delta.y.ReadValue();
 
-                // If we reach the screen edge, simulate extra movement
+                // Si se llega al borde de la pantalla, se simula movimiento extra
                 Vector2 mousePos = Mouse.current.position.ReadValue();
                 if (mousePos.x <= 5) deltaX = -5;
                 if (mousePos.x >= Screen.width - 5) deltaX = 5;
@@ -121,16 +121,16 @@ namespace Strategy
                 OrbitAroundPivot(camTransform.right, -deltaY * 0.2f);
             }
 
-            // Final FOV clamp
-            Camera.fieldOfView = Mathf.Clamp(Camera.fieldOfView, 30f, 100f);
+            // Limite final del FOV
+            _camera.fieldOfView = Mathf.Clamp(_camera.fieldOfView, 30f, 100f);
         }
 
         private void OrbitAroundPivot(Vector3 axis, float angle)
         {
-            Transform camTransform = Camera.transform;
-            camTransform.RotateAround(pivot, axis, angle);
+            Transform camTransform = _camera.transform;
+            camTransform.RotateAround(_pivot, axis, angle);
         }
 
-        public Camera GetCamera() => Camera;
+        public Camera GetCamera() => _camera;
     }
 }

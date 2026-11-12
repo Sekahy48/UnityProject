@@ -5,24 +5,24 @@ namespace Core.ECS.Component.InventoryComponents
 {
 
     /// <summary>
-    /// Class responsible for storing an object's damage capabilities
+    /// Guarda la capacidad de dano de un objeto.
     /// </summary>
     public class DamageComponent : IComponent, IJsonLoadable
     {
 
         #region Atributes
         /// <summary>
-        /// Effectiveness level of PIERCING damage
+        /// Eficacia del dano PERFORANTE
         /// </summary>
         private DamageLevel _punctureDmg;
 
         /// <summary>
-        /// Effectiveness level of SLASHING damage
+        /// Eficacia del dano CORTANTE
         /// </summary>
         private DamageLevel _slashingDmg;
 
         /// <summary>
-        /// Effectiveness level of BLUNT damage
+        /// Eficacia del dano CONTUNDENTE
         /// </summary>
         private DamageLevel _impactDmg;
 
@@ -32,24 +32,24 @@ namespace Core.ECS.Component.InventoryComponents
 
         public DamageComponent(DamageLevel punc, DamageLevel slash, DamageLevel impc)
         {
-            this._punctureDmg = punc;
-            this._slashingDmg = slash;
-            this._impactDmg = impc;
+            _punctureDmg = punc;
+            _slashingDmg = slash;
+            _impactDmg = impc;
         }
 
         #region Getters & Setters
         /// <summary>
-        /// Gets the object's **piercing** damage level.
+        /// Nivel de dano **perforante** del objeto.
         /// </summary>
         /// <returns>
-        /// A <see cref="DamageLevel"/> enum value representing the piercing damage effectiveness.
+        /// Un valor de <see cref="DamageLevel"/> con la eficacia del dano perforante.
         /// </returns>
         public DamageLevel PunctureDmg => _punctureDmg;
 
         /// <summary>
-        /// Sets the object's **piercing** damage level.
+        /// Fija el nivel de dano **perforante** del objeto.
         /// </summary>
-        /// <param name="level">Damage level of type <see cref="DamageLevel"/>.</param>
+        /// <param name="level">Nivel de dano, de tipo <see cref="DamageLevel"/>.</param>
         public void SetPunctureDmg(DamageLevel level)
         {
             _punctureDmg = level;
@@ -57,17 +57,17 @@ namespace Core.ECS.Component.InventoryComponents
 
 
         /// <summary>
-        /// Gets the object's **slashing** damage level.
+        /// Nivel de dano **cortante** del objeto.
         /// </summary>
         /// <returns>
-        /// A <see cref="DamageLevel"/> enum value representing the slashing damage effectiveness.
+        /// Un valor de <see cref="DamageLevel"/> con la eficacia del dano cortante.
         /// </returns>
         public DamageLevel SlashingDmg => _slashingDmg;
 
         /// <summary>
-        /// Sets the object's **slashing** damage level.
+        /// Fija el nivel de dano **cortante** del objeto.
         /// </summary>
-        /// <param name="level">Damage level of type <see cref="DamageLevel"/>.</param>
+        /// <param name="level">Nivel de dano, de tipo <see cref="DamageLevel"/>.</param>
         public void SetSlashingDmg(DamageLevel level)
         {
             _slashingDmg = level;
@@ -75,17 +75,17 @@ namespace Core.ECS.Component.InventoryComponents
 
 
         /// <summary>
-        /// Gets the object's **blunt** damage level.
+        /// Nivel de dano **contundente** del objeto.
         /// </summary>
         /// <returns>
-        /// A <see cref="DamageLevel"/> enum value representing the blunt damage effectiveness.
+        /// Un valor de <see cref="DamageLevel"/> con la eficacia del dano contundente.
         /// </returns>
         public DamageLevel ImpactDmg => _impactDmg;
 
         /// <summary>
-        /// Sets the object's **blunt** damage level.
+        /// Fija el nivel de dano **contundente** del objeto.
         /// </summary>
-        /// <param name="level">Damage level of type <see cref="DamageLevel"/>.</param>
+        /// <param name="level">Nivel de dano, de tipo <see cref="DamageLevel"/>.</param>
         public void SetImpactDmg(DamageLevel level)
         {
             _impactDmg = level;
@@ -102,16 +102,16 @@ namespace Core.ECS.Component.InventoryComponents
         #region Component
         public IComponent Clone()
         {
-            return new DamageComponent(this._punctureDmg, this._slashingDmg, this._impactDmg);
+            return new DamageComponent(_punctureDmg, _slashingDmg, _impactDmg);
         }
 
         public bool Equivalent(IComponent other)
         {
             if (other is DamageComponent otherDmg)
             {
-                return this._punctureDmg == otherDmg._punctureDmg &&
-                       this._slashingDmg == otherDmg._slashingDmg &&
-                       this._impactDmg == otherDmg._impactDmg;
+                return _punctureDmg == otherDmg._punctureDmg &&
+                       _slashingDmg == otherDmg._slashingDmg &&
+                       _impactDmg == otherDmg._impactDmg;
             }
             return false;
         }

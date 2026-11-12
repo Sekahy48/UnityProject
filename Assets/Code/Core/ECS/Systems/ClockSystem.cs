@@ -5,25 +5,25 @@ namespace Core.ECS.Systems
 {
     public class ClockSystem : ISubject
     {
-        private static ClockSystem instance = null;
-        private readonly List<IObserver> observers = new();
-        private float timeSpeed = 1.0f; // Default time speed
-        private float adjustedDeltaTime = 0.0f; // Adjusted delta time
-        private float tickTime = 0.016f; // Default tick time (60 FPS)
-        private bool isRunning = true; // Flag to check if the clock system is running
+        private static ClockSystem _instance = null;
+        private readonly List<IObserver> _observers = new();
+        private float _timeSpeed = 1.0f; // Velocidad del tiempo por defecto
+        private float _adjustedDeltaTime = 0.0f; // Delta de tiempo ajustado
+        private float _tickTime = 0.016f; // Duracion del tick por defecto (60 FPS)
+        private bool _isRunning = true; // Si el reloj esta en marcha
 
         private ClockSystem() { }
 
         public static ClockSystem GetInstance()
         {
-            if (instance == null)
-                instance = new ClockSystem();
-            return instance;
+            if (_instance == null)
+                _instance = new ClockSystem();
+            return _instance;
         }
 
         public void NotifyObservers()
         {
-            foreach (var observer in observers)
+            foreach (var observer in _observers)
             {
                 observer.Update();
             }
@@ -31,52 +31,52 @@ namespace Core.ECS.Systems
 
         public void Attach(IObserver target)
         {
-            observers.Add(target);
+            _observers.Add(target);
         }
 
         public void Detach(IObserver target)
         {
-            observers.Remove(target);
+            _observers.Remove(target);
         }
 
         public void SetTickTime(float tickTime)
         {
-            this.tickTime = tickTime;
+            _tickTime = tickTime;
         }
 
         public float GetTickTime()
         {
-            return tickTime;
+            return _tickTime;
         }
 
         public void SetTimeSpeed(float timeSpeed)
         {
-            this.timeSpeed = timeSpeed;
-            if (timeSpeed <= 0)
+            _timeSpeed = timeSpeed;
+            if (_timeSpeed <= 0)
             {
-                this.timeSpeed = 0; // Prevent negative time speed
-                this.isRunning = false; // Pause the clock system
+                _timeSpeed = 0; // Evita una velocidad de tiempo negativa
+                _isRunning = false; // Pausa el reloj
             }
             else
             {
-                this.isRunning = true; // Resume the clock system
+                _isRunning = true; // Reanuda el reloj
             }
         }
 
         public float GetTimeSpeed()
         {
-            return timeSpeed;
+            return _timeSpeed;
         }
 
         public void Update(float deltaTime)
         {
-            if (!isRunning) return;
+            if (!_isRunning) return;
 
-            adjustedDeltaTime += deltaTime * timeSpeed;
+            _adjustedDeltaTime += deltaTime * _timeSpeed;
 
-            while (adjustedDeltaTime >= tickTime)
+            while (_adjustedDeltaTime >= _tickTime)
             {
-                adjustedDeltaTime -= tickTime;
+                _adjustedDeltaTime -= _tickTime;
                 Tick();
             }
         }
@@ -88,17 +88,17 @@ namespace Core.ECS.Systems
 
         public void Pause()
         {
-            isRunning = false;
+            _isRunning = false;
         }
 
         public void Resume()
         {
-            isRunning = true;
+            _isRunning = true;
         }
 
         public bool IsRunning()
         {
-            return isRunning;
+            return _isRunning;
         }
     }
 }

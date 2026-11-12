@@ -896,11 +896,11 @@ namespace Core.Inventory
             AC.CheckNotNull(other, "other");
             if (!(other is InventoryObject otherInv)) return false;
 
-            bool generalCheck = this._id.Equals(other.GetTypeId())
-                             && this.IsLeaf() == other.IsLeaf()
-                             && (this._item == null) == (otherInv._item == null);
+            bool generalCheck = _id.Equals(other.GetTypeId())
+                             && IsLeaf() == other.IsLeaf()
+                             && (_item == null) == (otherInv._item == null);
             if (!generalCheck) return false;
-            if (this._inventory.Count != otherInv._inventory.Count) return false;
+            if (_inventory.Count != otherInv._inventory.Count) return false;
 
             List<IInventoryElement> remaining = new List<IInventoryElement>(otherInv._inventory);
             foreach (IInventoryElement elem in _inventory)
@@ -926,9 +926,9 @@ namespace Core.Inventory
         {
             // Parent se queda en null a proposito: el clon es un arbol desprendido, y heredar
             // el padre del original lo haria pesar sobre un inventario al que no pertenece.
-            InventoryObject clone = this._item != null
-                ? new InventoryObject(this._item)
-                : new InventoryObject(this._holder);
+            InventoryObject clone = _item != null
+                ? new InventoryObject(_item)
+                : new InventoryObject(_holder);
 
             // Un solo recorrido por la LISTA, consultando la rejilla para saber si cada hijo
             // ocupa celdas. Recorrer la rejilla y la lista por separado duplicaba lo que

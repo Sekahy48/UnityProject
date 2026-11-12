@@ -9,21 +9,21 @@ namespace Core.ECS.Component
 
         public InventoryComponent(InventoryObject inventory)
         {
-            this._inventory = inventory;
+            _inventory = inventory;
         }
 
         public InventoryObject Inventory => _inventory;
 
         public override IComponent Clone()
         {
-            return new InventoryComponent((InventoryObject)this._inventory.Clone());
+            return new InventoryComponent((InventoryObject)_inventory.Clone());
         }
 
         public override bool Equivalent(IComponent other)
         {
             return
                 other is InventoryComponent otherInventory &&
-                this._inventory.Equivalent(otherInventory._inventory);
+                _inventory.Equivalent(otherInventory._inventory);
         }
  
     }

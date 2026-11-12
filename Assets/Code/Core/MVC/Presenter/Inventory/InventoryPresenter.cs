@@ -1057,7 +1057,7 @@ namespace Core.MVC.Presenter.Inventory
 
         private void UpdateInventoryTabs(EquipmentComponent equipmentComponent)
         { 
-            _view.ClearInveotryTabs();
+            _view.ClearInventoryTabs();
 
             _view.AddTabToInventoryTabs(_entity.GetName(), () => _panelPresenters[PanelType.Player].Bind(_entity), new List<MenuOption>());
             

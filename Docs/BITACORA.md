@@ -124,4 +124,10 @@ estimación por bloque si la recuerda.
   capas (tronco, capa 1, capa 2) y probada con menú de depuración y escenarios; Fase 1.5 solo
   mundo físico; guardado aplazado a después del TFG (diseño conservado en `FASE1_5_HITOS.md`);
   líneas de corte defensivas (mínimo: 1.5 + Fase 2 hasta la capa 1).
-- **Pendiente que deja:** propuesta cerrada de hitos de la Fase 1.5; investigación del agua.
+- **Hecho después (misma sesión):** decisiones 25–32 de la Fase 1.5 e hitos M1–M6 en
+  `FASE1_5_HITOS.md`; Sergio empieza M1 (Rigidbody en la cámara, `GetSpeed` con el correr).
+  Claude: estándares de código (`Docs/ESTANDARES_CODIGO.md`) y limpieza de todo el repositorio
+  (campos privados a `_camelCase`, propiedades, `this.`, comentarios al español, erratas); Core
+  compilado y 56 tests en verde fuera de Unity.
+- **Pendiente que deja:** M1 (mover al jugador por física); compilar en Unity la limpieza;
+  investigación del agua.

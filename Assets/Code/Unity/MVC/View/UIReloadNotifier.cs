@@ -4,11 +4,11 @@ using UnityEngine;
 namespace MVC.View
 {
     /// <summary>
-    /// Companion MonoBehaviour for the inventory UIDocument.
-    /// UI Toolkit's Live Reload rebuilds the visual tree and then calls OnEnable
-    /// on every MonoBehaviour of the UIDocument's GameObject. This forwards that
-    /// signal so the views can be rebuilt and re-acquire their element references.
-    /// Editor-only concern; harmless in a build (fires once at startup).
+    /// MonoBehaviour acompanante del UIDocument del inventario.
+    /// La recarga en vivo de UI Toolkit reconstruye el arbol visual y luego llama a OnEnable
+    /// en cada MonoBehaviour del GameObject del UIDocument. Este reenvia esa senal para
+    /// que las vistas se reconstruyan y vuelvan a buscar sus elementos.
+    /// Solo importa en el Editor; en una build no hace dano (salta una vez al arrancar).
     /// </summary>
     public class UIReloadNotifier : MonoBehaviour
     {

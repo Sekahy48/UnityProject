@@ -7,63 +7,63 @@ namespace Core.ECS.Entity
     public interface IEntity
     {
         /// <summary>
-        /// Returns the id (handler)
+        /// Devuelve el id (manejador)
         /// </summary>
         Handler.IHandler GetId();
 
         /// <summary>
-        /// Returns the id as an integer
+        /// Devuelve el id como entero
         /// </summary>
         int GetIdAsInt();
 
         /// <summary>
-        /// Identifying name of the entity
+        /// Nombre identificativo de la entidad
         /// </summary>
         string GetName();
 
         /// <summary>
-        /// Returns the compound identifier (type + id)
+        /// Devuelve el identificador compuesto (tipo + id)
         /// </summary>
         Handler.IHandler GetCompoundIdentification();
 
         /// <summary>
-        /// Adds a component to the entity
+        /// Anade un componente a la entidad
         /// </summary>
         void AddComponent<T>(T component) where T : IComponent;
 
         /// <summary>
-        /// Gets a component by generic type
+        /// Devuelve un componente por tipo generico
         /// </summary>
         T GetComponent<T>() where T : IComponent;
 
         /// <summary>
-        /// Gets a component by dynamic Type (for when the type isn't known at compile time)
+        /// Devuelve un componente por Type dinamico (cuando el tipo no se conoce al compilar)
         /// </summary>
         IComponent GetComponentByType(Type target);
 
         /// <summary>
-        /// Every component the entity carries. Needed by <see cref="Equivalent"/> to compare
-        /// component sets in both directions, not just one.
+        /// Todos los componentes de la entidad. Lo necesita <see cref="Equivalent"/> para comparar
+        /// los conjuntos de componentes en los dos sentidos, no en uno solo.
         /// </summary>
         System.Collections.Generic.IEnumerable<IComponent> GetComponents();
 
         /// <summary>
-        /// Removes a component by name
+        /// Quita un componente por nombre
         /// </summary>
         bool RemoveComponent(Type target);
 
         /// <summary>
-        /// Checks if the component exists
+        /// Comprueba si el componente existe
         /// </summary>
         bool HasComponent(Type target);
 
         /// <summary>
-        /// Clones the entity (new ID)
+        /// Clona la entidad (con id nuevo)
         /// </summary>
-        IEntity Clone(); // override of ICloneable's Clone()
+        IEntity Clone(); // redefine el Clone() de ICloneable
 
         /// <summary>
-        /// Checks if this entity is equivalent to another (same type and same components with same values)
+        /// Si esta entidad es equivalente a otra (mismo tipo y mismos componentes con los mismos valores)
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>

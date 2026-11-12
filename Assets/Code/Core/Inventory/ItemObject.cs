@@ -7,8 +7,8 @@ using AC = Core.Utils.ArgumentChecker;
 namespace Core.Inventory
 {
     /// <summary>
-    /// Leaf node in the composite inventory tree.
-    /// Wraps a BatchItem that holds sub-lots of equivalent items.
+    /// Nodo hoja del arbol compuesto del inventario.
+    /// Envuelve un BatchItem que guarda sublotes de items equivalentes.
     /// </summary>
     public class ItemObject : IInventoryElement
     { 
@@ -52,18 +52,18 @@ namespace Core.Inventory
 
         public int ModifyAmount(int id, int amount)
         {
-            if (!this.GetTypeId().Equals(id)) return 0;
+            if (!GetTypeId().Equals(id)) return 0;
 
             if (amount > 0)
             {
-                // Adding: use first sub-lot's entity as representative
+                // Al anadir: se usa como representante la entidad del primer sublote
                 ItemEntity representative = GetItemEntity();
                 int remaining = _batch.AddAmount(representative, amount);
                 return amount - remaining;
             }
             else if (amount < 0)
             {
-                // Consuming: consume from random sub-lots
+                // Al consumir: se consume de sublotes al azar
                 int toConsume = Math.Min(Math.Abs(amount), _batch.GetTotalAmount());
                 int consumed = 0;
                 for (int i = 0; i < toConsume; i++)
@@ -76,17 +76,17 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Modifies ONE specific sub-lot, identified by an equivalent item.
-        /// Unlike ModifyAmount(int typeId, int) this never consumes at random: use it
-        /// when the caller knows exactly which variant it is moving (the hand holding a
-        /// specific sub-lot, for instance) rather than "any N units of this type".
-        /// Empty sub-lots are dropped by BatchItem itself; emptying the whole node is
-        /// the caller's problem — see InventoryObject.ModifyAmount(ItemObject, ItemEntity, int),
-        /// which removes the node and frees its grid cells.
+        /// Modifica UN sublote concreto, identificado por un item equivalente.
+        /// A diferencia de ModifyAmount(int typeId, int), nunca consume al azar: se usa
+        /// cuando el llamante sabe exactamente que variante mueve (la mano con un sublote
+        /// concreto, por ejemplo) y no "N unidades cualesquiera de este tipo".
+        /// Los sublotes vacios los quita el propio BatchItem; vaciar el nodo entero es
+        /// cosa del llamante: ver InventoryObject.ModifyAmount(ItemObject, ItemEntity, int),
+        /// que quita el nodo y libera sus celdas de la rejilla.
         /// </summary>
-        /// <param name="item">Item identifying the sub-lot (matched by Equivalent).</param>
-        /// <param name="amount">Positive adds, negative consumes.</param>
-        /// <returns>Units actually applied, always positive.</returns>
+        /// <param name="item">Item que identifica el sublote (se compara con Equivalent).</param>
+        /// <param name="amount">Positivo anade, negativo consume.</param>
+        /// <returns>Unidades aplicadas de verdad, siempre positivas.</returns>
         public int ModifyAmount(ItemEntity item, int amount)
         {
             AC.CheckNotNull(item, nameof(item));
@@ -113,17 +113,17 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Takes units out and reports WHICH variants came out, grouped by sub-lot.
+        /// Saca unidades y dice QUE variantes han salido, agrupadas por sublote.
         ///
-        /// ModifyAmount returns a bare count, which loses that information: a node holding
-        /// 10 rusty and 10 pristine swords consumes at random, and the caller would have to
-        /// guess what it just removed. Anything transferring items elsewhere needs the real
-        /// breakdown, or the destination silently receives N copies of one variant and the
-        /// others cease to exist.
+        /// ModifyAmount devuelve solo una cuenta y pierde esa informacion: un nodo con
+        /// 10 espadas oxidadas y 10 nuevas consume al azar, y el llamante tendria que
+        /// adivinar que ha sacado. Todo lo que traslada items a otro sitio necesita el
+        /// desglose real; si no, el destino recibe N copias de una variante y las demas
+        /// desaparecen sin avisar.
         /// </summary>
-        /// <param name="item">Sub-lot to take from, or null to take at random across the node.</param>
-        /// <param name="amount">Units to take. Taking more than there is takes what there is.</param>
-        /// <returns>Pairs of (variant, units taken). Empty if nothing came out.</returns>
+        /// <param name="item">Sublote del que sacar, o null para sacar al azar de todo el nodo.</param>
+        /// <param name="amount">Unidades a sacar. Si se pide mas de lo que hay, se saca lo que hay.</param>
+        /// <returns>Pares (variante, unidades sacadas). Vacio si no ha salido nada.</returns>
         public List<SubLot> Extract(ItemEntity item, int amount)
         {
             AC.CheckPositive(amount, nameof(amount));
@@ -144,12 +144,12 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Units available in one sub-lot, or in the whole node when <paramref name="item"/>
-        /// is null. Mirrors ModifyAmount(ItemEntity, int): same granularity, same null
-        /// semantics, so a caller can ask "how much can I take?" and then take it without
-        /// switching between two different APIs.
+        /// Unidades disponibles en un sublote, o en todo el nodo si <paramref name="item"/>
+        /// es null. Es el espejo de ModifyAmount(ItemEntity, int): misma granularidad y mismo
+        /// significado de null, para poder preguntar "cuanto puedo sacar" y sacarlo sin
+        /// cambiar de una API a otra.
         /// </summary>
-        /// <param name="item">Sub-lot to measure (matched by Equivalent), or null for the whole node.</param>
+        /// <param name="item">Sublote a medir (se compara con Equivalent), o null para todo el nodo.</param>
         public int GetAmount(ItemEntity item)
         {
             if (item == null) return _batch.GetTotalAmount();
@@ -170,7 +170,7 @@ namespace Core.Inventory
 
         public void DeleteItem(int id)
         {
-            if (this.GetTypeId().Equals(id))
+            if (GetTypeId().Equals(id))
             {
                 _batch.ConsumeAll();
             }
@@ -205,7 +205,7 @@ namespace Core.Inventory
 
         public IInventoryElement Clone()
         {
-            // Clone first sub-lot's entity to create a new ItemObject
+            // Clona la entidad del primer sublote para crear un ItemObject nuevo
             List<SubLot> subLots = _batch.GetSubLots();
             if (subLots.Count == 0) throw new InvalidOperationException("Cannot clone an ItemObject which BatchItem is empty. This node should be removed already.");
 

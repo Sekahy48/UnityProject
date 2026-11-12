@@ -1,17 +1,17 @@
 public class MapManager
 {
-    private Map currentMap;
+    private Map _currentMap;
 
     public void LoadMap(string name)
     {
-        if (currentMap != null)
-            currentMap.Dispose();
+        if (_currentMap != null)
+            _currentMap.Dispose();
 
-        currentMap = new Map("Maps/" + name);
+        _currentMap = new Map("Maps/" + name);
     }
 
     public Map GetCurrentMap()
     {
-        return currentMap;
+        return _currentMap;
     }
 }

@@ -14,10 +14,10 @@ namespace Core.MVC.View.UI.World
     {
         /// <summary>El conjunto: nombre, icono y descripcion del representante; cantidad y
         /// peso total de todo.</summary>
-        public ItemDisplayData Item;
+        public ItemDisplayData Item { get; set; }
 
         /// <summary>Una entrada por variante. Vacia o de un solo elemento: no hay desglose
         /// que mostrar.</summary>
-        public IReadOnlyList<ItemDisplayData> Lots;
+        public IReadOnlyList<ItemDisplayData> Lots { get; set; }
     }
 }

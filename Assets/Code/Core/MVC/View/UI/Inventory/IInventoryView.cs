@@ -81,7 +81,7 @@ namespace Core.MVC.View.UI.Inventory
 
         #region Pestanas de inventario
 
-        void ClearInveotryTabs();
+        void ClearInventoryTabs();
         void AddTabToInventoryTabs(string name, Action clickEvent, List<MenuOption> options);
         void RenderInventoryTabs(Action onHide);
 

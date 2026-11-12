@@ -5,21 +5,21 @@ namespace Core.Observer
 {
     public abstract class GenericSubject : ISubject
     {
-        protected List<IObserver> observers = new List<IObserver>();
+        private List<IObserver> _observers = new List<IObserver>();
         public void Attach(IObserver observer)
         {
-            if (!observers.Contains(observer))
+            if (!_observers.Contains(observer))
             {
-                observers.Add(observer);
+                _observers.Add(observer);
             }
         }
         public void Detach(IObserver observer)
         {
-            observers.Remove(observer);
+            _observers.Remove(observer);
         }
         public void NotifyObservers()
         {
-            foreach (var observer in observers)
+            foreach (var observer in _observers)
             {
                 observer.Update();
             }

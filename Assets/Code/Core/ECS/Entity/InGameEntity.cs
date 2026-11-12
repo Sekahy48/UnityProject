@@ -12,8 +12,8 @@
         /// </summary>
         public class InGameEntity : IEntity
         {
-            protected EntityId id;
-            protected readonly Dictionary<Type, IComponent> components = new();
+            private EntityId _id;
+            private readonly Dictionary<Type, IComponent> _components = new();
 
             /// <summary>
             /// La entidad no guarda su arquetipo.
@@ -28,13 +28,13 @@
             /// </summary>
             public InGameEntity(int id)
             {
-                this.id = new EntityId(id);
+                _id = new EntityId(id);
             }
 
             // ---- Getters ----
             public IHandler GetId()
             {
-                return id;
+                return _id;
             }
 
             public string GetName()
@@ -44,23 +44,23 @@
 
                 public IHandler GetCompoundIdentification()
             {
-                return new NameId($"{this.GetComponent<NameComponent>()}-{id}");
+                return new NameId($"{GetComponent<NameComponent>()}-{_id}");
             }
 
             public int GetIdAsInt()
             {
-                return id.ToInt();
+                return _id.ToInt();
             }
 
             public int GenerateEntityId()
             {
-                this.id = new EntityId(IdGenerator.GenerateNewId());
-                return this.id.ToInt();
+                _id = new EntityId(IdGenerator.GenerateNewId());
+                return _id.ToInt();
             }
             public T GetComponent<T>() where T : IComponent
             {
                 if (HasComponent(typeof(T)))
-                    return (T)components[typeof(T)];
+                    return (T)_components[typeof(T)];
                 else
                     return default;
             }
@@ -70,28 +70,28 @@
             /// </summary>
             public IComponent GetComponentByType(Type target)
             {
-                return components.TryGetValue(target, out var c) ? c : null;
+                return _components.TryGetValue(target, out var c) ? c : null;
             }
 
             // ---- IComponent related ----
             public void AddComponent<T>(T component) where T : IComponent
             {
-                components[component.GetType()] = component;
+                _components[component.GetType()] = component;
             }
 
             public bool HasComponent(Type target)
             {
-                return components.ContainsKey(target);
+                return _components.ContainsKey(target);
             }
 
             public bool RemoveComponent(Type target)
             {
-                return components.Remove(target);
+                return _components.Remove(target);
             }
 
             public IEnumerable<IComponent> GetComponents()
             {
-                return components.Values;
+                return _components.Values;
             }
 
             protected virtual InGameEntity CreateCloneInstance(int id)
@@ -107,7 +107,7 @@
             public IEntity Clone()
             {
                 InGameEntity clone = CreateCloneInstance(IdGenerator.GenerateNewId());
-                foreach (IComponent elem in components.Values)
+                foreach (IComponent elem in _components.Values)
                 {
                     if (elem is IEngineBridge) continue;
                     clone.AddComponent(elem.Clone());
@@ -142,9 +142,9 @@
             /// </summary>
             public bool Equivalent(IEntity other)
             {
-                if (other == null || components.Count != CountComponentsOf(other))
+                if (other == null || _components.Count != CountComponentsOf(other))
                     return false;
-                foreach (IComponent component in components.Values)
+                foreach (IComponent component in _components.Values)
                 {
                     //TODO 
                     if (!other.HasComponent(component.GetType()))

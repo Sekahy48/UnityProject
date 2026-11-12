@@ -1065,7 +1065,7 @@ namespace MVC.View.Inventory
                 
         }
 
-        public void ClearInveotryTabs() => _inventoryTabs.Clear();
+        public void ClearInventoryTabs() => _inventoryTabs.Clear();
         public void AddTabToInventoryTabs(String name, Action clickEvent, List<MenuOption> options)
         {
             // NOTA sino va juntar en PointerDown

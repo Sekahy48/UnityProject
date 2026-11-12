@@ -6,13 +6,13 @@ using UnityEngine;
 namespace Unity
 {
     /// <summary>
-    /// Engine system (runs every frame with real deltaTime).
-    /// Syncs PositionComponent (Core) with Transform (Unity).
+    /// Sistema del motor (se ejecuta cada fotograma con el deltaTime real).
+    /// Sincroniza PositionComponent (Core) con Transform (Unity).
     ///
-    /// Sync direction:
-    /// - If PositionComponent is dirty (Core modified it) → writes to Transform.
-    /// - If not dirty → reads Transform and updates PositionComponent
-    ///   (to reflect movements done by cameras, physics, animation, etc.)
+    /// Sentido de la sincronizacion:
+    /// - Si PositionComponent esta sucio (lo cambio el Core): se escribe en el Transform.
+    /// - Si no: se lee el Transform y se actualiza PositionComponent
+    ///   (para reflejar lo que mueven las camaras, la fisica, la animacion, etc.)
     /// </summary>
     public class TransformSyncSystem : IPeriodicSystem
     {
@@ -31,17 +31,17 @@ namespace Unity
 
                 if (pos.IsDirty)
                 {
-                    // Core modified the position → apply to Transform
+                    // El Core cambio la posicion: se aplica al Transform
                     t.position = new Vector3(pos.X, pos.Y, pos.Z);
                     t.rotation = new Quaternion(pos.RotX, pos.RotY, pos.RotZ, pos.RotW);
                     pos.ClearDirty();
                 }
                 else
                 {
-                    // Unity moved the object (cameras, physics) → read into the Core component
+                    // Unity movio el objeto (camaras, fisica): se lee en el componente del Core
                     pos.SetPosition(t.position.x, t.position.y, t.position.z);
                     pos.SetRotation(t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w);
-                    pos.ClearDirty(); // SetPosition marks dirty, but here we don't want to re-sync
+                    pos.ClearDirty(); // SetPosition lo marca sucio, pero aqui no se quiere volver a sincronizar
                 }
             }
         }

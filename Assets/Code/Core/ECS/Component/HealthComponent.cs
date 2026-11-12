@@ -3,102 +3,102 @@ using System;
 namespace Core.ECS.Component
 {
     /// <summary>
-    /// Represents a specific attribute referring to an entity's health points.
+    /// Puntos de vida de una entidad.
     /// </summary>
     public class HealthComponent : BasicComponent
     {
-        private int currentHealth; // Current health
-        private int maxHealth;     // Max health
+        private int _currentHealth; // Vida actual
+        private int _maxHealth;     // Vida maxima
         public const int UNLIMITED_HEALTH = -1;
 
         /// <summary>
-        /// Creates a health component with current health and a max value.
+        /// Crea un componente de vida con la vida actual y un maximo.
         /// </summary>
         public HealthComponent(int current, int max)
         {
-            this.currentHealth = current;
-            this.maxHealth = max == UNLIMITED_HEALTH ? UNLIMITED_HEALTH : Math.Max(0, max);
-            this._name = "HealthComponent";
+            _currentHealth = current;
+            _maxHealth = max == UNLIMITED_HEALTH ? UNLIMITED_HEALTH : Math.Max(0, max);
+            Name = "HealthComponent";
         }
 
         /// <summary>
-        /// Creates a health component with current health and an unlimited max.
+        /// Crea un componente de vida con la vida actual y sin maximo.
         /// </summary>
         public HealthComponent(int current)
         {
-            this.currentHealth = current;
-            this.maxHealth = UNLIMITED_HEALTH;
-            this._name = "HealthComponent";
+            _currentHealth = current;
+            _maxHealth = UNLIMITED_HEALTH;
+            Name = "HealthComponent";
         }
 
         /// <summary>
-        /// Decreases current health (down to zero at most).
+        /// Resta vida (como mucho, hasta cero).
         /// </summary>
         public void ReceiveDamage(int damage)
         {
             if (damage < 0) return;
-            this.currentHealth = Math.Max(0, this.currentHealth - damage);
+            _currentHealth = Math.Max(0, _currentHealth - damage);
         }
 
         /// <summary>
-        /// Increases current health (up to the max at most).
+        /// Suma vida (como mucho, hasta el maximo).
         /// </summary>
         public void HealHealth(int heal)
         {
-            this.currentHealth += heal;
+            _currentHealth += heal;
             ClampHealth();
         }
 
         /// <summary>
-        /// Decreases current health by a percentage.
+        /// Resta un porcentaje de la vida.
         /// </summary>
         public void ReceiveDamagePercentage(double percentage)
         {
-            int damage = (int)(maxHealth * percentage);
+            int damage = (int)(_maxHealth * percentage);
             ReceiveDamage(damage);
         }
 
         /// <summary>
-        /// Increases current health by a percentage (up to the max).
+        /// Suma un porcentaje de la vida (como mucho, hasta el maximo).
         /// </summary>
         public void HealPercentage(double percentage)
         {
-            int heal = (int)(maxHealth * percentage);
+            int heal = (int)(_maxHealth * percentage);
             HealHealth(heal);
         }
 
         private bool IsAlive()
         {
-            return currentHealth > 0;
+            return _currentHealth > 0;
         }
 
-        public int CurrentHealth => currentHealth;
-        public int MaxHealth => maxHealth;
+        public int CurrentHealth => _currentHealth;
+        public int MaxHealth => _maxHealth;
 
         private void ClampHealth()
         {
-            if (maxHealth != UNLIMITED_HEALTH && currentHealth > maxHealth)
-                currentHealth = maxHealth;
-            if (currentHealth < 0)
-                currentHealth = 0;
+            if (_maxHealth != UNLIMITED_HEALTH && _currentHealth > _maxHealth)
+                _currentHealth = _maxHealth;
+            if (_currentHealth < 0)
+                _currentHealth = 0;
         }
 
         public bool IsDead()
         {
-            return currentHealth <= 0;
+            return _currentHealth <= 0;
         }
 
         public override IComponent Clone()
         {
-            return new HealthComponent(this.currentHealth, this.maxHealth);
+            return new HealthComponent(_currentHealth, _maxHealth);
         }
 
         public override bool Equivalent(IComponent other)
         {
             return 
                 other is HealthComponent otherHealth &&
-                this.currentHealth == otherHealth.currentHealth &&
-                this.maxHealth == otherHealth.maxHealth;
+                _currentHealth == otherHealth._currentHealth &&
+                _maxHealth == otherHealth._maxHealth;
         }
     }
 }

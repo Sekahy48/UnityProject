@@ -9,9 +9,9 @@ namespace MVC.Controller
     public class CameraRegister : Unity.IActiveCameraSource
     {
         public enum CameraType { RTS, FPS, TPS}
-        private Dictionary<CameraType, ICameraStrategy> Cams = new();
-        private Array CameraCarousel = Enum.GetValues(typeof(CameraType));
-        private CameraType activeCam;
+        private Dictionary<CameraType, ICameraStrategy> _cams = new();
+        private Array _cameraCarousel = Enum.GetValues(typeof(CameraType));
+        private CameraType _activeCam;
 
         public CameraRegister()
         {
@@ -20,9 +20,9 @@ namespace MVC.Controller
 
         public void AddCamera(CameraType name, ICameraStrategy camera)
         {
-            if (!Cams.ContainsKey(name))
+            if (!_cams.ContainsKey(name))
             {
-                Cams[name] = camera;
+                _cams[name] = camera;
             }
             else
             {
@@ -39,7 +39,7 @@ namespace MVC.Controller
         
         public ICameraStrategy GetCamera(CameraType name)
         {
-            if (Cams.TryGetValue(name, out ICameraStrategy camera))
+            if (_cams.TryGetValue(name, out ICameraStrategy camera))
             {
                 return camera;
             }
@@ -52,28 +52,28 @@ namespace MVC.Controller
 
         public ICameraStrategy GetActiveCamera()
         {
-            if (activeCam.Equals(null))
+            if (_activeCam.Equals(null))
             {
                 Debug.LogError("No active camera set. Taking the first one available.");
                 return null;
             }
 
-            return GetCamera(activeCam);
+            return GetCamera(_activeCam);
         }
 
         public Camera Current => GetActiveCamera()?.GetCamera();
 
         public bool RemoveCamera(CameraType name)
         {
-            return Cams.Remove(name);
+            return _cams.Remove(name);
         }
 
         public void ActivateCamera(CameraType name)
         {
-            if (Cams.TryGetValue(name, out ICameraStrategy camera))
+            if (_cams.TryGetValue(name, out ICameraStrategy camera))
             {
                 camera.Activate();
-                foreach (var cam in Cams.Values)
+                foreach (var cam in _cams.Values)
                 {
                     if (!cam.Equals(camera))
                     {
@@ -86,14 +86,14 @@ namespace MVC.Controller
                 Debug.LogError($"Camera with name {name} not found.");
             }
 
-            activeCam = name;
+            _activeCam = name;
         }
 
         public ICameraStrategy NextCamera()
         {
-            int i = Array.IndexOf(CameraCarousel, activeCam);
-            i = (i + 1) % CameraCarousel.Length;
-            ActivateCamera((CameraType)CameraCarousel.GetValue(i));
+            int i = Array.IndexOf(_cameraCarousel, _activeCam);
+            i = (i + 1) % _cameraCarousel.Length;
+            ActivateCamera((CameraType)_cameraCarousel.GetValue(i));
             return GetActiveCamera();
             
         }

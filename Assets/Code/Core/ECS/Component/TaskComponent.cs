@@ -6,59 +6,59 @@ namespace Core.ECS.Component
 {
     public class TaskComponent : BasicComponent
     {
-        private readonly List<ITask> tasks = new List<ITask>();
-        private ITask currentTask = null;
+        private readonly List<ITask> _tasks = new List<ITask>();
+        private ITask _currentTask = null;
 
         public TaskComponent()
         {
-            this._name = "TaskComponent"; // Initializes the component name
+            Name = "TaskComponent"; // Initializes the component name
         }
 
         public void AddTask(ITask task)
         {
-            tasks.Add(task); 
+            _tasks.Add(task); 
         }
 
         public void PushTask(ITask task)
         {
-            tasks.Insert(0, task); // Adds to the front
+            _tasks.Insert(0, task); // Adds to the front
         }
 
         public void RemoveTask(ITask task)
         {
-            tasks.Remove(task);
+            _tasks.Remove(task);
         }
 
         public void ClearTasks()
         {
-            currentTask = null;
-            tasks.Clear();
+            _currentTask = null;
+            _tasks.Clear();
         }
 
         public bool HasTasks()
         {
-            return tasks.Count > 0 || currentTask != null;
+            return _tasks.Count > 0 || _currentTask != null;
         }
 
-        public ITask CurrentTask => currentTask;
+        public ITask CurrentTask => _currentTask;
 
         public void SetCurrentTask(ITask task)
         {
-            currentTask = task;
+            _currentTask = task;
         }
 
         public List<ITask> GetAllTasks()
         {
-            return new List<ITask>(tasks);
+            return new List<ITask>(_tasks);
         }
 
         public ITask PollNextTask()
         {
-            if (tasks.Count == 0)
+            if (_tasks.Count == 0)
                 return null;
 
-            ITask first = tasks.First();
-            tasks.RemoveAt(0);
+            ITask first = _tasks.First();
+            _tasks.RemoveAt(0);
             return first;
         }
 
@@ -66,10 +66,10 @@ namespace Core.ECS.Component
         {
             TaskComponent copy = new TaskComponent();
 
-            if (currentTask != null)
-                copy.SetCurrentTask(currentTask.Clone());
+            if (_currentTask != null)
+                copy.SetCurrentTask(_currentTask.Clone());
 
-            foreach (ITask task in tasks)
+            foreach (ITask task in _tasks)
                 copy.AddTask(task.Clone());
 
             return copy;
@@ -79,13 +79,13 @@ namespace Core.ECS.Component
         {
             if (other is not TaskComponent otherTaskComponent) return false;
 
-            if (this.currentTask == null != (otherTaskComponent.currentTask == null)) return false;
-            if (this.currentTask != null && !this.currentTask.Equivalent(otherTaskComponent.currentTask)) return false;
-            if (this.tasks.Count != otherTaskComponent.tasks.Count) return false;
+            if (_currentTask == null != (otherTaskComponent._currentTask == null)) return false;
+            if (_currentTask != null && !_currentTask.Equivalent(otherTaskComponent._currentTask)) return false;
+            if (_tasks.Count != otherTaskComponent._tasks.Count) return false;
 
-            for (int i = 0; i < this.tasks.Count; i++)
+            for (int i = 0; i < _tasks.Count; i++)
             {
-                if (!this.tasks.ElementAt(i).Equivalent(otherTaskComponent.tasks.ElementAt(i)))
+                if (!_tasks.ElementAt(i).Equivalent(otherTaskComponent._tasks.ElementAt(i)))
                     return false;
             }
 

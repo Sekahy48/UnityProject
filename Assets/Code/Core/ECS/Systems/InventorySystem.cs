@@ -136,7 +136,7 @@ namespace Core.ECS.Systems
             if (fullGrid)
             {
                 EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryFull , entity, inventoryComponent));
-                CoreLogger.Instance.Log("Inventory overflow: cannot transfere more object due to insufficient grid space.");
+                CoreLogger.Instance.Log("Inventory overflow: cannot transfer more object due to insufficient grid space.");
             }
 
             EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryChanged , entity, inventoryComponent));

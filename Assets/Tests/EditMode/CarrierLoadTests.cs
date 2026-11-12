@@ -17,7 +17,7 @@ namespace Core.Tests
     /// </summary>
     public class CarrierLoadTests
     {
-        private static readonly GameEventType[] Bands =
+        private static readonly GameEventType[] _loadBands =
         {
             GameEventType.NormalWeight, GameEventType.ExtraWeight,
             GameEventType.Overweight, GameEventType.Immobile,
@@ -32,7 +32,7 @@ namespace Core.Tests
             new ServiceRig();   // solo por lo que limpia: suscriptores del bus y logger mudo
             _system = new InventorySystem();
             _bands = new BandRecorder();
-            foreach (GameEventType band in Bands)
+            foreach (GameEventType band in _loadBands)
                 EventBus.GetInstance().Subscribe(band, _bands);
         }
 

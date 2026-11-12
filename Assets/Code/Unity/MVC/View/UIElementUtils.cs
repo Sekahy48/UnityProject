@@ -59,12 +59,12 @@ namespace MVC.View
 
             // Lo ultimo que se pidio; el manejador de geometria lee de aqui, asi que volver a
             // llamar solo actualiza los datos y no apila manejadores.
-            bool firstTime = !Placements.TryGetValue(floating, out Placement placement);
+            bool firstTime = !_placements.TryGetValue(floating, out Placement placement);
             if (firstTime)
             {
                 placement = new Placement();
-                Placements.Add(floating, placement);
-                floating.RegisterCallback<GeometryChangedEvent>(_ => Place(floating, Placements.TryGetValue(floating, out Placement p) ? p : null));
+                _placements.Add(floating, placement);
+                floating.RegisterCallback<GeometryChangedEvent>(_ => Place(floating, _placements.TryGetValue(floating, out Placement p) ? p : null));
             }
 
             placement.Anchor = anchor;
@@ -94,7 +94,7 @@ namespace MVC.View
 
         /* Datos de colocacion por flotante. Tabla debil: si el flotante desaparece (recarga de
            UI), su entrada se va con el y no hay que limpiar nada. */
-        private static readonly ConditionalWeakTable<VisualElement, Placement> Placements = new();
+        private static readonly ConditionalWeakTable<VisualElement, Placement> _placements = new();
 
         private static void Place(VisualElement floating, Placement placement)
         {
@@ -180,14 +180,14 @@ namespace MVC.View
             if (element == null) return;
 
             // Dos animaciones sobre el mismo translate se pelearian: la anterior se para.
-            if (Shakes.TryGetValue(element, out ShakeHandle previous))
+            if (_shakes.TryGetValue(element, out ShakeHandle previous))
             {
                 previous.Animation?.Stop();
-                Shakes.Remove(element);
+                _shakes.Remove(element);
             }
 
             ShakeHandle handle = new ShakeHandle();
-            Shakes.Add(element, handle);
+            _shakes.Add(element, handle);
 
             handle.Animation = element.experimental.animation
                 .Start(0f, 1f, durationMs, (target, t) =>
@@ -199,8 +199,8 @@ namespace MVC.View
                 .OnCompleted(() =>
                 {
                     element.style.translate = StyleKeyword.Null;
-                    if (Shakes.TryGetValue(element, out ShakeHandle current) && current == handle)
-                        Shakes.Remove(element);
+                    if (_shakes.TryGetValue(element, out ShakeHandle current) && current == handle)
+                        _shakes.Remove(element);
                 });
         }
 
@@ -210,8 +210,8 @@ namespace MVC.View
         }
 
         /* Sacudida en curso por elemento, para poder pararla si llega otra. Tabla debil, como
-           Placements: se va con el elemento. */
-        private static readonly ConditionalWeakTable<VisualElement, ShakeHandle> Shakes = new();
+           _placements: se va con el elemento. */
+        private static readonly ConditionalWeakTable<VisualElement, ShakeHandle> _shakes = new();
 
         #endregion
     }
