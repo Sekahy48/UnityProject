@@ -510,10 +510,7 @@ namespace Core.ECS.Systems
             return actions.Count == 0 ? (WorldAction?)null : actions[0];
         }
 
-        #endregion
-
-        /// <summary>Cuanto se aleja el monton de los pies del que tira, en metros.</summary>
-        private const float DROP_DISTANCE = 0.6f;
+        #endregion 
 
         /// <summary>
         /// Altura de las manos como fraccion de la estatura. Las manos en reposo quedan
@@ -547,20 +544,11 @@ namespace Core.ECS.Systems
             PositionComponent target = pile.GetComponent<PositionComponent>();
             PositionComponent source = dropper?.GetComponent<PositionComponent>();
 
-            if (target == null || source == null) return;
+            if (target == null || source == null) return; 
 
-            (float fx, _, float fz) = source.Forward();
-
-            // El frente en horizontal: se descarta la componente vertical y se renormaliza.
-            // Mirando casi en vertical el vector horizontal es casi nulo y normalizarlo
-            // amplificaria ruido, asi que en ese caso se suelta a plomo.
-            float horizontal = (float)Math.Sqrt(fx * fx + fz * fz);
-            float offsetX = horizontal > 1e-4f ? fx / horizontal * DROP_DISTANCE : 0f;
-            float offsetZ = horizontal > 1e-4f ? fz / horizontal * DROP_DISTANCE : 0f;
-
-            target.SetPosition(source.X + offsetX,
+            target.SetPosition(source.X,
                                source.Y + DropHeightOf(dropper),
-                               source.Z + offsetZ);
+                               source.Z);
         }
 
         /// <summary>

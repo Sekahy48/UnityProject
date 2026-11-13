@@ -32,8 +32,9 @@ namespace Unity
             SyncInitialPosition(entity, go, created);
 
             // Lo creado cae con fisica; el jugador trae su Rigidbody de la escena
-            if (created) PhysicsBodyBuilder.AddBody(entity, go, origin);
+            if (created) PhysicsBodyBuilder.AddBody(entity, go);
             SyncInitialMass(entity, go);
+            if (created) PhysicsBodyBuilder.Release(go, origin);   // despues de la masa: el impulso depende de ella
 
             AttachModel(entity, go);
         }

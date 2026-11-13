@@ -8,13 +8,17 @@ el encaje en el plan, de `Docs/ROADMAP.md`.
 
 > Esta sección existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**M1 cerrado (2026-11-12).** Rama `fase1.5`. La fase se queda solo en el mundo físico (soltar
-con física y jugador por física); el guardado se aplaza a después del TFG, con su diseño
-conservado abajo. El jugador ya se mueve por física (Sergio lo escribió, con guía): rapidez y
-dirección separadas (33), sin rozamiento al moverse y agarre al estar quieto (34, 37), sin
-Apply Root Motion (35) y cámaras FPS/TPS descolgadas del cuerpo (36). Probado en juego: paredes,
-FPS, TPS, caídas, cambio a RTS, rampas y paredes en el aire. Siguiente: **M2, lo soltado cae y
-rueda, con el sistema de masa** (quién escribe cada parte, se decide al empezarlo).
+**M1, M2 y M3 cerrados (2026-11-13).** Rama `fase1.5`. La fase se queda solo en el mundo físico;
+el guardado se aplaza a después del TFG, con su diseño conservado abajo.
+- **M1:** el jugador se mueve por física (33–37).
+- **M2:** lo soltado tiene cuerpo físico y masa = peso; la masa del jugador sigue a su carga
+  (38–44). `WeightCalculator`, aviso `WeightChanged`, `MassSyncSystem`, `PhysicsBodyBuilder`.
+- **M3:** se suelta desde el centro del jugador con un impulso según la masa e ignorándolo
+  hasta separarse (45, `DropperGrace`): no se puede tirar nada al otro lado de una pared.
+
+Siguiente: **M4, objetos pequeños bajo los pies** (umbral, 28; la manzana cuesta de empujar
+con la base redondeada de la cápsula). Después M5 (lo que se sale del mundo; antes, arreglar
+`TransformSyncSystem` para cuerpos con Rigidbody) y M6 (cierre).
 
 ## Objetivo
 
@@ -29,8 +33,9 @@ su peso.
 
 1. **Todo lo que se suelta cae y rueda,** sea un ítem suelto, un montón o un contenedor (el
    arcón incluido).
-2. **Sale un poco por delante del jugador,** donde hoy aparece lo soltado, y cae desde ahí.
-   **No atraviesa paredes:** si hay algo delante, aparece pegado al jugador.
+2. ~~Sale un poco por delante del jugador… si hay algo delante, aparece pegado al jugador.~~
+   **Sustituida por la 45 (2026-11-13):** sale desde el centro del jugador con un pequeño
+   impulso hacia delante, y por eso nunca puede nacer al otro lado de una pared.
 3. **Los objetos interactúan con lo que hay alrededor:** se empujan entre sí y el jugador los
    mueve al chocar con ellos.
 4. **Un montón cae como un solo objeto,** como es hoy en el Core. Separarlo en unidades
@@ -134,9 +139,8 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
 
 ### Implementación (2026-11-12)
 
-25. **No atravesar paredes al soltar: el Core pregunta a Unity por una interfaz,** igual que
-    con `IReachFilter` / `LineOfSightFilter`. El Core decide dónde aparece lo soltado; Unity
-    solo responde si el camino está libre.
+25. ~~No atravesar paredes al soltar: el Core pregunta a Unity por una interfaz.~~
+    **Sustituida por la 45:** soltando desde el centro del jugador no hace falta preguntar.
 26. **Masa del jugador con su carga: Unity la actualiza al recibir el aviso de que el inventario
     ha cambiado** (ya existe), no en cada fotograma.
 27. **Mientras el modelo 3D carga, el objeto cae ya con la esfera provisional** y la cambia por
@@ -223,6 +227,25 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
     el estado inicial del jugador al final del arranque (`PublishInitialState`), cuando ya
     escucha todo el mundo: masa, banda de carga e inventario.
 
+#### M3 (2026-11-13)
+
+45. **Soltar desde el centro del jugador con un pequeño impulso** (estilo Ark o Raft), en vez
+    de hacerlo aparecer delante y comprobar paredes (sustituye a 2 y 25). El centro del
+    jugador nunca está dentro de una pared, así que lo soltado nace siempre de su lado; el
+    impulso lo lleva hacia delante y, si hay pared, choca y cae a sus pies (con detección
+    Continuous no la atraviesa). Para no chocar con el propio jugador al nacer dentro de él,
+    lo soltado **ignora las colisiones con quien lo suelta durante un instante** (también los
+    colliders del modelo, que llegan después): **al menos 0,5 s y hasta que dejan de
+    solaparse** (`DropperGrace`). Con solo el tiempo, un arcón soltado contra una pared caía a
+    los pies, seguía dentro de la cápsula al reactivarse las colisiones y la física separaba a
+    los dos de golpe: el jugador pegaba un bote, peor cuanto más pesado el arcón. Precio
+    aceptado: mientras se está encima de lo recién soltado, se atraviesa. Impulso: 4 kg·m/s
+    entre la masa, con tope de 2 m/s, más la velocidad horizontal de quien lo suelta. Sin rayo
+    ni interfaz nueva en el Core.
+    Límite aceptado: un objeto grande soltado pegado a una pared nace un poco dentro de ella y
+    la física lo saca, casi siempre hacia el lado del jugador. No es «lanzar» (aplazado): sin
+    puntería, sin daño, sin fuerza elegida.
+
 ---
 
 ## Hitos
@@ -262,11 +285,15 @@ disparados.
   no se ajusta. La manzana a veces cuesta de empujar por lo pequeña que es frente a la base
   redondeada de la cápsula: se mira en M4.
 
-### M3 — No se tira nada a través de una pared
-- Interfaz del Core para preguntar a Unity si el camino del jugador al punto de soltar está
-  libre; si no, aparece pegado al jugador (2, 25).
-- **Cierre:** soltar mirando a una pared deja el objeto en el lado del jugador. Test del Core
-  con un filtro de prueba.
+### M3 — No se tira nada a través de una pared ✅ (2026-11-13)
+- Soltar desde el centro del jugador con impulso hacia delante e ignorando al que lo suelta
+  un instante (45). `PlaceAt` sin desplazamiento (Core, Sergio); impulso y colisión ignorada
+  en `PhysicsBodyBuilder` (Unity, Claude).
+- **Cierre:** soltar pegado a una pared y mirándola deja el objeto en el lado del jugador;
+  soltar en campo abierto lo deja delante, sin empujones raros al jugador.
+- **Probado en juego (2026-11-13):** contra la pared, lo soltado queda del lado del jugador y
+  un arcón cargado cae a sus pies sin bote; al apartarse vuelve a ser sólido; en campo
+  abierto sale hacia delante, la manzana más que el arcón; corriendo, se adelanta.
 
 ### M4 — Objetos pequeños bajo los pies
 - Probar a pisar objetos pequeños y fijar el umbral (28).
