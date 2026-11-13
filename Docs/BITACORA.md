@@ -139,3 +139,22 @@ estimación por bloque si la recuerda.
 - **Pendiente que deja:** M2: P2 sistema de masa (Sergio), P3 `PhysicsBodyBuilder` (Claude),
   coger mientras rueda; compilar en Unity los renombres, movimientos y P1; commit;
   investigación del agua.
+
+### 2026-11-13 — Fase 1.5: M2 y M3 cerrados
+- **Horas:** 4 h
+- **Con:** Sergio + Claude
+- **Fase / hito:** Fase 1.5 · M2, M3 (y M4 antiguo desestimado)
+- **Hecho:** **M2 cerrado:** `MassSyncSystem` (Sergio), `PhysicsBodyBuilder` (Claude), masa
+  inicial al enlazar y estado inicial publicado al arrancar; detección Continuous porque las
+  manzanas atravesaban el suelo plano. Encontrado y arreglado un fallo de la limpieza del día
+  anterior: el constructor de `EntityId` se asignaba a sí mismo y todas las entidades tenían
+  id 0 (lo soltado aparecía donde se soltó lo primero). **M3 cerrado:** soltar desde el centro
+  del jugador con impulso según la masa e ignorándolo hasta separarse (`DropperGrace`,
+  decisión 45, sustituye a 2 y 25). **Antiguo M4 desestimado** al probar (no hay problema con
+  objetos pequeños bajo los pies); los hitos siguientes corren un número. Normas nuevas:
+  `SubscribedEvents` uniforme y qué hacer con null (primera tanda aplicada; el catálogo lanza
+  al cargar). La conexión con el ordenador falló buena parte de la tarde.
+- **Commits:** 9532237 (M2), 43dfdab (M3).
+- **Pendiente que deja:** M4 (lo que se sale del mundo vuelve, con el arreglo de
+  `TransformSyncSystem` para Rigidbody) y M5 (cierre); segunda tanda de la norma de null;
+  peso de la Mochila como texto con coma en el catálogo; investigación del agua.

@@ -16,9 +16,10 @@ el guardado se aplaza a después del TFG, con su diseño conservado abajo.
 - **M3:** se suelta desde el centro del jugador con un impulso según la masa e ignorándolo
   hasta separarse (45, `DropperGrace`): no se puede tirar nada al otro lado de una pared.
 
-Siguiente: **M4, objetos pequeños bajo los pies** (umbral, 28; la manzana cuesta de empujar
-con la base redondeada de la cápsula). Después M5 (lo que se sale del mundo; antes, arreglar
-`TransformSyncSystem` para cuerpos con Rigidbody) y M6 (cierre).
+El antiguo M4 (objetos pequeños bajo los pies) se desestimó al probar: no hay problema (28).
+
+Siguiente: **M4, lo que se sale del mundo vuelve** (antes, arreglar `TransformSyncSystem`
+para cuerpos con Rigidbody). Después M5, cierre.
 
 ## Objetivo
 
@@ -145,8 +146,11 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
     ha cambiado** (ya existe), no en cada fotograma.
 27. **Mientras el modelo 3D carga, el objeto cae ya con la esfera provisional** y la cambia por
     la envoltura convexa cuando llega el modelo.
-28. **Objetos pequeños bajo los pies: el umbral se decide al probar** (por masa o tamaño, por
-    debajo del cual el objeto no choca con el jugador).
+28. ~~Objetos pequeños bajo los pies: el umbral se decide al probar.~~ **Desestimada
+    (2026-11-13):** probado tras M3, andar y correr sobre manzanas, montones, la espada y el
+    arcón no hace botar ni subirse al jugador, y los objetos se empujan bien. El hito que la
+    llevaba (antiguo M4) se quita y los siguientes corren un número. Si aparece el problema, se
+    retoma.
 29. **Salirse del mundo: se busca suelo en vertical en esa misma posición horizontal; si no
     hay, vuelve al último sitio donde estuvo quieto.**
 30. **Quién escribe cada cosa se decide al llegar a cada hito.** Lo de Core, por la regla de
@@ -283,7 +287,7 @@ disparados.
   del jugador (~80 kg) y el jugador no se frena al chocar (su velocidad la pone el código).
   Con el arcón cargado (~58 kg) la diferencia se nota claramente. Es lo físicamente esperable;
   no se ajusta. La manzana a veces cuesta de empujar por lo pequeña que es frente a la base
-  redondeada de la cápsula: se mira en M4.
+  redondeada de la cápsula; probado después, no molesta (28, desestimada).
 
 ### M3 — No se tira nada a través de una pared ✅ (2026-11-13)
 - Soltar desde el centro del jugador con impulso hacia delante e ignorando al que lo suelta
@@ -295,20 +299,16 @@ disparados.
   un arcón cargado cae a sus pies sin bote; al apartarse vuelve a ser sólido; en campo
   abierto sale hacia delante, la manzana más que el arcón; corriendo, se adelanta.
 
-### M4 — Objetos pequeños bajo los pies
-- Probar a pisar objetos pequeños y fijar el umbral (28).
-- **Cierre:** andar sobre manzanas no hace botar al jugador.
-
-### M5 — Lo que se sale del mundo vuelve
+### M4 — Lo que se sale del mundo vuelve
 - Detección por debajo de un límite y recolocación (29).
 - **Arreglar antes `TransformSyncSystem`** (visto el 2026-11-13). Su rama «el Core cambió la
   posición» escribe `transform.position` / `rotation`. Con un Rigidbody dinámico e interpolado
   eso no llega bien a la física y conserva la velocidad: lo recolocado seguiría cayendo.
   Con Rigidbody debe escribir `rb.position` / `rb.rotation` (y el transform, para que se vea
   en ese fotograma) y poner la velocidad a cero; sin Rigidbody, como está. Hoy no falla
-  porque nadie del Core mueve algo ya soltado; M5 es el primero.
+  porque nadie del Core mueve algo ya soltado; M4 es el primero.
 - **Cierre:** un objeto que atraviesa el suelo o cae por un borde vuelve a un sitio válido.
 
-### M6 — Cierre de la fase
+### M5 — Cierre de la fase
 - Repaso de los criterios de `Docs/ROADMAP.md` (Fase 1.5), tests del Core en verde y «Dónde
   estamos» reescrito.
