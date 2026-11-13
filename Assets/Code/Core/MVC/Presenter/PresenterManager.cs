@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.MVC.Presenter 
 {
@@ -18,6 +19,7 @@ namespace Core.MVC.Presenter
         /// </summary>
         public void RegisterPresenter(PresenterType type, IPresenter presenter)
         {
+            AC.CheckNotNull(presenter, nameof(presenter));
             if (!_presenters.ContainsKey(type))
             {
                 _presenters[type] = presenter;
@@ -32,6 +34,7 @@ namespace Core.MVC.Presenter
         /// </summary>
         public void ReplacePresenter(PresenterType type, IPresenter presenter)
         {
+            AC.CheckNotNull(presenter, nameof(presenter));
             _presenters[type] = presenter;
         }
 

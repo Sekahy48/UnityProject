@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.ECS.Entity;
 using Core.ECS.Systems;
+using Core.ECS;
 
 namespace Core.MVC.Model
 {

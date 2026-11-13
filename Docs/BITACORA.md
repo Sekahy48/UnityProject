@@ -109,8 +109,8 @@ estimación por bloque si la recuerda.
   ve como desgarro); guardar y cargar partida entra como N.
 
 ### 2026-11-12 — Segunda reunión con David y replanificación
-- **Horas:** reunión ~45 min (10:00–10:45); replanificación con Claude sin dato (sesión en
-  curso, sigue con la Fase 1.5)
+- **Horas:** reunión ~45 min (10:00–10:45); mañana, replanificación con Claude sin dato;
+  tarde, 3 h (M1 y comienzo de M2)
 - **Con:** Sergio y David; después Sergio + Claude
 - **Fase / hito:** planificación
 - **Hecho (reunión):** Stack&Go y Fuero le parecen bien. Stack&Go: herramienta común; como la
@@ -129,5 +129,13 @@ estimación por bloque si la recuerda.
   Claude: estándares de código (`Docs/ESTANDARES_CODIGO.md`) y limpieza de todo el repositorio
   (campos privados a `_camelCase`, propiedades, `this.`, comentarios al español, erratas); Core
   compilado y 56 tests en verde fuera de Unity.
-- **Pendiente que deja:** M1 (mover al jugador por física); compilar en Unity la limpieza;
+- **Hecho por la tarde (3 h):** **M1 cerrado** (Sergio lo escribe, con guía): velocidad al
+  Rigidbody con rapidez y dirección separadas, material sin rozamiento al moverse y agarre al
+  estar quieto, sin Apply Root Motion, cámaras FPS/TPS descolgadas del cuerpo; probado en juego
+  (decisiones 33–37). Limpieza compilada en Unity. **M2 diseñado** (decisiones 38–43) y
+  empezado: Sergio, `origin` en `IEntityLinker.Link`; Claude, `WeightCalculator.Of(IEntity)` y
+  aviso `WeightChanged` con tests (64 en verde), norma de sufijos de género, 7 renombres y
+  7 clases movidas a su carpeta.
+- **Pendiente que deja:** M2: P2 sistema de masa (Sergio), P3 `PhysicsBodyBuilder` (Claude),
+  coger mientras rueda; compilar en Unity los renombres, movimientos y P1; commit;
   investigación del agua.

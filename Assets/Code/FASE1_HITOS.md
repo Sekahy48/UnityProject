@@ -1306,3 +1306,9 @@ Hand added notes (by me by hand):
   valores, el clon los perderá sin avisar. Ya mordió una vez: `TurnSpeed` se asignaba solo en
   el otro constructor y el clon del jugador tenía 0 (no giraba). Arreglo: que `Clone()` copie
   todos los campos (o un constructor de copia).
+
+- [ ] **Pesos del catálogo como texto con coma decimal** (visto el 2026-11-13): la Mochila
+  llega como `"weight": "2,5"`. `NumericFields` lo lee con `Convert.ToSingle`, que usa el
+  idioma del sistema: en un Windows en español da 2,5; en uno en inglés da **25**. Arreglo en
+  dos sitios: que Stack&Go exporte números, y que la carga lea con `CultureInfo.InvariantCulture`
+  y trate un texto con coma como error de catálogo (norma 1.3 de `ESTANDARES_CODIGO.md`).

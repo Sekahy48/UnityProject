@@ -2,6 +2,7 @@ using Core;
 using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
+using Core.Inventory;
 using Core.Item;
 using Unity.ECS.Component;
 using Unity.Services;
@@ -16,7 +17,7 @@ namespace Unity
     /// </summary>
     public class UnityEntityLinker : IEntityLinker
     {
-        public void Link(IEntity entity, EntityType entityType)
+        public void Link(IEntity entity, EntityType entityType, IEntity origin = null)
         {
             GameObject go = ResolveGameObject(entity, entityType, out bool created);
             if (go == null)
@@ -29,6 +30,11 @@ namespace Unity
             entity.AddComponent(new UnityEntityComponent(go));
 
             SyncInitialPosition(entity, go, created);
+
+            // Lo creado cae con fisica; el jugador trae su Rigidbody de la escena
+            if (created) PhysicsBodyBuilder.AddBody(entity, go, origin);
+            SyncInitialMass(entity, go);
+
             AttachModel(entity, go);
         }
 
@@ -113,6 +119,20 @@ namespace Unity
         }
 
         /// <summary>
+        /// Masa del cuerpo fisico = peso de la entidad en el Core, si tiene cuerpo (el jugador,
+        /// lo recien creado). Lo mismo que <see cref="SyncInitialPosition"/>, para la masa:
+        /// dejar Core y motor de acuerdo al enlazar. Despues la mantiene MassSyncSystem.
+        ///
+        /// <para>Directo y no con un aviso: al enlazar al jugador aun no hay sistemas
+        /// registrados, y un aviso se perderia.</para>
+        /// </summary>
+        private void SyncInitialMass(IEntity entity, GameObject go)
+        {
+            if (go.TryGetComponent(out Rigidbody body))
+                PhysicsBodyBuilder.ApplyMass(body, WeightCalculator.Of(entity));
+        }
+
+        /// <summary>
         /// Cuelga el modelo 3D de la entidad cuando termine de cargar.
         ///
         /// <para><b>No se espera a proposito.</b> <c>Link</c> es sincrono y quien crea
@@ -131,8 +151,9 @@ namespace Unity
             if (string.IsNullOrEmpty(path)) return;
 
             GameObject model = await ModelCache.Instance.Instantiate(path, host.transform);
-            if (model == null) return;
+            if (host == null || model == null) return;   // host destruido: se recogio mientras cargaba
 
+            PhysicsBodyBuilder.ReplaceWithHulls(host, model);
             MeasureInteractionVolume(entity, host, model);
         }
 

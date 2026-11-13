@@ -1,6 +1,7 @@
 using System.ComponentModel;
+using Core.ECS.Systems;
 
-namespace Core.ECS.Systems
+namespace Core.World
 {
     /// <summary>
     /// Lo que se puede hacer con algo que esta en el mundo.

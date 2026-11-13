@@ -12,12 +12,8 @@ namespace Core.ECS.Systems
 {
     public class InventorySystem : IReactiveSystem
     {
-        private static readonly GameEventType[] _subscribedEvents =
-        {
-            /*Emtpy for the moment*/
-        };
-
-        public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
+        // Vacio de momento: no escucha ningun aviso
+        public IEnumerable<GameEventType> SubscribedEvents { get; } = Array.Empty<GameEventType>();
 
 
         /// <summary>
@@ -110,7 +106,7 @@ namespace Core.ECS.Systems
             // Physical carry capacity check
             if (entity.HasComponent(typeof(BodyComponent)) && movementComponent != null)
             {
-                GameEventType load = CarryCapacity.ClassifyLoad(totalWeight, GetMaxWeight(entity));
+                GameEventType load = CarryCapacityCalculator.ClassifyLoad(totalWeight, GetMaxWeight(entity));
                 EventBus.GetInstance().Post(new GameEvent(load, entity, movementComponent));
                 LogLoad(load);
 
@@ -140,6 +136,7 @@ namespace Core.ECS.Systems
             }
 
             EventBus.GetInstance().Post(new GameEvent(GameEventType.InventoryChanged , entity, inventoryComponent));
+            EventBus.GetInstance().Post(new GameEvent(GameEventType.WeightChanged, entity, inventoryComponent));
         }
 
         /// <summary>
@@ -165,7 +162,7 @@ namespace Core.ECS.Systems
             }
         }
 
-        private float GetMaxWeight(IEntity entity) => CarryCapacity.GetMaxLoad(entity); 
+        private float GetMaxWeight(IEntity entity) => CarryCapacityCalculator.GetMaxLoad(entity); 
     
         public void UpdateOnEvent(GameEvent gameEvent)
         {

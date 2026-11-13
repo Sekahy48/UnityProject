@@ -20,6 +20,8 @@ namespace Core.Services
         public InventoryService(GameInteractionContext interactionContext,
                                 GameSystemContext systemContext)
         {
+            AC.CheckNotNull(interactionContext, nameof(interactionContext));
+            AC.CheckNotNull(systemContext, nameof(systemContext));
             _interactionContext = interactionContext;
             _systemContext = systemContext;
         }
@@ -229,7 +231,7 @@ namespace Core.Services
                                          .TryEquip(destiny, variant, slot);
                 if (result != EquipResult.SuccessEquip) return count;
 
-                WornContainers.Attach(destiny, variant);
+                WornContainerBinder.Attach(destiny, variant);
 
                 return 0;
             });
@@ -335,14 +337,18 @@ namespace Core.Services
                 EquipResult result = equipmentSystem.TryEquip(dstEquipmentEntity, variant, dstEquipmentSlots, false);
                 if (result != EquipResult.SuccessEquip) return count;
 
-                WornContainers.Attach(dstEquipmentEntity, variant);
+                WornContainerBinder.Attach(dstEquipmentEntity, variant);
 
                 return 0;
             };
 
             int equiped = RunTransfer(origin, equipmentItem, 1, dstEquipmentEntity, addFunction); 
-            if (equiped > 0) 
-                EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, dstEquipmentEntity, dstEquipmentEntity.GetComponent<EquipmentComponent>()));
+            if (equiped > 0)
+            {
+                EquipmentComponent equipment = dstEquipmentEntity.GetComponent<EquipmentComponent>();
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, dstEquipmentEntity, equipment));
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.WeightChanged, dstEquipmentEntity, equipment));
+            }
             return equiped;
         }
 
@@ -472,7 +478,7 @@ namespace Core.Services
         {
             if (destiny == null || item == null) return false;
 
-            float attempted = ItemWeight.Of(item, units);
+            float attempted = WeightCalculator.Of(item, units);
 
             return destiny.GetComponent<InventoryComponent>().Inventory
                           .CarrierBlocks(attempted, GrabbedSourceInventory());

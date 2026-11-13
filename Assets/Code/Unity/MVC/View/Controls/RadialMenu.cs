@@ -283,7 +283,7 @@ namespace MVC.View.Controls
         /// <summary>
         /// Recalcula radios y arcos de todos los anillos y coloca los textos en el centro de
         /// su porcion. El primero cubre la vuelta entera con la opcion 0 arriba (igual que
-        /// <see cref="RadialGeometry"/>); cada siguiente, un arco centrado en su padre.
+        /// <see cref="RadialGeometryCalculator"/>); cada siguiente, un arco centrado en su padre.
         /// </summary>
         private void Relayout()
         {
@@ -377,7 +377,7 @@ namespace MVC.View.Controls
                 if (i >= 0) return (k, i);
             }
 
-            int first = RadialGeometry.IndexAt(dx, dy, _rings[0].Count, _inner, _outer * OUTSIDE_FACTOR);
+            int first = RadialGeometryCalculator.IndexAt(dx, dy, _rings[0].Count, _inner, _outer * OUTSIDE_FACTOR);
             return first >= 0 ? (0, first) : (-1, -1);
         }
 

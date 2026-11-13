@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Core.Events;
+using Core.ECS;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
 {
@@ -22,24 +24,28 @@ namespace Core.ECS.Systems
 
         public SystemManager(EntityManager entityManager)
         {
+            AC.CheckNotNull(entityManager, nameof(entityManager));
             _entityManager = entityManager;
             _clock.Attach(new TickCounter(this));
         }
 
         public SystemManager RegisterPeriodicGameSystem(IPeriodicSystem system)
         {
+            AC.CheckNotNull(system, nameof(system));
             _gamePeriodicSystems.Add(system);
             return this;
         }
 
         public SystemManager RegisterEngineSystem(IPeriodicSystem system)
         {
+            AC.CheckNotNull(system, nameof(system));
             _engineSystems.Add(system);
             return this;
         }
 
         public SystemManager RegisterReactiveGameSystem(IReactiveSystem system)
         {
+            AC.CheckNotNull(system, nameof(system));
             _gameReactiveSystems.Add(system);
             foreach (GameEventType type in system.SubscribedEvents)
                 EventBus.GetInstance().Subscribe(type, system);

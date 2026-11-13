@@ -4,6 +4,8 @@ using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
 using Core.Events; 
+using Core.World;
+using Core.ECS;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
@@ -28,12 +30,10 @@ namespace Core.ECS.Systems
     /// </summary>
     public class WorldInteractionSystem : IReactiveSystem
     {
-        private static readonly GameEventType[] _subscribedEvents =
+        public IEnumerable<GameEventType> SubscribedEvents { get; } = new[]
         {
             GameEventType.ItemDropped
         };
-
-        public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
 
         private readonly EntityManager _entityManager;
         private readonly IEntityLinker _linker;
@@ -62,7 +62,7 @@ namespace Core.ECS.Systems
 
         public void UpdateOnEvent(GameEvent gameEvent)
         {
-            if (gameEvent == null) return;
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
 
             switch (gameEvent.GetEventType())
             {
@@ -99,7 +99,7 @@ namespace Core.ECS.Systems
             pile.GetComponent<GroundLotComponent>().AddRange(lotEvent.Lots);
             PlaceAt(pile, lotEvent.GetEntity());
 
-            _linker.Link(pile, EntityType.GroundLot);
+            _linker.Link(pile, EntityType.GroundLot, lotEvent.GetEntity());
         }
 
         /// <summary>
@@ -117,23 +117,23 @@ namespace Core.ECS.Systems
             if (item == null) return;
 
             ItemEntity placed = item.Clone();
-            WorldPresence.AddTo(placed);
+            WorldPresenceRules.AddTo(placed);
             PlaceAt(placed, dropper);
 
             _entityManager.Register(placed);
-            _linker.Link(placed, EntityType.WorldItem);
+            _linker.Link(placed, EntityType.WorldItem, dropper);
         }
 
         /// <summary>
         /// Saca del mundo un item suelto que se acaba de recoger.
         ///
         /// Al inventario no va este item sino una copia limpia
-        /// (<see cref="WorldPresence.CleanCopyOf"/>); este se destruye entero, igual que un
+        /// (<see cref="WorldPresenceRules.CleanCopyOf"/>); este se destruye entero, igual que un
         /// monton vacio. Por eso basta con <see cref="Despawn"/>: desenlazar y dar de baja.
         /// </summary>
         public void TakeItem(ItemEntity item)
         {
-            if (item == null || !WorldPresence.IsIn(item)) return;
+            if (item == null || !WorldPresenceRules.IsIn(item)) return;
             Despawn(item);
         }
 
@@ -155,7 +155,9 @@ namespace Core.ECS.Systems
 
             int removed = lot.RemoveUnits(variant, units);
 
+            // Vacio, el monton desaparece y ya no hay peso que avisar.
             if (lot.IsEmpty) Despawn(pile);
+            else if (removed > 0) EventBus.GetInstance().Post(new GameEvent(GameEventType.WeightChanged, pile, lot));
 
             return removed;
         }

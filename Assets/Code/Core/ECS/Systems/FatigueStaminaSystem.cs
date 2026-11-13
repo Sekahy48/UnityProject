@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core.ECS.Component;
 using Core.ECS.Entity;
 using Core.Events; 
+using Core.ECS;
 
 namespace Core.ECS.Systems
 {

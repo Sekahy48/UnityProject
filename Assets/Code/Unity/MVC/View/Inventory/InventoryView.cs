@@ -1001,7 +1001,7 @@ namespace MVC.View.Inventory
                 _inspectWeightUnit.text = "";
                 _inspectDurability.text = "";
                 _inspectSize.text = "";
-                UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImages.EmptyIcon);
+                UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImagePaths.EmptyIcon);
                 foreach (VisualElement element in _inspectStats.Children())
                 {
                     element.RemoveFromClassList("inspection-strip__stat");

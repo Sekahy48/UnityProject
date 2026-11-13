@@ -2,6 +2,7 @@ using Core;
 using Core.ECS.Entity;
 using Unity.ECS.Component;
 using UnityEngine;
+using Core.World;
 
 namespace Unity
 {

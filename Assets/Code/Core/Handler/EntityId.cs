@@ -3,8 +3,8 @@ namespace Core.Handler
     public class EntityId : IHandler {
     private int _id;
 
-    public EntityId(int _id) {
-        _id = _id;
+    public EntityId(int id) {
+        _id = id;
     }
 
     public EntityId(IHandler other) {

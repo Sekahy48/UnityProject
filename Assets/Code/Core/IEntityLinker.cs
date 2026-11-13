@@ -14,7 +14,9 @@ namespace Core
         /// <param name="entity">Entity already created with pure Core components.</param>
         /// <param name="entityType">Archetype, used to decide whether the engine object is
         /// found in the scene or created on the spot.</param>
-        void Link(IEntity entity, EntityType entityType);
+        /// <param name="origin">Quien origino la entidad (quien la solto), o null. El motor lee
+        /// de el lo que Core no sabe, como su velocidad.</param>
+        void Link(IEntity entity, EntityType entityType, IEntity origin = null);
 
         /// <summary>
         /// Deshace <see cref="Link"/>: destruye la representacion de la entidad en el motor

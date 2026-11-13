@@ -2,8 +2,9 @@ using Core.ECS.Component;
 using Core.ECS.Systems; 
 using Unity.ECS.Component;
 using UnityEngine;
+using Core.ECS;
 
-namespace Unity
+namespace Unity.ECS.Systems
 {
     /// <summary>
     /// Sistema del motor (se ejecuta cada fotograma con el deltaTime real).

@@ -1,4 +1,7 @@
 using Core.Contexts;
+using Core.ECS;
+using Core.Factories;
+using Core.Item;
 using Core.ECS.Systems;
 using Core.Events;
 using Core.MVC.Presenter;
@@ -23,8 +26,9 @@ namespace Core.Tests
             EventBus.GetInstance().Clear();
             CoreLogger.Instance = new SilentLogger();
 
-            // Sin EntityManager: InventoryService y estos dos sistemas no lo usan.
-            SystemManager systems = new SystemManager(null)
+            // EntityManager vacio: InventoryService y estos dos sistemas no lo usan, pero
+            // SystemManager lo exige (no admite null desde la norma de parametros).
+            SystemManager systems = new SystemManager(new EntityManager(new PrototypeFactory(new ItemCatalogue())))
                 .RegisterReactiveGameSystem(new InventorySystem())
                 .RegisterReactiveGameSystem(new EquipmentSystem());
 

@@ -1,4 +1,5 @@
-namespace Core.Services
+using Core.Services;
+namespace Core.Inventory
 {
     /// <summary>
     /// Resultado de preguntar "si suelto aqui, que pasa". Lo produce InventoryService por el

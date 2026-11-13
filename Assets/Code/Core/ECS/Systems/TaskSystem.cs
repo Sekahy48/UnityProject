@@ -5,6 +5,7 @@ using Core.ECS.Entity;
 using Core.Events;
 using Core.MVC.Model;
 using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
 {
@@ -14,11 +15,14 @@ namespace Core.ECS.Systems
 
         public TaskSystem(Logic logic)
         {
+            AC.CheckNotNull(logic, nameof(logic));
             _logic = logic;
         }
 
         public void UpdateOnEvent(GameEvent gameEvent)
         {
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
+
             List<IEntity> entitiesWithTasks = _logic.GetEntitiesWithComponent(typeof(TaskComponent));
 
             foreach (var entity in entitiesWithTasks)

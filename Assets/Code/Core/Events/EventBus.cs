@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Events
 {
@@ -24,6 +25,7 @@ namespace Core.Events
 
         public void Subscribe(GameEventType eventType, IEventObserver observer)
         {
+            AC.CheckNotNull(observer, nameof(observer));
             if (!_subscribers.ContainsKey(eventType))
                 _subscribers[eventType] = new List<IEventObserver>();
 
@@ -33,12 +35,14 @@ namespace Core.Events
 
         public void Unsubscribe(GameEventType eventType, IEventObserver observer)
         {
+            AC.CheckNotNull(observer, nameof(observer));
             if (_subscribers.TryGetValue(eventType, out var list))
                 list.Remove(observer);
         }
 
         public void Post(GameEvent gameEvent)
         {
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
             if (!_subscribers.TryGetValue(gameEvent.GetEventType(), out var list)) return;
 
             // Copia: un observador puede suscribirse o darse de baja al reaccionar,

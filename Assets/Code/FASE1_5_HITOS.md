@@ -147,15 +147,15 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
     hay, vuelve al último sitio donde estuvo quieto.**
 30. **Quién escribe cada cosa se decide al llegar a cada hito.** Lo de Core, por la regla de
     `CLAUDE.md`, es de Sergio.
-31. **La masa de los Rigidbody la pone un sistema propio de Unity** suscrito al aviso de
-    inventario cambiado (`InventoryChanged`; más adelante también al de equipo cambiado). No
+31. **La masa de los Rigidbody la pone un sistema propio de Unity** suscrito al aviso de que
+    el peso puede haber cambiado (`WeightChanged`, ver 39; antes decía `InventoryChanged`). No
     es «cada entidad comprueba si el aviso es suyo»: un solo sistema atiende a todas, toma la
     entidad que viene en el aviso y, si tiene cuerpo físico en Unity, le pone `masa = peso`.
     Vale igual para el jugador y para los objetos (un arcón del suelo al que le metes cosas).
     Como el aviso no llega cuando algo aparece en el mundo, la masa inicial se pone también
     al enlazar la entidad con su GameObject. Las estrategias de cámara siguen guardando el
     GameObject del jugador y sacan de él el Rigidbody una vez; no saben nada de pesos.
-32. **El peso de cualquier entidad sale de una sola función del Core:** un ítem, `ItemWeight.Of`
+32. **El peso de cualquier entidad sale de una sola función del Core:** un ítem, `WeightCalculator.Of`
     (con su contenido); un cuerpo, su peso más el total de su inventario (que ya incluye la
     mochila puesta). La ropa puesta aún no pesa (decidido, sin aplicar). Es Core: la escribe
     Sergio.
@@ -189,6 +189,40 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
     el desmayo, el material saldrá del estado del cuerpo (moviéndose / de pie / inerte), no
     de las teclas, y el movimiento por teclas quedará bloqueado mientras no pueda moverse.
 
+#### M2 (2026-11-12)
+
+38. **Una sola clase de pesos, `WeightCalculator`** (antes `ItemWeight`), en `Core/Inventory`:
+    `Of(ItemEntity)` y `Of(IEntity)` (ítem con su contenido; montón, sus lotes; cuerpo, su peso
+    más su inventario; lo demás, 0 = «no se sabe»). El mínimo que exige la física (0,01 kg) lo
+    pone Unity, no el Core. Con el renombre llegó la norma de sufijos de género para las
+    clases de utilidad (`Docs/ESTANDARES_CODIGO.md`, 1.1).
+39. **Aviso genérico `WeightChanged` = «el peso PUEDE haber cambiado».** Se publica junto a
+    `InventoryChanged` en cada nivel de la cadena (bolsa, mochila, portador), al cambiar el
+    equipo y al coger parte de un montón; en Fase 2, al cambiar el peso del cuerpo. No se
+    compara con el anterior: quien lo escucha aguanta repeticiones. Motivo: cambiar el
+    inventario no implica cambiar el peso, y hay pesos que cambian sin inventario.
+40. **La física de lo soltado la pone una clase nueva de Unity, `PhysicsBodyBuilder`,** a la
+    que llama `UnityEntityLinker` (solo para lo creado, no para el jugador). Incluye
+    `ApplyMass`, que usa también el sistema de masa: el mínimo vive en un sitio.
+41. **Esfera provisional del tamaño del volumen del arquetipo** (`InteractionVolumeComponent`).
+    Al llegar el modelo, **un collider convexo por cada malla** bajo el mismo Rigidbody: un
+    solo sólido (una tapa no se abre; eso serían dos cuerpos con bisagra, fuera de la fase).
+    Riesgo por comprobar: que glTFast deje las mallas legibles en ejecución.
+42. **Lo soltado hereda la velocidad horizontal de quien lo suelta:** soltar corriendo lo hace
+    rodar hacia delante. Para eso `IEntityLinker.Link` recibe `origin` (quien lo soltó).
+43. **Rozamiento por defecto en los objetos;** por material (madera, metal) leyendo
+    `MaterialComponent`, más adelante. **Dejar de simularse al pararse (12) = el «sueño» de los
+    Rigidbody de Unity**, sin código propio. **Interpolate** activado y detección
+    **Continuous** (2026-11-13: con Discrete, las manzanas atravesaban el suelo plano —un
+    plano sin grosor— al caer desde la mano; por una rampa no, porque llegaban rodando
+    despacio).
+44. **Masa inicial al enlazar, directa y no por aviso** (2026-11-13). `UnityEntityLinker`
+    pone `masa = peso` a todo lo que enlaza con Rigidbody (el jugador y lo creado), igual que
+    sincroniza la posición. Un aviso no serviría: el jugador se enlaza antes de que existan
+    los sistemas. Y como los objetos de desarrollo entran sin aviso, `GameMain` publica una vez
+    el estado inicial del jugador al final del arranque (`PublishInitialState`), cuando ya
+    escucha todo el mundo: masa, banda de carga e inventario.
+
 ---
 
 ## Hitos
@@ -207,11 +241,11 @@ disparados.
 - **Cierre:** se mueve igual que antes al jugar, sin el tirón contra las paredes; la cámara
   no tiembla.
 
-### M2 — Lo soltado cae y rueda
+### M2 — Lo soltado cae y rueda ✅ (2026-11-13)
 - Sistema de masa (31, 32): la del jugador = cuerpo + carga, actualizada con el aviso de
   inventario cambiado (26); la de lo suelto, la de abajo.
 - Lo que está en el mundo (ítems sueltos, montones, arcones) tiene Rigidbody dinámico con masa
-  = peso del ítem con su contenido (`ItemWeight.Of`) y colisión convexa del modelo (11), con la
+  = peso del ítem con su contenido (`WeightCalculator.Of`) y colisión convexa del modelo (11), con la
   esfera provisional mientras carga (27).
 - La posición: el Core la marca al soltar; desde ahí manda la física y `TransformSyncSystem`
   ya la copia al Core. Al pararse, deja de simularse (12).
@@ -219,6 +253,14 @@ disparados.
 - **Cierre:** soltar una manzana y un arcón: caen, ruedan o vuelcan según su forma, se paran y
   se pueden coger, también en movimiento. Empujar la manzana y empujar el arcón se nota
   distinto.
+
+- **Probado en juego (2026-11-13):** lo soltado cae delante, rueda o vuelca y se para; se
+  coge en movimiento; la masa del jugador sigue a su carga. Empujar: con el arcón vacío
+  (8 kg) y la manzana (0,2 kg) el empuje se parece, porque los dos pesan muy poco al lado
+  del jugador (~80 kg) y el jugador no se frena al chocar (su velocidad la pone el código).
+  Con el arcón cargado (~58 kg) la diferencia se nota claramente. Es lo físicamente esperable;
+  no se ajusta. La manzana a veces cuesta de empujar por lo pequeña que es frente a la base
+  redondeada de la cápsula: se mira en M4.
 
 ### M3 — No se tira nada a través de una pared
 - Interfaz del Core para preguntar a Unity si el camino del jugador al punto de soltar está
@@ -232,6 +274,12 @@ disparados.
 
 ### M5 — Lo que se sale del mundo vuelve
 - Detección por debajo de un límite y recolocación (29).
+- **Arreglar antes `TransformSyncSystem`** (visto el 2026-11-13). Su rama «el Core cambió la
+  posición» escribe `transform.position` / `rotation`. Con un Rigidbody dinámico e interpolado
+  eso no llega bien a la física y conserva la velocidad: lo recolocado seguiría cayendo.
+  Con Rigidbody debe escribir `rb.position` / `rb.rotation` (y el transform, para que se vea
+  en ese fotograma) y poner la velocidad a cero; sin Rigidbody, como está. Hoy no falla
+  porque nadie del Core mueve algo ya soltado; M5 es el primero.
 - **Cierre:** un objeto que atraviesa el suelo o cae por un borde vuelve a un sitio válido.
 
 ### M6 — Cierre de la fase

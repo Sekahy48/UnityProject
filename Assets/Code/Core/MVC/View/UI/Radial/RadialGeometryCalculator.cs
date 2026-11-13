@@ -15,7 +15,7 @@ namespace Core.MVC.View.UI.Radial
     /// cuenta como zona de su opcion, y basta un gesto rapido en su direccion. El centro es
     /// zona muerta (no elige nada) y lo que queda muy lejos tampoco.</para>
     /// </summary>
-    public static class RadialGeometry
+    public static class RadialGeometryCalculator
     {
         private const float TWO_PI = (float)(Math.PI * 2.0);
 

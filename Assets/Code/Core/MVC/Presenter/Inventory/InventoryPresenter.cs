@@ -15,6 +15,7 @@ using Core.Events;
 using Core.Observer;
 using Core.ECS.Component.ItemComponents;
 using System.Linq;
+using Core.Utils;
 
 namespace Core.MVC.Presenter.Inventory
 {
@@ -49,6 +50,9 @@ namespace Core.MVC.Presenter.Inventory
 
         public InventoryPresenter(IInventoryView view, ItemCatalogue itemCatalogue, InventoryService service)
         {
+            AC.CheckNotNull(view, nameof(view));
+            AC.CheckNotNull(itemCatalogue, nameof(itemCatalogue));
+            AC.CheckNotNull(service, nameof(service));
             _view = view;
             _view.OnCloseClicked += OnCloseClicked;
             _view.OnReady += OnViewReady;
@@ -383,7 +387,7 @@ namespace Core.MVC.Presenter.Inventory
 
         /// <summary>
         /// El dominio responde en su vocabulario y aqui se traduce al que entiende la vista,
-        /// igual que CarryCapacity.ClassifyLoad se traduce a una clase USS. El motivo del
+        /// igual que CarryCapacityCalculator.ClassifyLoad se traduce a una clase USS. El motivo del
         /// rechazo se pierde a proposito: un color no puede transportarlo.
         /// </summary>
         private static PlacementVerdict ToVerdict(EquipResult result)
@@ -1011,6 +1015,8 @@ namespace Core.MVC.Presenter.Inventory
 
         public void UpdateOnEvent(GameEvent gameEvent)
         {
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
+
             switch (gameEvent.GetEventType()) 
             {
                 case GameEventType.InventoryChanged:

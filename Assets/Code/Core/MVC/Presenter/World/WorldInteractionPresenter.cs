@@ -10,6 +10,8 @@ using Core.MVC.View.UI.Inventory;
 using Core.MVC.View.UI.Radial;
 using Core.MVC.View.UI.World;
 using Core.Services;
+using Core.World;
+using Core.Utils;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.MVC.Presenter.World
@@ -200,7 +202,7 @@ namespace Core.MVC.Presenter.World
             foreach (PanelType panelType in SIDE_PANELS)
             {
                 IEntity target = _panels.OccupantOf(panelType);
-                if (target != null && WorldPresence.IsIn(target) && !_service.IsInRange(_actor, target))
+                if (target != null && WorldPresenceRules.IsIn(target) && !_service.IsInRange(_actor, target))
                     _panels.ClosePanel(panelType);
             }
         }

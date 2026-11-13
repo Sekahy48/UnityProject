@@ -48,7 +48,7 @@ namespace Core.Tests
         private static ItemEntity WornBackpack(IEntity carrier)
         {
             ItemEntity backpack = TestItems.Container(3, 3, maxWeight: 100000f);
-            Assert.IsTrue(WornContainers.Attach(carrier, backpack), "la mochila tiene que colgar del portador");
+            Assert.IsTrue(WornContainerBinder.Attach(carrier, backpack), "la mochila tiene que colgar del portador");
             return backpack;
         }
 

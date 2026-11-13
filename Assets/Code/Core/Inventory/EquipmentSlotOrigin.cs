@@ -61,7 +61,7 @@ namespace Core.Inventory
             if (amount <= 0 || !IsEquipped()) return new List<SubLot>();
 
             _system.TryUnequip(_owner, _item, _slotTypes);
-            WornContainers.Detach(_owner, _item);
+            WornContainerBinder.Detach(_owner, _item);
 
             return new List<SubLot> { new SubLot(_item, 1) };
         }
@@ -77,7 +77,7 @@ namespace Core.Inventory
                     $"No se pudo devolver '{_item.GetDisplayName()}' a su equipo: {result.GetMessage()}. " +
                     "La prenda ha salido del equipo sin llegar a ningun destino.");
 
-            WornContainers.Attach(_owner, _item);
+            WornContainerBinder.Attach(_owner, _item);
         }
 
         /// <summary>El equipo no tiene celdas que liberar.</summary>

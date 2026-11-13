@@ -6,6 +6,7 @@ using Core.ECS.Entity;
 using Core.ECS.Systems;
 using Core.Events;
 using Core.Inventory;
+using Core.World;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Services
@@ -137,7 +138,7 @@ namespace Core.Services
                 // es una copia sin nada del mundo. Intentarlo con la copia ES la pregunta de
                 // si cabe; si no cabe, el del suelo no se ha tocado y no hay nada que
                 // deshacer. Si cabe, el del suelo se destruye.
-                ItemEntity clean = WorldPresence.CleanCopyOf(worldItem);
+                ItemEntity clean = WorldPresenceRules.CleanCopyOf(worldItem);
 
                 int placed = MoveInto(actor, inventory, clean, 1, ref limit);
                 left += 1 - placed;
@@ -199,7 +200,7 @@ namespace Core.Services
         /// Hoy nadie escucha estos eventos; el log es el aviso hasta que exista el HUD.
         ///
         /// Con un actor con cuerpo, Weight ya no sale: el cuerpo no frena por peso
-        /// (CarryCapacity.GetTransferLimit), se sobrecarga. Queda para un actor sin cuerpo.
+        /// (CarryCapacityCalculator.GetTransferLimit), se sobrecarga. Queda para un actor sin cuerpo.
         /// </summary>
         private static void Announce(IEntity actor, InventoryComponent inventory, PickUpLimit limit)
         {
@@ -245,7 +246,7 @@ namespace Core.Services
             else if (target is ItemEntity worldItem)
             {
                 // La misma copia limpia que PickUp.
-                fits = 1 - sim.TryStackOntoHere(WorldPresence.CleanCopyOf(worldItem), 1, null, out _);
+                fits = 1 - sim.TryStackOntoHere(WorldPresenceRules.CleanCopyOf(worldItem), 1, null, out _);
             }
 
             return fits;

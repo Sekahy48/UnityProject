@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.ECS.Component.Equipment;
 using Core.Services;
+using Core.Inventory;
 
 namespace Core.MVC.View.UI.Inventory
 {
