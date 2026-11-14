@@ -206,6 +206,8 @@ public class GameMain : MonoBehaviour
         SystemManager systemManager = new SystemManager(entityManager);
 
         systemManager.RegisterPeriodicGameSystem(new FatigueStaminaSystem());
+        // Antes que TransformSyncSystem: lo recolocado llega al Core en el mismo fotograma
+        systemManager.RegisterEngineSystem(new OutOfWorldRecoverySystem(new Unity.FixedHeightWorldLimit(-20f)));
         systemManager.RegisterEngineSystem(new TransformSyncSystem());
         systemManager.RegisterReactiveGameSystem(new MovementSystem())
                      .RegisterReactiveGameSystem(new InventorySystem())

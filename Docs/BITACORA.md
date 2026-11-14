@@ -158,3 +158,16 @@ estimación por bloque si la recuerda.
 - **Pendiente que deja:** M4 (lo que se sale del mundo vuelve, con el arreglo de
   `TransformSyncSystem` para Rigidbody) y M5 (cierre); segunda tanda de la norma de null;
   peso de la Mochila como texto con coma en el catálogo; investigación del agua.
+
+### 2026-11-14 — Fase 1.5 terminada
+- **Horas:** 1 h
+- **Con:** Sergio + Claude
+- **Fase / hito:** Fase 1.5 · M4, M5
+- **Hecho:** **M4 cerrado:** `OutOfWorldRecoverySystem` (Unity) devuelve al mundo lo que baja de
+  un límite intercambiable (`IWorldLimit`, hoy Y < −20): encima del suelo en su misma X y Z, o al
+  último sitio seguro (objeto dormido; cuerpo que anda, pisando suelo). `TransformSyncSystem`
+  mueve el Rigidbody cuando el Core cambia la posición. **M5:** criterios del `ROADMAP`
+  repasados y cumplidos; 66 tests en verde. **Fase 1.5 terminada** en 4 días (estimado: 1–2
+  semanas).
+- **Commits:** pendiente.
+- **Pendiente que deja:** fusionar `fase1.5` en `main`; Fase 2 (antes, investigación del agua).

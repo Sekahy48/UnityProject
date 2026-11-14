@@ -8,18 +8,23 @@ el encaje en el plan, de `Docs/ROADMAP.md`.
 
 > Esta sección existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
 
-**M1, M2 y M3 cerrados (2026-11-13).** Rama `fase1.5`. La fase se queda solo en el mundo físico;
-el guardado se aplaza a después del TFG, con su diseño conservado abajo.
+**Fase terminada (2026-11-14).** Rama `fase1.5`, pendiente de fusionar en `main`. La fase se
+quedó solo en el mundo físico; el guardado se aplaza a después del TFG, con su diseño conservado
+abajo.
 - **M1:** el jugador se mueve por física (33–37).
 - **M2:** lo soltado tiene cuerpo físico y masa = peso; la masa del jugador sigue a su carga
   (38–44). `WeightCalculator`, aviso `WeightChanged`, `MassSyncSystem`, `PhysicsBodyBuilder`.
 - **M3:** se suelta desde el centro del jugador con un impulso según la masa e ignorándolo
   hasta separarse (45, `DropperGrace`): no se puede tirar nada al otro lado de una pared.
+- **El antiguo M4** (objetos pequeños bajo los pies) se desestimó al probar (28).
+- **M4:** lo que se sale del mundo vuelve (46, `OutOfWorldRecoverySystem`, `IWorldLimit`).
+- **M5:** criterios del `ROADMAP` repasados, 66 tests del Core en verde.
 
-El antiguo M4 (objetos pequeños bajo los pies) se desestimó al probar: no hay problema (28).
+**Queda fuera, anotado:** guardado (después del TFG); lanzar objetos (Fase 5); norma de null,
+segunda tanda (`Docs/ESTANDARES_CODIGO.md`); peso de la Mochila como texto con coma
+(`FASE1_HITOS.md`, Future); límite del mundo calculado de la escena cuando haya varios mapas.
 
-Siguiente: **M4, lo que se sale del mundo vuelve** (antes, arreglar `TransformSyncSystem`
-para cuerpos con Rigidbody). Después M5, cierre.
+Siguiente: **Fase 2, fisiología** (`Docs/ROADMAP.md`); antes, la investigación del agua.
 
 ## Objetivo
 
@@ -246,6 +251,23 @@ disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
     aceptado: mientras se está encima de lo recién soltado, se atraviesa. Impulso: 4 kg·m/s
     entre la masa, con tope de 2 m/s, más la velocidad horizontal de quien lo suelta. Sin rayo
     ni interfaz nueva en el Core.
+
+#### M4 (2026-11-14)
+
+46. **Lo que se sale del mundo lo devuelve un sistema del motor** (`OutOfWorldRecoverySystem`,
+    en Unity), no el Core: salirse es un fallo de la física y buscar suelo es geometría.
+    Cubre cualquier entidad con Rigidbody, el jugador incluido. **Fuera = por debajo de un
+    límite** detrás de una interfaz (`IWorldLimit`; hoy `FixedHeightWorldLimit`, Y < −20), para
+    cambiarlo por uno calculado de la escena cuando haya varios mapas; así se distingue caer
+    desde una torre (acaba en el suelo, por encima del límite) de atravesarlo. Recuerda el
+    último sitio seguro de cada cuerpo: un objeto, cuando Unity lo duerme; un cuerpo que anda
+    (con `BodyComponent`: jugador, NPC), **cuando pisa suelo**. Con «quieto» (la decisión 29
+    al pie de la letra), tras una carrera larga sin pararse el jugador volvía al origen; para
+    los objetos se queda «dormido», porque con «pisando suelo» uno que rueda hacia un borde
+    volvería al mismo borde. Al salirse: si hay suelo estático en su misma X y Z, encima (rayo
+    desde 2 m sobre el último sitio seguro, no desde lo alto, para no acabar en un tejado); si
+    no, al último sitio seguro. Velocidad a cero. De paso, `TransformSyncSystem` mueve el Rigidbody
+    (y lo para) cuando es el Core quien cambia la posición.
     Límite aceptado: un objeto grande soltado pegado a una pared nace un poco dentro de ella y
     la física lo saca, casi siempre hacia el lado del jugador. No es «lanzar» (aplazado): sin
     puntería, sin daño, sin fuerza elegida.
@@ -299,16 +321,17 @@ disparados.
   un arcón cargado cae a sus pies sin bote; al apartarse vuelve a ser sólido; en campo
   abierto sale hacia delante, la manzana más que el arcón; corriendo, se adelanta.
 
-### M4 — Lo que se sale del mundo vuelve
-- Detección por debajo de un límite y recolocación (29).
-- **Arreglar antes `TransformSyncSystem`** (visto el 2026-11-13). Su rama «el Core cambió la
-  posición» escribe `transform.position` / `rotation`. Con un Rigidbody dinámico e interpolado
-  eso no llega bien a la física y conserva la velocidad: lo recolocado seguiría cayendo.
-  Con Rigidbody debe escribir `rb.position` / `rb.rotation` (y el transform, para que se vea
-  en ese fotograma) y poner la velocidad a cero; sin Rigidbody, como está. Hoy no falla
-  porque nadie del Core mueve algo ya soltado; M4 es el primero.
+### M4 — Lo que se sale del mundo vuelve ✅ (2026-11-14)
+- Detección por debajo de un límite y recolocación (29, 46), en Unity.
+- `TransformSyncSystem`: cuando el Core cambia la posición, mueve el Rigidbody y lo para
+  (hecho; antes escribía el transform y lo teletransportado seguía cayendo).
 - **Cierre:** un objeto que atraviesa el suelo o cae por un borde vuelve a un sitio válido.
+- **Probado en juego (2026-11-14):** una manzana arrastrada bajo el suelo reaparece encima,
+  en el mismo punto; el jugador que cae por el borde corriendo vuelve al borde, y saltando al
+  vacío, a donde despegó; cayendo pegado al borde por debajo, reaparece encima del suelo.
+  Lo que no es entidad (el caballero de prueba de la escena) no se recupera: queda fuera a
+  propósito.
 
-### M5 — Cierre de la fase
+### M5 — Cierre de la fase ✅ (2026-11-14)
 - Repaso de los criterios de `Docs/ROADMAP.md` (Fase 1.5), tests del Core en verde y «Dónde
   estamos» reescrito.

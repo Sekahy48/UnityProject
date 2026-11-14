@@ -34,30 +34,11 @@ líneas de corte son más defensivas. La historia de los cambios, en «Por qué 
 |---|---|---|
 | 0 | Revisión del código heredado; separación en `Core/` (C# puro) y `Unity/`. | `PR_FASE_0.md` |
 | 1 | Inventario: catálogo de ítems, sublotes, peso y rejilla, equipo, interfaz tetris, interacción con el mundo, pulido y tests. Cerrada el 2026-10-29; fusionada en `main` (PR #2). | `Assets/Code/FASE1_HITOS.md` |
+| 1.5 | Mundo físico: el jugador se mueve por física; lo soltado cae, rueda y vuelca con masa = peso (el jugador, cuerpo + carga); sale desde el centro del jugador con un impulso según su masa, así que nunca atraviesa una pared; colisión con la envoltura convexa del modelo; lo que se sale del mundo vuelve. Del 2026-11-11 al 14 (estimado: 1–2 semanas). | `Assets/Code/FASE1_5_HITOS.md` |
 
 ---
 
-## Fase 1.5 — Mundo físico (siguiente)
-
-Fase corta y transversal, antes de la fisiología.
-
-**Experiencia:** lo que sueltas cae y rueda como un objeto real; tú y los objetos os
-empujáis según vuestro peso.
-
-**Mecánicas:** soltar con física (todo lo soltado cae y rueda, sale delante del jugador sin
-atravesar paredes, un montón cae como un solo objeto, se puede coger mientras rueda); masa =
-peso del ítem; el jugador se mueve por física y su masa incluye lo que carga; colisión con la
-envoltura convexa del modelo; lo que se sale del mundo vuelve al punto válido más cercano.
-
-**Cierre:** lo soltado cae y rueda sin tirones y se queda donde se para; el jugador se mueve
-por física sin el tirón contra las paredes; empujar una manzana y empujar un arcón se nota
-distinto.
-
-Decisiones en `Assets/Code/FASE1_5_HITOS.md`.
-
----
-
-## Fase 2 — Fisiología
+## Fase 2 — Fisiología (siguiente)
 
 **Experiencia:** el personaje tiene un cuerpo que pide cosas y que se hace daño. Pasa hambre,
 sed, frío y sueño; se hiere, le duele, se cura o empeora. Todo se nota en lo que puede hacer y

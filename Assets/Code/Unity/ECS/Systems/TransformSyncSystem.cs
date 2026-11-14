@@ -32,9 +32,19 @@ namespace Unity.ECS.Systems
 
                 if (pos.IsDirty)
                 {
-                    // El Core cambio la posicion: se aplica al Transform
-                    t.position = new Vector3(pos.X, pos.Y, pos.Z);
-                    t.rotation = new Quaternion(pos.RotX, pos.RotY, pos.RotZ, pos.RotW);
+                    // El Core cambio la posicion: es un teletransporte. Con Rigidbody se mueve el
+                    // cuerpo (si no, la fisica no se entera bien) y se para: lo teletransportado
+                    // no sigue cayendo.
+                    Vector3 position = new Vector3(pos.X, pos.Y, pos.Z);
+                    Quaternion rotation = new Quaternion(pos.RotX, pos.RotY, pos.RotZ, pos.RotW);
+                    if (t.TryGetComponent(out Rigidbody body))
+                    {
+                        body.position = position;
+                        body.rotation = rotation;
+                        body.linearVelocity = Vector3.zero;
+                        body.angularVelocity = Vector3.zero;
+                    }
+                    t.SetPositionAndRotation(position, rotation);   // que se vea en este fotograma
                     pos.ClearDirty();
                 }
                 else
