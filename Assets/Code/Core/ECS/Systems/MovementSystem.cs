@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.ECS.Component;
 using Core.Events;
 using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
 {
@@ -14,7 +15,7 @@ namespace Core.ECS.Systems
 
         private bool _weightRestrictionActive = false;
 
-        private static readonly GameEventType[] _subscribedEvents =
+        public IEnumerable<GameEventType> SubscribedEvents { get; } = new[]
         {
             GameEventType.ExtraWeight,
             GameEventType.Overweight,
@@ -22,11 +23,11 @@ namespace Core.ECS.Systems
             GameEventType.NormalWeight
         };
 
-        public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
-
 
         public void UpdateOnEvent(GameEvent gameEvent)
         {
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
+
             float multiplier = -1;
             bool shouldRestrict = false;
             switch (gameEvent.GetEventType())

@@ -9,38 +9,38 @@ namespace MVC.View
 {
     public class HUDManager : IObserver
     {
-        private IEntity player; 
+        private IEntity _player; 
         public HUDManager(IEntity player)
         {
-            this.player = player;
+            _player = player;
         }
         public void Update()
         {
-            this.UpdateStamina();
-            this.UpdateFatigue();
+            UpdateStamina();
+            UpdateFatigue();
         }
         public void UpdateStamina()
         {
-            EnergyComponent fisiologic = player.GetComponent<EnergyComponent>();
+            EnergyComponent fisiologic = _player.GetComponent<EnergyComponent>();
             if (fisiologic == null)
             {
                 UnityEngine.Debug.LogError("Player entity does not have a EnergyComponent.");
                 return;
             }
-            // Logic to reduce the stamina bar in the HUD interface
+            // Aqui iria la logica para bajar la barra de aguante del HUD
             //UnityEngine.Debug.Log("Stamina: " + fisiologic.Stamina + "/" + fisiologic.MaxStamina);
             HUDUtils.GetInstance().ModifyFillable("StaminaBar", fisiologic.Stamina / fisiologic.MaxStamina);
         }
 
         public void UpdateFatigue()
         {
-            EnergyComponent fisiologic = player.GetComponent<EnergyComponent>();
+            EnergyComponent fisiologic = _player.GetComponent<EnergyComponent>();
             if (fisiologic == null)
             {
                 UnityEngine.Debug.LogError("Player entity does not have a EnergyComponent.");
                 return;
             }
-            // Logic to reduce the fatigue bar in the HUD interface
+            // Aqui iria la logica para bajar la barra de cansancio del HUD
             // UnityEngine.Debug.Log("Fatigue: " + fisiologic.Fatigue + "/" + fisiologic.MaxFatigue);
             HUDUtils.GetInstance().ModifyFillable("FatigueBar", fisiologic.Fatigue / fisiologic.MaxFatigue);
         }

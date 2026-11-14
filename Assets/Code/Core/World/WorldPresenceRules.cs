@@ -2,8 +2,9 @@ using System;
 using Core.ECS.Component;
 using Core.ECS.Component.Interaction;
 using Core.ECS.Entity;
+using Core.ECS.Systems;
 
-namespace Core.ECS.Systems
+namespace Core.World
 {
     /// <summary>
     /// Que componentes hacen que algo "este en el mundo", escrito una sola vez.
@@ -17,7 +18,7 @@ namespace Core.ECS.Systems
     /// recogido volveria al inventario con restos del suelo, dejaria de ser equivalente a
     /// sus iguales y no se apilaria con ellos.</para>
     /// </summary>
-    public static class WorldPresence
+    public static class WorldPresenceRules
     {
         /// <summary>
         /// Radio de la esfera con la que nace lo que se pone en el mundo, para poder apuntarle

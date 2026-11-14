@@ -8,6 +8,15 @@ using Newtonsoft.Json;
 
 namespace Core.Item
 {
+    /// <summary>
+    /// Lee el catalogo de items exportado por Stack&amp;Go.
+    ///
+    /// <para><b>Un catalogo con errores no arranca el juego</b> (decidido el 2026-11-13): se
+    /// lanza al cargar, con TODOS los fallos juntos, para enterarse al arrancar y no con un
+    /// item que falta a mitad de partida. Lo que no se trata como error son los ficheros de
+    /// modelo que faltan: eso es un despiste al copiar los datos, no un catalogo mal
+    /// escrito, y solo se avisa (ver <see cref="WarnAboutMissingModels"/>).</para>
+    /// </summary>
     public class JsonItemCatalogLoader
     {
         private readonly TypeIdMapper _typeIdMapper;
@@ -22,31 +31,27 @@ namespace Core.Item
             string path = CoreConfig.CatalogPath;
 
             if (!File.Exists(path))
-            {
-                CoreLogger.Instance.LogError("JsonItemCatalogLoader: Catalog file not found at " + path);
-                return;
-            }
+                throw new FileNotFoundException("JsonItemCatalogLoader: no existe el catalogo de items.", path);
 
             string json = File.ReadAllText(path);
             CatalogData catalogData = JsonConvert.DeserializeObject<CatalogData>(json);
 
             if (catalogData == null || catalogData.items == null)
-            {
-                CoreLogger.Instance.LogError("JsonItemCatalogLoader: Failed to parse catalog JSON.");
-                return;
-            }
+                throw new InvalidDataException("JsonItemCatalogLoader: el catalogo no tiene lista de items: " + path);
 
+            List<string> errors = new List<string>();
             int loadedCount = 0;
 
-            foreach (ItemData itemData in catalogData.items)
+            for (int i = 0; i < catalogData.items.Count; i++)
             {
-                if (string.IsNullOrEmpty(itemData.name))
+                ItemData itemData = catalogData.items[i];
+                if (itemData == null || string.IsNullOrEmpty(itemData.name))
                 {
-                    CoreLogger.Instance.LogWarning("JsonItemCatalogLoader: Skipping item with empty name.");
+                    errors.Add("item n.º " + i + ": sin nombre");
                     continue;
                 }
 
-                ItemEntity prototype = CreatePrototype(itemData);
+                ItemEntity prototype = CreatePrototype(itemData, errors);
 
                 if (prototype == null)
                 {
@@ -57,11 +62,15 @@ namespace Core.Item
                 loadedCount++;
             }
 
+            if (errors.Count > 0)
+                throw new InvalidDataException("JsonItemCatalogLoader: el catalogo tiene " + errors.Count +
+                                               " errores (" + path + "):\n- " + string.Join("\n- ", errors));
+
             _typeIdMapper.Save();
-            CoreLogger.Instance.Log("JsonItemCatalogLoader: Loaded " + loadedCount + " items.");
+            CoreLogger.Instance.Log("JsonItemCatalogLoader: cargados " + loadedCount + " items.");
         }
 
-        private ItemEntity CreatePrototype(ItemData itemData)
+        private ItemEntity CreatePrototype(ItemData itemData, List<string> errors)
         {
             int typeId = _typeIdMapper.GetOrAssignId(itemData.name);
             ItemEntity prototype = new ItemEntity(IdGenerator.GenerateNewId());
@@ -72,7 +81,7 @@ namespace Core.Item
             {
                 foreach (ComponentData compData in itemData.components)
                 {
-                    IComponent component = CreateComponent(compData);
+                    IComponent component = CreateComponent(itemData.name, compData, errors);
                     if (component != null)
                     {
                         prototype.AddComponent(component);
@@ -98,7 +107,7 @@ namespace Core.Item
 
             if (!hasBaseItem)
             {
-                CoreLogger.Instance.LogWarning("JsonItemCatalogLoader: Item '" + itemData.name + "' has no BaseItemComponent. Skipping.");
+                errors.Add("'" + itemData.name + "': no tiene componente BaseItem");
                 return null;
             }
 
@@ -134,19 +143,19 @@ namespace Core.Item
             }
         }
 
-        private IComponent CreateComponent(ComponentData data)
+        private IComponent CreateComponent(string itemName, ComponentData data, List<string> errors)
         {
-            IComponent instance = ItemComponentRegistry.Create(data.type);
+            IComponent instance = data == null ? null : ItemComponentRegistry.Create(data.type);
 
             if (instance == null)
             {
-                CoreLogger.Instance.LogWarning("JsonItemCatalogLoader: Unknown component type '" + data.type + "'. Skipping.");
+                errors.Add("'" + itemName + "': tipo de componente desconocido '" + data?.type + "'");
                 return null;
             }
 
             if (data.values == null || data.values.Count == 0)
             {
-                CoreLogger.Instance.LogWarning("JsonItemCatalogLoader: Component '" + data.type + "' has no values. Skipping.");
+                errors.Add("'" + itemName + "': el componente '" + data.type + "' no tiene valores");
                 return null;
             }
 

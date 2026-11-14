@@ -209,7 +209,7 @@ namespace Core.Inventory
         /// en una hoja nueva: envolverlo dejaba su contenido fuera del arbol, y lo que no cuelga
         /// del arbol no pesa — una mochila pesaba distinto puesta que guardada.
         ///
-        /// <para>Interno y no privado porque <see cref="ItemWeight"/> hace la misma pregunta:
+        /// <para>Interno y no privado porque <see cref="WeightCalculator"/> hace la misma pregunta:
         /// que un item "es un contenedor" tiene que decidirse en un solo sitio.</para>
         /// </summary>
         internal static InventoryObject ContainerOf(ItemEntity item)
@@ -309,7 +309,7 @@ namespace Core.Inventory
         public int FitByWeight(ItemEntity item, int amount, InventoryObject source = null)
         {
             // Con su contenido: una mochila llena no entra por lo que pesa vacia.
-            float unit = ItemWeight.Of(item);
+            float unit = WeightCalculator.Of(item);
             if (unit <= 0) return amount;   // sin peso no hay limite que aplicar
 
             float free = FreeWeight(source);
@@ -353,14 +353,14 @@ namespace Core.Inventory
         /// SpawnIntoHand no es de nadie y no limita nada.</para>
         ///
         /// <para>El techo es el de transferencia, no el de la barra: un cuerpo no frena
-        /// (ver CarryCapacity.GetTransferLimit). En la cadena solo limitan los contenedores.</para>
+        /// (ver CarryCapacityCalculator.GetTransferLimit). En la cadena solo limitan los contenedores.</para>
         /// </summary>
         /// <param name="source">Inventario del que sale lo que se va a mover, o null si viene de
         /// fuera del arbol: el equipo, el catalogo, el mundo.</param>
         public float OwnFreeWeight(InventoryObject source = null)
             => _holder == null || (source != null && WrapsOrIs(source))
                 ? float.MaxValue
-                : CarryCapacity.GetTransferLimit(_holder) - GetTotalWeight();
+                : CarryCapacityCalculator.GetTransferLimit(_holder) - GetTotalWeight();
 
         /// <summary>
         /// Kilos que admite de verdad: el minimo de toda la cadena.
@@ -866,10 +866,10 @@ namespace Core.Inventory
 
             foreach (IInventoryElement elem in _inventory)
             { 
-                // Un contenedor hijo pesa lo que ItemWeight dice de el —su peso y su
+                // Un contenedor hijo pesa lo que WeightCalculator dice de el —su peso y su
                 // contenido—, que es la misma cifra con la que se le dejo entrar.
                 total += elem is InventoryObject container && container.GetItemEntity() != null
-                    ? ItemWeight.Of(container.GetItemEntity())
+                    ? WeightCalculator.Of(container.GetItemEntity())
                     : elem.GetTotalWeight();
             }
 
@@ -896,11 +896,11 @@ namespace Core.Inventory
             AC.CheckNotNull(other, "other");
             if (!(other is InventoryObject otherInv)) return false;
 
-            bool generalCheck = this._id.Equals(other.GetTypeId())
-                             && this.IsLeaf() == other.IsLeaf()
-                             && (this._item == null) == (otherInv._item == null);
+            bool generalCheck = _id.Equals(other.GetTypeId())
+                             && IsLeaf() == other.IsLeaf()
+                             && (_item == null) == (otherInv._item == null);
             if (!generalCheck) return false;
-            if (this._inventory.Count != otherInv._inventory.Count) return false;
+            if (_inventory.Count != otherInv._inventory.Count) return false;
 
             List<IInventoryElement> remaining = new List<IInventoryElement>(otherInv._inventory);
             foreach (IInventoryElement elem in _inventory)
@@ -926,9 +926,9 @@ namespace Core.Inventory
         {
             // Parent se queda en null a proposito: el clon es un arbol desprendido, y heredar
             // el padre del original lo haria pesar sobre un inventario al que no pertenece.
-            InventoryObject clone = this._item != null
-                ? new InventoryObject(this._item)
-                : new InventoryObject(this._holder);
+            InventoryObject clone = _item != null
+                ? new InventoryObject(_item)
+                : new InventoryObject(_holder);
 
             // Un solo recorrido por la LISTA, consultando la rejilla para saber si cada hijo
             // ocupa celdas. Recorrer la rejilla y la lista por separado duplicaba lo que

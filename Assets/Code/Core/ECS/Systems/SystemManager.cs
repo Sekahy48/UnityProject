@@ -1,100 +1,106 @@
 using System.Collections.Generic;
 using Core.Events;
+using Core.ECS;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
 {
     /// <summary>
-    /// Manages and runs the game's systems.
-    /// - Game perodic systems: run on every ClockSystem tick (affected by timeSpeed, pause, etc.)
-    /// - Game reactive systems: run reacting to concrete game events
-    /// - Engine systems: run every frame with real deltaTime (input, camera, UI)
+    /// Gestiona y ejecuta los sistemas del juego.
+    /// - Sistemas de juego periodicos: se ejecutan en cada tick de ClockSystem (les afectan la velocidad del tiempo, la pausa, etc.)
+    /// - Sistemas de juego reactivos: se ejecutan al reaccionar a eventos concretos del juego
+    /// - Sistemas del motor: se ejecutan cada fotograma con el deltaTime real (entrada, camara, interfaz)
     /// </summary>
     public class SystemManager
     {
-        private readonly ClockSystem clock = ClockSystem.GetInstance();
-        private readonly EntityManager entityManager;
+        private readonly ClockSystem _clock = ClockSystem.GetInstance();
+        private readonly EntityManager _entityManager;
 
-        private readonly List<IPeriodicSystem> gamePeriodicSystems = new();
-        private readonly List<IPeriodicSystem> engineSystems = new();
-        private readonly List<IReactiveSystem> gameReactiveSystems = new();
+        private readonly List<IPeriodicSystem> _gamePeriodicSystems = new();
+        private readonly List<IPeriodicSystem> _engineSystems = new();
+        private readonly List<IReactiveSystem> _gameReactiveSystems = new();
 
-        private int pendingTicks = 0;
+        private int _pendingTicks = 0;
 
         public SystemManager(EntityManager entityManager)
         {
-            this.entityManager = entityManager;
-            clock.Attach(new TickCounter(this));
+            AC.CheckNotNull(entityManager, nameof(entityManager));
+            _entityManager = entityManager;
+            _clock.Attach(new TickCounter(this));
         }
 
         public SystemManager RegisterPeriodicGameSystem(IPeriodicSystem system)
         {
-            gamePeriodicSystems.Add(system);
+            AC.CheckNotNull(system, nameof(system));
+            _gamePeriodicSystems.Add(system);
             return this;
         }
 
         public SystemManager RegisterEngineSystem(IPeriodicSystem system)
         {
-            engineSystems.Add(system);
+            AC.CheckNotNull(system, nameof(system));
+            _engineSystems.Add(system);
             return this;
         }
 
         public SystemManager RegisterReactiveGameSystem(IReactiveSystem system)
         {
-            gameReactiveSystems.Add(system);
+            AC.CheckNotNull(system, nameof(system));
+            _gameReactiveSystems.Add(system);
             foreach (GameEventType type in system.SubscribedEvents)
                 EventBus.GetInstance().Subscribe(type, system);
             return this;
         }
 
         /// <summary>
-        /// Call every frame from GameMain.Update().
+        /// Se llama cada fotograma desde GameMain.Update().
         /// </summary>
         public void Update(float deltaTime)
         {
-            // Engine systems run every frame with real deltaTime
-            foreach (var system in engineSystems)
-                system.Process(deltaTime, entityManager);
+            // Los sistemas del motor se ejecutan cada fotograma con el deltaTime real
+            foreach (var system in _engineSystems)
+                system.Process(deltaTime, _entityManager);
 
-            // ClockSystem accumulates time and generates ticks
-            clock.Update(deltaTime);
+            // ClockSystem acumula tiempo y genera ticks
+            _clock.Update(deltaTime);
 
-            // Game systems run once per accumulated tick
-            float tickTime = clock.GetTickTime();
-            while (pendingTicks > 0)
+            // Los sistemas de juego se ejecutan una vez por cada tick acumulado
+            float tickTime = _clock.GetTickTime();
+            while (_pendingTicks > 0)
             {
-                pendingTicks--;
-                foreach (var system in gamePeriodicSystems)
-                    system.Process(tickTime, entityManager);
+                _pendingTicks--;
+                foreach (var system in _gamePeriodicSystems)
+                    system.Process(tickTime, _entityManager);
             }
         }
 
         /// <summary>
-        /// Gets a registered system by type. Useful for connecting observers.
+        /// Devuelve un sistema registrado por su tipo. Util para conectar observadores.
         /// </summary>
         public T GetPeriodicSystem<T>() where T : class, IPeriodicSystem
         {
-            foreach (var system in gamePeriodicSystems)
+            foreach (var system in _gamePeriodicSystems)
                 if (system is T typed) return typed;
-            foreach (var system in engineSystems)
+            foreach (var system in _engineSystems)
                 if (system is T typed) return typed;
             return null;
         }
 
         public T GetReactiveSystem<T>() where T : class, IReactiveSystem
         {
-            foreach (var system in gameReactiveSystems)
+            foreach (var system in _gameReactiveSystems)
                 if (system is T typed) return typed;
             return null;
         }
 
         /// <summary>
-        /// Internal adapter to count ClockSystem ticks via observer.
+        /// Adaptador interno que cuenta los ticks de ClockSystem como observador.
         /// </summary>
         private class TickCounter : Observer.IObserver
         {
-            private readonly SystemManager owner;
-            public TickCounter(SystemManager owner) { this.owner = owner; }
-            public void Update() { owner.pendingTicks++; }
+            private readonly SystemManager _owner;
+            public TickCounter(SystemManager owner) { _owner = owner; }
+            public void Update() { _owner._pendingTicks++; }
         }
     }
 }

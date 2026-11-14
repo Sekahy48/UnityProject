@@ -13,6 +13,7 @@ using Core.MVC.Presenter;
 using Core.Observer;
 using Core.Services;
 using NUnit.Framework;
+using Core.ECS;
 
 namespace Core.Tests
 {
@@ -29,7 +30,7 @@ namespace Core.Tests
         /// <summary>Linker que no hace nada: en los tests no hay GameObjects que enlazar.</summary>
         private sealed class NullLinker : IEntityLinker
         {
-            public void Link(IEntity entity, EntityType entityType) { }
+            public void Link(IEntity entity, EntityType entityType, IEntity origin = null) { }
             public void Unlink(IEntity entity) { }
         }
 
@@ -106,7 +107,7 @@ namespace Core.Tests
         public void Al_recoger_si_faltan_hueco_y_peso_el_motivo_es_el_peso()
         {
             // El inventario del actor es un contenedor de 1 celda y 1 kg. Contenedor y no cuerpo a
-            // proposito: un cuerpo no frena por peso (CarryCapacity.GetTransferLimit), asi que
+            // proposito: un cuerpo no frena por peso (CarryCapacityCalculator.GetTransferLimit), asi que
             // este caso solo existe con un actor sin cuerpo.
             InGameEntity actor = ActorAtOrigin();
             actor.AddComponent(new InventoryComponent(TestItems.InventoryOf(TestItems.Container(1, 1, maxWeight: 1f))));
@@ -225,6 +226,38 @@ namespace Core.Tests
 
             Assert.AreEqual(0, _service.CountPickable(actor, pile));
             Assert.AreEqual(5, _service.PickUp(actor, pile));
+        }
+
+        [Test]
+        public void Coger_parte_de_un_monton_avisa_de_que_su_peso_cambio()
+        {
+            ItemEntity apple = TestItems.Apple();
+            IEntity pile = PileOf(new SubLot(apple, 5));
+            WeightLog log = new WeightLog();
+            EventBus.GetInstance().Subscribe(GameEventType.WeightChanged, log);
+
+            _world.TakeFromLot(pile, apple, 2);
+
+            CollectionAssert.Contains(log.Entities, pile);
+        }
+
+        [Test]
+        public void Vaciar_un_monton_no_avisa_de_peso_porque_ya_no_existe()
+        {
+            ItemEntity apple = TestItems.Apple();
+            IEntity pile = PileOf(new SubLot(apple, 5));
+            WeightLog log = new WeightLog();
+            EventBus.GetInstance().Subscribe(GameEventType.WeightChanged, log);
+
+            _world.TakeFromLot(pile, apple, 5);
+
+            CollectionAssert.DoesNotContain(log.Entities, pile);
+        }
+
+        private sealed class WeightLog : IEventObserver
+        {
+            public readonly List<IEntity> Entities = new List<IEntity>();
+            public void UpdateOnEvent(GameEvent gameEvent) => Entities.Add(gameEvent.GetEntity());
         }
     }
 }

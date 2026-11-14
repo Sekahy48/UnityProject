@@ -15,17 +15,17 @@ namespace Core.MVC.View.UI.World
         /// gris. La misma clase que una porcion del radial, para que marca y menu no puedan
         /// contar cosas distintas.
         /// </summary>
-        public RadialOption Option;
+        public RadialOption Option { get; set; }
 
         /// <summary>Sobre que se hace ("Manzana x5"). Vacio si no hay nada que decir.</summary>
-        public string TargetLabel;
+        public string TargetLabel { get; set; }
 
         /// <summary>
         /// Hay mas acciones que la de la pulsacion corta: la vista avisa de que manteniendo
         /// hay mas. Se muestra aunque el menu radial aun no exista, para que el aviso no
         /// cambie de forma el dia que llegue.
         /// </summary>
-        public bool HasMoreActions;
+        public bool HasMoreActions { get; set; }
 
         public bool SameAs(WorldPromptData other)
             => other != null

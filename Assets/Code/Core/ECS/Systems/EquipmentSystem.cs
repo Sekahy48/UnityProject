@@ -9,12 +9,8 @@ namespace Core.ECS.Systems
 {
     public class EquipmentSystem : IReactiveSystem
     {
-        private static readonly GameEventType[] _subscribedEvents =
-        {
-            /*Emtpy for the moment*/
-        };
-
-        public IEnumerable<GameEventType> SubscribedEvents => _subscribedEvents;
+        // Vacio de momento: no escucha ningun aviso
+        public IEnumerable<GameEventType> SubscribedEvents { get; } = Array.Empty<GameEventType>();
 
         public EquipResult TryEquip(IEntity entity, ItemEntity item, List<EquipmentSlotType> slots, bool announce = true)
         {
@@ -26,7 +22,11 @@ namespace Core.ECS.Systems
 
             EquipResult result = equipmentComponent.EquipItem(slots, item, wearableComponent.FullOcupancy);
 
-            if (result == EquipResult.SuccessEquip && announce) EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, entity, equipmentComponent));
+            if (result == EquipResult.SuccessEquip && announce)
+            {
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, entity, equipmentComponent));
+                EventBus.GetInstance().Post(new GameEvent(GameEventType.WeightChanged, entity, equipmentComponent));
+            }
 
             return result; 
         }
@@ -39,6 +39,7 @@ namespace Core.ECS.Systems
             foreach (EquipmentSlotType slotType in slotTypes)
                 equipmentComponent.UnequipItem(item, slotType); 
             EventBus.GetInstance().Post(new GameEvent(GameEventType.EquipmentChanged, entity, equipmentComponent));
+            EventBus.GetInstance().Post(new GameEvent(GameEventType.WeightChanged, entity, equipmentComponent));
             CoreLogger.Instance.Log(EquipResult.SuccessUnequip.GetMessage());
 
             return EquipResult.SuccessUnequip;

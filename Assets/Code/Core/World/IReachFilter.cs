@@ -1,6 +1,6 @@
 using Core.ECS.Entity;
 
-namespace Core
+namespace Core.World
 {
     /// <summary>
     /// Condicion de alcance que Core no puede comprobar por si mismo: si hay algo entre los

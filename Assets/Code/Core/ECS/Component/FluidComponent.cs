@@ -5,123 +5,123 @@ namespace Core.ECS.Component
 {
     public class FluidComponent : BasicComponent, IJsonLoadable, INumericFields
     {
-        private Dictionary<ResourceType, float> fluids;
-        private float maxCapacity;
+        private Dictionary<ResourceType, float> _fluids;
+        private float _maxCapacity;
 
         public FluidComponent()
         {
-            this.fluids = new Dictionary<ResourceType, float>();
+            _fluids = new Dictionary<ResourceType, float>();
         }
 
         public FluidComponent(float maxCapacity)
         {
-            this.fluids = new Dictionary<ResourceType, float>();
-            this.maxCapacity = maxCapacity;
-            this._name = "FluidComponent";
+            _fluids = new Dictionary<ResourceType, float>();
+            _maxCapacity = maxCapacity;
+            Name = "FluidComponent";
         }
 
-        // Add fluid to the component
+        // Anade fluido al componente
         public float AddFluid(ResourceType fluid, float amount)
         {
-            float left = this.GetSpaceLeft();
+            float left = GetSpaceLeft();
 
             if (left <= 0)
                 return -1;
 
             float toAdd = Math.Min(amount, left);
 
-            if (fluids.ContainsKey(fluid))
-                fluids[fluid] += toAdd;
+            if (_fluids.ContainsKey(fluid))
+                _fluids[fluid] += toAdd;
             else
-                fluids[fluid] = toAdd;
+                _fluids[fluid] = toAdd;
 
             return amount - toAdd;
         }
 
-        // Drain fluid from the component
+        // Saca fluido del componente
         public float DrainFluid(ResourceType fluid, float amount)
         {
             float outAmount = 0;
 
-            if (fluids.ContainsKey(fluid))
+            if (_fluids.ContainsKey(fluid))
             {
-                float left = fluids[fluid];
+                float left = _fluids[fluid];
                 if (amount >= left)
                 {
-                    fluids[fluid] = 0f;
+                    _fluids[fluid] = 0f;
                     outAmount = left;
                 }
                 else
                 {
-                    fluids[fluid] = left - amount;
+                    _fluids[fluid] = left - amount;
                     outAmount = amount;
                 }
             }
             return outAmount;
         }
 
-        // Get remaining capacity
+        // Capacidad que queda libre
         public float GetSpaceLeft()
         {
             float content = 0;
-            foreach (var amount in fluids.Values)
+            foreach (var amount in _fluids.Values)
             {
                 content += amount;
             }
 
-            if (this.maxCapacity < content)
+            if (_maxCapacity < content)
             {
                 return -1;
             }
 
-            return this.maxCapacity - content;
+            return _maxCapacity - content;
         }
 
-        public void SetMaxCapacity(float value) { maxCapacity = value; }
+        public void SetMaxCapacity(float value) { _maxCapacity = value; }
 
         /// <summary>
         /// El contenido actual no se declara porque es un diccionario por tipo de fluido y
         /// no un numero suelto; si algun dia hace falta preguntarlo sera con un nombre
         /// propio, como <c>fill</c>, y decidiendo que significa.
         /// </summary>
-        private static readonly NumericFields<FluidComponent> Fields =
+        private static readonly NumericFields<FluidComponent> _fields =
             new NumericFields<FluidComponent>()
-                .Add("maxCapacity", c => c.maxCapacity, (c, v) => c.SetMaxCapacity(v));
+                .Add("maxCapacity", c => c._maxCapacity, (c, v) => c.SetMaxCapacity(v));
 
         public bool TryGetNumericValue(string field, out float value)
-            => Fields.TryGet(this, field, out value);
+            => _fields.TryGet(this, field, out value);
 
         public void SetFromValues(Dictionary<string, object> values)
         {
-            Fields.Apply(this, values);
+            _fields.Apply(this, values);
         }
 
         public override IComponent Clone()
         {
-            FluidComponent copy = new FluidComponent(this.maxCapacity);
+            FluidComponent copy = new FluidComponent(_maxCapacity);
 
-            // Deep copy of the fluid map
-            foreach (var entry in this.fluids)
+            // Copia profunda del mapa de fluidos
+            foreach (var entry in _fluids)
             {
-                copy.fluids[entry.Key] = entry.Value;
+                copy._fluids[entry.Key] = entry.Value;
             }
 
             return copy;
         }
 
         /// <summary>
-        /// Determines if this component has the exact same fluid content as another
-        /// fluid component, regardless of the order of the fluids.  
+        /// Si este componente tiene exactamente el mismo contenido que otro componente de
+        /// fluido, sin importar el orden de los fluidos.
         /// </summary>
-        /// <param name="other"> Another fluid component to compare with.</param>
-        /// <returns>True if both components have the same fluid content, false otherwise.</returns>
+        /// <param name="other"> Otro componente de fluido con el que comparar.</param>
+        /// <returns>True si los dos tienen el mismo contenido, false si no.</returns>
         public Boolean SameContent(FluidComponent other)
         {
-            if (this.fluids.Count != other.fluids.Count) return false;
+            if (_fluids.Count != other._fluids.Count) return false;
 
-            foreach (KeyValuePair<ResourceType, float> entry in this.fluids)
+            foreach (KeyValuePair<ResourceType, float> entry in _fluids)
             {
-                if (!other.fluids.TryGetValue(entry.Key, out float otherValue))
+                if (!other._fluids.TryGetValue(entry.Key, out float otherValue))
                     return false;
                 if (Math.Abs(otherValue - entry.Value) > 0.001f)
                     return false;
@@ -130,20 +130,20 @@ namespace Core.ECS.Component
         }
 
         /// <summary>
-        /// Determines if this component contains, at least, the same
-        /// fluid content as another fluid component, understanding "at least" as having 
-        /// the same or more amount of each fluid type present in the other component, 
-        /// regardless of the order of the fluids.
+        /// Si este componente contiene, como minimo, el mismo contenido que otro componente de
+        /// fluido: la misma cantidad o mas de cada tipo de fluido presente en el otro,
+        /// sin importar el orden de los fluidos.
+        ///
         /// </summary>
-        /// <param name="other"> Another fluid component to compare with.</param>
-        /// <returns>True if this component contains at least the same fluid content as the other, false otherwise.</returns>
+        /// <param name="other"> Otro componente de fluido con el que comparar.</param>
+        /// <returns>True si este contiene al menos el contenido del otro, false si no.</returns>
         public Boolean ContainsAtLeast(FluidComponent other)
         {
-            if (this.fluids.Count != other.fluids.Count) return false;
+            if (_fluids.Count != other._fluids.Count) return false;
 
-            foreach (KeyValuePair<ResourceType, float> entry in this.fluids)
+            foreach (KeyValuePair<ResourceType, float> entry in _fluids)
             {
-                if (!other.fluids.TryGetValue(entry.Key, out float otherValue))
+                if (!other._fluids.TryGetValue(entry.Key, out float otherValue))
                     return false;
                 if (otherValue - entry.Value > 0.0f)
                     return false;
@@ -155,8 +155,8 @@ namespace Core.ECS.Component
         {
             return 
                 other is FluidComponent otherFluid &&
-                this.maxCapacity == otherFluid.maxCapacity &&
-                this.SameContent(otherFluid);
+                _maxCapacity == otherFluid._maxCapacity &&
+                SameContent(otherFluid);
 
         }
     }

@@ -82,7 +82,8 @@ estimación por bloque si la recuerda.
 - **Pendiente que deja:** identificar mecánicas con el método acordado; roadmap mk1.
 
 ### 2026-11-11 — Catálogo de mecánicas, revisión 2
-- **Horas:** ~1 h hasta la revisión 2 (estimación de Sergio); la sesión sigue
+- **Horas:** ~3 h 30 min (estimación de Sergio): ~2 h 30 min hasta el cierre de la Fase 1 en
+  `main` y ~1 h más definiendo la Fase 1.5 (ya entrada la madrugada del 12)
 - **Con:** Sergio + Claude
 - **Fase / hito:** planificación (entre la Fase 1 y la siguiente)
 - **Hecho:** Sergio revisa el borrador del catálogo y responde a sus preguntas; Claude rehace
@@ -98,6 +99,75 @@ estimación por bloque si la recuerda.
   la plantilla de documento de diseño que pasó David: útiles para la memoria y para presentar,
   en espera para el desarrollo. `CLAUDE.md` apunta ya a los hitos de la fase en curso y recoge
   el modo socrático. `FASE1_HITOS.md`: fase terminada.
-- **Pendiente que deja:** reunión del jueves 12; hitos de la Fase 1.5 en modo socrático;
+- **Fase 1.5:** PR #2 fusiona la Fase 1 en `main`; rama `fase1.5`. Definida en modo
+  socrático en `Assets/Code/FASE1_5_HITOS.md`: soltar con física (todo cae y rueda, masa =
+  peso, el jugador se mueve por física y lleva su carga), guardado por entidades con ids y
+  contrato `ISaveComponent` al estilo del catálogo, JSON, autoguardado rotativo, sin migración
+  de versiones hasta tener una estable. Lanzar objetos, aplazado.
+- **Pendiente que deja:** reunión del jueves 12; propuesta cerrada de hitos de la Fase 1.5;
   investigación del agua antes de la Fase 2. Decidido: el desgarro es un corte con la marca «irregular» (en la interfaz se
   ve como desgarro); guardar y cargar partida entra como N.
+
+### 2026-11-12 — Segunda reunión con David y replanificación
+- **Horas:** reunión ~45 min (10:00–10:45); mañana, replanificación con Claude sin dato;
+  tarde, 3 h (M1 y comienzo de M2)
+- **Con:** Sergio y David; después Sergio + Claude
+- **Fase / hito:** planificación
+- **Hecho (reunión):** Stack&Go y Fuero le parecen bien. Stack&Go: herramienta común; como la
+  base fue de Ingeniería del Software, quizá no proceda en la solución (Sergio quiere
+  delimitar lo hecho para Artisan; a acordar). Fuero: se puede presentar como módulo aunque no
+  se conecte, con el visor de BISI. Viendo solo la fisiología, David vuelve a temer por el
+  alcance: pide identificar el tronco y centrarse en él, y tener la fisiología antes que el
+  resto. Soltar con física: bien, es poco trabajo. Guardar partida: no perder tiempo; una
+  vertical slice se enseña con un escenario preparado.
+- **Hecho (replanificación):** `ROADMAP.md` mk2: fisiología entera en la Fase 2, ordenada por
+  capas (tronco, capa 1, capa 2) y probada con menú de depuración y escenarios; Fase 1.5 solo
+  mundo físico; guardado aplazado a después del TFG (diseño conservado en `FASE1_5_HITOS.md`);
+  líneas de corte defensivas (mínimo: 1.5 + Fase 2 hasta la capa 1).
+- **Hecho después (misma sesión):** decisiones 25–32 de la Fase 1.5 e hitos M1–M6 en
+  `FASE1_5_HITOS.md`; Sergio empieza M1 (Rigidbody en la cámara, `GetSpeed` con el correr).
+  Claude: estándares de código (`Docs/ESTANDARES_CODIGO.md`) y limpieza de todo el repositorio
+  (campos privados a `_camelCase`, propiedades, `this.`, comentarios al español, erratas); Core
+  compilado y 56 tests en verde fuera de Unity.
+- **Hecho por la tarde (3 h):** **M1 cerrado** (Sergio lo escribe, con guía): velocidad al
+  Rigidbody con rapidez y dirección separadas, material sin rozamiento al moverse y agarre al
+  estar quieto, sin Apply Root Motion, cámaras FPS/TPS descolgadas del cuerpo; probado en juego
+  (decisiones 33–37). Limpieza compilada en Unity. **M2 diseñado** (decisiones 38–43) y
+  empezado: Sergio, `origin` en `IEntityLinker.Link`; Claude, `WeightCalculator.Of(IEntity)` y
+  aviso `WeightChanged` con tests (64 en verde), norma de sufijos de género, 7 renombres y
+  7 clases movidas a su carpeta.
+- **Pendiente que deja:** M2: P2 sistema de masa (Sergio), P3 `PhysicsBodyBuilder` (Claude),
+  coger mientras rueda; compilar en Unity los renombres, movimientos y P1; commit;
+  investigación del agua.
+
+### 2026-11-13 — Fase 1.5: M2 y M3 cerrados
+- **Horas:** 4 h
+- **Con:** Sergio + Claude
+- **Fase / hito:** Fase 1.5 · M2, M3 (y M4 antiguo desestimado)
+- **Hecho:** **M2 cerrado:** `MassSyncSystem` (Sergio), `PhysicsBodyBuilder` (Claude), masa
+  inicial al enlazar y estado inicial publicado al arrancar; detección Continuous porque las
+  manzanas atravesaban el suelo plano. Encontrado y arreglado un fallo de la limpieza del día
+  anterior: el constructor de `EntityId` se asignaba a sí mismo y todas las entidades tenían
+  id 0 (lo soltado aparecía donde se soltó lo primero). **M3 cerrado:** soltar desde el centro
+  del jugador con impulso según la masa e ignorándolo hasta separarse (`DropperGrace`,
+  decisión 45, sustituye a 2 y 25). **Antiguo M4 desestimado** al probar (no hay problema con
+  objetos pequeños bajo los pies); los hitos siguientes corren un número. Normas nuevas:
+  `SubscribedEvents` uniforme y qué hacer con null (primera tanda aplicada; el catálogo lanza
+  al cargar). La conexión con el ordenador falló buena parte de la tarde.
+- **Commits:** 9532237 (M2), 43dfdab (M3).
+- **Pendiente que deja:** M4 (lo que se sale del mundo vuelve, con el arreglo de
+  `TransformSyncSystem` para Rigidbody) y M5 (cierre); segunda tanda de la norma de null;
+  peso de la Mochila como texto con coma en el catálogo; investigación del agua.
+
+### 2026-11-14 — Fase 1.5 terminada
+- **Horas:** 1 h
+- **Con:** Sergio + Claude
+- **Fase / hito:** Fase 1.5 · M4, M5
+- **Hecho:** **M4 cerrado:** `OutOfWorldRecoverySystem` (Unity) devuelve al mundo lo que baja de
+  un límite intercambiable (`IWorldLimit`, hoy Y < −20): encima del suelo en su misma X y Z, o al
+  último sitio seguro (objeto dormido; cuerpo que anda, pisando suelo). `TransformSyncSystem`
+  mueve el Rigidbody cuando el Core cambia la posición. **M5:** criterios del `ROADMAP`
+  repasados y cumplidos; 66 tests en verde. **Fase 1.5 terminada** en 4 días (estimado: 1–2
+  semanas).
+- **Commits:** pendiente.
+- **Pendiente que deja:** fusionar `fase1.5` en `main`; Fase 2 (antes, investigación del agua).

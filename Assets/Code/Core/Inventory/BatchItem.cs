@@ -7,24 +7,24 @@ using AC = Core.Utils.ArgumentChecker;
 namespace Core.Inventory
 {
     /// <summary>
-    /// Groups items of the same typeId into sub-lots differentiated by state (durability, condition, etc.).
-    /// Each sub-lot is a pair (ItemEntity, amount). Items within the same sub-lot are Equivalent.
-    /// Total amount across all sub-lots cannot exceed maxStackSize.
+    /// Agrupa items del mismo typeId en sublotes que se distinguen por su estado (durabilidad, condicion, etc.).
+    /// Cada sublote es un par (ItemEntity, cantidad). Los items de un mismo sublote son Equivalent.
+    /// La cantidad total de todos los sublotes no puede pasar de maxStackSize.
     ///
     /// <para>
-    /// <b>Invariant — sub-lot entities are immutable while held here.</b>
-    /// A single <see cref="ItemEntity"/> instance may be shared by several sub-lots, by several
-    /// BatchItems, and by several ItemObjects placed at different grid positions: when a lot is
-    /// split (because it exceeds maxStackSize, or because part of it is moved) the reference is
-    /// copied, not the object. Mutating an entity obtained from <see cref="GetSubLots"/> would
-    /// therefore silently alter every stack sharing it.
+    /// <b>Invariante: las entidades de los sublotes son inmutables mientras estan aqui.</b>
+    /// Una misma instancia de <see cref="ItemEntity"/> puede estar compartida por varios sublotes, varios
+    /// BatchItem y varios ItemObject en distintas posiciones de la rejilla: al partir un lote
+    /// (porque supera maxStackSize o porque se mueve una parte) se copia la referencia, no el
+    /// objeto. Modificar una entidad obtenida de <see cref="GetSubLots"/> cambiaria sin avisar
+    /// todas las pilas que la comparten.
     /// </para>
     /// <para>
-    /// To change the state of some units (wear, spoilage, enchantment...), follow copy-on-write:
-    /// clone the entity, subtract that amount from the original sub-lot, apply the change to the
-    /// clone, and add it back as a new sub-lot. Since the clone is no longer
-    /// <c>Equivalent</c> to the original it will land in its own sub-lot, which is exactly the
-    /// distinction sub-lots exist to represent.
+    /// Para cambiar el estado de unas unidades (desgaste, que se estropeen, un encantamiento...), copiar al escribir:
+    /// clonar la entidad, restar esa cantidad del sublote original, aplicar el cambio al
+    /// clon y anadirlo como sublote nuevo. Como el clon ya no es
+    /// <c>Equivalent</c> al original, acaba en su propio sublote, que es justo la
+    /// distincion que los sublotes existen para representar.
     /// </para>
     /// </summary>
     public class BatchItem
@@ -48,20 +48,20 @@ namespace Core.Inventory
             _random = new Random();
         }
 
-        //#region Getters
+        // #region Lecturas
 
         /// <summary>
-        /// TypeId shared by all items in this batch.
+        /// TypeId comun a todos los items de esta pila.
         /// </summary>
         public int GetTypeId() => _typeId;
 
         /// <summary>
-        /// Maximum total amount this batch can hold across all sub-lots.
+        /// Cantidad total maxima que admite la pila sumando todos los sublotes.
         /// </summary>
         public int GetMaxStackSize() => _maxStackSize;
 
         /// <summary>
-        /// Sum of amounts across all sub-lots.
+        /// Suma de las cantidades de todos los sublotes.
         /// </summary>
         public int GetTotalAmount()
         {
@@ -74,7 +74,7 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Sum of (weight * amount) across all sub-lots.
+        /// Suma de (peso * cantidad) de todos los sublotes.
         /// </summary>
         public float GetTotalWeight()
         {
@@ -87,27 +87,27 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Whether the batch has no sub-lots (all items consumed).
+        /// Si la pila no tiene sublotes (se consumio todo).
         /// </summary>
         public bool IsEmpty() => _items.Count == 0;
 
         /// <summary>
-        /// Returns a copy of the sub-lot list for inspection.
+        /// Devuelve una copia de la lista de sublotes para consultarla.
         /// </summary>
         public List<SubLot> GetSubLots() => new List<SubLot>(_items);
 
-        //#endregion
+        // #endregion
 
-        //#region Add
+        // #region Anadir
 
         /// <summary>
-        /// Adds a certain amount of an item if it matches the batch typeId.
-        /// If the item is Equivalent to an existing sub-lot, merges into it.
-        /// Otherwise creates a new sub-lot.
+        /// Anade una cantidad de un item si coincide con el typeId de la pila.
+        /// Si el item es Equivalent a un sublote existente, se suma a el;
+        /// si no, se crea un sublote nuevo.
         /// </summary>
-        /// <param name="item">Item to add (must share this batch's typeId).</param>
-        /// <param name="amount">Number of units to add.</param>
-        /// <returns>Amount that could not be added due to maxStackSize limit.</returns>
+        /// <param name="item">Item a anadir (tiene que compartir el typeId de la pila).</param>
+        /// <param name="amount">Unidades a anadir.</param>
+        /// <returns>Cantidad que no se pudo anadir por el limite de maxStackSize.</returns>
         public int AddAmount(ItemEntity item, int amount)
         {
             if (item.GetComponent<BaseItemComponent>().TypeId != _typeId) return amount;
@@ -123,14 +123,14 @@ namespace Core.Inventory
             return remaining;
         }
 
-        //#endregion
+        // #endregion
 
-        //#region Consume
+        // #region Consumir
 
         /// <summary>
-        /// Consumes 1 unit from a random sub-lot.
+        /// Consume 1 unidad de un sublote al azar.
         /// </summary>
-        /// <returns>The consumed ItemEntity, or null if the batch is empty.</returns>
+        /// <returns>La ItemEntity consumida, o null si la pila esta vacia.</returns>
         public ItemEntity ConsumeRandom()
         {
             if (_items.Count == 0) return null;
@@ -142,10 +142,10 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Consumes N units randomly across sub-lots. Returns what was consumed grouped by sub-lot.
+        /// Consume N unidades al azar entre los sublotes. Devuelve lo consumido agrupado por sublote.
         /// </summary>
-        /// <param name="amount">Number of units to consume.</param>
-        /// <returns>What was consumed from each sub-lot.</returns>
+        /// <param name="amount">Unidades a consumir.</param>
+        /// <returns>Lo consumido de cada sublote.</returns>
         public List<SubLot> ConsumeRandom(int amount)
         {
             List<SubLot> consumed = new List<SubLot>();
@@ -176,11 +176,11 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Consumes up to the requested amount from the sub-lot matching the given item.
+        /// Consume como mucho la cantidad pedida del sublote que coincide con el item dado.
         /// </summary>
-        /// <param name="item">Item identifying the sub-lot (matched by Equivalent).</param>
-        /// <param name="amount">Maximum units to consume.</param>
-        /// <returns>Actual amount consumed.</returns>
+        /// <param name="item">Item que identifica el sublote (se compara con Equivalent).</param>
+        /// <param name="amount">Unidades maximas a consumir.</param>
+        /// <returns>Cantidad consumida de verdad.</returns>
         public int ConsumeAmount(ItemEntity item, int amount)
         {
             int consumed = Math.Min(amount, GetBatchAmount(item));
@@ -193,7 +193,7 @@ namespace Core.Inventory
         {
             _items.Clear();
         }
-        //#endregion
+        // #endregion
 
         /// <summary>
         /// Si la pila ya guarda una variante Equivalent a ese item. Sirve para apilar primero
@@ -201,10 +201,10 @@ namespace Core.Inventory
         /// </summary>
         public bool HasVariant(ItemEntity item) => GetBatchAmount(item) > 0;
 
-        //#region Private helpers
+        // #region Ayudantes privados
 
         /// <summary>
-        /// Returns the amount stored in the sub-lot whose item is Equivalent to the given one.
+        /// Cantidad guardada en el sublote cuyo item es Equivalent al dado.
         /// </summary>
         private int GetBatchAmount(ItemEntity item)
         {
@@ -216,10 +216,10 @@ namespace Core.Inventory
         }
 
         /// <summary>
-        /// Sets the amount of the sub-lot matching the given item.
-        /// If amount reaches 0, the sub-lot is removed.
+        /// Fija la cantidad del sublote que coincide con el item dado.
+        /// Si llega a 0, el sublote se quita.
         /// </summary>
-        /// <returns>True if a matching sub-lot was found.</returns>
+        /// <returns>True si se encontro un sublote que coincide.</returns>
         private bool SetAmount(ItemEntity item, int amount)
         {
             for (int i = 0; i < _items.Count; i++)
@@ -241,6 +241,6 @@ namespace Core.Inventory
             return false;
         }
 
-        //#endregion
+        // #endregion
     }
 }

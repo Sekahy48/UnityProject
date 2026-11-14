@@ -7,6 +7,7 @@ using Core.ECS.Entity;
 using Core.ECS.Systems;
 using Core.Inventory;
 using Core.Item;
+using Core.World;
 
 namespace Core.Factories
 {
@@ -42,8 +43,8 @@ namespace Core.Factories
             e.AddComponent(new GroundLotComponent());
 
             // Posicion y volumen de partida: la misma presencia en el mundo que un item
-            // suelto, de un solo sitio (WorldPresence).
-            WorldPresence.AddTo(e);
+            // suelto, de un solo sitio (WorldPresenceRules).
+            WorldPresenceRules.AddTo(e);
 
             return e;
         }

@@ -28,7 +28,7 @@ namespace Core.Item
             public Func<IComponent> Factory;
         }
 
-        private static readonly Dictionary<string, Entry> Entries = new Dictionary<string, Entry>();
+        private static readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry>();
 
         static ItemComponentRegistry()
         {
@@ -52,23 +52,23 @@ namespace Core.Item
         /// </summary>
         private static void Register<T>(string name) where T : IComponent, new()
         {
-            Entries[name] = new Entry { Type = typeof(T), Factory = () => new T() };
+            _entries[name] = new Entry { Type = typeof(T), Factory = () => new T() };
         }
 
         public static bool Contains(string name)
-            => name != null && Entries.ContainsKey(name);
+            => name != null && _entries.ContainsKey(name);
 
         /// <summary>Crea un componente vacio de ese nombre, o null si no esta registrado.</summary>
         public static IComponent Create(string name)
-            => name != null && Entries.TryGetValue(name, out Entry entry) ? entry.Factory() : null;
+            => name != null && _entries.TryGetValue(name, out Entry entry) ? entry.Factory() : null;
 
         /// <summary>
         /// Tipo con el que pedirle ese componente a una entidad, o null si no esta
         /// registrado.
         /// </summary>
         public static Type TypeOf(string name)
-            => name != null && Entries.TryGetValue(name, out Entry entry) ? entry.Type : null;
+            => name != null && _entries.TryGetValue(name, out Entry entry) ? entry.Type : null;
 
-        public static IEnumerable<string> Names => Entries.Keys;
+        public static IEnumerable<string> Names => _entries.Keys;
     }
 }

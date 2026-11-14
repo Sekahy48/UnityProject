@@ -21,6 +21,8 @@ using MVC.View.HUD;
 using Core.ECS.Component;
 using Core.ECS.Component.Equipment;
 using Core.Inventory;
+using Core.ECS;
+using Unity.ECS.Systems;
 
 
 /// <summary>
@@ -73,6 +75,23 @@ public class GameMain : MonoBehaviour
         UIReloadNotifier.OnUIRecreated += BuildViewsAndPresenters;
         BuildServices();
         BuildViewsAndPresenters();
+
+        PublishInitialState(sessionCtx._player, systemCtx);
+    }
+
+    /// <summary>
+    /// Avisa una vez del estado de partida con el que se arranca.
+    ///
+    /// <para>Hace falta porque el jugador se crea, se enlaza y se llena ANTES de que existan
+    /// los sistemas y los presentadores: los objetos de desarrollo entran con
+    /// <c>AddItem</c> directo y nadie se entera. Sin esto, la masa del jugador se quedaria
+    /// sin su carga y la banda de carga sin calcular hasta tocar el inventario. Va al final,
+    /// cuando ya escucha todo el mundo. Cargar partida tendra el mismo problema y la misma
+    /// salida.</para>
+    /// </summary>
+    private void PublishInitialState(IEntity player, GameSystemContext systemCtx)
+    {
+        systemCtx.SystemManager.GetReactiveSystem<InventorySystem>()?.EvaluateAndFireEvents(player, false);
     }
 
     void Update()
@@ -187,10 +206,13 @@ public class GameMain : MonoBehaviour
         SystemManager systemManager = new SystemManager(entityManager);
 
         systemManager.RegisterPeriodicGameSystem(new FatigueStaminaSystem());
-        systemManager.RegisterEngineSystem(new Unity.TransformSyncSystem());
+        // Antes que TransformSyncSystem: lo recolocado llega al Core en el mismo fotograma
+        systemManager.RegisterEngineSystem(new OutOfWorldRecoverySystem(new Unity.FixedHeightWorldLimit(-20f)));
+        systemManager.RegisterEngineSystem(new TransformSyncSystem());
         systemManager.RegisterReactiveGameSystem(new MovementSystem())
                      .RegisterReactiveGameSystem(new InventorySystem())
                      .RegisterReactiveGameSystem(new EquipmentSystem())
+                     .RegisterReactiveGameSystem(new MassSyncSystem())
                      .RegisterReactiveGameSystem(new WorldInteractionSystem(entityManager, new Unity.UnityEntityLinker(),
                                                                             new Unity.LineOfSightFilter()));
 

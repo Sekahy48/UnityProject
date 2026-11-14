@@ -1,0 +1,337 @@
+# Fase 1.5 — Mundo físico
+
+Documento de hitos de la Fase 1.5. Se construye en modo socrático: Claude pregunta, Sergio
+decide, y aquí queda lo decidido con su porqué. Las mecánicas salen de `Docs/MECANICAS.md` y
+el encaje en el plan, de `Docs/ROADMAP.md`.
+
+## Dónde estamos
+
+> Esta sección existe para el relevo entre conversaciones: reescribirla al cerrar cada tarea.
+
+**Fase terminada (2026-11-14).** Rama `fase1.5`, pendiente de fusionar en `main`. La fase se
+quedó solo en el mundo físico; el guardado se aplaza a después del TFG, con su diseño conservado
+abajo.
+- **M1:** el jugador se mueve por física (33–37).
+- **M2:** lo soltado tiene cuerpo físico y masa = peso; la masa del jugador sigue a su carga
+  (38–44). `WeightCalculator`, aviso `WeightChanged`, `MassSyncSystem`, `PhysicsBodyBuilder`.
+- **M3:** se suelta desde el centro del jugador con un impulso según la masa e ignorándolo
+  hasta separarse (45, `DropperGrace`): no se puede tirar nada al otro lado de una pared.
+- **El antiguo M4** (objetos pequeños bajo los pies) se desestimó al probar (28).
+- **M4:** lo que se sale del mundo vuelve (46, `OutOfWorldRecoverySystem`, `IWorldLimit`).
+- **M5:** criterios del `ROADMAP` repasados, 66 tests del Core en verde.
+
+**Queda fuera, anotado:** guardado (después del TFG); lanzar objetos (Fase 5); norma de null,
+segunda tanda (`Docs/ESTANDARES_CODIGO.md`); peso de la Mochila como texto con coma
+(`FASE1_HITOS.md`, Future); límite del mundo calculado de la escena cuando haya varios mapas.
+
+Siguiente: **Fase 2, fisiología** (`Docs/ROADMAP.md`); antes, la investigación del agua.
+
+## Objetivo
+
+Lo que se suelta cae y rueda como un objeto real; el jugador y los objetos se empujan según
+su peso.
+
+---
+
+## Decisiones de experiencia de juego (2026-11-11)
+
+### Soltar con física
+
+1. **Todo lo que se suelta cae y rueda,** sea un ítem suelto, un montón o un contenedor (el
+   arcón incluido).
+2. ~~Sale un poco por delante del jugador… si hay algo delante, aparece pegado al jugador.~~
+   **Sustituida por la 45 (2026-11-13):** sale desde el centro del jugador con un pequeño
+   impulso hacia delante, y por eso nunca puede nacer al otro lado de una pared.
+3. **Los objetos interactúan con lo que hay alrededor:** se empujan entre sí y el jugador los
+   mueve al chocar con ellos.
+4. **Un montón cae como un solo objeto,** como es hoy en el Core. Separarlo en unidades
+   queda fuera del TFG.
+5. **Se puede coger algo mientras rueda,** con las mismas condiciones de alcance que hoy.
+
+**Lanzar objetos, aplazado (fuera de esta fase).** Interesante, pero arrastra decisiones que
+no tocan ahora: lanzar exige llevar antes el objeto en las manos (hoy tirar es una opción del
+menú contextual del inventario), distinguir objetos de una mano (una manzana) y de dos (un
+arcón), y qué pasa al impactar (un arcón lanzado contra una pared debería romperse, lo que
+toca la durabilidad). «Llevar en las manos» encaja con colocar objetos (Fase 5), así que se
+revisa entonces. Apuntado en `Docs/MECANICAS.md`.
+
+### Guardar y cargar — APLAZADO A DESPUÉS DEL TFG
+
+**Decidido el 2026-11-12, tras la reunión con David:** el guardado no entra en el TFG. Una
+vertical slice se enseña con un escenario preparado, no con partidas guardadas, y mantener el
+guardado al día con cada sistema nuevo cuesta sin aportar al objetivo. Lo de esta sección y las
+decisiones 14–24 quedan como **diseño hecho, para retomar después del TFG**. Mientras tanto,
+disciplina barata: ids de entidad estables y nada que no se pueda reconstruir.
+
+6. **Mezcla de tres formas de guardar:**
+   - **Autoguardado periódico,** con el intervalo configurable en ajustes (10 minutos por
+     defecto).
+   - **Guardado manual:** sobrescribir una partida o guardar como archivo nuevo.
+   - **Guardado al dormir.** Dormir llega en la Fase 2; esta fase deja el guardado listo para
+     que dormir lo llame.
+
+   Que solo se pueda guardar en ciertos momentos, por realismo, queda fuera del TFG.
+7. **Varias partidas:** se responde con lo anterior (guardar como archivo nuevo).
+8. **Interfaz:** en esta fase basta con guardar y cargar desde controles de depuración. El
+   menú de verdad (inicio, ranuras, ajustes) se hace cuando convenga; el sistema de guardado
+   ya admite varios archivos desde el principio para que el menú solo tenga que llamarlo.
+
+---
+
+## Decisiones de sistema (2026-11-11)
+
+### Física
+
+9. **Todo se empuja según su masa, el jugador incluido** (no hay caso especial «el jugador
+   empuja pero no es empujado»). Un solo modelo para todo: menos casos, se procesa igual.
+   **Consecuencia:** el jugador tiene que moverse por física. Hoy se mueve escribiendo
+   `transform.position` (`BaseCameraStrategy`, línea ~217) sobre un Rigidbody dinámico de masa
+   1, que es justo la causa del tirón contra las paredes visto en octubre. Pasar a moverlo por
+   el Rigidbody arregla las dos cosas.
+10. **La masa física es el peso del ítem** (el del inventario). Une inventario y física a
+    propósito. **La masa del jugador es la de su cuerpo más lo que lleva encima.**
+11. **Forma de colisión: envoltura convexa calculada del modelo 3D.** Lo redondo rueda, lo
+    cuadrado vuelca. Para el futuro, una forma elegida por ítem en Stack&Go (esfera, caja,
+    cápsula), cuando se vuelva a Stack&Go.
+12. **Al pararse, el objeto deja de simularse** hasta que algo lo toque, y **al cargar aparece
+    exactamente donde se paró,** sin volver a caer.
+13. **Si algo se sale del mundo** (atraviesa el suelo o cae por un borde), **se recoloca en el
+    punto válido más cercano.** Ni vuelve a donde se soltó ni se pierde (perderlo tiene riesgo
+    de «efecto portal»: tirar cosas a propósito para hacerlas desaparecer).
+
+### Guardado (aplazado a después del TFG; ver arriba)
+
+14. **Formato JSON legible,** con Newtonsoft (ya está en el proyecto). Binario, más adelante si
+    hace falta.
+15. **Qué se guarda: entidades con sus componentes, no una lista por funcionalidad.** El
+    jugador es una entidad: su posición, su estado, su inventario y su equipo son
+    componentes suyos. Lo mismo los objetos del mundo. Aparte, el estado que no es de ninguna
+    entidad (en la 1.5, la cámara activa; en la 2, el reloj del mundo). Así cada fase añade
+    componentes y el guardado los recoge sin cambiar de forma.
+
+16. **Cada componente declara si se guarda** con la interfaz `ISaveComponent` (ver 18). Lo que no se guarda (el enlace con el GameObject, el
+    volumen de interacción medido del modelo) se reconstruye al cargar. Un test recorre todos
+    los tipos de componente y falla si alguno no está ni marcado para guardarse ni declarado
+    como reconstruible: así no se olvida ninguno en silencio.
+17. **Identidad: cada entidad se guarda una sola vez con su id, y las relaciones van como
+    referencias a ids.** No es solo para el futuro: la mochila puesta ya se alcanza por dos
+    caminos (su slot de equipo y el árbol de inventario del jugador), y guardar el árbol anidado
+    la escribiría dos veces y al cargar habría dos mochilas. Exige ids estables guardados, que
+    al cargar el generador de ids siga por encima del mayor id cargado, y cargar en dos pasos:
+    primero se crean todas las entidades, después se resuelven las referencias entre ellas.
+18. **Contrato único `ISaveComponent` para todos los componentes que se guardan**, al estilo del
+    catálogo (`ItemComponentRegistry` + `SetFromValues`): nombre con el que viaja el
+    componente, `GetValues()` y `SetFromValues(...)`, con diccionarios de valores; el Core no
+    sabe de JSON, solo el cargador y el guardador. **Los simples** lo implementan sobre sí
+    mismos. **Los complejos** (inventario, equipo) implementan el mismo contrato pero delegan en
+    un serializador estático propio (propuesta de Sergio: así el contrato es igual para todos).
+    **Referencias entre entidades:** `SetFromValues` recibe un contexto con un buscador de
+    entidades. El cargador crea primero todas las entidades vacías (con sus ids) y después
+    rellena sus componentes, así que cualquier referencia ya se puede resolver. Un solo método
+    para todos; los simples ignoran el contexto. (Descartado: un segundo método
+    `ResolveReferences` solo para los complejos.)
+19. **Cada archivo lleva número de versión. Hasta que el juego tenga una versión estable, no se
+    migran guardados antiguos:** uno de otra versión se rechaza con un aviso. Las migraciones
+    (pasos sobre el JSON antes de leerlo) empiezan con la primera versión estable.
+20. **Guardar y cargar se lanzan desde opciones del menú de desarrollo,** no con teclas.
+21. **Al cargar, todo cerrado y la mano vacía.** No se pierde nada: la mano es una reserva y
+    lo que llevaba sigue en su origen. Por eso el autoguardado puede saltar en cualquier
+    momento, incluso arrastrando algo.
+22. **Autoguardado rotando los 3 últimos,** por si uno sale mal.
+23. **Guardados manuales con nombre automático por fecha y hora** (`partida_AAAA-MM-DD_HH-mm`)
+    mientras no haya menú.
+24. **Los guardados van a `Application.persistentDataPath`** (en Windows, dentro de `AppData`),
+    fuera del proyecto y del repositorio.
+
+### Implementación (2026-11-12)
+
+25. ~~No atravesar paredes al soltar: el Core pregunta a Unity por una interfaz.~~
+    **Sustituida por la 45:** soltando desde el centro del jugador no hace falta preguntar.
+26. **Masa del jugador con su carga: Unity la actualiza al recibir el aviso de que el inventario
+    ha cambiado** (ya existe), no en cada fotograma.
+27. **Mientras el modelo 3D carga, el objeto cae ya con la esfera provisional** y la cambia por
+    la envoltura convexa cuando llega el modelo.
+28. ~~Objetos pequeños bajo los pies: el umbral se decide al probar.~~ **Desestimada
+    (2026-11-13):** probado tras M3, andar y correr sobre manzanas, montones, la espada y el
+    arcón no hace botar ni subirse al jugador, y los objetos se empujan bien. El hito que la
+    llevaba (antiguo M4) se quita y los siguientes corren un número. Si aparece el problema, se
+    retoma.
+29. **Salirse del mundo: se busca suelo en vertical en esa misma posición horizontal; si no
+    hay, vuelve al último sitio donde estuvo quieto.**
+30. **Quién escribe cada cosa se decide al llegar a cada hito.** Lo de Core, por la regla de
+    `CLAUDE.md`, es de Sergio.
+31. **La masa de los Rigidbody la pone un sistema propio de Unity** suscrito al aviso de que
+    el peso puede haber cambiado (`WeightChanged`, ver 39; antes decía `InventoryChanged`). No
+    es «cada entidad comprueba si el aviso es suyo»: un solo sistema atiende a todas, toma la
+    entidad que viene en el aviso y, si tiene cuerpo físico en Unity, le pone `masa = peso`.
+    Vale igual para el jugador y para los objetos (un arcón del suelo al que le metes cosas).
+    Como el aviso no llega cuando algo aparece en el mundo, la masa inicial se pone también
+    al enlazar la entidad con su GameObject. Las estrategias de cámara siguen guardando el
+    GameObject del jugador y sacan de él el Rigidbody una vez; no saben nada de pesos.
+32. **El peso de cualquier entidad sale de una sola función del Core:** un ítem, `WeightCalculator.Of`
+    (con su contenido); un cuerpo, su peso más el total de su inventario (que ya incluye la
+    mochila puesta). La ropa puesta aún no pesa (decidido, sin aplicar). Es Core: la escribe
+    Sergio.
+33. **El movimiento separa rapidez y dirección** (M1, 2026-11-12). La rapidez sube con
+    `Acceleration` (8 m/s²) y baja con `Deceleration` (16 m/s²); la dirección gira hacia la de
+    las teclas a `TurnSpeed` (720 °/s) sin gastar rapidez. Motivo: con piernas se cambia de
+    dirección casi sin frenar; acercar el vector entero (`MoveTowards`) hacía perder mucha
+    velocidad en cada giro. Media vuelta sin frenar: aceptado tras probarlo; si resultara raro,
+    se añadiría un freno según lo cerrado del giro.
+34. **El jugador no tiene rozamiento con el suelo:** material físico `PlayerSinFriccion`
+    (fricción 0, combinación Minimum) en `Assets/Settings/Physics/`. El frenado lo hace el
+    código (33); con el rozamiento por defecto el suelo se comía la aceleración. Evita también
+    quedarse pegado a las paredes en el aire.
+35. **Animator del jugador sin Apply Root Motion:** con él activo, el Animator pisaba cada paso
+    de física la velocidad del Rigidbody con la de la animación (0, van en el sitio) y el
+    jugador temblaba sin avanzar.
+36. **Las cámaras de primera y tercera persona no cuelgan del cuerpo** (M1, 2026-11-12). El
+    cuerpo gira con `MoveRotation`, al ritmo de la física; si la cámara colgara de él, el ratón
+    iría a tirones. FPS: la cámara se coloca cada fotograma en la posición del jugador más la
+    altura de los ojos y aplica los dos giros directamente. TPS: sigue al jugador sin retraso y
+    solo suaviza su desplazamiento alrededor de él (la órbita del ratón); antes suavizaba
+    también el seguimiento y al caer se quedaba atrás. La dirección de W/A/S/D sale del giro
+    del ratón, no del cuerpo, que va un paso de física por detrás.
+37. **Quieto, el jugador se agarra al suelo** (M1, 2026-11-12). Sin rozamiento (34) se
+    deslizaba despacio por las rampas al pararse, y el rozamiento estático del material no
+    bastó. `HandleMovement` cambia el material del collider: sin teclas, uno de agarre total
+    (`PlayerQuieto`, creado por código, combinación Maximum); con teclas, `PlayerSinFriccion`.
+    **Límite conocido, para Fase 2:** el agarre representa estar de pie y consciente, y hoy lo
+    decide «no hay teclas». Un cuerpo desmayado o muerto en una cuesta debe poder resbalar
+    (solo en las empinadas: un cuerpo inerte sobre hierba aguanta las suaves). Cuando exista
+    el desmayo, el material saldrá del estado del cuerpo (moviéndose / de pie / inerte), no
+    de las teclas, y el movimiento por teclas quedará bloqueado mientras no pueda moverse.
+
+#### M2 (2026-11-12)
+
+38. **Una sola clase de pesos, `WeightCalculator`** (antes `ItemWeight`), en `Core/Inventory`:
+    `Of(ItemEntity)` y `Of(IEntity)` (ítem con su contenido; montón, sus lotes; cuerpo, su peso
+    más su inventario; lo demás, 0 = «no se sabe»). El mínimo que exige la física (0,01 kg) lo
+    pone Unity, no el Core. Con el renombre llegó la norma de sufijos de género para las
+    clases de utilidad (`Docs/ESTANDARES_CODIGO.md`, 1.1).
+39. **Aviso genérico `WeightChanged` = «el peso PUEDE haber cambiado».** Se publica junto a
+    `InventoryChanged` en cada nivel de la cadena (bolsa, mochila, portador), al cambiar el
+    equipo y al coger parte de un montón; en Fase 2, al cambiar el peso del cuerpo. No se
+    compara con el anterior: quien lo escucha aguanta repeticiones. Motivo: cambiar el
+    inventario no implica cambiar el peso, y hay pesos que cambian sin inventario.
+40. **La física de lo soltado la pone una clase nueva de Unity, `PhysicsBodyBuilder`,** a la
+    que llama `UnityEntityLinker` (solo para lo creado, no para el jugador). Incluye
+    `ApplyMass`, que usa también el sistema de masa: el mínimo vive en un sitio.
+41. **Esfera provisional del tamaño del volumen del arquetipo** (`InteractionVolumeComponent`).
+    Al llegar el modelo, **un collider convexo por cada malla** bajo el mismo Rigidbody: un
+    solo sólido (una tapa no se abre; eso serían dos cuerpos con bisagra, fuera de la fase).
+    Riesgo por comprobar: que glTFast deje las mallas legibles en ejecución.
+42. **Lo soltado hereda la velocidad horizontal de quien lo suelta:** soltar corriendo lo hace
+    rodar hacia delante. Para eso `IEntityLinker.Link` recibe `origin` (quien lo soltó).
+43. **Rozamiento por defecto en los objetos;** por material (madera, metal) leyendo
+    `MaterialComponent`, más adelante. **Dejar de simularse al pararse (12) = el «sueño» de los
+    Rigidbody de Unity**, sin código propio. **Interpolate** activado y detección
+    **Continuous** (2026-11-13: con Discrete, las manzanas atravesaban el suelo plano —un
+    plano sin grosor— al caer desde la mano; por una rampa no, porque llegaban rodando
+    despacio).
+44. **Masa inicial al enlazar, directa y no por aviso** (2026-11-13). `UnityEntityLinker`
+    pone `masa = peso` a todo lo que enlaza con Rigidbody (el jugador y lo creado), igual que
+    sincroniza la posición. Un aviso no serviría: el jugador se enlaza antes de que existan
+    los sistemas. Y como los objetos de desarrollo entran sin aviso, `GameMain` publica una vez
+    el estado inicial del jugador al final del arranque (`PublishInitialState`), cuando ya
+    escucha todo el mundo: masa, banda de carga e inventario.
+
+#### M3 (2026-11-13)
+
+45. **Soltar desde el centro del jugador con un pequeño impulso** (estilo Ark o Raft), en vez
+    de hacerlo aparecer delante y comprobar paredes (sustituye a 2 y 25). El centro del
+    jugador nunca está dentro de una pared, así que lo soltado nace siempre de su lado; el
+    impulso lo lleva hacia delante y, si hay pared, choca y cae a sus pies (con detección
+    Continuous no la atraviesa). Para no chocar con el propio jugador al nacer dentro de él,
+    lo soltado **ignora las colisiones con quien lo suelta durante un instante** (también los
+    colliders del modelo, que llegan después): **al menos 0,5 s y hasta que dejan de
+    solaparse** (`DropperGrace`). Con solo el tiempo, un arcón soltado contra una pared caía a
+    los pies, seguía dentro de la cápsula al reactivarse las colisiones y la física separaba a
+    los dos de golpe: el jugador pegaba un bote, peor cuanto más pesado el arcón. Precio
+    aceptado: mientras se está encima de lo recién soltado, se atraviesa. Impulso: 4 kg·m/s
+    entre la masa, con tope de 2 m/s, más la velocidad horizontal de quien lo suelta. Sin rayo
+    ni interfaz nueva en el Core.
+
+#### M4 (2026-11-14)
+
+46. **Lo que se sale del mundo lo devuelve un sistema del motor** (`OutOfWorldRecoverySystem`,
+    en Unity), no el Core: salirse es un fallo de la física y buscar suelo es geometría.
+    Cubre cualquier entidad con Rigidbody, el jugador incluido. **Fuera = por debajo de un
+    límite** detrás de una interfaz (`IWorldLimit`; hoy `FixedHeightWorldLimit`, Y < −20), para
+    cambiarlo por uno calculado de la escena cuando haya varios mapas; así se distingue caer
+    desde una torre (acaba en el suelo, por encima del límite) de atravesarlo. Recuerda el
+    último sitio seguro de cada cuerpo: un objeto, cuando Unity lo duerme; un cuerpo que anda
+    (con `BodyComponent`: jugador, NPC), **cuando pisa suelo**. Con «quieto» (la decisión 29
+    al pie de la letra), tras una carrera larga sin pararse el jugador volvía al origen; para
+    los objetos se queda «dormido», porque con «pisando suelo» uno que rueda hacia un borde
+    volvería al mismo borde. Al salirse: si hay suelo estático en su misma X y Z, encima (rayo
+    desde 2 m sobre el último sitio seguro, no desde lo alto, para no acabar en un tejado); si
+    no, al último sitio seguro. Velocidad a cero. De paso, `TransformSyncSystem` mueve el Rigidbody
+    (y lo para) cuando es el Core quien cambia la posición.
+    Límite aceptado: un objeto grande soltado pegado a una pared nace un poco dentro de ella y
+    la física lo saca, casi siempre hacia el lado del jugador. No es «lanzar» (aplazado): sin
+    puntería, sin daño, sin fuerza elegida.
+
+---
+
+## Hitos
+
+Orden pensado para que cada hito se pruebe solo y no estropee lo anterior. El jugador va
+primero: si los objetos tuvieran física mientras el jugador sigue moviéndose a base de
+escribir su posición, al tocarlos los «teletransportaría» dentro de ellos y saldrían
+disparados.
+
+### M1 — El jugador se mueve por física ✅ (2026-11-12)
+- El movimiento deja de escribir `transform.position` (`BaseCameraStrategy`) y pasa a darle
+  velocidad al Rigidbody dinámico, con interpolación para que la cámara no tiemble.
+- Revisar las pendientes y los escalones. La voltereta y el mortal son solo animaciones (no
+  hay código que mueva al jugador); sin Apply Root Motion (35) ya no desplazan el cuerpo.
+- La masa del jugador (cuerpo + carga) pasa a M2, con el sistema de masa (31, 32).
+- **Cierre:** se mueve igual que antes al jugar, sin el tirón contra las paredes; la cámara
+  no tiembla.
+
+### M2 — Lo soltado cae y rueda ✅ (2026-11-13)
+- Sistema de masa (31, 32): la del jugador = cuerpo + carga, actualizada con el aviso de
+  inventario cambiado (26); la de lo suelto, la de abajo.
+- Lo que está en el mundo (ítems sueltos, montones, arcones) tiene Rigidbody dinámico con masa
+  = peso del ítem con su contenido (`WeightCalculator.Of`) y colisión convexa del modelo (11), con la
+  esfera provisional mientras carga (27).
+- La posición: el Core la marca al soltar; desde ahí manda la física y `TransformSyncSystem`
+  ya la copia al Core. Al pararse, deja de simularse (12).
+- Se puede coger mientras rueda (5).
+- **Cierre:** soltar una manzana y un arcón: caen, ruedan o vuelcan según su forma, se paran y
+  se pueden coger, también en movimiento. Empujar la manzana y empujar el arcón se nota
+  distinto.
+
+- **Probado en juego (2026-11-13):** lo soltado cae delante, rueda o vuelca y se para; se
+  coge en movimiento; la masa del jugador sigue a su carga. Empujar: con el arcón vacío
+  (8 kg) y la manzana (0,2 kg) el empuje se parece, porque los dos pesan muy poco al lado
+  del jugador (~80 kg) y el jugador no se frena al chocar (su velocidad la pone el código).
+  Con el arcón cargado (~58 kg) la diferencia se nota claramente. Es lo físicamente esperable;
+  no se ajusta. La manzana a veces cuesta de empujar por lo pequeña que es frente a la base
+  redondeada de la cápsula; probado después, no molesta (28, desestimada).
+
+### M3 — No se tira nada a través de una pared ✅ (2026-11-13)
+- Soltar desde el centro del jugador con impulso hacia delante e ignorando al que lo suelta
+  un instante (45). `PlaceAt` sin desplazamiento (Core, Sergio); impulso y colisión ignorada
+  en `PhysicsBodyBuilder` (Unity, Claude).
+- **Cierre:** soltar pegado a una pared y mirándola deja el objeto en el lado del jugador;
+  soltar en campo abierto lo deja delante, sin empujones raros al jugador.
+- **Probado en juego (2026-11-13):** contra la pared, lo soltado queda del lado del jugador y
+  un arcón cargado cae a sus pies sin bote; al apartarse vuelve a ser sólido; en campo
+  abierto sale hacia delante, la manzana más que el arcón; corriendo, se adelanta.
+
+### M4 — Lo que se sale del mundo vuelve ✅ (2026-11-14)
+- Detección por debajo de un límite y recolocación (29, 46), en Unity.
+- `TransformSyncSystem`: cuando el Core cambia la posición, mueve el Rigidbody y lo para
+  (hecho; antes escribía el transform y lo teletransportado seguía cayendo).
+- **Cierre:** un objeto que atraviesa el suelo o cae por un borde vuelve a un sitio válido.
+- **Probado en juego (2026-11-14):** una manzana arrastrada bajo el suelo reaparece encima,
+  en el mismo punto; el jugador que cae por el borde corriendo vuelve al borde, y saltando al
+  vacío, a donde despegó; cayendo pegado al borde por debajo, reaparece encima del suelo.
+  Lo que no es entidad (el caballero de prueba de la escena) no se recupera: queda fuera a
+  propósito.
+
+### M5 — Cierre de la fase ✅ (2026-11-14)
+- Repaso de los criterios de `Docs/ROADMAP.md` (Fase 1.5), tests del Core en verde y «Dónde
+  estamos» reescrito.

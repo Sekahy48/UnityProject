@@ -1001,7 +1001,7 @@ namespace MVC.View.Inventory
                 _inspectWeightUnit.text = "";
                 _inspectDurability.text = "";
                 _inspectSize.text = "";
-                UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImages.EmptyIcon);
+                UIElementUtils.SetBackgroundTexture(_inspectIcon, UIImagePaths.EmptyIcon);
                 foreach (VisualElement element in _inspectStats.Children())
                 {
                     element.RemoveFromClassList("inspection-strip__stat");
@@ -1065,7 +1065,7 @@ namespace MVC.View.Inventory
                 
         }
 
-        public void ClearInveotryTabs() => _inventoryTabs.Clear();
+        public void ClearInventoryTabs() => _inventoryTabs.Clear();
         public void AddTabToInventoryTabs(String name, Action clickEvent, List<MenuOption> options)
         {
             // NOTA sino va juntar en PointerDown

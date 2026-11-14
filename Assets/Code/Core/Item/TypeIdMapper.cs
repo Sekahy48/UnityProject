@@ -53,10 +53,10 @@ namespace Core.Item
             string json = File.ReadAllText(path);
             Dictionary<string, int> loaded = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
 
+            // Que no exista es normal (primer arranque); que exista y no se lea, no: perder
+            // el mapa renumeraria los items y romperia todo lo que guarde ids.
             if (loaded == null)
-            {
-                return;
-            }
+                throw new System.IO.InvalidDataException("TypeIdMapper: no se puede leer el mapa de ids: " + path);
 
             _typeIdMap.Clear();
             int maxId = 0;

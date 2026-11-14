@@ -206,6 +206,7 @@ Docs/
   CREDITOS.md        ← recursos de terceros con origen y licencia
   MECANICAS.md       ← catálogo de mecánicas (lo que se quiere en el juego)
   ROADMAP.md         ← fases: qué se hace y en qué orden
+  ESTANDARES_CODIGO.md ← convenciones de nombres y estilo, y lo que aún no las cumple
 ```
 
 ---

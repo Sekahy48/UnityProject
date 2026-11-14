@@ -22,19 +22,19 @@ namespace Unity.ECS.Component
             // No deberia llamarse: InGameEntity.Clone salta los IEngineBridge. Si alguien lo
             // hiciera, devolveria un segundo puente al MISMO GameObject, que es justo el
             // error que eso evita.
-            return new UnityEntityComponent(this.GameObject);
+            return new UnityEntityComponent(GameObject);
         }
 
         public GameObject GetGameObject()
         {
-            return this.GameObject;
+            return GameObject;
         }
 
         public bool Equivalent(IComponent other)
         {
             return 
                 other is UnityEntityComponent otherUnity &&
-                this.GameObject == otherUnity.GameObject;
+                GameObject == otherUnity.GameObject;
         }
     }
 

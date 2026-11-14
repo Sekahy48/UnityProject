@@ -6,8 +6,8 @@ using MVC.View;
 namespace MVC.Controller
 {
     /// <summary>
-    /// Main game controller.
-    /// Receives only the sub-contexts it needs, not the whole GameContext.
+    /// Controlador principal del juego.
+    /// Recibe solo los subcontextos que necesita, no el GameContext entero.
     /// </summary>
     public class GameController
     {
@@ -21,14 +21,14 @@ namespace MVC.Controller
         }
 
         /// <summary>
-        /// Main game loop.
+        /// Bucle principal del juego.
         /// </summary>
         public void Update(float deltaTime)
         {
-            // 1. Input and camera (real time)
+            // 1. Entrada y camara (tiempo real)
             _inputManager.Update(deltaTime);
 
-            // 2. SystemManager: engine systems (every frame) + game systems (per tick)
+            // 2. SystemManager: sistemas del motor (cada fotograma) + sistemas de juego (por tick)
             _systemCtx.SystemManager.Update(deltaTime);
         }
     }

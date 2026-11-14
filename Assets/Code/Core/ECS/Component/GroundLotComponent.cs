@@ -33,7 +33,7 @@ namespace Core.ECS.Component
         public GroundLotComponent(IReadOnlyList<SubLot> lots)
         {
             _lots = lots == null ? new List<SubLot>() : new List<SubLot>(lots);
-            _name = "GroundLotComponent";
+            Name = "GroundLotComponent";
         }
 
         public IReadOnlyList<SubLot> Lots => _lots;

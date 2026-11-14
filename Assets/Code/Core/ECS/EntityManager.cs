@@ -4,8 +4,10 @@ using Core.ECS.Component;
 using Core.ECS.Entity;
 using Core.Factories;
 using Core.Observer;
+using Core.ECS.Systems;
+using AC = Core.Utils.ArgumentChecker;
 
-namespace Core.ECS.Systems
+namespace Core.ECS
 {
     /// <summary>
     /// Manages the game's entities. No UnityEngine dependencies.
@@ -21,6 +23,7 @@ namespace Core.ECS.Systems
 
         public EntityManager(PrototypeFactory prototypeFactory)
         {
+            AC.CheckNotNull(prototypeFactory, nameof(prototypeFactory));
             _prototypeFactory = prototypeFactory;
             _prototypes[EntityType.ResourceNode] = _prototypeFactory.CreateResourceNodePrototype();
             _prototypes[EntityType.AliveEntity] = _prototypeFactory.CreateAliveEntityPrototype();

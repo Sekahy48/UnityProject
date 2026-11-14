@@ -16,7 +16,7 @@ namespace Core.Inventory
     /// lleva. De ahi sale todo lo demas — el peso sube por el arbol y la capacidad se
     /// pregunta hacia arriba — sin que nadie tenga que anunciar nada.</para>
     /// </summary>
-    public static class WornContainers
+    public static class WornContainerBinder
     {
         /// <summary>Cuelga el inventario de la prenda del de quien la lleva.</summary>
         /// <returns>False si la prenda no es un contenedor, o ya estaba enganchada ahi.</returns>

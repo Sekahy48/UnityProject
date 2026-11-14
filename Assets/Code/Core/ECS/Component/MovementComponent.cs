@@ -9,7 +9,14 @@ namespace Core.ECS.Component
     public class MovementComponent : BasicComponent
     {
         private float _speed;
+        public float TurnSpeed {get;} = 720;
         private float _runMultiplier = 2.5f;
+
+        /* Ritmo al que la velocidad real se acerca a la objetivo, en m/s cada segundo.
+           Frenar es mas rapido que arrancar: el cuerpo se para antes de lo que arranca.
+           Valores de partida para ajustar jugando (con velocidad 2: ~0,25 s para arrancar). */
+        private float _acceleration = 8f;
+        private float _deceleration = 16f;
         private float _weightSpeedMultiplier = 1.0f;
         private float _dirX, _dirY;
         private bool _isMoving;
@@ -23,7 +30,7 @@ namespace Core.ECS.Component
             _speed = speed;
             _dirX = 0f;
             _dirY = 0f;
-            _isMoving = false;
+            _isMoving = false; 
         }
 
         public MovementComponent(float speed, float mult, float dirX, float dirY, bool isMoving, float mouseSensitivity)
@@ -39,9 +46,25 @@ namespace Core.ECS.Component
         // ---- Speed ----
 
         public void SetSpeed(float speed) => _speed = speed;
-        public float GetSpeed() => _speed * _weightSpeedMultiplier;
+        /// <summary>
+        /// Velocidad a la que se quiere ir ahora, en m/s: la base por el multiplicador de peso
+        /// y, si esta corriendo y puede correr, por el de correr. Es el OBJETIVO al que tiende la
+        /// aceleracion, no la velocidad real del cuerpo. Ya lo incluye todo: no multiplicar otra
+        /// vez por <see cref="RunMultiplier"/> desde fuera.
+        /// </summary>
+        public float GetSpeed() => IsRunning && CanRun()
+                    ? _speed * _weightSpeedMultiplier * RunMultiplier
+                    : _speed * _weightSpeedMultiplier;
         public void SetWeightSpeedMultiplier(float mult) => _weightSpeedMultiplier = mult;
         public float WeightSpeedMultiplier => _weightSpeedMultiplier;
+
+        // ---- Acceleration ----
+
+        public float Acceleration => _acceleration;
+        public void SetAcceleration(float acceleration) => _acceleration = acceleration;
+
+        public float Deceleration => _deceleration;
+        public void SetDeceleration(float deceleration) => _deceleration = deceleration;
 
         // ---- Run multiplier ----
 

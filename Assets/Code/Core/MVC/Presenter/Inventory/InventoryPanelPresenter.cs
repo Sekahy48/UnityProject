@@ -6,6 +6,7 @@ using Core.ECS.Systems;
 using Core.Inventory;
 using Core.MVC.View.UI.Inventory;
 using Core.Services;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.MVC.Presenter.Inventory
 {
@@ -28,6 +29,8 @@ namespace Core.MVC.Presenter.Inventory
         private readonly GrabGesture _grabGesture;
         public InventoryPanelPresenter(IInventoryPanelView view, InventoryService service)
         {
+            AC.CheckNotNull(view, nameof(view));
+            AC.CheckNotNull(service, nameof(service));
             _panelView = view;
             _service =  service;
 
@@ -280,8 +283,8 @@ namespace Core.MVC.Presenter.Inventory
 
             // No se exige BodyComponent: un arcon no tiene cuerpo pero si limite de peso.
             float currentWeight = invComp.Inventory.GetTotalWeight();
-            float maxWeight = CarryCapacity.GetMaxLoad(Entity);
-            _panelView.UpdateWeightStats(currentWeight, maxWeight, CarryCapacity.ClassifyLoad(currentWeight, maxWeight));
+            float maxWeight = CarryCapacityCalculator.GetMaxLoad(Entity);
+            _panelView.UpdateWeightStats(currentWeight, maxWeight, CarryCapacityCalculator.ClassifyLoad(currentWeight, maxWeight));
         } 
 
         private void CancelHand()

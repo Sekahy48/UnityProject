@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.ECS.Component.Equipment;
 using Core.Services;
+using Core.Inventory;
 
 namespace Core.MVC.View.UI.Inventory
 {
@@ -81,7 +82,7 @@ namespace Core.MVC.View.UI.Inventory
 
         #region Pestanas de inventario
 
-        void ClearInveotryTabs();
+        void ClearInventoryTabs();
         void AddTabToInventoryTabs(string name, Action clickEvent, List<MenuOption> options);
         void RenderInventoryTabs(Action onHide);
 

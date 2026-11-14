@@ -22,7 +22,7 @@ namespace Core.MVC.View.UI.Inventory
         public readonly IReadOnlyList<MenuOption> SubOptions;
 
         /// <summary>
-        /// Fields that will be recieved to execute the handler
+        /// Fields that will be received to execute the handler
         /// </summary>
         public readonly IReadOnlyList<MenuField> Fields;
 

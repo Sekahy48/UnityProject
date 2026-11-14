@@ -59,7 +59,7 @@ namespace Core.Tests
             ItemEntity backpackItem = TestItems.Container(3, 3, maxWeight: 100f, ownWeight: 1f);
             TestItems.InventoryOf(backpackItem).StackOnto(TestItems.Apple(weight: 0.5f), 8);
 
-            Assert.AreEqual(5f, ItemWeight.Of(backpackItem), 1e-4f);
+            Assert.AreEqual(5f, WeightCalculator.Of(backpackItem), 1e-4f);
         }
 
         [Test]
@@ -71,10 +71,10 @@ namespace Core.Tests
             Assert.AreEqual(3, inventory.FitByWeight(anvil, 3), "entran todas aunque pasen del techo");
 
             inventory.AddItem(anvil, 3);
-            float ratio = inventory.GetTotalWeight() / CarryCapacity.GetMaxLoad(body);
+            float ratio = inventory.GetTotalWeight() / CarryCapacityCalculator.GetMaxLoad(body);
 
             Assert.Greater(ratio, 1f);
-            Assert.AreEqual(GameEventType.Immobile, CarryCapacity.ClassifyLoad(ratio));
+            Assert.AreEqual(GameEventType.Immobile, CarryCapacityCalculator.ClassifyLoad(ratio));
         }
 
         [Test]

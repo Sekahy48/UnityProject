@@ -3,15 +3,16 @@ using Core.ECS.Component;
 using Core.ECS.Entity;
 using Core.Events;
 using Core.Inventory;
+using Core.ECS.Systems;
 
-namespace Core.ECS.Systems
+namespace Core.Inventory
 {
     /// <summary>
     /// Calculates carry capacity from BodyComponent, EnergyComponent and NutritionComponent,
     /// and owns the load thresholds that turn a weight ratio into an encumbrance band.
     /// When the real system loop is implemented, this will become a system with its own component.
     /// </summary>
-    public static class CarryCapacity
+    public static class CarryCapacityCalculator
     {
         /// <summary>Ratio above which the entity is slowed down.</summary>
         public const float EXTRA_WEIGHT = 0.70f;

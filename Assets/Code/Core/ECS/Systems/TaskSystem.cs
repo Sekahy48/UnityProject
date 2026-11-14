@@ -5,21 +5,25 @@ using Core.ECS.Entity;
 using Core.Events;
 using Core.MVC.Model;
 using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.ECS.Systems
 {
     public class TaskSystem : IEventObserver
     {
-        private readonly Logic logic;
+        private readonly Logic _logic;
 
         public TaskSystem(Logic logic)
         {
-            this.logic = logic;
+            AC.CheckNotNull(logic, nameof(logic));
+            _logic = logic;
         }
 
         public void UpdateOnEvent(GameEvent gameEvent)
         {
-            List<IEntity> entitiesWithTasks = logic.GetEntitiesWithComponent(typeof(TaskComponent));
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
+
+            List<IEntity> entitiesWithTasks = _logic.GetEntitiesWithComponent(typeof(TaskComponent));
 
             foreach (var entity in entitiesWithTasks)
             {

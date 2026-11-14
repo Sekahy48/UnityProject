@@ -5,7 +5,8 @@ namespace Core.ECS.Component
 {
     public abstract class BasicComponent : GenericSubject, IComponent
     {
-        protected String _name;
+        /* Nombre del tipo de componente, para depurar. */
+        protected string Name { get; set; }
  
 
         public abstract IComponent Clone();

@@ -7,34 +7,34 @@ namespace Core.ECS.Component
     /// </summary>
     public class BodyComponent : BasicComponent
     {
-        private float height;
-        private float weight;
-        private float age;
-        private int sex; // 0 = male, 1 = female
-        private float fatPercentage;
+        private float _height;
+        private float _weight;
+        private float _age;
+        private int _sex; // 0 = male, 1 = female
+        private float _fatPercentage;
 
         public BodyComponent(float height, float weight, float age, int sex)
         {
-            this.height = height;
-            this.weight = weight;
-            this.age = age;
-            this.sex = sex;
+            _height = height;
+            _weight = weight;
+            _age = age;
+            _sex = sex;
             EstimateFatPercentage();
-            this._name = "BodyComponent";
+            Name = "BodyComponent";
         }
 
         public float EstimateFatPercentage()
         {
-            if (sex == 0)
-                fatPercentage = 1.2f * Bmi() + 0.23f * age - 16.2f;
+            if (_sex == 0)
+                _fatPercentage = 1.2f * Bmi() + 0.23f * _age - 16.2f;
             else
-                fatPercentage = 1.2f * Bmi() + 0.23f * age - 5.4f;
-            return fatPercentage;
+                _fatPercentage = 1.2f * Bmi() + 0.23f * _age - 5.4f;
+            return _fatPercentage;
         }
 
         public float Bmi()
         {
-            return weight / (height * height);
+            return _weight / (_height * _height);
         }
 
         /// <summary>
@@ -42,30 +42,30 @@ namespace Core.ECS.Component
         /// </summary>
         public float GetMuscleMass()
         {
-            return weight * (1f - fatPercentage / 100f);
+            return _weight * (1f - _fatPercentage / 100f);
         }
 
         // Getters and Setters
-        public float Height => height;
-        public void SetHeight(float height) => this.height = height;
+        public float Height => _height;
+        public void SetHeight(float height) => _height = height;
 
-        public float Weight => weight;
-        public void SetWeight(float weight) => this.weight = weight;
+        public float Weight => _weight;
+        public void SetWeight(float weight) => _weight = weight;
 
-        public float Age => age;
-        public void SetAge(float age) => this.age = age;
+        public float Age => _age;
+        public void SetAge(float age) => _age = age;
 
-        public int Sex => sex;
-        public void SetSex(int sex) => this.sex = sex;
+        public int Sex => _sex;
+        public void SetSex(int sex) => _sex = sex;
 
-        public float FatPercentage => fatPercentage;
-        public void SetFatPercentage(float fatPercentage) => this.fatPercentage = fatPercentage;
+        public float FatPercentage => _fatPercentage;
+        public void SetFatPercentage(float fatPercentage) => _fatPercentage = fatPercentage;
 
         public override IComponent Clone()
         {
-            var copy = new BodyComponent(height, weight, age, sex);
-            copy.fatPercentage = this.fatPercentage;
-            copy._name = this._name;
+            var copy = new BodyComponent(_height, _weight, _age, _sex);
+            copy._fatPercentage = _fatPercentage;
+            copy.Name = Name;
             return copy;
         }
 
@@ -75,11 +75,11 @@ namespace Core.ECS.Component
             {
                 float eps = 0.001f;
                 return
-                    Math.Abs(height - o.height) < eps &&
-                    Math.Abs(weight - o.weight) < eps &&
-                    Math.Abs(age - o.age) < eps &&
-                    sex == o.sex &&
-                    Math.Abs(fatPercentage - o.fatPercentage) < eps;
+                    Math.Abs(_height - o._height) < eps &&
+                    Math.Abs(_weight - o._weight) < eps &&
+                    Math.Abs(_age - o._age) < eps &&
+                    _sex == o._sex &&
+                    Math.Abs(_fatPercentage - o._fatPercentage) < eps;
             }
             return false;
         }

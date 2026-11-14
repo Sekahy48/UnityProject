@@ -21,7 +21,7 @@ namespace MVC.View.Inventory
         public VisualElement RootPanel {get; private set;}
 
         private VisualElement _topBar;
-        private Label _titelLabel; /*Label where the name of the inventory's entity is displayed*/
+        private Label _titleLabel; /*Label where the name of the inventory's entity is displayed*/
         private Button _closeButton; /*Button to hide this subpanel*/
         private VisualElement _gridMount, /*Mounting point for the inventory grid*/
                               _grid,      /*Generated grid, sized to fit its mount*/
@@ -62,7 +62,7 @@ namespace MVC.View.Inventory
         private Vector3 _pressLeftOrigin; /*Position where last pointer down event ocurred (left button)*/ 
         private const float DRAG_THRESHOLD_SQR = 100f; /*Threshold to consider a pointer down event means a drag action but a click/grab*/
 
-        private static readonly Dictionary<GameEventType, string> LoadClasses = new()
+        private static readonly Dictionary<GameEventType, string> _loadClasses = new()
         {
             { GameEventType.NormalWeight, "weight-rail__bar--normal"   },
             { GameEventType.ExtraWeight,  "weight-rail__bar--extra"    },
@@ -74,7 +74,7 @@ namespace MVC.View.Inventory
            El mapa existe para que los nombres de clase no se repartan por el codigo, y una
            cadena construida a mano se escapa justo de eso: al renombrar en el USS, el mapa
            avisa y la concatenacion no. */
-        private static readonly Dictionary<GameEventType, string> LoadLabelClasses = new()
+        private static readonly Dictionary<GameEventType, string> _loadLabelClasses = new()
         {
             { GameEventType.NormalWeight, "weight-rail__label--normal"   },
             { GameEventType.ExtraWeight,  "weight-rail__label--extra"    },
@@ -122,7 +122,7 @@ namespace MVC.View.Inventory
             _gridMount = RootPanel.Q<VisualElement>("grid-mount");
 
             _topBar = RootPanel.Q<VisualElement>("inventory-bar");
-            _titelLabel = RootPanel.Q<Label>("title-label-panel");
+            _titleLabel = RootPanel.Q<Label>("title-label-panel");
             _closeButton = RootPanel.Q<Button>("close-button-panel");
             _closeButton.RegisterCallback<ClickEvent>(_ => OnCloseRequested?.Invoke());
             _weightLabel = RootPanel.Q<Label>("weight-label");
@@ -359,13 +359,13 @@ namespace MVC.View.Inventory
             // Las dos se limpian antes de poner la nueva: sin esto se acumulan banda tras
             // banda, y a partir de la segunda transicion manda la que el USS resuelva mas
             // tarde en vez de la actual.
-            foreach (string cls in LoadClasses.Values)
+            foreach (string cls in _loadClasses.Values)
                 _weightBar.RemoveFromClassList(cls);
-            _weightBar.AddToClassList(LoadClasses[eventType]);
+            _weightBar.AddToClassList(_loadClasses[eventType]);
 
-            foreach (string cls in LoadLabelClasses.Values)
+            foreach (string cls in _loadLabelClasses.Values)
                 _weightLabel.RemoveFromClassList(cls);
-            _weightLabel.AddToClassList(LoadLabelClasses[eventType]);
+            _weightLabel.AddToClassList(_loadLabelClasses[eventType]);
         }
 
         /// <summary>
@@ -510,7 +510,7 @@ namespace MVC.View.Inventory
 
         public void SetLabelText(String content)
         {
-            _titelLabel.text = content;
+            _titleLabel.text = content;
         } 
 
         #endregion

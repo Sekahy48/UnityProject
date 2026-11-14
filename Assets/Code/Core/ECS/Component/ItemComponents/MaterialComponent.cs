@@ -13,38 +13,38 @@ namespace Core.ECS.Component.InventoryComponents
     }
     
     /// <summary>
-    /// Gets the general category/type of the material.
-    ///
+    /// Material de un item: tipo, nombre y propiedades fisicas.
+    /// </summary>
     public class MaterialComponent : IComponent, IJsonLoadable, INumericFields
     {
         #region Atributes
         /// <summary>
-        /// Represents the general category/type of the material
+        /// Categoria o tipo general del material
         /// </summary>
         private MaterialType _materialType;
 
         /// <summary>
-        /// Name of the instance
+        /// Nombre de la instancia
         /// </summary>
         private String _materialName;
 
         /// <summary>
-        /// Represents how flexible it is
+        /// Lo flexible que es
         /// </summary>
         private float _flexibility;
 
         /// <summary>
-        /// Represents how hard it is
+        /// Lo duro que es
         /// </summary>
         private float _hardness;
 
         /// <summary>
-        /// Represents how breathable it is
+        /// Lo transpirable que es
         /// </summary>
         private float _transpirability;
 
         /// <summary>
-        /// Represents how insulating it is
+        /// Lo aislante que es
         /// </summary>
         private float _thermalInsulation;
 
@@ -54,101 +54,101 @@ namespace Core.ECS.Component.InventoryComponents
 
         public MaterialComponent(MaterialType type, String name, float flex, float hard, float transpir, float thermIns)
         {
-            this._materialType = type;
-            this._materialName = name;
-            this._flexibility = flex;
-            this._hardness = hard;
-            this._transpirability = transpir;
-            this._thermalInsulation = thermIns;
+            _materialType = type;
+            _materialName = name;
+            _flexibility = flex;
+            _hardness = hard;
+            _transpirability = transpir;
+            _thermalInsulation = thermIns;
         }
         
         #region Setters & Getters 
         
          /// <summary>
-        /// Gets the general type of the material.
+        /// Tipo general del material.
         /// </summary>
-        /// <returns>The material type.</returns>
+        /// <returns>El tipo de material.</returns>
         public MaterialType MaterialType => _materialType;
 
         /// <summary>
-        /// Sets the general type of the material.
+        /// Fija el tipo general del material.
         /// </summary>
-        /// <param name="materialType">The material type to assign.</param>
+        /// <param name="materialType">El tipo de material.</param>
         public void SetMaterialType(MaterialType materialType)
         {
             _materialType = materialType;
         }
 
         /// <summary>
-        /// Gets the name of the material.
+        /// Nombre del material.
         /// </summary>
-        /// <returns>The material name.</returns>
+        /// <returns>El nombre del material.</returns>
         public string MaterialName => _materialName;
 
         /// <summary>
-        /// Sets the name of the material.
+        /// Fija el nombre del material.
         /// </summary>
-        /// <param name="materialName">The new material name.</param>
+        /// <param name="materialName">El nombre nuevo.</param>
         public void SetMaterialName(string materialName)
         {
             _materialName = materialName;
         }
 
         /// <summary>
-        /// Gets the flexibility level of the material.
+        /// Nivel de flexibilidad del material.
         /// </summary>
-        /// <returns>The flexibility level.</returns>
+        /// <returns>El nivel de flexibilidad.</returns>
         public float Flexibility => _flexibility;
 
         /// <summary>
-        /// Sets the flexibility level of the material.
+        /// Fija el nivel de flexibilidad del material.
         /// </summary>
-        /// <param name="flexibility">The new flexibility level.</param>
+        /// <param name="flexibility">El nivel nuevo.</param>
         public void SetFlexibility(float flexibility)
         {
             _flexibility = flexibility;
         }
 
         /// <summary>
-        /// Gets the hardness level of the material.
+        /// Nivel de dureza del material.
         /// </summary>
-        /// <returns>The hardness level.</returns>
+        /// <returns>El nivel de dureza.</returns>
         public float Hardness => _hardness;
 
         /// <summary>
-        /// Sets the hardness level of the material.
+        /// Fija el nivel de dureza del material.
         /// </summary>
-        /// <param name="hardness">The new hardness level.</param>
+        /// <param name="hardness">El nivel nuevo.</param>
         public void SetHardness(float hardness)
         {
             _hardness = hardness;
         }
 
         /// <summary>
-        /// Gets the breathability level of the material.
+        /// Nivel de transpirabilidad del material.
         /// </summary>
-        /// <returns>The breathability level.</returns>
+        /// <returns>El nivel de transpirabilidad.</returns>
         public float Transpirability => _transpirability;
 
         /// <summary>
-        /// Sets the breathability level of the material.
+        /// Fija el nivel de transpirabilidad del material.
         /// </summary>
-        /// <param name="transpirability">The new breathability level.</param>
+        /// <param name="transpirability">El nivel nuevo.</param>
         public void SetTranspirability(float transpirability)
         {
             _transpirability = transpirability;
         }
 
         /// <summary>
-        /// Gets the thermal insulation level of the material.
+        /// Nivel de aislamiento termico del material.
         /// </summary>
-        /// <returns>The thermal insulation level.</returns>
+        /// <returns>El nivel de aislamiento termico.</returns>
         public float ThermalInsulation => _thermalInsulation;
 
         /// <summary>
-        /// Sets the thermal insulation level of the material.
+        /// Fija el nivel de aislamiento termico del material.
         /// </summary>
-        /// <param name="thermalInsulation">The new thermal insulation level.</param>
+        /// <param name="thermalInsulation">El nivel nuevo.</param>
         public void SetThermalInsulation(float thermalInsulation)
         {
             _thermalInsulation = thermalInsulation;
@@ -157,7 +157,7 @@ namespace Core.ECS.Component.InventoryComponents
         /// <summary>
         /// Campos numericos. El tipo y el nombre del material quedan fuera por no serlo.
         /// </summary>
-        private static readonly NumericFields<MaterialComponent> Fields =
+        private static readonly NumericFields<MaterialComponent> _fields =
             new NumericFields<MaterialComponent>()
                 .Add("flexibility", c => c._flexibility, (c, v) => c.SetFlexibility(v))
                 .Add("hardness", c => c._hardness, (c, v) => c.SetHardness(v))
@@ -165,11 +165,11 @@ namespace Core.ECS.Component.InventoryComponents
                 .Add("thermalInsulation", c => c._thermalInsulation, (c, v) => c.SetThermalInsulation(v));
 
         public bool TryGetNumericValue(string field, out float value)
-            => Fields.TryGet(this, field, out value);
+            => _fields.TryGet(this, field, out value);
 
         public void SetFromValues(Dictionary<string, object> values)
         {
-            Fields.Apply(this, values);
+            _fields.Apply(this, values);
 
             if (values.ContainsKey("materialType")) SetMaterialType(Enum.Parse<MaterialType>(values["materialType"].ToString(), true));
             if (values.ContainsKey("materialName")) SetMaterialName(values["materialName"].ToString());
@@ -184,12 +184,12 @@ namespace Core.ECS.Component.InventoryComponents
         {
             if (other is MaterialComponent otherMaterial)
             {
-                return this._materialType == otherMaterial._materialType &&
-                       this._materialName == otherMaterial._materialName &&
-                       this._flexibility == otherMaterial._flexibility &&
-                       this._hardness == otherMaterial._hardness &&
-                       this._transpirability == otherMaterial._transpirability &&
-                       this._thermalInsulation == otherMaterial._thermalInsulation;
+                return _materialType == otherMaterial._materialType &&
+                       _materialName == otherMaterial._materialName &&
+                       _flexibility == otherMaterial._flexibility &&
+                       _hardness == otherMaterial._hardness &&
+                       _transpirability == otherMaterial._transpirability &&
+                       _thermalInsulation == otherMaterial._thermalInsulation;
             }
 
             return false;

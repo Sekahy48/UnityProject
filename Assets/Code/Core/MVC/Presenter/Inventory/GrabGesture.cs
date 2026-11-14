@@ -1,5 +1,6 @@
 using System;
 using Core.Services;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.MVC.Presenter.Inventory
 {
@@ -18,6 +19,7 @@ namespace Core.MVC.Presenter.Inventory
 
         public GrabGesture(InventoryService inventoryService)
         {
+            AC.CheckNotNull(inventoryService, nameof(inventoryService));
             _inventoryService = inventoryService;
         }
 

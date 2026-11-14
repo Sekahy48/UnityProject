@@ -10,29 +10,29 @@ namespace MVC.Controller
 {
     public class ViewManager
     {
-        private Dictionary<PresenterType, IView> views;
+        private Dictionary<PresenterType, IView> _views;
     
         public ViewManager()
         {
-            views = new Dictionary<PresenterType, IView>();
+            _views = new Dictionary<PresenterType, IView>();
         }
 
         public void InitializeViews(UIRegistry uiRegistry, Unity.IActiveCameraSource cameras)
         {
              // Inventory View
-             views[PresenterType.INV] = new InventoryView(uiRegistry.GetDocument(UIDocumentType.Inventory),
+             _views[PresenterType.INV] = new InventoryView(uiRegistry.GetDocument(UIDocumentType.Inventory),
                                                           uiRegistry.GetTemplate(UITemplateType.InventoryPanel));
 
-             views[PresenterType.WORLD] = new WorldInteractionView(uiRegistry.GetDocument(UIDocumentType.WorldInteraction),
+             _views[PresenterType.WORLD] = new WorldInteractionView(uiRegistry.GetDocument(UIDocumentType.WorldInteraction),
                                                                    cameras,
                                                                    uiRegistry.GetTemplate(UITemplateType.InspectPanel));
 
-             views[PresenterType.HUD] = new HUDView(uiRegistry.GetDocument(UIDocumentType.HUD));
+             _views[PresenterType.HUD] = new HUDView(uiRegistry.GetDocument(UIDocumentType.HUD));
         }
 
         public T GetView<T>(PresenterType type) where T : IView
         {
-            if (views.TryGetValue(type, out IView view))
+            if (_views.TryGetValue(type, out IView view))
                 return (T)view;
             return default;
         }

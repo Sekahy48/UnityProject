@@ -8,65 +8,65 @@ namespace Core.Inventory
 {
     public interface IInventoryElement
     {
-        //#region Global operations (recursive, BFS)
+        // #region Operaciones globales (recursivas, BFS)
 
         /// <summary>
-        /// Adds a new leaf node to this node's inventory.
-        /// If the amount exceeds stacking limits, creates multiple nodes.
+        /// Anade un nodo hoja nuevo al inventario de este nodo.
+        /// Si la cantidad supera los limites de apilado, crea varios nodos.
         /// </summary>
-        /// <returns> The amount of item that couldnt be added due to internal limitations </returns>
+        /// <returns> La cantidad que no se pudo anadir por limites internos </returns>
         int  AddItem(ItemEntity item, int amount);
 
          
 
         /// <summary>
-        /// Tries to stack the item onto the first equivalent node found.
-        /// If none is found, creates a new node.
+        /// Intenta apilar el item en el primer nodo equivalente que encuentre.
+        /// Si no hay ninguno, crea un nodo nuevo.
         /// </summary> 
-        /// <returns> The amount of item that couldnt be added due to internal limitations </returns>
+        /// <returns> La cantidad que no se pudo anadir por limites internos </returns>
         int StackOnto(ItemEntity item, int amount);
 
         /// <summary>
-        /// Modifies the amount of an item in the global inventory.
+        /// Modifica la cantidad de un item en todo el inventario.
         /// </summary>
         int ModifyAmount(int id, int amount); 
 
          
         /// <summary>
-        /// Checks if the inventory contains an item with the given id.
+        /// Si el inventario contiene un item con ese id.
         /// </summary>
         bool Contains(int id);
 
         /// <summary>
-        /// Gets the total amount of an item across the whole inventory.
+        /// Cantidad total de un item en todo el inventario.
         /// </summary>
         int GetAmount(int id);
 
         /// <summary>
-        /// Gets the total amount of items equivalents to the given variant.
+        /// Cantidad total de items equivalentes a la variante dada.
         /// </summary>
-        /// <param name="variant"></param>
-        /// <returns></returns>
+        /// <param name="variant">Variante con la que comparar.</param>
+        /// <returns>Unidades equivalentes en total.</returns>
         int GetAmount(ItemEntity variant);
 
         /// <summary>
-        /// Removes all units of an item from the inventory.
+        /// Quita del inventario todas las unidades de un item.
         /// </summary>
         void DeleteItem(int id);
 
         /// <summary>
-        /// Returns the first node containing the item with the given id.
+        /// Primer nodo que contiene el item con ese id.
         /// </summary>
         IInventoryElement Find(int id);
 
         /// <summary>
-        /// Returns all nodes containing the item with the given id.
+        /// Todos los nodos que contienen el item con ese id.
         /// </summary>
         List<IInventoryElement> FindNodes(int id);
 
-        //#endregion
+        // #endregion
 
-        //#region Local operations (immediate level only)
+        // #region Operaciones locales (solo el nivel inmediato)
 
         int StackOntoHere(ItemEntity item, int amount);
         int ModifyAmountHere(int id, int amount);
@@ -76,29 +76,29 @@ namespace Core.Inventory
         IInventoryElement FindHere(int id);
         List<IInventoryElement> FindNodesHere(int id);
 
-        //#endregion
+        // #endregion
 
-        //#region Node operations
+        // #region Operaciones de nodo
 
         /// <summary>
-        /// Stacks a certain amount of item in a preexistent node of the same item type.
+        /// Apila una cantidad de item en un nodo ya existente del mismo tipo de item.
         /// </summary>
-        /// <param name="nodeId">Id of the tree node.</param>
-        /// <param name="item">Item to add - needs to be the same type as the internal item of the node.</param>
-        /// <param name="amount">Amount to be added</param>
-        /// <returns> The remaining amount that couldnt be added. </returns>
+        /// <param name="nodeId">Id del nodo del arbol.</param>
+        /// <param name="item">Item a anadir: tiene que ser del mismo tipo que el del nodo.</param>
+        /// <param name="amount">Cantidad a anadir</param>
+        /// <returns> La cantidad que no se pudo anadir. </returns>
         int StackOntoNode(int nodeId, ItemEntity item, int amount);
         
         /// <summary>
-        /// Returns the ndoe with a certain nodeId if tis found. Otherwise returns null.
+        /// Devuelve el nodo con ese nodeId si lo encuentra; si no, null.
         /// </summary>
-        /// <param name="nodeId">Id of the node to be found.</param>
-        /// <returns>Found node or null.</returns>
+        /// <param name="nodeId">Id del nodo a buscar.</param>
+        /// <returns>El nodo encontrado o null.</returns>
         IInventoryElement FindNodeById(int nodeId);
         
         /// <summary>
-        /// Consumes N units randomly across sub-lots. Returns what was consumed grouped by sub-lot.
-        /// Only supported on leaf nodes.
+        /// Consume N unidades al azar entre los sublotes. Devuelve lo consumido agrupado por sublote.
+        /// Solo para nodos hoja.
         /// </summary>
         List<SubLot> ConsumeRandom(int amount);
 
@@ -114,9 +114,9 @@ namespace Core.Inventory
         /// <returns>Pares (variante, unidades sacadas). Vacio si no salio nada.</returns>
         List<SubLot> Extract(ItemEntity variant, int amount);
 
-        //#enregion
+        // #endregion
 
-        //#region Getters & Utilities
+        // #region Lecturas y utilidades
 
         int GetTypeId();
         int GetNodeId();
@@ -136,6 +136,6 @@ namespace Core.Inventory
         float GetTotalWeight(); 
         bool Equivalent(IInventoryElement other);
         IInventoryElement Clone();
-        //#endregion
+        // #endregion
     }
 }

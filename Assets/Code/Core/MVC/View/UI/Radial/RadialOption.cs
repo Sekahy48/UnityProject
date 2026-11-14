@@ -7,16 +7,16 @@ namespace Core.MVC.View.UI.Radial
     public class RadialOption
     {
         /// <summary>Texto principal ("Coger", "Coger x3", "Principal (Cofre)").</summary>
-        public string Label;
+        public string Label { get; set; }
 
         /// <summary>Texto bajo la etiqueta ("No hay espacio suficiente"), o null.</summary>
-        public string Hint;
+        public string Hint { get; set; }
 
         /// <summary>Abre un anillo; la vista anade "[Mas opciones]" debajo.</summary>
-        public bool HasChildren;
+        public bool HasChildren { get; set; }
 
         /// <summary>En gris; elegirla no hace nada.</summary>
-        public bool Disabled;
+        public bool Disabled { get; set; }
 
         public bool SameAs(RadialOption other)
             => other != null

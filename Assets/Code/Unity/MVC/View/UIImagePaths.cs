@@ -5,7 +5,7 @@ namespace MVC.View
     /// carpeta). Estan aqui y no en CoreConfig porque son arte de presentacion: Core no
     /// sabe que existen iconos.
     /// </summary>
-    public static class UIImages
+    public static class UIImagePaths
     {
         private const string ROOT = "images/";
 

@@ -1,5 +1,6 @@
 using Core.ECS.Systems;
 using Core.MVC.Presenter;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Contexts
 {
@@ -14,6 +15,8 @@ namespace Core.Contexts
 
         public GameSystemContext(SystemManager systemManager, PresenterManager presenterManager)
         {
+            AC.CheckNotNull(systemManager, nameof(systemManager));
+            AC.CheckNotNull(presenterManager, nameof(presenterManager));
             SystemManager = systemManager;
             PresenterManager = presenterManager;
         }

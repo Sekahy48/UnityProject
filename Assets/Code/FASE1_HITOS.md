@@ -1298,3 +1298,17 @@ Hand added notes (by me by hand):
   compensa, o si tener el gesto solo en la rejilla resulta incoherente al jugarlo.
 
 - [ ] Filtered consumption for crafting: `ConsumeFiltered(Predicate<ItemEntity> filter, int amount)` in `BatchItem` + wrapper in `InventorySystem`. Recipes need items matching not just typeId but specific state (e.g., hot iron ingot vs cold). `Equivalent()` may be too strict — evaluate whether a looser matching system is needed (partial match, predicate-based). Uses `BfsFindAll(typeId)` + filter per sub-lot. Additive, no structural refactor needed.
+
+- [ ] **`MovementComponent.Clone()` no copia todo su estado** (visto en Fase 1.5, M1). Usa el
+  constructor de 6 parámetros, que no pasa `_acceleration`, `_deceleration`,
+  `_weightSpeedMultiplier` ni `TurnSpeed`: el clon se queda con los valores por defecto del
+  campo. Hoy no se nota porque nadie los cambia en el prototipo; el día que un NPC tenga otros
+  valores, el clon los perderá sin avisar. Ya mordió una vez: `TurnSpeed` se asignaba solo en
+  el otro constructor y el clon del jugador tenía 0 (no giraba). Arreglo: que `Clone()` copie
+  todos los campos (o un constructor de copia).
+
+- [ ] **Pesos del catálogo como texto con coma decimal** (visto el 2026-11-13): la Mochila
+  llega como `"weight": "2,5"`. `NumericFields` lo lee con `Convert.ToSingle`, que usa el
+  idioma del sistema: en un Windows en español da 2,5; en uno en inglés da **25**. Arreglo en
+  dos sitios: que Stack&Go exporte números, y que la carga lea con `CultureInfo.InvariantCulture`
+  y trate un texto con coma como error de catálogo (norma 1.3 de `ESTANDARES_CODIGO.md`).

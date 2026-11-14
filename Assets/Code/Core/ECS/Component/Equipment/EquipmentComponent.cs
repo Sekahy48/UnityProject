@@ -13,7 +13,7 @@ namespace Core.ECS.Component.Equipment
 
         public EquipmentComponent(List<EquipmentSlotType> allowedSlots)
         {
-            this._allowedSlots = allowedSlots;
+            _allowedSlots = allowedSlots;
             EquipmentSlots = new Dictionary<EquipmentSlotType, EquipmentSlot>();
         }
 

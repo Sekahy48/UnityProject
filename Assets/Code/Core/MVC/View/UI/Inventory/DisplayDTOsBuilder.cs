@@ -44,7 +44,7 @@ namespace Core.MVC.View.UI.Inventory
                 IconPath    = baseItem.IconPath,
                 Description = baseItem.Description,
                 UnitWeight  = baseItem.Weight,
-                TotalWeight = ItemWeight.Of(itemEntity, amount),
+                TotalWeight = WeightCalculator.Of(itemEntity, amount),
                 Durability  = baseItem.Durability,
                 DimensionW  = baseItem.DimensionW,
                 DimensionH  = baseItem.DimensionH,

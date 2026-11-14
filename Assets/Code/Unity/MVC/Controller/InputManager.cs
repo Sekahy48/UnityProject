@@ -31,9 +31,9 @@ namespace MVC.Controller
 
         public InputManager(CameraRegister cameraRegister, PresenterManager presenterManager, GameSessionContext sessionContext)
         {
-            this._cameraRegister = cameraRegister;
-            this._presenterManager = presenterManager;
-            this._sessionContext = sessionContext;
+            _cameraRegister = cameraRegister;
+            _presenterManager = presenterManager;
+            _sessionContext = sessionContext;
         }
 
         public void Update(float deltaTime)

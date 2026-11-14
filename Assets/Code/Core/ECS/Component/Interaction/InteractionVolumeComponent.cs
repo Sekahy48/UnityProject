@@ -24,7 +24,7 @@ namespace Core.ECS.Component.Interaction
         public InteractionVolumeComponent(InteractionVolume volume)
         {
             _volume = volume ?? new SphereVolume(0.25f);
-            _name = "InteractionVolumeComponent";
+            Name = "InteractionVolumeComponent";
         }
 
         public InteractionVolume Volume => _volume;

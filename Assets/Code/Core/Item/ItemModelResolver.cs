@@ -68,7 +68,7 @@ namespace Core.Item
         {
             if (string.IsNullOrEmpty(model.DrivenBy)) return model.DefaultStage;
 
-            return ItemMagnitudes.TryRead(entity, model.DrivenBy, out float value)
+            return ItemMagnitudeReader.TryRead(entity, model.DrivenBy, out float value)
                 ? model.StageFor(value)
                 : model.DefaultStage;
         }

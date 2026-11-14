@@ -7,6 +7,8 @@ using Core.MVC.View.UI.HUD;
 using Core.MVC.View.UI.HUD.States;
 using Core.MVC.View.UI.HUD.States.Category;
 using Core.Observer;
+using Core.Inventory;
+using Core.Utils;
 using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.MVC.Presenter.HUD
@@ -76,6 +78,8 @@ namespace Core.MVC.Presenter.HUD
         #region Events
         public void UpdateOnEvent(GameEvent gameEvent)
         {
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
+
             // El bus avisa de cualquier entidad; el HUD es solo del jugador.
             if (!ReferenceEquals(gameEvent.GetEntity(), _player)) return;
 
@@ -135,7 +139,7 @@ namespace Core.MVC.Presenter.HUD
         #region Estados
 
         /* Franja de carga -> nivel de peso. Una sola traduccion, la usan el evento y Refresh. */
-        private static readonly Dictionary<GameEventType, WeightLevel> LoadLevels = new()
+        private static readonly Dictionary<GameEventType, WeightLevel> _loadLevels = new()
         {
             { GameEventType.NormalWeight, WeightLevel.None     },
             { GameEventType.ExtraWeight,  WeightLevel.Extra    },
@@ -149,7 +153,7 @@ namespace Core.MVC.Presenter.HUD
         /// </summary>
         private void ShowLoad(GameEventType band)
         {
-            if (!LoadLevels.TryGetValue(band, out WeightLevel level)) return;
+            if (!_loadLevels.TryGetValue(band, out WeightLevel level)) return;
             _view.AddState(Weight(level), level.GetDescription());
         }
 
@@ -164,8 +168,8 @@ namespace Core.MVC.Presenter.HUD
             if (inventory == null) return;
 
             float weight = inventory.Inventory.GetTotalWeight();
-            float maxLoad = CarryCapacity.GetMaxLoad(_player);
-            ShowLoad(CarryCapacity.ClassifyLoad(weight, maxLoad));
+            float maxLoad = CarryCapacityCalculator.GetMaxLoad(_player);
+            ShowLoad(CarryCapacityCalculator.ClassifyLoad(weight, maxLoad));
         }
 
         private static PlayerStatus Weight(WeightLevel level) => new PlayerStatus(StatusCategory.Weight, (int)level);

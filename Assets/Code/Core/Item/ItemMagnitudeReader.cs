@@ -14,7 +14,7 @@ namespace Core.Item
     /// cierta temperatura necesita exactamente esto. Si naciera dentro del resolutor visual,
     /// el dia del crafting habria que sacarla de alli o duplicarla.
     /// </summary>
-    public static class ItemMagnitudes
+    public static class ItemMagnitudeReader
     {
         public const char SEPARATOR = '.';
 

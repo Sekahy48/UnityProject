@@ -21,7 +21,7 @@ namespace Core.ECS.Component
 
         public GazeComponent()
         {
-            _name = "GazeComponent";
+            Name = "GazeComponent";
         }
 
         /// <summary>

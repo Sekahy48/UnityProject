@@ -1,5 +1,7 @@
 using Core.ECS.Systems;
 using Core.Item;
+using Core.ECS;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Contexts
 {
@@ -14,6 +16,8 @@ namespace Core.Contexts
 
         public GameDataContext(EntityManager entityManager, ItemCatalogue itemCatalogue)
         {
+            AC.CheckNotNull(entityManager, nameof(entityManager));
+            AC.CheckNotNull(itemCatalogue, nameof(itemCatalogue));
             _entityManager = entityManager;
             _itemCatalogue = itemCatalogue;
         }

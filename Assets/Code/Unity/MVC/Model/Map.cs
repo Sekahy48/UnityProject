@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Map
 {
-    private GameObject root;
+    private GameObject _root;
 
     public Map(string resourcePath)
     {
@@ -13,14 +13,14 @@ public class Map
             return;
         }
 
-        root = GameObject.Instantiate(prefab);
+        _root = GameObject.Instantiate(prefab);
     }
 
     public void Dispose()
     {
-        if (root != null)
+        if (_root != null)
         {
-            GameObject.Destroy(root);
+            GameObject.Destroy(_root);
         }
     }
 }

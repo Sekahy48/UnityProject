@@ -19,5 +19,16 @@ namespace Core.Events
         /// </summary>
         WeightLimitReached,
         EnergyChanged,
+
+        /// <summary>
+        /// El peso de la entidad del aviso PUEDE haber cambiado: se publica en cada operacion
+        /// capaz de cambiarlo (inventario, equipo, recoger parte de un monton), sin comprobar
+        /// si de verdad cambio. Quien lo escuche tiene que aguantar avisos repetidos; el peso
+        /// nuevo se pregunta a <see cref="Core.Inventory.WeightCalculator.Of(Core.ECS.Entity.IEntity)"/>.
+        /// No sustituye a <see cref="InventoryChanged"/>: mover algo dentro de la rejilla
+        /// cambia el inventario y no el peso, y recoger de un monton cambia el peso sin que
+        /// haya inventario.
+        /// </summary>
+        WeightChanged,
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.Observer;
+using AC = Core.Utils.ArgumentChecker;
 
 namespace Core.Events
 {
@@ -9,37 +10,40 @@ namespace Core.Events
     /// </summary>
     public class EventBus
     {
-        private static EventBus instance;
+        private static EventBus _instance;
 
-        private readonly Dictionary<GameEventType, List<IEventObserver>> subscribers = new();
+        private readonly Dictionary<GameEventType, List<IEventObserver>> _subscribers = new();
 
         private EventBus() { }
 
         public static EventBus GetInstance()
         {
-            if (instance == null)
-                instance = new EventBus();
-            return instance;
+            if (_instance == null)
+                _instance = new EventBus();
+            return _instance;
         }
 
         public void Subscribe(GameEventType eventType, IEventObserver observer)
         {
-            if (!subscribers.ContainsKey(eventType))
-                subscribers[eventType] = new List<IEventObserver>();
+            AC.CheckNotNull(observer, nameof(observer));
+            if (!_subscribers.ContainsKey(eventType))
+                _subscribers[eventType] = new List<IEventObserver>();
 
-            if (!subscribers[eventType].Contains(observer))
-                subscribers[eventType].Add(observer);
+            if (!_subscribers[eventType].Contains(observer))
+                _subscribers[eventType].Add(observer);
         }
 
         public void Unsubscribe(GameEventType eventType, IEventObserver observer)
         {
-            if (subscribers.TryGetValue(eventType, out var list))
+            AC.CheckNotNull(observer, nameof(observer));
+            if (_subscribers.TryGetValue(eventType, out var list))
                 list.Remove(observer);
         }
 
         public void Post(GameEvent gameEvent)
         {
-            if (!subscribers.TryGetValue(gameEvent.GetEventType(), out var list)) return;
+            AC.CheckNotNull(gameEvent, nameof(gameEvent));
+            if (!_subscribers.TryGetValue(gameEvent.GetEventType(), out var list)) return;
 
             // Copia: un observador puede suscribirse o darse de baja al reaccionar,
             // y modificar la lista mientras se recorre lanza InvalidOperationException.
@@ -63,7 +67,7 @@ namespace Core.Events
         /// </summary>
         public void Clear()
         {
-            subscribers.Clear();
+            _subscribers.Clear();
         }
     }
 }
