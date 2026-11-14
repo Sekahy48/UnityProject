@@ -230,6 +230,11 @@ equilibrarlas para que no rompan la inmersión ni sean un incordio, sin renuncia
 
 ## Investigación pendiente
 
+- **Fisiología de referencia** (añadida el 2026-11-14): números reales para que el ritmo de
+  la capa 1 no se invente a ojo. Calorías al día según la actividad; agua al día; cuánto se
+  aguanta sin agua y sin comida; umbrales de temperatura corporal (hipotermia, hipertermia);
+  pérdida de sangre hasta el desmayo y la muerte; horas de sueño y qué pasa sin dormir. Con
+  fuentes, que sirven también para la memoria. Incluye la del agua, abajo.
 - **El agua en la sociedad feudal y otras.** Qué fuentes se consideraban seguras (agua
   corriente frente a lago, pozo, lluvia), si bastaba con hervirla o se filtraba también (sabor
   terroso), qué se consideraba normal. Objetivo: que las fuentes de agua sean fidedignas y

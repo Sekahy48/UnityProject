@@ -100,7 +100,12 @@ detalle del ánimo → detalle de la enfermedad. El tronco y la capa 1 no se rec
 
 ### Antes de empezar
 
-- **Investigación del agua** (`MECANICAS.md`, «Investigación pendiente»).
+- **Investigación de fisiología de referencia, con la del agua dentro** (`MECANICAS.md`,
+  «Investigación pendiente»): calorías, agua, aguante sin comer ni beber, temperatura
+  corporal, pérdida de sangre, sueño. Sin estos números, los ritmos se inventan a ojo.
+- **El primer hito es la base del menú de depuración,** no una mecánica: la vista, cómo se
+  abre y cómo cada mecánica registra sus propias órdenes, más las primeras que ya tienen
+  sentido (controlar el tiempo, fijar valores). Cada hito siguiente añade las suyas.
 - **Documento de hitos de la Fase 2,** en modo socrático.
 
 ### Cierre

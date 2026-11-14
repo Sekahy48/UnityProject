@@ -169,5 +169,5 @@ estimación por bloque si la recuerda.
   mueve el Rigidbody cuando el Core cambia la posición. **M5:** criterios del `ROADMAP`
   repasados y cumplidos; 66 tests en verde. **Fase 1.5 terminada** en 4 días (estimado: 1–2
   semanas).
-- **Commits:** pendiente.
+- **Commits:** ffcb887; fusionada en `main` por PR.
 - **Pendiente que deja:** fusionar `fase1.5` en `main`; Fase 2 (antes, investigación del agua).
