@@ -66,6 +66,7 @@ crezca después (enfermedades, temperatura).
 | Elegir qué comer según lo que aporta (calorías; quizá proteína, grasa, azúcar) | una dieta pobre trae penalizaciones distintas | Green Hell (macronutrientes) | D | 📄 |
 | Cocinar o ahumar la comida | cruda sienta peor o dura menos | Green Hell, The Long Dark | D | 📖 |
 | Vigilar el estado de la comida (fresca, rancia, estropeada) | comer algo estropeado tiene consecuencias desde el principio | Project Zomboid | N | 🗣️ |
+| Vomitar (por comida en mal estado, enfermedad…): el estómago se vacía y durante un rato no hay hambre, sino pereza de comer | que el cuerpo reaccione a lo que le sienta mal y no se pueda «recuperar» comiendo al instante | — | F | 🗣️ |
 
 ### 1.2 Beber
 | Hace | Motivación | Referente | Et. | Origen |

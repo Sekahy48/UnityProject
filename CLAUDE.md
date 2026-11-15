@@ -173,6 +173,11 @@ fichero en vez de razonar sobre lo que debería contener. Antes de añadir un m�
 haz grep del nombre: ya ha pasado duplicar un `Forward()` que existía cincuenta líneas más
 abajo.
 
+**Si Sergio te pide comprobar algo, abre el fichero.** No contestes de memoria ni con lo leído
+antes en la conversación, salvo que estés 100 % seguro de que sigue siendo cierto: él lo va a
+hacer comprobar igualmente. Vale para el código y para los documentos. Con las referencias de los
+documentos de investigación, verifícalas tú contra la fuente; no se las devuelvas a él.
+
 **Cuando tomes una decisión de diseño con su razonamiento, apúntala en
 el documento de hitos de la fase en curso** (`Assets/Code/FASE<n>_HITOS.md`). Ese documento es lo que permite que una conversación nueva
 empiece sabiendo por qué las cosas son como son.

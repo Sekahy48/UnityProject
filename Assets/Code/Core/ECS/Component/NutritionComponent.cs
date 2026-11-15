@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Core.ECS.Component
 {
     /// <summary>
-    /// Hunger, thirst, macronutrients and reserves. Relevant in Phase 3.
+    /// Hunger, thirst, macronutrients and reserves.
     /// </summary>
     public class NutritionComponent : BasicComponent, IJsonLoadable, INumericFields
     {
