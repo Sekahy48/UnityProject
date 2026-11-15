@@ -173,7 +173,7 @@ estimación por bloque si la recuerda.
 - **Pendiente que deja:** fusionar `fase1.5` en `main`; Fase 2 (antes, investigación del agua).
 
 ### 2026-11-14 — Fase 2: investigación de fisiología y primeras decisiones
-- **Horas:** sin dato
+- **Horas:** 2–3 h (aproximado, según Sergio)
 - **Con:** Sergio + Claude
 - **Fase / hito:** Fase 2 · antes de los hitos (capa 0)
 - **Hecho:** `Docs/FISIOLOGIA_REFERENCIA.md` (calorías, agua, aguante sin comer ni beber,
@@ -182,7 +182,7 @@ estimación por bloque si la recuerda.
   empezado: lista de 25 decisiones de la capa 0 y primeras respuestas (el sueño no mata,
   micronutrientes en un saco, etapas de hambre, solo hervir el agua). Norma nueva en `CLAUDE.md`:
   si Sergio pide comprobar algo, se abre el fichero.
-- **Commits:** ninguno (va con el de la sesión siguiente).
+- **Commits:** ed305ed (junto con la sesión del 15).
 
 ### 2026-11-15 — Fase 2: capa 0 decidida entera
 - **Horas:** ~4,5 h (estimación, confirmar)
@@ -196,6 +196,6 @@ estimación por bloque si la recuerda.
   multiplicativos con suelo, desmayo y muerte por umbrales de constantes vitales, modelo de
   despertar. Investigación ampliada: músculo, adaptación nerviosa, ganancia con déficit,
   proteína, vaciado gástrico, sangre y agua. Vómito aplazado (`MECANICAS.md`, F).
-- **Commits:** pendiente.
+- **Commits:** ed305ed.
 - **Pendiente que deja:** escribir los hitos de la fase, empezando por el menú de depuración;
   quitar el espacio sobrante en `BodyComponent.cs` (línea de `_fatPercentage`).

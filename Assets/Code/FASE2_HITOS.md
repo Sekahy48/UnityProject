@@ -22,7 +22,7 @@ encaje en el plan, de `Docs/ROADMAP.md` y los números de referencia, de
 - **Capa 0: todas las decisiones cerradas (2026-11-15, 20:32).** Ver «Lista de decisiones de la
   capa 0» y las secciones «Decididas». Quedan solo valores de calibración, que se fijan al
   implementar.
-- **En curso:** escribir los hitos de la fase.
+- **Hitos escritos** (2026-11-15). **En curso:** definir M1, menú de depuración.
 - **Siguiente:** cuando la investigación y las decisiones estén cerradas, escribir los hitos. El
   primero es la base del menú de depuración, no una mecánica.
 - **Aviso para quien retome esto:** las secciones «Decididas por Sergio (fecha, hora)» están en
@@ -481,7 +481,7 @@ adelante surgieron después.
 
 **Desmayo y muerte**
 22. Desmayo: pantalla, control, duración, qué despierta, qué lo causa. — cerrada (ver «Decididas»)
-23. Muerte: causas; vida en puntos; qué pasa al morir. — cerrada (ver «Decididas»)
+23. Muerte: causas; vida en puntos; qué pasa al morir. — parcial: causas y umbrales cerrados; **falta qué pasa al morir** (reinicio del escenario, pantalla…). Se decide en el hito de desmayo y muerte.
 24. Morir desmayado; estado crítico intermedio. — cerrada
 
 **Transversal**
@@ -526,4 +526,35 @@ adelante surgieron después.
 
 ## Hitos
 
-*(Se escriben cuando termine la capa 0.)*
+Partición aceptada por Sergio (2026-11-15, 22:27). Cada hito cierra con algo jugable y probado. Lo
+que hay que decidir dentro de cada uno se plantea al llegar a él; se define e implementa un hito
+antes de definir el siguiente.
+
+**Capa 0: tronco**
+
+| Hito | Qué entrega | Cómo se prueba |
+|---|---|---|
+| **M1. Menú de depuración** | Menú base: forzar valores, acelerar el tiempo, escenarios preparados | Abrirlo y mover un valor que ya existe (aguante, peso) |
+| **M2. Reloj del mundo** | `DayCycle`: hora del día, luz de Unity según la hora (primavera fija, inicio 6:00), temperatura ambiente global | Acelerar el tiempo y ver amanecer y anochecer |
+| **M3. Estados y capacidades** | Enum por estado, evento genérico, peso migrado, tooltips; calculadores de velocidad, tiempo de acción y carga (multiplicación con suelo) | El peso funciona igual que hoy por el camino nuevo, con tooltip |
+| **M4. Cuerpo** | Composición (grasa, músculo por pieza, resto), 30 piezas, sangre y agua corporal; peso y % de grasa deducidos; `BodyComponent` rehecho | Ver la composición en el menú; cambiar la grasa cambia el peso |
+| **M5. Desmayo y muerte** | Umbrales de constantes vitales, pantalla negra sin control, despertar según causa, histéresis, qué pasa al morir | Bajar sangre o temperatura desde el menú: desmayo, recuperación, muerte |
+
+**Capa 1: mínimo del TFG**
+
+| Hito | Qué entrega |
+|---|---|
+| **M6. Comer y hambre** | `DigestiveComponent` con vaciado lineal, reservas, balance de grasa, hambre derivada con hábito, lleno y empachado |
+| **M7. Beber y sed** | Agua en el contenido digestivo con tasa propia, agua corporal, sed, deshidratación hasta el desmayo |
+| **M8. Sueño y cansancio** | Deuda de sueño, dormir eligiendo horas, despertar por luz, aguante generalizado por entidad |
+| **M9. Temperatura corporal** | Temperatura central según el ambiente; aislamiento de la ropa (se decide aquí) |
+| **M10. Heridas y sangrado** | Heridas por pieza y tipo, curvas de severidad, catálogo de daño y armadura con cobertura, desde el menú; rescate desde el menú |
+| **M11. Músculo y fuerza** | Músculo por pieza que alimenta la capacidad de carga |
+
+**Capa 2:** entrenamiento por golpes (puerta energética y proteica, índice nervioso), dolor, tratar
+heridas, estado de la comida, ánimo, infección y fracturas. Se parte en hitos al cerrar la capa 1.
+
+*Notas de orden:* M6 va después de M2 (el hábito necesita la hora); el orden de M6 a M10 es
+flexible. M5 va antes de las necesidades porque las constantes vitales se mueven desde el menú.
+
+### M1. Menú de depuración — en definición
