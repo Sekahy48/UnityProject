@@ -558,3 +558,46 @@ heridas, estado de la comida, ánimo, infección y fracturas. Se parte en hitos 
 flexible. M5 va antes de las necesidades porque las constantes vitales se mueven desde el menú.
 
 ### M1. Menú de depuración — en definición
+
+**Decidido por Sergio (2026-11-16):**
+
+- **Línea de comandos** al estilo Minecraft o Skyrim, con `/help` que lista los comandos, en vez de
+  un panel gráfico. *Por qué:* poca interfaz que diseñar, se amplía sola con cada mecánica y en el
+  futuro puede servir de modo creativo o de trucos para el jugador.
+- **Las órdenes pueden afectar a cualquier entidad**, no solo al jugador.
+- **Quién escribe qué:** se decide sobre la marcha.
+- **Órdenes iniciales:** velocidad del tiempo; fijar aguante y cansancio; aparecer N unidades de
+  un ítem en el mundo; añadir N unidades de un ítem a un inventario.
+- **Ver valores:** con un comando de estadísticas dentro de la propia consola.
+- **Traza de vuelta:** cada comando responde en la consola (error, sintaxis incorrecta o lo que
+  hizo: «añadidas 4 manzanas al inventario») y el mismo mensaje va al log de Unity.
+- **Escenarios preparados:** fuera de M1.
+- **Reproducibilidad:** sí; normalizar cómo se sacan las semillas, como en Fuero (generador
+  propio SplitMix64, `DeterministicRandom`, semilla del mundo y un flujo por actor derivado de ella;
+  `System.Random` prohibido en el módulo). Hoy en Artisan hay `System.Random` en
+  `NutritionComponent` (hambre inicial, que desaparece al derivar el hambre) y en `BatchItem`
+  (elige sub-lote al azar). Verificado en ambos repositorios.
+- **Tests:** los normales. **Hecho:** cuando se cumpla lo que pone el hito.
+
+**Decidido por Sergio (2026-11-16, 08:25):**
+
+- **Se abre con la T.**
+- **Trucos:** en el futuro, un ajuste para activarlos; de momento siempre activos (también en lo
+  que se presente del TFG).
+- **Entidades:** selectores con `@` (`@s`, `@p`…, con significado) e identificadores sin `@`
+  (el id a secas). Los dos.
+- **Comandos en inglés** (`/give`, `/help`…).
+- **Historial (flecha arriba) y autocompletado (tabulador) entran en M1.**
+- **Aparecer ítems:** delante del jugador, o en unas coordenadas si se dan.
+- **Semilla:** entra en M1 solo si es sencillo con lo que ya hay en Fuero. Se **copia** la clase
+  (`DeterministicRandom`); la limpieza de duplicados entre repositorios (este, `ArgumentChecker`…)
+  se hará al enchufar Fuero, quizá fuera del TFG.
+- **`/stats <entidad>`** muestra todos sus componentes; `/stats <entidad> <componente>`, solo ese.
+
+**Decidido por Sergio (2026-11-16, 08:31):**
+
+- **Abrir la consola bloquea el control del personaje, pero no para el tiempo.**
+- **Semilla del mundo en `GameMain`** de momento, y comando **`/seed`** para verla.
+- **Azar por actor** (como Fuero, D55 «Azar por actor») cuando haya varios actores: fuera de M1 y
+  probablemente de la fase. **Sin flujo propio para objetos** (una manzana no lo necesita).
+- **`BatchItem`:** Sergio pide propuesta a Claude (sin cerrar; ver respuesta).
