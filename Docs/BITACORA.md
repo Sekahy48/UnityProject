@@ -199,3 +199,15 @@ estimación por bloque si la recuerda.
 - **Commits:** ed305ed.
 - **Pendiente que deja:** escribir los hitos de la fase, empezando por el menú de depuración;
   quitar el espacio sobrante en `BodyComponent.cs` (línea de `_fatPercentage`).
+
+### 2026-11-16 — Fase 2: M1 definido (consola de comandos)
+- **Horas:** ~0,5 h (estimación, confirmar)
+- **Con:** Sergio + Claude
+- **Fase / hito:** Fase 2 · M1
+- **Hecho:** decidido que el menú de depuración sea una consola de comandos al estilo Minecraft
+  (T, `/help`, historial y autocompletado, comandos en inglés, selectores `@s`/`@p` e ids, trucos
+  siempre activos de momento); órdenes iniciales (tiempo, aguante y cansancio, aparecer y dar
+  ítems, `/stats`, `/seed`); traza en consola y log; semilla en `GameMain` copiando
+  `DeterministicRandom` de Fuero. El 2026-11-20, opción B para el azar de `BatchItem`.
+- **Commits:** aa9ecde.
+- **Pendiente que deja:** propuesta cerrada de M1 e implementación.

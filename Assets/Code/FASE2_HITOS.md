@@ -22,9 +22,8 @@ encaje en el plan, de `Docs/ROADMAP.md` y los números de referencia, de
 - **Capa 0: todas las decisiones cerradas (2026-11-15, 20:32).** Ver «Lista de decisiones de la
   capa 0» y las secciones «Decididas». Quedan solo valores de calibración, que se fijan al
   implementar.
-- **Hitos escritos** (2026-11-15). **En curso:** definir M1, menú de depuración.
-- **Siguiente:** cuando la investigación y las decisiones estén cerradas, escribir los hitos. El
-  primero es la base del menú de depuración, no una mecánica.
+- **Hitos escritos** (2026-11-15): M1–M5 capa 0, M6–M11 capa 1. **En curso:** M1, consola de
+  comandos. Decisiones cerradas (2026-11-20). **Siguiente:** propuesta cerrada de M1.
 - **Aviso para quien retome esto:** las secciones «Decididas por Sergio (fecha, hora)» están en
   orden cronológico y algunas decisiones posteriores sustituyen a las anteriores (se indica en
   cada una). Las secciones «Decididas» mandan sobre el estado de la lista. La lista original de 25 preguntas está en «Lista de decisiones de la capa 0», con su estado.
@@ -600,4 +599,11 @@ flexible. M5 va antes de las necesidades porque las constantes vitales se mueven
 - **Semilla del mundo en `GameMain`** de momento, y comando **`/seed`** para verla.
 - **Azar por actor** (como Fuero, D55 «Azar por actor») cuando haya varios actores: fuera de M1 y
   probablemente de la fase. **Sin flujo propio para objetos** (una manzana no lo necesita).
-- **`BatchItem`:** Sergio pide propuesta a Claude (sin cerrar; ver respuesta).
+- **`BatchItem` (decidido 2026-11-20): opción B**, un flujo de azar global provisional, al estilo
+  de `ClockSystem`, sembrado en `GameMain` y resembrable en los tests. *Por qué:* con un solo actor
+  da el mismo resultado que un flujo por actor y cuesta una línea. *Deuda:* con varios actores se
+  pasa a que cada actor entregue su flujo (D55 de Fuero, «Azar por actor»), lo que toca la cadena
+  de consumo del inventario (`ItemObject` → `BatchItem.ConsumeRandom`, interfaz
+  `IInventoryElement`). Descartadas: A (parámetro por toda la cadena, caro hoy) y C (inyectar al
+  construir).
+- **Lista de M1 cerrada (2026-11-20).**
